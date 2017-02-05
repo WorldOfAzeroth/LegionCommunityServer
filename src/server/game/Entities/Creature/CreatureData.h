@@ -40,7 +40,7 @@ enum CreatureDifficultyFlags
     CREATURE_DIFFICULTYFLAGS_IMMUNE_TO_NPC                     = 0x00000040, // UNIT_FLAG_IMMUNE_TO_NPC
     CREATURE_DIFFICULTYFLAGS_UNK2                              = 0x00000080,
     CREATURE_DIFFICULTYFLAGS_SESSILE                           = 0x00000100, // Creature is rooted
-    CREATURE_DIFFICULTYFLAGS_NOT_SELECTABLE                    = 0x00000200, // UNIT_FLAG_NOT_SELECTABLE
+    CREATURE_DIFFICULTYFLAGS_NOT_SELECTABLE                    = 0x00000200, // UNIT_FLAG_UNINTERACTIBLE
     CREATURE_DIFFICULTYFLAGS_UNK3                              = 0x00000400, // Related to health - it seems similar to CREATURE_DIFFICULTYFLAGS_2_KEEP_HEALTH_POINTS_AT_RESET
     CREATURE_DIFFICULTYFLAGS_NO_CORPSE_UPON_DEATH              = 0x00000800, // Creature instantly disappear when killed
     CREATURE_DIFFICULTYFLAGS_UNK5                              = 0x00001000,
@@ -59,7 +59,7 @@ enum CreatureDifficultyFlags
     CREATURE_DIFFICULTYFLAGS_IGNORE_COMBAT                     = 0x02000000,
     CREATURE_DIFFICULTYFLAGS_UNK12                             = 0x04000000,
     CREATURE_DIFFICULTYFLAGS_SUMMON_GUARD_IF_IN_AGGRO_RANGE    = 0x08000000, // Creature will summon a guard if player is within its aggro range (even if creature doesn't attack per se)
-    CREATURE_DIFFICULTYFLAGS_ONLY_SWIM                         = 0x10000000, // UNIT_FLAG_UNK_15
+    CREATURE_DIFFICULTYFLAGS_ONLY_SWIM                         = 0x10000000, // UNIT_FLAG_CAN_SWIM
     CREATURE_DIFFICULTYFLAGS_UNK13                             = 0x20000000, // Related to gravity
     CREATURE_DIFFICULTYFLAGS_TFLAG_UNK5                        = 0x40000000, // CREATURE_TYPEFLAGS_UNK5
     CREATURE_DIFFICULTYFLAGS_LARGE_AOI                         = 0x80000000  // UnitFlags2 0x200000

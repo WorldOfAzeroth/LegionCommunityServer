@@ -1186,7 +1186,7 @@ public:
                         case 87:
                             if (Creature* malganis = ObjectAccessor::GetCreature(*me, malganisGUID))
                             {
-                                malganis->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_UNK_6 | UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_UNK_15);
+                                malganis->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_UNK_6 | UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_CAN_SWIM);
                                 malganis->SetReactState(REACT_AGGRESSIVE);
                             }
                             JumpToNextStep(1000);

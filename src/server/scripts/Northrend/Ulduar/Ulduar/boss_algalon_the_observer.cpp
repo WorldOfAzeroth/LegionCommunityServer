@@ -380,7 +380,7 @@ class boss_algalon_the_observer : public CreatureScript
                         events.ScheduleEvent(EVENT_DESPAWN_ALGALON_2, 17000);
                         events.ScheduleEvent(EVENT_DESPAWN_ALGALON_3, 26000);
                         me->DespawnOrUnsummon(34000);
-                        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_NPC);
+                        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE | UNIT_FLAG_IMMUNE_TO_NPC);
                         break;
                     case ACTION_INIT_ALGALON:
                         _firstPull = false;
@@ -397,7 +397,7 @@ class boss_algalon_the_observer : public CreatureScript
             void EnterCombat(Unit* /*target*/) override
             {
                 uint32 introDelay = 0;
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_NPC);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE | UNIT_FLAG_IMMUNE_TO_NPC);
                 events.Reset();
                 events.SetPhase(PHASE_ROLE_PLAY);
 
@@ -540,7 +540,7 @@ class boss_algalon_the_observer : public CreatureScript
                     me->SetReactState(REACT_PASSIVE);
                     me->AttackStop();
                     me->setFaction(35);
-                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                     DoCast(me, SPELL_SELF_STUN);
                     events.Reset();
                     summons.DespawnAll();
@@ -588,11 +588,11 @@ class boss_algalon_the_observer : public CreatureScript
                         {
                             events.SetPhase(PHASE_NORMAL);
                             me->SetSheath(SHEATH_STATE_MELEE);
-                            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_NPC);
+                            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE | UNIT_FLAG_IMMUNE_TO_NPC);
                             me->SetReactState(REACT_DEFENSIVE);
                             DoCastAOE(SPELL_SUPERMASSIVE_FAIL, true);
                             //! Workaround for Creature::_IsTargetAcceptable returning false
-                            //! for creatures that start combat in REACT_PASSIVE and UNIT_FLAG_NOT_SELECTABLE
+                            //! for creatures that start combat in REACT_PASSIVE and UNIT_FLAG_UNINTERACTIBLE
                             //! causing them to immediately evade
                             if (!me->getThreatManager().isThreatListEmpty())
                                 AttackStart(me->getThreatManager().getHostilTarget());
@@ -673,7 +673,7 @@ class boss_algalon_the_observer : public CreatureScript
                             break;
                         case EVENT_OUTRO_4:
                             DoCastAOE(SPELL_SUPERMASSIVE_FAIL);
-                            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                             break;
                         case EVENT_OUTRO_5:
                             if (Creature* brann = DoSummon(NPC_BRANN_BRONZBEARD_ALG, BrannOutroPos[0], 131500, TEMPSUMMON_TIMED_DESPAWN))
@@ -762,7 +762,7 @@ class npc_living_constellation : public CreatureScript
                             if (Unit* target = algalon->AI()->SelectTarget(SELECT_TARGET_RANDOM, 0, NonTankTargetSelector(algalon)))
                             {
                                 me->SetReactState(REACT_AGGRESSIVE);
-                                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                                 AttackStart(target);
                                 DoZoneInCombat();
                                 _isActive = true;

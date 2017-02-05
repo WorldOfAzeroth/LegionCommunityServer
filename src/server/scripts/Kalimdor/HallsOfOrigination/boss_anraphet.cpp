@@ -151,7 +151,7 @@ public:
             if (instance->GetData(DATA_DEAD_ELEMENTALS) == 4)
             {
                 // Set to combat automatically, Brann's event won't repeat
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 events.SetPhase(PHASE_COMBAT);
                 ScheduleCombatEvents();
                 me->SetHomePosition(AnraphetActivatePos);
@@ -235,7 +235,7 @@ public:
                         events.ScheduleEvent(EVENT_ANRAPHET_READY, 6000, 0, PHASE_INTRO);
                         break;
                     case EVENT_ANRAPHET_READY:
-                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                         events.SetPhase(PHASE_COMBAT);
                         ScheduleCombatEvents();
                         break;

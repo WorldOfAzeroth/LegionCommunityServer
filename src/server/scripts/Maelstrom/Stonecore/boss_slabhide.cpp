@@ -201,7 +201,7 @@ class boss_slabhide : public CreatureScript
                         me->SetHover(false);
                         me->SetHomePosition(SlabhideIntroLandPos);
                         me->HandleEmoteCommand(EMOTE_ONESHOT_ROAR);
-                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                         me->SetReactState(REACT_AGGRESSIVE);
                         instance->SetData(DATA_SLABHIDE_INTRO, DONE);
                         break;

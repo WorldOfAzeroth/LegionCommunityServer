@@ -140,7 +140,7 @@ public:
                         DoCast(me, SPELL_SUMMON_WORM, true);
                         if (Unit* worm = me->FindNearestCreature(NPC_SCOURGED_BURROWER, 3.0f))
                         {
-                            worm->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                            worm->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                             worm->HandleEmoteCommand(EMOTE_ONESHOT_EMERGE);
                         }
                         phaseTimer = 1000;

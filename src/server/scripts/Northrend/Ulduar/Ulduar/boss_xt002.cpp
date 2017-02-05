@@ -203,7 +203,7 @@ class boss_xt002 : public CreatureScript
             {
                 _Reset();
 
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 me->SetReactState(REACT_AGGRESSIVE);
                 DoCastSelf(SPELL_STAND);
 
@@ -252,7 +252,7 @@ class boss_xt002 : public CreatureScript
             {
                 Talk(SAY_DEATH);
                 _JustDied();
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
             }
 
             void DamageTaken(Unit* /*attacker*/, uint32& /*damage*/) override
@@ -378,7 +378,7 @@ class boss_xt002 : public CreatureScript
                     heart->CastSpell(me, SPELL_HEART_LIGHTNING_TETHER);
                     heart->CastSpell(heart, SPELL_HEART_HEAL_TO_FULL, true);
                     heart->CastSpell(me, SPELL_RIDE_VEHICLE_EXPOSED, true);
-                    heart->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                    heart->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                     heart->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29);
                }
 
@@ -399,7 +399,7 @@ class boss_xt002 : public CreatureScript
                 Talk(SAY_HEART_CLOSED);
                 Talk(EMOTE_HEART_CLOSED);
 
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 me->SetReactState(REACT_AGGRESSIVE);
                 DoCastSelf(SPELL_STAND);
 
@@ -414,7 +414,7 @@ class boss_xt002 : public CreatureScript
                     return;
 
                 heart->CastSpell(me, SPELL_HEART_RIDE_VEHICLE, true);
-                heart->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                heart->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 heart->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29);
                 heart->RemoveAurasDueToSpell(SPELL_EXPOSED_HEART);
 
@@ -1043,7 +1043,7 @@ class spell_xt002_submerged : public SpellScriptLoader
                 if (!target)
                     return;
 
-                target->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                target->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 target->SetStandState(UNIT_STAND_STATE_SUBMERGED);
             }
 

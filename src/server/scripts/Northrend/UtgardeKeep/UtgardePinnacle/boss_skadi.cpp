@@ -231,7 +231,7 @@ public:
             {
                 case ACTION_START_ENCOUNTER:
                     instance->SetBossState(DATA_SKADI_THE_RUTHLESS, IN_PROGRESS);
-                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                     me->setActive(true);
                     SpawnFirstWave();
                     Talk(SAY_AGGRO);
@@ -267,7 +267,7 @@ public:
                     Talk(SAY_DRAKE_DEATH);
                     DoCast(me, SPELL_SKADI_TELEPORT, true);
                     summons.DespawnEntry(NPC_WORLD_TRIGGER);
-                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_PC);
+                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE | UNIT_FLAG_IMMUNE_TO_PC);
                     me->SetReactState(REACT_AGGRESSIVE);
                     _phase = PHASE_GROUND;
 

@@ -369,7 +369,7 @@ class boss_deathbringer_saurfang : public CreatureScript
                     _dead = true;
                     _JustDied();
                     _EnterEvadeMode();
-                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_NOT_SELECTABLE);
+                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_UNINTERACTIBLE);
 
                     DoCastAOE(SPELL_REMOVE_MARKS_OF_THE_FALLEN_CHAMPION);
                     DoCast(me, SPELL_ACHIEVEMENT, true);
@@ -462,7 +462,7 @@ class boss_deathbringer_saurfang : public CreatureScript
                     switch (eventId)
                     {
                         case EVENT_INTRO_ALLIANCE_2:
-                            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                             me->setFaction(FACTION_SCOURGE);
                             Talk(SAY_INTRO_ALLIANCE_2);
                             break;
@@ -475,7 +475,7 @@ class boss_deathbringer_saurfang : public CreatureScript
                             DoCast(me, SPELL_GRIP_OF_AGONY);
                             break;
                         case EVENT_INTRO_HORDE_2:
-                            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                             me->setFaction(FACTION_SCOURGE);
                             Talk(SAY_INTRO_HORDE_2);
                             break;
@@ -727,7 +727,7 @@ class npc_high_overlord_saurfang_icc : public CreatureScript
                             if (Creature* deathbringer = ObjectAccessor::GetCreature(*me, _instance->GetGuidData(DATA_DEATHBRINGER_SAURFANG)))
                             {
                                 deathbringer->CastSpell(me, SPELL_RIDE_VEHICLE, true);  // for the packet logs.
-                                deathbringer->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                                deathbringer->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                                 deathbringer->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_DROWNED);
                             }
                             _events.ScheduleEvent(EVENT_OUTRO_HORDE_5, 1000);    // move

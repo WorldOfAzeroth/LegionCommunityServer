@@ -167,7 +167,7 @@ INSERT INTO `reference_loot_template` (`Entry`, `Item`, `Reference`, `Chance`, `
 (43401, 56331, 0, 0, 0, 1, 1, 1, 1, NULL),
 (43401, 56332, 0, 0, 0, 1, 1, 1, 1, NULL);
 
--- Set UNIT_FLAG_NOT_SELECTABLE to Trashing Charge.
+-- Set UNIT_FLAG_UNINTERACTIBLE to Trashing Charge.
 UPDATE `creature_template` SET `unit_flags` = 33554432 WHERE `entry` = 43743;
 
 -- Crystalspawn Giant SAI
@@ -213,7 +213,7 @@ INSERT INTO `reference_loot_template` (`Entry`, `Item`, `Reference`, `Chance`, `
 (43403, 56336, 0, 0, 0, 1, 1, 1, 1, NULL),
 (43403, 56337, 0, 0, 0, 1, 1, 1, 1, NULL);
 
--- Set UNIT_FLAG_NOT_SELECTABLE to Stalactite Trigger - Boss, Lava Fissure, .
+-- Set UNIT_FLAG_UNINTERACTIBLE to Stalactite Trigger - Boss, Lava Fissure, .
 UPDATE `creature_template` SET `unit_flags` = 33554432 WHERE `entry` IN (43159, 43242);
 
 -- "Stalactite Trigger - Boss": InhabitType correction
@@ -286,7 +286,7 @@ INSERT INTO `reference_loot_template` (`Entry`, `Item`, `Reference`, `Chance`, `
 (43405, 56341, 0, 0, 0, 1, 1, 1, 1, NULL),
 (43405, 56342, 0, 0, 0, 1, 1, 1, 1, NULL);
 
--- Set UNIT_FLAG_NOT_SELECTABLE to Rupture Controller and Rupture.
+-- Set UNIT_FLAG_UNINTERACTIBLE to Rupture Controller and Rupture.
 UPDATE `creature_template` SET `unit_flags` = 33554432 WHERE `entry` IN (49597, 49576);
 
 -- Heroic template of High Priestess Azil 
@@ -346,5 +346,5 @@ INSERT INTO `spell_target_position` (`id`, `effIndex`, `target_map`, `target_pos
 (86858, 0, 725, 1341.19, 913.399, 197.092, 0, 0),
 (86856, 0, 725, 1361.89, 920.219, 196.308, 0, 0);
 
--- Set UNIT_FLAG_NOT_SELECTABLE to Gravity Well and Seismic Shard.
+-- Set UNIT_FLAG_UNINTERACTIBLE to Gravity Well and Seismic Shard.
 UPDATE `creature_template` SET `unit_flags` = 33554432 WHERE `entry` IN (42499, 42355);

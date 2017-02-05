@@ -103,7 +103,7 @@ public:
 
             //Incase wipe during phase that mograine fake death
             me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
             me->SetStandState(UNIT_STAND_STATE_STAND);
 
             if (me->IsAlive())
@@ -152,7 +152,7 @@ public:
                 me->RemoveAllAuras();
                 me->ClearAllReactives();
 
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 me->SetStandState(UNIT_STAND_STATE_DEAD);
 
                 _bHasDied = true;
@@ -184,7 +184,7 @@ public:
                 //On resurrection, stop fake death and heal whitemane and resume fight
                 if (Unit* Whitemane = ObjectAccessor::GetUnit(*me, instance->GetGuidData(DATA_WHITEMANE)))
                 {
-                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                     me->SetStandState(UNIT_STAND_STATE_STAND);
                     DoCast(Whitemane, SPELL_LAYONHANDS);
 

@@ -192,7 +192,7 @@ class boss_corborus : public CreatureScript
                             events.RescheduleEvent(EVENT_SUBMERGE, 100000);
 
                             me->SetReactState(REACT_PASSIVE);
-                            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                             DoCast(me, SPELL_CLEAR_ALL_DEBUFFS);
                             me->AttackStop();
 
@@ -217,7 +217,7 @@ class boss_corborus : public CreatureScript
                             break;
                         case EVENT_EMERGE:
                             me->RemoveAllAuras();
-                            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                             DoCast(me, SPELL_EMERGE);
                             events.ScheduleEvent(EVENT_ATTACK, 2500);
                             break;

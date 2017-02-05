@@ -225,7 +225,7 @@ public:
             if (summon->GetEntry() != NPC_NEFARIAN)
             {
                 summon->UpdateEntry(NPC_BONE_CONSTRUCT);
-                summon->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                summon->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 summon->SetReactState(REACT_PASSIVE);
                 summon->SetStandState(UNIT_STAND_STATE_DEAD);
             }
@@ -575,7 +575,7 @@ public:
                     {
                         (*itr)->Respawn();
                         (*itr)->SetInCombatWithZone();
-                        (*itr)->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                        (*itr)->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                         (*itr)->SetReactState(REACT_AGGRESSIVE);
                         (*itr)->SetStandState(UNIT_STAND_STATE_STAND);
                     }

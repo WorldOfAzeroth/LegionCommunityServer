@@ -500,7 +500,7 @@ public:
             }
 
             creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-            creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_15);
+            creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_CAN_SWIM);
 
             player->CastSpell(creature, SPELL_DUEL, false);
             player->CastSpell(player, SPELL_DUEL_FLAG, true);
@@ -550,7 +550,7 @@ public:
 
             me->RestoreFaction();
             CombatAI::Reset();
-            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_15);
+            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_CAN_SWIM);
         }
 
         void SpellHit(Unit* pCaster, const SpellInfo* pSpell) override
@@ -857,7 +857,7 @@ public:
 
             deathcharger->RestoreFaction();
             deathcharger->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK);
-            deathcharger->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            deathcharger->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
             if (!me->GetVehicle() && deathcharger->IsVehicle() && deathcharger->GetVehicleKit()->HasEmptySeat(0))
                 me->EnterVehicle(deathcharger);
         }
@@ -871,7 +871,7 @@ public:
             if (killer->GetTypeId() == TYPEID_PLAYER && deathcharger->GetTypeId() == TYPEID_UNIT && deathcharger->IsVehicle())
             {
                 deathcharger->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK);
-                deathcharger->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                deathcharger->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 deathcharger->setFaction(2096);
             }
         }

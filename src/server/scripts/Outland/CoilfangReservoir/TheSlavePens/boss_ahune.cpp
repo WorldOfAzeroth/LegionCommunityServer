@@ -268,7 +268,7 @@ public:
             me->RemoveAurasDueToSpell(SPELL_STAY_SUBMERGED);
             DoCast(me, SPELL_STAND);
             DoCast(me, SPELL_RESURFACE, true);
-            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
             events.ScheduleEvent(EVENT_SYNCH_HEALTH, Seconds(3));
         }
 
@@ -326,7 +326,7 @@ public:
         {
             if (action == ACTION_AHUNE_RETREAT)
             {
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_PC);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE | UNIT_FLAG_IMMUNE_TO_PC);
                 me->RemoveAurasDueToSpell(SPELL_ICE_SPEAR_AURA);
                 _events.ScheduleEvent(EVENT_SYNCH_HEALTH, Seconds(3), 0, PHASE_TWO);
             }
@@ -334,7 +334,7 @@ public:
             {
                 _events.Reset();
                 DoCast(me, SPELL_ICE_SPEAR_AURA);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_PC);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE | UNIT_FLAG_IMMUNE_TO_PC);
             }
         }
 

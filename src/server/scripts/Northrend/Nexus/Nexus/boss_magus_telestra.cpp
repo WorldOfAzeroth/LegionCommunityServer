@@ -134,7 +134,7 @@ public:
         {
             Initialize();
 
-            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
             me->SetVisible(true);
 
             instance->SetBossState(DATA_MAGUS_TELESTRA, NOT_STARTED);
@@ -248,7 +248,7 @@ public:
                 me->AttackStop();
                 if (uiIsWaitingToAppearTimer <= diff)
                 {
-                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                     bIsWaitingToAppear = false;
                 } else uiIsWaitingToAppearTimer -= diff;
                 return;
@@ -285,7 +285,7 @@ public:
                 me->CastStop();
                 me->RemoveAllAuras();
                 me->SetVisible(false);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 uiFireMagusGUID = SplitPersonality(NPC_FIRE_MAGUS);
                 uiFrostMagusGUID = SplitPersonality(NPC_FROST_MAGUS);
                 uiArcaneMagusGUID = SplitPersonality(NPC_ARCANE_MAGUS);
@@ -302,7 +302,7 @@ public:
                 me->CastStop();
                 me->RemoveAllAuras();
                 me->SetVisible(false);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 uiFireMagusGUID = SplitPersonality(NPC_FIRE_MAGUS);
                 uiFrostMagusGUID = SplitPersonality(NPC_FROST_MAGUS);
                 uiArcaneMagusGUID = SplitPersonality(NPC_ARCANE_MAGUS);

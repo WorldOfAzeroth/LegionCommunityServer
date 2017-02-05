@@ -429,18 +429,6 @@ enum UnitState
     UNIT_STATE_ALL_STATE       = 0xffffffff                      //(UNIT_STATE_STOPPED | UNIT_STATE_MOVING | UNIT_STATE_IN_COMBAT | UNIT_STATE_IN_FLIGHT)
 };
 
-enum UnitMoveType
-{
-    MOVE_WALK           = 0,
-    MOVE_RUN            = 1,
-    MOVE_RUN_BACK       = 2,
-    MOVE_SWIM           = 3,
-    MOVE_SWIM_BACK      = 4,
-    MOVE_TURN_RATE      = 5,
-    MOVE_FLIGHT         = 6,
-    MOVE_FLIGHT_BACK    = 7,
-    MOVE_PITCH_RATE     = 8
-};
 
 #define MAX_MOVE_TYPE     9
 
@@ -1064,7 +1052,8 @@ class TC_GAME_API Unit : public WorldObject
         virtual float GetArmorMultiplierForTarget(WorldObject const* /*target*/) const { return 1.0f; }
 
         Powers GetPowerType() const { return Powers(GetUInt32Value(UNIT_FIELD_DISPLAY_POWER)); }
-        void SetPowerType(Powers power);
+        void SetPowerType(Powers power, bool sendUpdate = true);
+        void SetOverrideDisplayPowerId(uint32 powerDisplayId) { SetUInt32Value(UNIT_FIELD_OVERRIDE_DISPLAY_POWER_ID, powerDisplayId); }
         void UpdateDisplayPower();
         int32 GetPower(Powers power) const;
         int32 GetMinPower(Powers power) const { return power == POWER_LUNAR_POWER ? -100 : 0; }
@@ -1077,11 +1066,42 @@ class TC_GAME_API Unit : public WorldObject
         // returns the change in power
         int32 ModifyPower(Powers power, int32 val);
 
+        void ApplyModManaCostMultiplier(float manaCostMultiplier, bool apply) { ApplyModSignedFloatValue(UNIT_FIELD_POWER_COST_MULTIPLIER, manaCostMultiplier, apply); }
+        void ApplyModManaCostModifier(SpellSchools school, int32 mod, bool apply) { ApplyModInt32Value(UNIT_FIELD_POWER_COST_MODIFIER + school, mod, apply); }
+
         uint32 GetBaseAttackTime(WeaponAttackType att) const;
         void SetBaseAttackTime(WeaponAttackType att, uint32 val);
         void UpdateAttackTimeField(WeaponAttackType att);
         void ApplyAttackTimePercentMod(WeaponAttackType att, float val, bool apply);
         void ApplyCastTimePercentMod(float val, bool apply);
+
+        float GetModCastingSpeed() const { GetFloatValue(UNIT_MOD_CAST_SPEED); }
+        void SetModCastingSpeed(float castingSpeed) { SetFloatValue(UNIT_MOD_CAST_SPEED, castingSpeed); }
+        void SetModSpellHaste(float spellHaste) { SetFloatValue(UNIT_MOD_CAST_HASTE, spellHaste); }
+        void SetModHaste(float haste) { SetFloatValue(UNIT_FIELD_MOD_HASTE, haste); }
+        void SetModRangedHaste(float rangedHaste) { SetFloatValue(UNIT_FIELD_MOD_RANGED_HASTE, rangedHaste); }
+        void SetModHasteRegen(float hasteRegen) { SetFloatValue(UNIT_FIELD_MOD_HASTE_REGEN, hasteRegen); }
+        void SetModTimeRate(float timeRate) { SetFloatValue(UNIT_FIELD_MOD_TIME_RATE, timeRate); }
+
+        bool HasUnitFlag(UnitFlags flags) const { return HasFlag(UNIT_FIELD_FLAGS, flags); }
+        void SetUnitFlag(UnitFlags flags) { SetFlag(UNIT_FIELD_FLAGS, flags); }
+        void RemoveUnitFlag(UnitFlags flags) { RemoveFlag(UNIT_FIELD_FLAGS, flags); }
+        void ReplaceAllUnitFlags(UnitFlags flags) { ToggleFlag(UNIT_FIELD_FLAGS, flags); }
+
+        bool HasUnitFlag2(UnitFlags2 flags) const { return HasFlag(UNIT_FIELD_FLAGS_2, flags); }
+        void SetUnitFlag2(UnitFlags2 flags) { SetFlag(UNIT_FIELD_FLAGS_2, flags); }
+        void RemoveUnitFlag2(UnitFlags2 flags) { RemoveFlag(UNIT_FIELD_FLAGS_2, flags); }
+        void ReplaceAllUnitFlags2(UnitFlags2 flags) { ToggleFlag(UNIT_FIELD_FLAGS_2, flags); }
+
+        bool HasUnitFlag3(UnitFlags3 flags) const { return HasFlag(UNIT_FIELD_FLAGS_3, flags); }
+        void SetUnitFlag3(UnitFlags3 flags) { SetFlag(UNIT_FIELD_FLAGS_3, flags); }
+        void RemoveUnitFlag3(UnitFlags3 flags) { RemoveFlag(UNIT_FIELD_FLAGS_3, flags); }
+        void ReplaceAllUnitFlags3(UnitFlags3 flags) { ToggleFlag(UNIT_FIELD_FLAGS_3, flags); }
+
+        void SetCreatedBySpell(int32 spellId) { SetUInt32Value(UNIT_CREATED_BY_SPELL, spellId); }
+
+        Emote GetEmoteState() const { return Emote(GetUInt32Value(UNIT_NPC_EMOTESTATE)); }
+        void SetEmoteState(Emote emote) { SetUInt32Value(UNIT_NPC_EMOTESTATE, emote); }
 
         SheathState GetSheath() const { return SheathState(GetByteValue(UNIT_FIELD_BYTES_2, UNIT_BYTES_2_OFFSET_SHEATH_STATE)); }
         void SetSheath(SheathState sheathed) { SetByteValue(UNIT_FIELD_BYTES_2, UNIT_BYTES_2_OFFSET_SHEATH_STATE, sheathed); }
@@ -1102,9 +1122,23 @@ class TC_GAME_API Unit : public WorldObject
         bool IsInRaidWith(Unit const* unit) const;
         void GetPartyMembers(std::list<Unit*> &units);
         bool IsContestedGuard() const;
-        bool IsPvP() const { return HasByteFlag(UNIT_FIELD_BYTES_2, UNIT_BYTES_2_OFFSET_PVP_FLAG, UNIT_BYTE2_FLAG_PVP); }
-        bool IsFFAPvP() const { return HasByteFlag(UNIT_FIELD_BYTES_2, UNIT_BYTES_2_OFFSET_PVP_FLAG, UNIT_BYTE2_FLAG_FFA_PVP); }
+
+        UnitPVPStateFlags GetPvpFlags() const { return UnitPVPStateFlags(GetByteValue(UNIT_FIELD_BYTES_2, UNIT_BYTES_2_OFFSET_PVP_FLAG)); }
+        bool HasPvpFlag(UnitPVPStateFlags flags) const { return HasByteFlag(UNIT_FIELD_BYTES_2, UNIT_BYTES_2_OFFSET_PVP_FLAG, flags); }
+        void SetPvpFlag(UnitPVPStateFlags flags) {  SetByteFlag(UNIT_FIELD_BYTES_2, UNIT_BYTES_2_OFFSET_PVP_FLAG, flags); }
+        void RemovePvpFlag(UnitPVPStateFlags flags) { RemoveByteFlag(UNIT_FIELD_BYTES_2, UNIT_BYTES_2_OFFSET_PVP_FLAG, flags); }
+        void ReplaceAllPvpFlags(UnitPVPStateFlags flags) { ToggleByteFlag(UNIT_FIELD_BYTES_2, UNIT_BYTES_2_OFFSET_PVP_FLAG, flags); }
+
+        bool IsInSanctuary() const { return HasPvpFlag(UNIT_BYTE2_FLAG_SANCTUARY); }
+        bool IsPvP() const { return HasPvpFlag(UNIT_BYTE2_FLAG_PVP); }
+        bool IsFFAPvP() const { return HasPvpFlag(UNIT_BYTE2_FLAG_FFA_PVP); }
         virtual void SetPvP(bool state);
+
+        UnitPetFlag GetPetFlags() const { return UnitPetFlag(GetByteValue(UNIT_FIELD_BYTES_2, UNIT_BYTES_2_OFFSET_PET_FLAGS)); }
+        bool HasPetFlag(UnitPetFlag flags) const { return HasByteFlag(UNIT_FIELD_BYTES_2, UNIT_BYTES_2_OFFSET_PET_FLAGS, flags); }
+        void SetPetFlag(UnitPetFlag flags) { SetByteFlag(UNIT_FIELD_BYTES_2, UNIT_BYTES_2_OFFSET_PET_FLAGS, flags); }
+        void RemovePetFlag(UnitPetFlag flags) { RemoveByteFlag(UNIT_FIELD_BYTES_2, UNIT_BYTES_2_OFFSET_PET_FLAGS, flags); }
+        void ReplaceAllPetFlags(UnitPetFlag flags) { ToggleByteFlag(UNIT_FIELD_BYTES_2, UNIT_BYTES_2_OFFSET_PET_FLAGS, flags); }
 
         uint32 GetCreatureType() const;
         uint32 GetCreatureTypeMask() const;
@@ -1114,11 +1148,19 @@ class TC_GAME_API Unit : public WorldObject
         bool IsStandState() const;
         void SetStandState(UnitStandStateType state, uint32 animKitID = 0);
 
-        void  SetStandFlags(uint8 flags) { SetByteFlag(UNIT_FIELD_BYTES_1, UNIT_BYTES_1_OFFSET_VIS_FLAG, flags); }
-        void  RemoveStandFlags(uint8 flags) { RemoveByteFlag(UNIT_FIELD_BYTES_1, UNIT_BYTES_1_OFFSET_VIS_FLAG, flags); }
+        void SetStandFlags(uint8 flags) { SetByteFlag(UNIT_FIELD_BYTES_1, UNIT_BYTES_1_OFFSET_VIS_FLAG, flags); }
+        void RemoveStandFlags(uint8 flags) { RemoveByteFlag(UNIT_FIELD_BYTES_1, UNIT_BYTES_1_OFFSET_VIS_FLAG, flags); }
+
+        void SetVisFlag(UnitVisFlags flags) { SetByteFlag(UNIT_FIELD_BYTES_1, UNIT_BYTES_1_OFFSET_VIS_FLAG, flags); }
+        void RemoveVisFlag(UnitVisFlags flags) { RemoveByteFlag(UNIT_FIELD_BYTES_1, UNIT_BYTES_1_OFFSET_VIS_FLAG, flags); }
+        void ReplaceAllVisFlags(UnitVisFlags flags) { ToggleByteFlag(UNIT_FIELD_BYTES_1, UNIT_BYTES_1_OFFSET_VIS_FLAG, flags); }
+
+        AnimTier GetAnimTier() const { return AnimTier(GetByteValue(UNIT_FIELD_BYTES_1, UNIT_BYTES_1_OFFSET_ANIM_TIER)); }
+        void SetAnimTier(AnimTier animTier, bool notifyClient = true);
 
         bool IsMounted() const { return HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_MOUNT); }
-        uint32 GetMountID() const { return GetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID); }
+        uint32 GetMountDisplayId() const { return GetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID); }
+        void SetMountDisplayId(uint32 mountDisplayId) {  SetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID, mountDisplayId); }
         void Mount(uint32 mount, uint32 vehicleId = 0, uint32 creatureEntry = 0);
         void Dismount();
         MountCapabilityEntry const* GetMountCapability(uint32 mountType) const;
@@ -1187,22 +1229,34 @@ class TC_GAME_API Unit : public WorldObject
 
         MeleeHitOutcome RollMeleeOutcomeAgainst(Unit const* victim, WeaponAttackType attType) const;
 
-        bool IsVendor()       const { return HasFlag64(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_VENDOR); }
-        bool IsTrainer()      const { return HasFlag64(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_TRAINER); }
-        bool IsQuestGiver()   const { return HasFlag64(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER); }
-        bool IsGossip()       const { return HasFlag64(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP); }
-        bool IsTaxi()         const { return HasFlag64(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_FLIGHTMASTER); }
-        bool IsGuildMaster()  const { return HasFlag64(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_PETITIONER); }
-        bool IsBattleMaster() const { return HasFlag64(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_BATTLEMASTER); }
-        bool IsBanker()       const { return HasFlag64(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_BANKER); }
-        bool IsInnkeeper()    const { return HasFlag64(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_INNKEEPER); }
-        bool IsSpiritHealer() const { return HasFlag64(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPIRITHEALER); }
-        bool IsSpiritGuide()  const { return HasFlag64(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPIRITGUIDE); }
-        bool IsTabardDesigner()const { return HasFlag64(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_TABARDDESIGNER); }
-        bool IsAuctioner()    const { return HasFlag64(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_AUCTIONEER); }
-        bool IsArmorer()      const { return HasFlag64(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_REPAIR); }
+        NPCFlags GetNpcFlags() const { return NPCFlags(GetUInt32Value(UNIT_NPC_FLAGS)); }
+        bool HasNpcFlag(NPCFlags flags) const { return HasFlag(UNIT_NPC_FLAGS, flags); }
+        void SetNpcFlag(NPCFlags flags) { SetUInt32Value(UNIT_NPC_FLAGS, flags); }
+        void RemoveNpcFlag(NPCFlags flags) { RemoveFlag(UNIT_NPC_FLAGS, flags); }
+        void ReplaceAllNpcFlags(NPCFlags flags) { ToggleFlag(UNIT_NPC_FLAGS, flags); }
+
+        NPCFlags2 GetNpcFlags2() const { return NPCFlags2(GetUInt32Value(UNIT_NPC_FLAGS + 1)); }
+        bool HasNpcFlag2(NPCFlags2 flags) const { return HasFlag(UNIT_NPC_FLAGS + 1, flags); }
+        void SetNpcFlag2(NPCFlags2 flags) { SetUInt32Value(UNIT_NPC_FLAGS + 1, flags); }
+        void RemoveNpcFlag2(NPCFlags2 flags) { RemoveFlag(UNIT_NPC_FLAGS + 1, flags); }
+        void ReplaceAllNpcFlags2(NPCFlags2 flags) { ToggleFlag(UNIT_NPC_FLAGS + 1, flags); }
+
+        bool IsVendor()       const { return HasNpcFlag(UNIT_NPC_FLAG_VENDOR); }
+        bool IsTrainer()      const { return HasNpcFlag(UNIT_NPC_FLAG_TRAINER); }
+        bool IsQuestGiver()   const { return HasNpcFlag(UNIT_NPC_FLAG_QUESTGIVER); }
+        bool IsGossip()       const { return HasNpcFlag(UNIT_NPC_FLAG_GOSSIP); }
+        bool IsTaxi()         const { return HasNpcFlag(UNIT_NPC_FLAG_FLIGHTMASTER); }
+        bool IsGuildMaster()  const { return HasNpcFlag(UNIT_NPC_FLAG_PETITIONER); }
+        bool IsBattleMaster() const { return HasNpcFlag(UNIT_NPC_FLAG_BATTLEMASTER); }
+        bool IsBanker()       const { return HasNpcFlag(UNIT_NPC_FLAG_BANKER); }
+        bool IsInnkeeper()    const { return HasNpcFlag(UNIT_NPC_FLAG_INNKEEPER); }
+        bool IsSpiritHealer() const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITHEALER); }
+        bool IsSpiritGuide()  const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITGUIDE); }
+        bool IsTabardDesigner()const{ return HasNpcFlag(UNIT_NPC_FLAG_TABARDDESIGNER); }
+        bool IsAuctioner()    const { return HasNpcFlag(UNIT_NPC_FLAG_AUCTIONEER); }
+        bool IsArmorer()      const { return HasNpcFlag(UNIT_NPC_FLAG_REPAIR); }
         bool IsServiceProvider() const;
-        bool IsSpiritService() const { return HasFlag64(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPIRITHEALER | UNIT_NPC_FLAG_SPIRITGUIDE); }
+        bool IsSpiritService() const { return HasNpcFlag(NPCFlags(UNIT_NPC_FLAG_SPIRITHEALER | UNIT_NPC_FLAG_SPIRITGUIDE)); }
         bool IsCritter() const { return GetCreatureType() == CREATURE_TYPE_CRITTER; }
 
         bool IsInFlight()  const { return HasUnitState(UNIT_STATE_IN_FLIGHT); }

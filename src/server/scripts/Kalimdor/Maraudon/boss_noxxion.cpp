@@ -84,7 +84,7 @@ public:
             {
                 //Become visible again
                 me->setFaction(14);
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 //Noxxion model
                 me->SetDisplayId(11172);
                 Invisible = false;
@@ -124,7 +124,7 @@ public:
                 //me->m_canMove = true;
                 me->InterruptNonMeleeSpells(false);
                 me->setFaction(35);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 // Invisible Model
                 me->SetDisplayId(11686);
                 SummonAdds(me->GetVictim());

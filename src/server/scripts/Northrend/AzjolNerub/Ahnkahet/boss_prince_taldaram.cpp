@@ -264,7 +264,7 @@ class boss_prince_taldaram : public CreatureScript
 
             void RemovePrison()
             {
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 me->RemoveAurasDueToSpell(SPELL_BEAM_VISUAL);
                 me->SetHomePosition(me->GetPositionX(), me->GetPositionY(), DATA_GROUND_POSITION_Z, me->GetOrientation());
                 DoCast(SPELL_HOVER_FALL);

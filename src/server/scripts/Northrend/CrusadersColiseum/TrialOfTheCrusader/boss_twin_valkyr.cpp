@@ -169,7 +169,7 @@ struct boss_twin_baseAI : public BossAI
 
     void Reset() override
     {
-        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_UNINTERACTIBLE);
         me->SetReactState(REACT_PASSIVE);
         me->ModifyAuraState(AuraState, true);
         /* Uncomment this once that they are floating above the ground
@@ -195,7 +195,7 @@ struct boss_twin_baseAI : public BossAI
         switch (uiId)
         {
             case 1:
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_NOT_SELECTABLE);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_UNINTERACTIBLE);
                 me->SetReactState(REACT_AGGRESSIVE);
                 break;
             default:
@@ -552,7 +552,7 @@ struct npc_unleashed_ballAI : public ScriptedAI
 
     void Reset() override
     {
-        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_UNINTERACTIBLE);
         me->SetReactState(REACT_PASSIVE);
         me->SetDisableGravity(true);
         me->SetCanFly(true);

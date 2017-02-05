@@ -210,7 +210,7 @@ class boss_grand_warlock_nethekurse : public CreatureScript
             {
                 summoned->setFaction(16);
                 summoned->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                summoned->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                summoned->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
 
                 //triggered spell of consumption does not properly show it's SpellVisual, wrong spellid?
                 summoned->CastSpell(summoned, SPELL_TEMPORARY_VISUAL, true);

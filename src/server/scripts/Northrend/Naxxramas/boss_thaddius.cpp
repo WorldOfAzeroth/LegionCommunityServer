@@ -299,7 +299,7 @@ struct boss_thaddius : public BossAI
         {
             events.SetPhase(PHASE_TRANSITION);
 
-            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
 
             events.ScheduleEvent(EVENT_TRANSITION_1, Seconds(10), 0, PHASE_TRANSITION);
             events.ScheduleEvent(EVENT_TRANSITION_2, Seconds(12), 0, PHASE_TRANSITION);
@@ -320,7 +320,7 @@ struct boss_thaddius : public BossAI
             me->DespawnOrUnsummon();
             me->SetRespawnTime(initial ? 5 : 30);
 
-            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_STUNNED);
+            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_UNINTERACTIBLE | UNIT_FLAG_STUNNED);
             events.SetPhase(PHASE_RESETTING);
             if (Creature* feugen = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_FEUGEN)))
                 feugen->AI()->DoAction(ACTION_BEGIN_RESET_ENCOUNTER);
@@ -492,7 +492,7 @@ public:
                 // if the encounter reset while feigning death
                 me->SetStandState(UNIT_STAND_STATE_STAND);
                 me->SetReactState(REACT_AGGRESSIVE);
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 isOverloading = false;
                 isFeignDeath = false;
 
@@ -543,7 +543,7 @@ public:
                         me->SetFullHealth();
                         me->SetStandState(UNIT_STAND_STATE_STAND);
                         me->SetReactState(REACT_AGGRESSIVE);
-                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                         Talk(EMOTE_FEIGN_REVIVE);
                         isFeignDeath = false;
 
@@ -619,7 +619,7 @@ public:
                 if (Creature* thaddius = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_THADDIUS)))
                     thaddius->AI()->DoAction(ACTION_STALAGG_DIED);
 
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 me->RemoveAllAuras();
                 me->SetReactState(REACT_PASSIVE);
                 me->AttackStop();
@@ -760,7 +760,7 @@ public:
                 // if the encounter reset while feigning death
                 me->SetStandState(UNIT_STAND_STATE_STAND);
                 me->SetReactState(REACT_AGGRESSIVE);
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 isOverloading = false;
                 isFeignDeath = false;
 
@@ -812,7 +812,7 @@ public:
                         me->SetFullHealth();
                         me->SetStandState(UNIT_STAND_STATE_STAND);
                         me->SetReactState(REACT_AGGRESSIVE);
-                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                         Talk(EMOTE_FEIGN_REVIVE);
                         isFeignDeath = false;
 
@@ -894,7 +894,7 @@ public:
                 me->AttackStop();
                 me->StopMoving();
                 me->SetStandState(UNIT_STAND_STATE_DEAD);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
 
                 damage = 0;
 

@@ -1488,7 +1488,7 @@ class npc_valkyr_shadowguard : public CreatureScript
                     case POINT_CHARGE:
                         if (Player* target = ObjectAccessor::GetPlayer(*me, _grabbedPlayer))
                         {
-                            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                             if (GameObject* platform = ObjectAccessor::GetGameObject(*me, _instance->GetGuidData(DATA_ARTHAS_PLATFORM)))
                             {
                                 std::list<Creature*> triggers;
@@ -1734,7 +1734,7 @@ class npc_terenas_menethil : public CreatureScript
                     damage = me->GetHealth() - 1;
                     if (!me->HasAura(SPELL_TERENAS_LOSES_INSIDE) && !IsHeroic())
                     {
-                        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                         DoCast(SPELL_TERENAS_LOSES_INSIDE);
                         _events.ScheduleEvent(EVENT_TELEPORT_BACK, 1000);
                         if (Creature* warden = me->FindNearestCreature(NPC_SPIRIT_WARDEN, 20.0f))
@@ -1795,7 +1795,7 @@ class npc_terenas_menethil : public CreatureScript
                             }
                             break;
                         case EVENT_DESTROY_SOUL:
-                            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                             if (Creature* warden = me->FindNearestCreature(NPC_SPIRIT_WARDEN, 20.0f))
                                 warden->CastSpell((Unit*)NULL, SPELL_DESTROY_SOUL, TRIGGERED_NONE);
                             DoCast(SPELL_TERENAS_LOSES_INSIDE);
@@ -2774,7 +2774,7 @@ class spell_the_lich_king_vile_spirit_damage_target_search : public SpellScriptL
                         summoner->GetAI()->SetData(DATA_VILE, 1);
                 GetCaster()->CastSpell((Unit*)NULL, SPELL_SPIRIT_BURST, true);
                 GetCaster()->ToCreature()->DespawnOrUnsummon(3000);
-                GetCaster()->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                GetCaster()->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
             }
 
             void Register() override

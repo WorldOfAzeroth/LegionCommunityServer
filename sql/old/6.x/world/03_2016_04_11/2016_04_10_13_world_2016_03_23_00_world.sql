@@ -105,7 +105,7 @@ DELETE FROM `spell_script_names` WHERE `scriptname`="spell_loatheb_necrotic_aura
 -- ======== --
 -- Thaddius --
 -- ======== --
--- Move UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_NOT_SELECTABLE (thaddius' base state) to creature_template instead of applying it in script
+-- Move UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_UNINTERACTIBLE (thaddius' base state) to creature_template instead of applying it in script
 UPDATE `creature_template` SET `unit_flags`=33554688 WHERE `entry`=15928;
 -- Move inactive aura to creature_template_addon
 DELETE FROM `creature_template_addon` WHERE entry = 15928;

@@ -152,7 +152,7 @@ class instance_uldaman : public InstanceMapScript
             {
                 creature->setFaction(35);
                 creature->RemoveAllAuras();
-                creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 creature->SetControlled(true, UNIT_STATE_ROOT);
                 creature->AddAura(SPELL_MINION_FREEZE_ANIM, creature);
             }
@@ -186,7 +186,7 @@ class instance_uldaman : public InstanceMapScript
                             continue;
                         target->SetControlled(false, UNIT_STATE_ROOT);
                         target->setFaction(14);
-                        target->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                        target->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                         target->RemoveAura(SPELL_MINION_FREEZE_ANIM);
 
                         return;        // only want the first one we find
@@ -209,7 +209,7 @@ class instance_uldaman : public InstanceMapScript
                     if (!target || !target->IsAlive() || target->getFaction() == 14)
                         continue;
                     target->SetControlled(false, UNIT_STATE_ROOT);
-                    target->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                    target->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                     target->setFaction(14);
                     target->RemoveAura(SPELL_MINION_FREEZE_ANIM);
                     archaedas->CastSpell(target, SPELL_AWAKEN_VAULT_WALKER, true);
@@ -275,7 +275,7 @@ class instance_uldaman : public InstanceMapScript
 
                 ironaya->setFaction(415);
                 ironaya->SetControlled(false, UNIT_STATE_ROOT);
-                ironaya->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                ironaya->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
 
                 ironaya->GetMotionMaster()->Clear();
                 ironaya->GetMotionMaster()->MovePoint(0, IronayaPoint);

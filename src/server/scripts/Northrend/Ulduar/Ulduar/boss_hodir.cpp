@@ -558,7 +558,7 @@ class npc_icicle : public CreatureScript
             {
                 Initialize();
                 me->SetDisplayId(me->GetCreatureTemplate()->Modelid1);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_PACIFIED | UNIT_FLAG_NOT_SELECTABLE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_PACIFIED | UNIT_FLAG_UNINTERACTIBLE);
                 me->SetControlled(true, UNIT_STATE_ROOT);
                 me->SetReactState(REACT_PASSIVE);
             }
@@ -613,7 +613,7 @@ class npc_snowpacked_icicle : public CreatureScript
             {
                 Initialize();
                 me->SetDisplayId(me->GetCreatureTemplate()->Modelid2);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_PACIFIED);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_UNINTERACTIBLE | UNIT_FLAG_PACIFIED);
                 me->SetControlled(true, UNIT_STATE_ROOT);
                 me->SetReactState(REACT_PASSIVE);
             }

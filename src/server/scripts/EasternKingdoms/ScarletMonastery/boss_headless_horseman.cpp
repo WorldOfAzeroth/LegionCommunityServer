@@ -318,7 +318,7 @@ public:
                 if (!bodyGUID)
                     bodyGUID = caster->GetGUID();
                 me->RemoveAllAuras();
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 DoCast(me, SPELL_HEAD_LANDS, true);
                 DoCast(me, SPELL_HEAD, false);
                 SaySound(SAY_LOST_HEAD);
@@ -925,7 +925,7 @@ void npc_head::npc_headAI::Disappear()
             DoCast(body, SPELL_FLYING_HEAD);
             me->SetFullHealth();
             me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
             me->GetMotionMaster()->MoveIdle();
             ENSURE_AI(boss_headless_horseman::boss_headless_horsemanAI, body->AI())->returned = true;
         }

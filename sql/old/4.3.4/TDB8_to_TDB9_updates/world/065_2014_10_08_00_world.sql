@@ -14,11 +14,11 @@ INSERT INTO `smart_scripts` (`entryorguid`, `source_type`, `id`, `link`, `event_
 (@Hira, 0, 0, 0, 1, 0, 100, 0, 600000, 600000, 600000, 600000, 80, @Hira*100, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Hira - OOC - actionlist'),
 (@Hira*100, 9, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Hira - actionlist - talk (emote)'),
 (@Hira*100, 9, 1, 0, 0, 0, 100, 0, 5000, 5000, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Hira - actionlist - talk'),
-(@Hira*100, 9, 2, 0, 0, 0, 100, 0, 0, 0, 0, 0, 18, 33554432, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Hira - actionlist - set UNIT_FLAG_NOT_SELECTABLE'),
+(@Hira*100, 9, 2, 0, 0, 0, 100, 0, 0, 0, 0, 0, 18, 33554432, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Hira - actionlist - set UNIT_FLAG_UNINTERACTIBLE'),
 (@Hira*100, 9, 3, 0, 0, 0, 100, 0, 0, 0, 0, 0, 53, 1, @Hira, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Hira - actionlist - start wp'),
 (@Hira,0 ,1 ,0 ,40 ,0 ,100 ,0, 11, 0, 0, 0 ,80, @Hira*100+1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Ruul the Darkener - way point reached - Re action list'),
 (@Hira*100+1, 9, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 66, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 5815.272, 473.4902, 658.7961, 4.660029, 'Hira - actionlist - SET Orientation'),
-(@Hira*100+1, 9, 1, 0, 0, 0, 100, 0, 0, 0, 0, 0, 19, 33554432, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Hira - actionlist - remove UNIT_FLAG_NOT_SELECTABLE');
+(@Hira*100+1, 9, 1, 0, 0, 0, 100, 0, 0, 0, 0, 0, 19, 33554432, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Hira - actionlist - remove UNIT_FLAG_UNINTERACTIBLE');
 
 DELETE FROM `waypoints` WHERE `entry`=@Hira;
 INSERT INTO `waypoints` (`entry`,`pointid`,`position_x`,`position_y`,`position_z`,`point_comment`) VALUES

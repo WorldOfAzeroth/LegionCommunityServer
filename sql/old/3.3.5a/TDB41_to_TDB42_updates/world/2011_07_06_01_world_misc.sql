@@ -27,7 +27,7 @@ INSERT INTO `creature_template_addon` (`entry`,`mount`,`bytes1`,`bytes2`,`emote`
 
 UPDATE `creature` SET `MovementType`=0,`spawndist`=0 WHERE `id` IN (34286,34159,33571); -- Orbital Support, Ulduar Gauntlet Generator, Ulduar Gauntlet Generator (small radius)
 
--- No npc should have UNIT_FLAG_PVP_ATTACKABLE
+-- No npc should have UNIT_FLAG_PLAYER_CONTROLLED
 UPDATE `creature_template` SET `unit_flags`=`unit_flags`&~0x8 WHERE `unit_flags` & 0x8;
 
 DELETE FROM `gossip_menu` WHERE `entry`=1822 AND `text_id`=2474;

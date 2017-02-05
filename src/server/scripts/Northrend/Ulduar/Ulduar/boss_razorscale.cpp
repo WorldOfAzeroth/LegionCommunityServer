@@ -358,7 +358,7 @@ class boss_razorscale : public CreatureScript
             {
                 _Reset();
                 me->SetCanFly(true);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                 me->SetReactState(REACT_PASSIVE);
                 Initialize();
                 if (Creature* commander = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_EXPEDITION_COMMANDER)))
@@ -446,7 +446,7 @@ class boss_razorscale : public CreatureScript
                                 phase = PHASE_FLIGHT;
                                 events.SetPhase(PHASE_FLIGHT);
                                 me->SetCanFly(true);
-                                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                                 me->SetReactState(REACT_PASSIVE);
                                 me->AttackStop();
                                 me->GetMotionMaster()->MoveTakeoff(0, RazorFlight);
@@ -457,7 +457,7 @@ class boss_razorscale : public CreatureScript
                                 return;
                             case EVENT_LAND:
                                 me->SetCanFly(false);
-                                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
                                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED | UNIT_FLAG_PACIFIED);
                                 if (Creature* commander = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_EXPEDITION_COMMANDER)))
                                     commander->AI()->DoAction(ACTION_GROUND_PHASE);
@@ -551,7 +551,7 @@ class boss_razorscale : public CreatureScript
                 phase = PHASE_PERMAGROUND;
                 events.SetPhase(PHASE_PERMAGROUND);
                 me->SetCanFly(false);
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_STUNNED | UNIT_FLAG_PACIFIED);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE | UNIT_FLAG_STUNNED | UNIT_FLAG_PACIFIED);
                 me->SetReactState(REACT_AGGRESSIVE);
                 me->RemoveAurasDueToSpell(SPELL_HARPOON_TRIGGER);
                 me->SetSpeedRate(MOVE_FLIGHT, 1.0f);
@@ -585,7 +585,7 @@ class boss_razorscale : public CreatureScript
                 switch (action)
                 {
                     case ACTION_EVENT_START:
-                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
+                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_UNINTERACTIBLE);
                         me->SetReactState(REACT_AGGRESSIVE);
                         DoZoneInCombat(me, 150.0f);
                         break;

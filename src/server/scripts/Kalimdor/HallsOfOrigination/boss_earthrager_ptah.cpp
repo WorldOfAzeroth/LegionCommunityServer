@@ -293,7 +293,7 @@ public:
         {
             if (Unit* ptah = GetCaster())
             {
-                ptah->SetFlag(UNIT_FIELD_FLAGS, uint32(UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_UNK_29 | UNIT_FLAG_UNK_31));
+                ptah->SetFlag(UNIT_FIELD_FLAGS, uint32(UNIT_FLAG_UNINTERACTIBLE | UNIT_FLAG_UNK_29 | UNIT_FLAG_UNK_31));
                 ptah->SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);
             }
         }
@@ -302,7 +302,7 @@ public:
         {
             if (Unit* ptah = GetCaster())
             {
-                ptah->RemoveFlag(UNIT_FIELD_FLAGS, uint32(UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_UNK_29 | UNIT_FLAG_UNK_31));
+                ptah->RemoveFlag(UNIT_FIELD_FLAGS, uint32(UNIT_FLAG_UNINTERACTIBLE | UNIT_FLAG_UNK_29 | UNIT_FLAG_UNK_31));
                 ptah->RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);
             }
         }

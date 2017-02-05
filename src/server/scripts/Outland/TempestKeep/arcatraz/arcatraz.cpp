@@ -541,7 +541,7 @@ class npc_zerekethvoidzone : public CreatureScript
             {
                 me->SetUInt32Value(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
                 me->setFaction(16);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
 
                 DoCast(me, SPELL_VOID_ZONE_DAMAGE);
             }
