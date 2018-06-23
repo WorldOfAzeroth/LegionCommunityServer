@@ -291,7 +291,7 @@ public:
             {
                 if (IpLocationRecord* location = sIPLocation->GetData(handler->GetSession()->GetRemoteAddress()))
                 {
-                    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_LOCK_CONTRY);
+                    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_LOCK_COUNTRY);
                     stmt->setString(0, location->country_code);
                     stmt->setUInt32(1, handler->GetSession()->GetAccountId());
                     LoginDatabase.Execute(stmt);
