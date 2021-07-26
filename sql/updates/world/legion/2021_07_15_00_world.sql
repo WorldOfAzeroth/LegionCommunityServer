@@ -1,7 +1,7 @@
 -- Innkeeper fixes
-DELETE FROM `world`.`gossip_menu_option` WHERE MenuId in (7468, 1291, 1293);
+DELETE FROM `gossip_menu_option` WHERE MenuId in (7468, 1291, 1293);
 
-INSERT INTO `world`.`gossip_menu_option` (`MenuId`, `OptionIndex`, `OptionIcon`, `OptionText`, `OptionBroadcastTextId`, `OptionType`, `OptionNpcFlag`, `VerifiedBuild`) VALUES 
+INSERT INTO `gossip_menu_option` (`MenuId`, `OptionIndex`, `OptionIcon`, `OptionText`, `OptionBroadcastTextId`, `OptionType`, `OptionNpcFlag`, `VerifiedBuild`) VALUES 
 -- Caregiver Chellan, Azure Watch Gossip fix. ( Closes Issue #54 )
 (7468, 0, 0, 'Trick or Treat!', 10693, 1, 1, 0),
 (7468, 2, 0, 'What can I do at an inn?', 4308, 1, 1, 26124),

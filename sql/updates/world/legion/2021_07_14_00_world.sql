@@ -1,14 +1,14 @@
 -- Fix for the world profession trainer. ( Lien Farner, Goldshire as a guineapig )
 
-DELETE FROM `world`.`creature_template` WHERE entry = 47384;
-INSERT INTO `world`.`creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`, `KillCredit1`, `KillCredit2`, `modelid1`, `modelid2`, `modelid3`, `modelid4`, `name`, `femaleName`, `subname`, `TitleAlt`, `IconName`, `gossip_menu_id`, `minlevel`, `maxlevel`, `HealthScalingExpansion`, `RequiredExpansion`, `VignetteID`, `faction`, `npcflag`, `speed_walk`, `speed_run`, `scale`, `rank`, `dmgschool`, `BaseAttackTime`, `RangeAttackTime`, `BaseVariance`, `RangeVariance`, `unit_class`, `unit_flags`, `unit_flags2`, `unit_flags3`, `dynamicflags`, `family`, `trainer_class`, `type`, `type_flags`, `type_flags2`, `lootid`, `pickpocketloot`, `skinloot`, `resistance1`, `resistance2`, `resistance3`, `resistance4`, `resistance5`, `resistance6`, `spell1`, `spell2`, `spell3`, `spell4`, `spell5`, `spell6`, `spell7`, `spell8`, `VehicleId`, `mingold`, `maxgold`, `AIName`, `MovementType`, `InhabitType`, `HoverHeight`, `HealthModifier`, `HealthModifierExtra`, `ManaModifier`, `ManaModifierExtra`, `ArmorModifier`, `DamageModifier`, `ExperienceModifier`, `RacialLeader`, `movementId`, `RegenHealth`, `mechanic_immune_mask`, `flags_extra`, `ScriptName`, `VerifiedBuild`) VALUES 
+DELETE FROM `creature_template` WHERE entry = 47384;
+INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`, `KillCredit1`, `KillCredit2`, `modelid1`, `modelid2`, `modelid3`, `modelid4`, `name`, `femaleName`, `subname`, `TitleAlt`, `IconName`, `gossip_menu_id`, `minlevel`, `maxlevel`, `HealthScalingExpansion`, `RequiredExpansion`, `VignetteID`, `faction`, `npcflag`, `speed_walk`, `speed_run`, `scale`, `rank`, `dmgschool`, `BaseAttackTime`, `RangeAttackTime`, `BaseVariance`, `RangeVariance`, `unit_class`, `unit_flags`, `unit_flags2`, `unit_flags3`, `dynamicflags`, `family`, `trainer_class`, `type`, `type_flags`, `type_flags2`, `lootid`, `pickpocketloot`, `skinloot`, `resistance1`, `resistance2`, `resistance3`, `resistance4`, `resistance5`, `resistance6`, `spell1`, `spell2`, `spell3`, `spell4`, `spell5`, `spell6`, `spell7`, `spell8`, `VehicleId`, `mingold`, `maxgold`, `AIName`, `MovementType`, `InhabitType`, `HoverHeight`, `HealthModifier`, `HealthModifierExtra`, `ManaModifier`, `ManaModifierExtra`, `ArmorModifier`, `DamageModifier`, `ExperienceModifier`, `RacialLeader`, `movementId`, `RegenHealth`, `mechanic_immune_mask`, `flags_extra`, `ScriptName`, `VerifiedBuild`) VALUES 
 (47384, 0, 0, 0, 0, 0, 35576, 0, 0, 0, 'Lien Farner', '', 'Profession Trainer', NULL, '', 500000, 10, 10, 0, 0, 0, 12, 17, 1, 1.14286, 1, 0, 0, 2000, 2000, 1, 1, 1, 0, 2048, 0, 0, 0, 2, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 3, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, '', 25549);
 
 
 -- gossip_menu
 
-DELETE FROM `world`.`gossip_menu` WHERE `MenuId` BETWEEN 500000 AND 500013;
-INSERT INTO `world`.`gossip_menu` (`MenuId`, `TextId`, `VerifiedBuild`) VALUES 
+DELETE FROM `gossip_menu` WHERE `MenuId` BETWEEN 500000 AND 500013;
+INSERT INTO `gossip_menu` (`MenuId`, `TextId`, `VerifiedBuild`) VALUES 
 (500013, 17127, 0), 
 (500012, 17135, 0), 
 (500011, 17133, 0), 
@@ -26,8 +26,8 @@ INSERT INTO `world`.`gossip_menu` (`MenuId`, `TextId`, `VerifiedBuild`) VALUES
 
 -- gossip_menu_option
 
-DELETE FROM `world`.`gossip_menu_option` WHERE `MenuId` BETWEEN 500000 AND 500013;
-INSERT INTO `world`.`gossip_menu_option` (`MenuId`, `OptionIndex`, `OptionIcon`, `OptionText`, `OptionBroadcastTextId`, `OptionType`, `OptionNpcFlag`, `VerifiedBuild`) VALUES 
+DELETE FROM `gossip_menu_option` WHERE `MenuId` BETWEEN 500000 AND 500013;
+INSERT INTO `gossip_menu_option` (`MenuId`, `OptionIndex`, `OptionIcon`, `OptionText`, `OptionBroadcastTextId`, `OptionType`, `OptionNpcFlag`, `VerifiedBuild`) VALUES 
 (500013, 6, 0, 'Tell me about gathering professions.', 47106, 1, 1, 26124), 
 (500013, 5, 0, 'Tell me about Tailoring.', 47152, 1, 1, 26124), 
 (500013, 4, 0, 'Tell me about Inscription.', 47149, 1, 1, 26124), 
@@ -88,8 +88,8 @@ INSERT INTO `world`.`gossip_menu_option` (`MenuId`, `OptionIndex`, `OptionIcon`,
 
 -- gossip_menu_option_action
 
-DELETE FROM `world`.`gossip_menu_option_action` WHERE `MenuId` BETWEEN 500000 AND 500013;
-INSERT INTO `world`.`gossip_menu_option_action` (`MenuId`, `OptionIndex`, `ActionMenuId`, `ActionPoiId`) VALUES 
+DELETE FROM `gossip_menu_option_action` WHERE `MenuId` BETWEEN 500000 AND 500013;
+INSERT INTO `gossip_menu_option_action` (`MenuId`, `OptionIndex`, `ActionMenuId`, `ActionPoiId`) VALUES 
 (500013, 6, 500001, 0), 
 (500013, 4, 500012, 0), 
 (500013, 5, 500010, 0), 
@@ -142,8 +142,8 @@ INSERT INTO `world`.`gossip_menu_option_action` (`MenuId`, `OptionIndex`, `Actio
 
 -- gossip_menu_trainer
 
-DELETE FROM `world`.`gossip_menu_option_trainer` WHERE `MenuId` BETWEEN 500000 AND 500013;
-INSERT INTO `world`.`gossip_menu_option_trainer` (`MenuId`, `OptionIndex`, `TrainerId`) VALUES 
+DELETE FROM `gossip_menu_option_trainer` WHERE `MenuId` BETWEEN 500000 AND 500013;
+INSERT INTO `gossip_menu_option_trainer` (`MenuId`, `OptionIndex`, `TrainerId`) VALUES 
 (500012, 0, 63), 
 (500011, 0, 62), 
 (500010, 0, 117),

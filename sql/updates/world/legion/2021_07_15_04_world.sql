@@ -1,9 +1,9 @@
 -- Vendor fixes
 
 -- Velia Moonbow, Darnassus Guild Vendor Fix ( Closes issue #45 )
-DELETE FROM `world`.`npc_vendor` WHERE entry in (43951, 43949, 51504);
+DELETE FROM `npc_vendor` WHERE entry in (43951, 43949, 51504);
 
-INSERT INTO `world`.`npc_vendor` (`entry`, `slot`, `item`, `maxcount`, `incrtime`, `ExtendedCost`, `type`, `BonusListIDs`, `PlayerConditionID`, `IgnoreFiltering`, `VerifiedBuild`) VALUES 
+INSERT INTO `npc_vendor` (`entry`, `slot`, `item`, `maxcount`, `incrtime`, `ExtendedCost`, `type`, `BonusListIDs`, `PlayerConditionID`, `IgnoreFiltering`, `VerifiedBuild`) VALUES 
 (51504, 1, 122260, 0, 0, 0, 1, NULL, 0, 0, 25881),
 (51504, 2, 122261, 0, 0, 0, 1, NULL, 0, 0, 25881),
 (51504, 3, 122262, 0, 0, 0, 1, NULL, 0, 0, 25881),
@@ -33,7 +33,7 @@ INSERT INTO `world`.`npc_vendor` (`entry`, `slot`, `item`, `maxcount`, `incrtime
 (51504, 27, 63206, 0, 0, 0, 1, NULL, 0, 0, 25881);
 
 -- Durnok, GrolDom Farm Leather Armor Vendor Fix ( Closes issue #33 )
-INSERT INTO `world`.`npc_vendor` (`entry`, `slot`, `item`, `maxcount`, `incrtime`, `ExtendedCost`, `type`, `BonusListIDs`, `PlayerConditionID`, `IgnoreFiltering`, `VerifiedBuild`) VALUES 
+INSERT INTO `npc_vendor` (`entry`, `slot`, `item`, `maxcount`, `incrtime`, `ExtendedCost`, `type`, `BonusListIDs`, `PlayerConditionID`, `IgnoreFiltering`, `VerifiedBuild`) VALUES 
 (43951, 1, 843, 0, 0, 0, 1, NULL, 0, 0, 25881), 
 (43951, 2, 844, 0, 0, 0, 1, NULL, 0, 0, 25881), 
 (43951, 3, 845, 0, 0, 0, 1, NULL, 0, 0, 25881),
@@ -61,4 +61,4 @@ INSERT INTO `world`.`npc_vendor` (`entry`, `slot`, `item`, `maxcount`, `incrtime
 (43949, 12, 3607, 0, 0, 0, 1, NULL, 0, 0, 25881);
 
 -- General Goods Vendor Mydrannul, Darnassus ( Closes issue #44 )
-UPDATE `world`.`gossip_menu_option` SET `OptionType` = 3, `OptionNpcFlag` = 128 WHERE (`MenuId` = 4305) and (`OptionIndex` = 0);
+UPDATE `gossip_menu_option` SET `OptionType` = 3, `OptionNpcFlag` = 128 WHERE (`MenuId` = 4305) and (`OptionIndex` = 0);
