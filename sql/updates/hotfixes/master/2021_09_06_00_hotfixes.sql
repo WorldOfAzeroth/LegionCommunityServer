@@ -3,32 +3,32 @@
 --
 DROP TABLE IF EXISTS `adventure_journal`;
 CREATE TABLE `adventure_journal` (
-    ID                       INT              DEFAULT 0 NOT NULL
-        primary key,
-    Name_Lang                TEXT                       NULL,
-    Description_Lang         TEXT                       NULL,
-    ButtonText_Lang          TEXT                       NULL,
-    RewardDescription_Lang   TEXT                       NULL,
-    ContinueDescription_Lang TEXT                       NULL,
-    TextureFileDataID        INT              DEFAULT 0 NOT NULL,
-    ItemID                   INT              DEFAULT 0 NOT NULL,
-    LfgDungeonID             SMALLINT         DEFAULT 0 NOT NULL,
-    QuestID                  SMALLINT         DEFAULT 0 NOT NULL,
-    BattleMasterListID       SMALLINT         DEFAULT 0 NOT NULL,
-	BonusPlayerConditionID1  SMALLINT         DEFAULT 0 NOT NULL,
-    BonusPlayerConditionID2  SMALLINT         DEFAULT 0 NOT NULL,
-    CurrencyType             SMALLINT         DEFAULT 0 NOT NULL,
-    WorldMapAreaID           SMALLINT         DEFAULT 0 NOT NULL,
-    Type                     TINYINT UNSIGNED DEFAULT 0 NOT NULL,
-    Flags                    TINYINT UNSIGNED DEFAULT 0 NOT NULL,
-    ButtonActionType         TINYINT UNSIGNED DEFAULT 0 NOT NULL,
-    PriorityMin              TINYINT UNSIGNED DEFAULT 0 NOT NULL,
-    PriorityMax              TINYINT UNSIGNED DEFAULT 0 NOT NULL,
-	BonusValue1              TINYINT UNSIGNED DEFAULT 0 NOT NULL,
-    BonusValue2              TINYINT UNSIGNED DEFAULT 0 NOT NULL,
-    CurrencyQuantity         TINYINT UNSIGNED DEFAULT 0 NOT NULL,
-    PlayerConditionID        INT              DEFAULT 0 NOT NULL,
-    ItemQuantity             INT              DEFAULT 0 NOT NULL	
+    `ID` int(10) NOT NULL DEFAULT 0,
+    `Name_Lang` text NOT NULL,
+    `Description_Lang` text NOT NULL,
+    `ButtonText_Lang` text NOT NULL,
+    `RewardDescription_Lang` text NOT NULL,
+    `ContinueDescription_Lang` text NOT NULL,
+    `TextureFileDataID` int(10) NOT NULL DEFAULT 0,
+    `ItemID` int(10) NOT NULL DEFAULT 0,
+    `LfgDungeonID` smallint(6) DEFAULT 0 NOT NULL,
+    `QuestID` smallint(6) DEFAULT 0 NOT NULL,
+    `BattleMasterListID` smallint(6) DEFAULT 0 NOT NULL,
+	`BonusPlayerConditionID1` smallint(6) DEFAULT 0 NOT NULL,
+    `BonusPlayerConditionID2` smallint(6) DEFAULT 0 NOT NULL,
+    `CurrencyType` smallint(6) DEFAULT 0 NOT NULL,
+    `WorldMapAreaID` smallint(6) DEFAULT 0 NOT NULL,
+    `Type` tinyint(4) unsigned NOT NULL DEFAULT 0,
+    `Flags` tinyint(4) unsigned NOT NULL DEFAULT 0,
+    `ButtonActionType` tinyint(4) unsigned NOT NULL DEFAULT 0,
+    `PriorityMin` tinyint(4) unsigned NOT NULL DEFAULT 0,
+    `PriorityMax` tinyint(4) unsigned NOT NULL DEFAULT 0,
+	`BonusValue1` tinyint(4) unsigned NOT NULL DEFAULT 0,
+    `BonusValue2` tinyint(4) unsigned NOT NULL DEFAULT 0,
+    `CurrencyQuantity` tinyint(4) unsigned NOT NULL DEFAULT 0,
+    `PlayerConditionID` int(10) NOT NULL DEFAULT 0,
+    `ItemQuantity` int(10) NOT NULL DEFAULT 0,
+	PRIMARY KEY (`ID`)
 ) ENGINE = MyISAM collate = utf8_unicode_ci;
 
 --
@@ -37,12 +37,13 @@ CREATE TABLE `adventure_journal` (
 DROP TABLE IF EXISTS `adventure_journal_locale`;
 CREATE TABLE `adventure_journal_locale`
 (
-    ID                       INT UNSIGNED DEFAULT 0 NOT NULL,
-    locale                   VARCHAR(4)             NULL,
-    Name_Lang                TEXT                   NULL,
-    Description_Lang         TEXT                   NULL,
-    ButtonText_Lang          TEXT                   NULL,
-    RewardDescription_Lang   TEXT                   NULL,
-    ContinueDescription_Lang TEXT                   NULL,
-    VerifiedBuild            SMALLINT     DEFAULT 0 NULL
+    `ID` int(10) unsigned NOT NULL DEFAULT '0',
+    `locale` varchar(4) NOT NULL,
+    `Name_Lang` text NULL,
+    `Description_Lang` text NULL,
+    `ButtonText_Lang` text NULL,
+    `RewardDescription_Lang` text NULL,
+    `ContinueDescription_Lang` text NULL,
+    `VerifiedBuild` smallint(6) NOT NULL DEFAULT '0',
+	PRIMARY KEY (`ID`)
 ) ENGINE = MyISAM collate = utf8_unicode_ci;
