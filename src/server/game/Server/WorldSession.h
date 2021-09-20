@@ -79,6 +79,13 @@ namespace WorldPackets
         class GuildGetAchievementMembers;
     }
 
+    
+    namespace AdventureJournal
+    {
+        class AdventureJournalOpenQuest;
+        class AdventureJournalStartQuest;
+    }
+
     namespace AreaTrigger
     {
         class AreaTrigger;
@@ -1719,6 +1726,12 @@ class TC_GAME_API WorldSession
 
         // Honor
         void HandlePvpPrestigeRankUp(WorldPackets::Misc::PvpPrestigeRankUp& /*pvpPrestigeRankUp*/);
+
+        // Adventure Journal
+        void HandleAdventureJournalOpenQuest(WorldPackets::AdventureJournal::AdventureJournalOpenQuest& openAdventureJournalQuest);
+        void HandleAdventureJournalStartQuest(WorldPackets::AdventureJournal::AdventureJournalStartQuest& startAdventureJournalQuest);
+
+
 
         union ConnectToKey
         {
