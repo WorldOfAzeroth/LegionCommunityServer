@@ -2310,13 +2310,13 @@ INSERT INTO `creature` (`guid`, `id`, `map`, `zoneId`, `areaId`, `spawnDifficult
 (@CGUID+519, 13099, 30, 2597, 2957, '0', '0', 0, 0, 1, 776.23590087890625, -318.25067138671875, 63.09943771362304687, 2.356378078460693359, 300, 0, 0, 18713, 5410, 0, NULL, NULL, NULL, NULL, 52649); -- Irondeep Explorer (Area: Irondeep Mine - Difficulty: 0) CreateObject1 (Auras: )
 
 DELETE FROM `creature_addon` WHERE `guid` BETWEEN @CGUID+0 AND @CGUID+1146;
-INSERT INTO `creature_addon` (`guid`, `path_id`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
+INSERT INTO `creature_addon` (`guid`, `pathid`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
 (@CGUID+513, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''), -- Irondeep Peon
 (@CGUID+515, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''), -- Irondeep Peon
 (@CGUID+518, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''); -- Irondeep Peon
 
 DELETE FROM `creature_template_addon` WHERE `entry` IN (13079, 13099, 13397 /*13397 (Irondeep Peon)*/);
-INSERT INTO `creature_template_addon` (`entry`, `path_id`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
+INSERT INTO `creature_template_addon` (`entry`, `pathid`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
 (13079, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''), -- 13079 (Keetar)
 (13099, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''), -- 13099 (Irondeep Explorer)
 (13397, 0, 0, 0, 0, 0, 1, 1, 233, 0, 0, 0, 0, ''); -- 13317 (Coldmine Miner)
@@ -2408,13 +2408,13 @@ INSERT INTO `creature` (`guid`, `id`, `map`, `zoneId`, `areaId`, `spawnDifficult
 (@CGUID+605, 13098, 30, 2597, 2957, '0', '0', 0, 0, 1, 876.046630859375, -341.85699462890625, 65.8742828369140625, 4.450589656829833984, 300, 0, 0, 18713, 5410, 0, NULL, NULL, NULL, NULL, 52649), -- Irondeep Surveyor (Area: Irondeep Mine - Difficulty: 0) CreateObject1
 (@CGUID+606, 13396, 30, 2597, 2957, '0', '0', 0, 0, 1, 957.11297607421875, -325.919921875, 61.75893783569335937, 1.134464025497436523, 300, 0, 0, 12197, 0, 0, NULL, NULL, NULL, NULL, 52649); -- Irondeep Miner (Area: Irondeep Mine - Difficulty: 0) CreateObject1
 
-INSERT INTO `creature_addon` (`guid`, `path_id`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
+INSERT INTO `creature_addon` (`guid`, `pathid`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
 (@CGUID+583, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, ''), -- Irondeep Miner
 (@CGUID+597, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, ''), -- Irondeep Miner
 (@CGUID+601, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, ''); -- Irondeep Miner
 
 DELETE FROM `creature_template_addon` WHERE `entry` IN (13078 /*13078 (Umi Thorson)*/, 13080 /*13080 (Irondeep Guard)*/, 13098 /*13098 (Irondeep Surveyor)*/, 13396 /*13396 (Irondeep Miner)*/);
-INSERT INTO `creature_template_addon` (`entry`, `path_id`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
+INSERT INTO `creature_template_addon` (`entry`, `pathid`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
 (13078, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''), -- 13078 (Umi Thorson)
 (13080, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''), -- 13080 (Irondeep Guard)
 (13098, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''), -- 13098 (Irondeep Surveyor)
@@ -2506,13 +2506,13 @@ INSERT INTO `creature` (`guid`, `id`, `map`, `zoneId`, `areaId`, `spawnDifficult
 (@CGUID+690, 10987, 30, 2597, 2597, '0', '0', 0, 0, 1, 791.4014892578125, -329.929718017578125, 63.04186630249023437, 5.608000755310058593, 300, 0, 0, 17618, 0, 0, NULL, NULL, NULL, NULL, 52649), -- Irondeep Trogg (Area: Alterac Valley - Difficulty: 0) CreateObject1 (Auras: )
 (@CGUID+692, 10987, 30, 2597, 2597, '0', '0', 0, 0, 1, 793.05322265625, -331.2530517578125, 63.08449554443359375, 5.612669944763183593, 300, 0, 0, 17618, 0, 0, NULL, NULL, NULL, NULL, 52649); -- Irondeep Trogg (Area: Alterac Valley - Difficulty: 0) CreateObject1 (Auras: )
 
-INSERT INTO `creature_addon` (`guid`, `path_id`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
+INSERT INTO `creature_addon` (`guid`, `pathid`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
 (@CGUID+688, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, ''), -- Irondeep Trogg
 (@CGUID+690, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, ''), -- Irondeep Trogg
 (@CGUID+692, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, ''); -- Irondeep Trogg
 
 DELETE FROM `creature_template_addon` WHERE `entry` IN (10987 /*10987 (Irondeep Trogg)*/);
-INSERT INTO `creature_template_addon` (`entry`, `path_id`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
+INSERT INTO `creature_template_addon` (`entry`, `pathid`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
 (10987, 0, 0, 0, 0, 0, 1, 0, 233, 0, 0, 0, 0, ''); -- 10987 (Irondeep Trogg)
 
 -- Coldtooth mine - Horde
@@ -2617,13 +2617,13 @@ INSERT INTO `creature` (`guid`, `id`, `map`, `zoneId`, `areaId`, `spawnDifficult
 (@CGUID+790, 13088, 30, 2597, 2963, '0', '0', 0, 0, 1, -849.416259765625, -93.4278945922851562, 68.59841156005859375, 3.228859186172485351, 10, 0, 0, 83980, 0, 0, NULL, NULL, NULL, NULL, 52393); -- Masha Swiftcut (Area: Coldtooth Mine - Difficulty: 0) CreateObject2
 
 DELETE FROM `creature_template_addon` WHERE `entry` IN (13088, 13097, 13089, 13316);
-INSERT INTO `creature_template_addon` (`entry`, `path_id`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
+INSERT INTO `creature_template_addon` (`entry`, `pathid`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
 (13088, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''), -- Masha Swiftcut
 (13097, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''), -- Coldmine Surveyor
 (13089, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''), -- Coldmine Guard
 (13316, 0, 0, 0, 0, 0, 1, 1, 233, 0, 0, 0, 0, ''); -- Coldmine Peon
 
-INSERT INTO `creature_addon` (`guid`, `path_id`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
+INSERT INTO `creature_addon` (`guid`, `pathid`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
 (@CGUID+763, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''), -- Coldmine Peon
 (@CGUID+768, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''), -- Coldmine Peon
 (@CGUID+779, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''); -- Coldmine Peon
@@ -2729,12 +2729,12 @@ INSERT INTO `creature` (`guid`, `id`, `map`, `zoneId`, `areaId`, `spawnDifficult
 (@CGUID+887, 13087, 30, 2597, 2963, '0', '0', 0, 0, 1, -954.88153076171875, -215.19512939453125, 77.0063629150390625, 4.220669746398925781, 300, 0, 0, 21492, 0, 0, NULL, NULL, NULL, NULL, 52649); -- Coldmine Invader (Area: Coldtooth Mine - Difficulty: 0) CreateObject1
 
 DELETE FROM `creature_template_addon` WHERE `entry` IN (13087 /*13087 (Coldmine Invader)*/, 13086 /*13086 (Aggi Rumblestomp) - Shield Spike*/, 13317 /*13317 (Coldmine Miner)*/);
-INSERT INTO `creature_template_addon` (`entry`, `path_id`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
+INSERT INTO `creature_template_addon` (`entry`, `pathid`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
 (13087, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''), -- 13087 (Coldmine Invader)
 (13086, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, '12782'), -- 13086 (Aggi Rumblestomp) - Shield Spike
 (13317, 0, 0, 0, 0, 0, 1, 0, 233, 0, 0, 0, 0, ''); -- 13317 (Coldmine Miner)
 
-INSERT INTO `creature_addon` (`guid`, `path_id`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
+INSERT INTO `creature_addon` (`guid`, `pathid`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
 (@CGUID+879, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, ''),
 (@CGUID+882, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, ''),
 (@CGUID+885, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, '');
@@ -2872,7 +2872,7 @@ UPDATE `creature` SET `StringId` = 'bg_av_herald_west_tower_attack' WHERE `guid`
 UPDATE `creature` SET `StringId` = 'bg_av_herald_west_tower_defend' WHERE `guid` = @CGUID+221;
 -- UPDATE `creature` SET `StringId` = NULL WHERE `guid` = @CGUID+222; -- Unknown
 
-INSERT INTO `creature_addon` (`guid`, `path_id`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
+INSERT INTO `creature_addon` (`guid`, `pathid`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
 (@CGUID+0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, '12782'), -- Frostwolf Battleguard - 12782 - Shield Spike
 (@CGUID+3, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, '18950'), -- Frost Wolf Bloodhound - 18950 - Invisibility and Stealth Detection
 (@CGUID+5, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, '12782'), -- Frostwolf Battleguard - 12782 - Shield Spike
@@ -3023,7 +3023,7 @@ INSERT INTO `creature_addon` (`guid`, `path_id`, `mount`, `StandState`, `AnimTie
 (@CGUID+308, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''), -- Druid of the Grove
 (@CGUID+309, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''); -- Archdruid Renferal
 
-INSERT INTO `creature_addon` (`guid`, `path_id`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
+INSERT INTO `creature_addon` (`guid`, `pathid`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
 (@CGUID+310, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''), -- Kurdrum Barleybeard
 (@CGUID+311, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, '12782'), -- Stormpike Battleguard - 12782 - Shield Spike
 (@CGUID+312, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, '12782'), -- Stormpike Battleguard - 12782 - Shield Spike
@@ -3426,7 +3426,7 @@ DELETE FROM `gameobject` WHERE `guid` IN (11765, 11766, 15388, 15389, 15390, 153
 DELETE FROM `gameobject_addon` WHERE `guid` IN (11765, 11766, 15388, 15389, 15390, 15391, 15392, 15393, 15394);
 
 DELETE FROM `creature_template_addon` WHERE `entry` IN (14465 /*14465 (Alliance Battle Standard) - Battle Standard*/, 12097 /*12097 (Frostwolf Quartermaster)*/, 12122 /*12122 (Duros)*/, 12121 /*12121 (Drakan)*/, 14772 /*14772 (East Frostwolf Warmaster) - East Frostwolf Warmaster*/, 14777 /*14777 (West Frostwolf Warmaster) - West Frostwolf Warmaster*/, 14776 /*14776 (Tower Point Warmaster) - Tower Point Warmaster*/, 14773 /*14773 (Iceblood Warmaster) - Iceblood Warmaster*/, 14764 /*14764 (Icewing Marshal) - Icewing Marshal*/, 14763 /*14763 (Dun Baldar South Marshal) - Dun Baldar South Marshal*/, 14762 /*14762 (Dun Baldar North Marshal) - Dun Baldar North Marshal*/, 14765 /*14765 (Stonehearth Marshal) - Stonehearth Marshal*/, 13617 /*13617 (Stormpike Stable Master)*/, 5139 /*5139 (Kurdrum Barleybeard)*/, 13442 /*13442 (Archdruid Renferal)*/, 13443 /*13443 (Druid of the Grove)*/, 5135 /*5135 (Svalbrad Farmountain)*/, 4257 /*4257 (Lana Thunderbrew)*/, 13257 /*13257 (Murgot Deepforge)*/, 12096 /*12096 (Stormpike Quartermaster)*/, 14188 /*14188 (Dirk Swindle)*/, 14187 /*14187 (Athramanis)*/, 5134 /*5134 (Jonivera Farmountain)*/, 4255 /*4255 (Brogus Thunderbrew)*/, 13447 /*13447 (Corporal Noreg Stormpike) - Revenge Trigger*/, 13181 /*13181 (Wing Commander Mulverick)*/, 13216 /*13216 (Gaelden Hammersmith)*/, 13797 /*13797 (Mountaineer Boombellow)*/, 13319 /*13319 (Commander Duffy) - Invisibility and Stealth Detection*/, 13180 /*13180 (Wing Commander Jeztor)*/, 13179 /*13179 (Wing Commander Guse)*/, 13320 /*13320 (Commander Karl Philips) - Invisibility and Stealth Detection*/, 14283 /*14283 (Stormpike Owl) - Invisibility and Stealth Detection*/, 12127 /*12127 (Stormpike Guardsman)*/, 12050 /*12050 (Stormpike Defender) - Revenge Trigger*/, 11949 /*11949 (Captain Balinda Stonehearth)*/, 13139 /*13139 (Commander Randolph) - Invisibility and Stealth Detection*/, 11947 /*11947 (Captain Galvangar)*/, 13140 /*13140 (Commander Dardosh) - Invisibility and Stealth Detection*/, 13438 /*13438 (Wing Commander Slidore)*/, 13154 /*13154 (Commander Louis Philips) - Invisibility and Stealth Detection*/, 11605 /*11605 (Whitewhisker Overseer) - Haste Aura*/, 10367 /*10367 (Shrye Ragefist)*/, 10364 /*10364 (Yaelika Farclaw)*/, 13448 /*13448 (Sergeant Yazra Bloodsnarl)*/, 13218 /*13218 (Grunnda Wolfheart)*/, 3625 /*3625 (Rarck)*/, 13176 /*13176 (Smith Regzar)*/, 3343 /*3343 (Grelkor)*/, 2225 /*2225 (Zora Guthrek)*/, 13798 /*13798 (Jotek)*/, 14186 /*14186 (Ravak Grimtotem)*/, 14185 /*14185 (Najak Hexxen)*/, 13439 /*13439 (Wing Commander Vipore)*/, 13153 /*13153 (Commander Mulfort) - Invisibility and Stealth Detection*/, 165189 /*165189 (Generic Hunter Pet)*/, 1863 /*1863 (Succubus) - Override Command Demon, Preparation, Avoidance*/, 11948 /*11948 (Vanndar Stormpike) - Unit Frame*/, 11946 /*11946 (Drek'Thar) - Unit Frame*/, 13236 /*13236 (Primalist Thurloga)*/, 174170 /*174170 (Maw Haunt) - Levitate, Scourge Haunt Visual, Face Player and give GUID*/, 11998 /*11998 (Frostwolf Herald)*/, 154474 /*154474 (Primalist Thurloga)*/, 154473 /*154473 (Voggah Deathgrip)*/, 13616 /*13616 (Frostwolf Stable Master)*/, 12051 /*12051 (Frostwolf Legionnaire)*/, 13284 /*13284 (Frostwolf Shaman)*/, 14282 /*14282 (Frost Wolf Bloodhound) - Invisibility and Stealth Detection*/, 12053 /*12053 (Frostwolf Guardian) - Revenge Trigger*/);
-INSERT INTO `creature_template_addon` (`entry`, `path_id`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
+INSERT INTO `creature_template_addon` (`entry`, `pathid`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
 (14465, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, '23033'), -- 14465 (Alliance Battle Standard) - Battle Standard
 (12097, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''), -- 12097 (Frostwolf Quartermaster)
 (12122, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, ''), -- 12122 (Duros)
