@@ -196,6 +196,35 @@ LOCK TABLES `autobroadcast` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `battle_pet_declinedname`
+--
+
+DROP TABLE IF EXISTS `battle_pet_declinedname`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `battle_pet_declinedname` (
+  `guid` bigint NOT NULL,
+  `genitive` varchar(12) NOT NULL DEFAULT '',
+  `dative` varchar(12) NOT NULL DEFAULT '',
+  `accusative` varchar(12) NOT NULL DEFAULT '',
+  `instrumental` varchar(12) NOT NULL DEFAULT '',
+  `prepositional` varchar(12) NOT NULL DEFAULT '',
+  PRIMARY KEY (`guid`),
+  CONSTRAINT `fk_battle_pet__battle_pet_declinedname` FOREIGN KEY (`guid`) REFERENCES `battle_pets` (`guid`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `battle_pet_declinedname`
+--
+
+LOCK TABLES `battle_pet_declinedname` WRITE;
+/*!40000 ALTER TABLE `battle_pet_declinedname` DISABLE KEYS */;
+/*!40000 ALTER TABLE `battle_pet_declinedname` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+--
 -- Table structure for table `battle_pet_slots`
 --
 
