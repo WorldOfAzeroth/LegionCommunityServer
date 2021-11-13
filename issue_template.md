@@ -4,7 +4,7 @@
 
 **Description:**
 
-CHANGEME Description of the problem or issue here.
+CHANGEME Description of the problem or issue here. Include zone name for things like Quests.
 
 **Current behaviour:**
 
@@ -13,11 +13,11 @@ If this is a crash, post the crashlog (upload to https://gist.github.com/).
 
 **Expected behaviour:**
 
-CHANGEME Tell us what should happen instead.
+CHANGEME Tell us what should happen instead. Include entries of affected creatures / items / quests with a link to the relevant wowhead page. Use web.archive.org to find cached wowhead/wowdb pages from 2018 May or earlier, or wowpedia (Three dots in the top right and History to see old pages).
 
 **Steps to reproduce the problem:**
 
-1. CHANGEME Step 1 include entries of affected creatures / items / quests with a link to the relevant wowhead page.  
+1. CHANGEME Step 1   
 2. Step 2
 3. Step 3
 

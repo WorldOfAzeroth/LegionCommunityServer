@@ -2494,7 +2494,8 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
         if (talentSpells.count(spellInfo->Id))
             spellInfo->AttributesCu |= SPELL_ATTR0_CU_IS_TALENT;
 
-
+		if (G3D::fuzzyNe(spellInfo->Width, 0.0f))
+            spellInfo->AttributesCu |= SPELL_ATTR0_CU_CONE_LINE;
         spellInfo->_InitializeExplicitTargetMask();
     }
 

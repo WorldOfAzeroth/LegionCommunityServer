@@ -47,6 +47,7 @@ enum ShamanSpells
     SPELL_SHAMAN_ELEMENTAL_BLAST_HASTE          = 173183,
     SPELL_SHAMAN_ELEMENTAL_BLAST_MASTERY        = 173184,
     SPELL_SHAMAN_ELEMENTAL_MASTERY              = 16166,
+    SPELL_ELEMENTAL_SHAMAN                      = 137040,
     SPELL_SHAMAN_ENERGY_SURGE                   = 40465,
     SPELL_SHAMAN_EXHAUSTION                     = 57723,
     SPELL_SHAMAN_FIRE_NOVA_TRIGGERED            = 8349,
@@ -288,6 +289,47 @@ class spell_sha_earth_shield : public SpellScriptLoader
         {
             return new spell_sha_earth_shield_AuraScript();
         }
+};
+
+// 170374
+//Apply Earthen Rage Passive Aura on spellcast
+class spell_sha_earthen_rage_aura : public SpellScriptLoader
+{
+public:
+    spell_sha_earthen_rage_aura() : SpellScriptLoader("spell_sha_earthen_rage_aura") { }
+
+    class spell_sha_earthen_rage_aura_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_sha_earthen_rage_aura_SpellScript);
+
+        bool Validate(SpellInfo const* /*spellInfo*/) override
+        {
+            return ValidateSpellInfo({ SPELL_SHAMAN_EARTHEN_RAGE_PASSIVE });
+        }
+
+        void HandleScript(SpellEffIndex /*effIndex*/)
+        {            
+            if (Unit* caster = GetCaster()) //Make sure we have a target ( self )
+             if (caster->HasAura(SPELL_ELEMENTAL_SHAMAN)) //Check if we are specced for elemental
+              if (caster->HasSpell(SPELL_SHAMAN_EARTHEN_RAGE_PASSIVE)) //Check if we have the talent in our spellbook
+                  if (!(caster->HasAura(SPELL_SHAMAN_EARTHEN_RAGE_PASSIVE)))  //Check if player has the passive aura or not
+                  {
+                      Aura* earthen = caster->AddAura(SPELL_SHAMAN_EARTHEN_RAGE_PASSIVE, caster); //Add aura to player ( caster )
+                      earthen->SetDuration(6000, false); //Set the duration of the aura
+                  }
+        }
+
+        void Register() override
+        {
+            //Only activates if the spell does damage.
+            OnEffectHitTarget += SpellEffectFn(spell_sha_earthen_rage_aura_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
+        }
+    };
+
+    SpellScript* GetSpellScript() const override
+    {
+        return new spell_sha_earthen_rage_aura_SpellScript();
+    }
 };
 
 // 170374 - Earthen Rage (Passive)
@@ -1292,6 +1334,7 @@ void AddSC_shaman_spell_scripts()
     new spell_sha_bloodlust();
     new spell_sha_crash_lightning();
     new spell_sha_earth_shield();
+    new spell_sha_earthen_rage_aura();
     new spell_sha_earthen_rage_passive();
     new spell_sha_earthen_rage_proc_aura();
     new spell_sha_elemental_blast();

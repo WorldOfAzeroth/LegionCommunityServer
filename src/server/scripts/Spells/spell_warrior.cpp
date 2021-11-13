@@ -47,6 +47,7 @@ enum WarriorSpells
     SPELL_WARRIOR_GLYPH_OF_THE_BLAZING_TRAIL        = 123779,
     SPELL_WARRIOR_GLYPH_OF_HEROIC_LEAP              = 159708,
     SPELL_WARRIOR_GLYPH_OF_HEROIC_LEAP_BUFF         = 133278,
+    SPELL_WARRIOR_HEAVY_REPERCUSSIONS               = 203177,
     SPELL_WARRIOR_HEROIC_LEAP_JUMP                  = 178368,
     SPELL_WARRIOR_IMPENDING_VICTORY                 = 202168,
     SPELL_WARRIOR_IMPENDING_VICTORY_HEAL            = 202166,
@@ -63,6 +64,7 @@ enum WarriorSpells
     SPELL_WARRIOR_SECOUND_WIND_PROC_RANK_2          = 29838,
     SPELL_WARRIOR_SECOUND_WIND_TRIGGER_RANK_1       = 29841,
     SPELL_WARRIOR_SECOUND_WIND_TRIGGER_RANK_2       = 29842,
+    SPELL_WARRIOR_SHIELD_BLOCK_TRIGGERED           = 132404,
     SPELL_WARRIOR_SHIELD_SLAM                       = 23922,
     SPELL_WARRIOR_SHOCKWAVE                         = 46968,
     SPELL_WARRIOR_SHOCKWAVE_STUN                    = 132168,
@@ -1016,6 +1018,62 @@ public:
     }
 };
 
+class spell_warr_shield_block : public SpellScriptLoader
+{
+public:
+    spell_warr_shield_block() : SpellScriptLoader("spell_warr_shield_block") { }
+
+    class spell_warr_shield_block_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_warr_shield_block_SpellScript);
+
+        void HandleOnHit()
+        {
+            if (Player* _player = GetCaster()->ToPlayer())
+                _player->CastSpell(_player, SPELL_WARRIOR_SHIELD_BLOCK_TRIGGERED, true);
+        }
+
+        void Register() override
+        {
+            OnHit += SpellHitFn(spell_warr_shield_block_SpellScript::HandleOnHit);
+        }
+    };
+
+    class spell_warr_shield_block_AuraScript : public AuraScript
+    {
+        PrepareAuraScript(spell_warr_shield_block_AuraScript);
+
+        bool Validate(SpellInfo const* /*spellInfo*/) override
+        {
+            if (!sSpellMgr->GetSpellInfo(SPELL_WARRIOR_SHIELD_BLOCK_TRIGGERED))
+                return false;
+            return true;
+        }
+
+        void CalculateAmount(AuraEffect const* /*aurEff*/, int32& amount, bool& /*canBeRecalculated*/)
+        {
+            if (Unit* caster = GetCaster())
+                if (caster->HasAura(SPELL_WARRIOR_HEAVY_REPERCUSSIONS))
+                    amount += 30;
+        }
+
+        void Register() override
+        {
+            DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_warr_shield_block_AuraScript::CalculateAmount, EFFECT_1, SPELL_AURA_MOD_DAMAGE_PERCENT_DONE);
+        }
+    };
+
+    SpellScript* GetSpellScript() const override
+    {
+        return new spell_warr_shield_block_SpellScript();
+    }
+
+    AuraScript* GetAuraScript() const override
+    {
+        return new spell_warr_shield_block_AuraScript();
+    }
+};
+
 // 107570 - Storm Bolt
 class spell_warr_storm_bolt : public SpellScriptLoader
 {
@@ -1453,6 +1511,7 @@ void AddSC_warrior_spell_scripts()
     new spell_warr_second_wind_proc();
     new spell_warr_second_wind_trigger();
     new spell_warr_shattering_throw();
+    new spell_warr_shield_block();
     new spell_warr_shockwave();
     new spell_warr_slam();
     new spell_warr_storm_bolt();
