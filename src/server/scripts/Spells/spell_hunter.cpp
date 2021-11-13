@@ -47,12 +47,15 @@ enum HunterSpells
     SPELL_HUNTER_LONE_WOLF                          = 155228,
     SPELL_HUNTER_MASTERS_CALL_TRIGGERED             = 62305,
     SPELL_HUNTER_MISDIRECTION_PROC                  = 35079,
+    SPELL_HUNTER_MONGOOSE_BITE                      = 190928,
+    SPELL_HUNTER_MONGOOSE_FURY                      = 190931,
     SPELL_HUNTER_MULTI_SHOT_FOCUS                   = 213363,
     SPELL_HUNTER_PET_LAST_STAND_TRIGGERED           = 53479,
     SPELL_HUNTER_PET_HEART_OF_THE_PHOENIX           = 55709,
     SPELL_HUNTER_PET_HEART_OF_THE_PHOENIX_TRIGGERED = 54114,
     SPELL_HUNTER_PET_HEART_OF_THE_PHOENIX_DEBUFF    = 55711,
     SPELL_HUNTER_PET_CARRION_FEEDER_TRIGGERED       = 54045,
+    SPELL_HUNTER_RAPTOR_STRIKE                      = 186270,
     SPELL_HUNTER_READINESS                          = 23989,
     SPELL_HUNTER_SERPENT_STING                      = 1978,
     SPELL_HUNTER_SNIPER_TRAINING_R1                 = 53302,
@@ -60,7 +63,8 @@ enum HunterSpells
     SPELL_HUNTER_STEADY_SHOT_FOCUS                  = 77443,
     SPELL_HUNTER_T9_4P_GREATNESS                    = 68130,
 	SPELL_HUNTER_BEAST_CLEAVE						= 115939,
-	SPELL_ROAR_OF_SACRIFICE_TRIGGERED               = 67481
+	SPELL_ROAR_OF_SACRIFICE_TRIGGERED               = 67481,
+    SPELL_HUNTER_WAY_OF_THE_MOKNATHAL               = 201082
 };
 
 enum MiscSpells
@@ -566,6 +570,84 @@ class spell_hun_misdirection_proc : public SpellScriptLoader
         {
             return new spell_hun_misdirection_proc_AuraScript();
         }
+};
+
+// Way of the Mok'nathal - 201082
+class spell_hun_way_of_the_moknathal : public SpellScriptLoader
+{
+public:
+    spell_hun_way_of_the_moknathal() : SpellScriptLoader("spell_hun_way_of_the_moknathal") {}
+
+    class spell_hun_way_of_the_moknathal_AuraScript : public AuraScript
+    {
+        PrepareAuraScript(spell_hun_way_of_the_moknathal_AuraScript);
+
+        bool Validate(SpellInfo const* /*spellInfo*/) override
+        {
+            if (!sSpellMgr->GetSpellInfo(SPELL_HUNTER_RAPTOR_STRIKE))
+                return false;
+            return true;
+        }
+
+        bool CheckProc(ProcEventInfo& eventInfo)
+        {
+            if (eventInfo.GetSpellInfo()->Id == SPELL_HUNTER_RAPTOR_STRIKE)
+                return true;
+            return false;
+        }
+
+        void Register() override
+        {
+            DoCheckProc += AuraCheckProcFn(spell_hun_way_of_the_moknathal_AuraScript::CheckProc);
+        }
+    };
+
+    AuraScript* GetAuraScript() const override
+    {
+        return new spell_hun_way_of_the_moknathal_AuraScript();
+    }
+};
+
+// Mongoose Bite - 190928
+class spell_hun_mongoose_bite : public SpellScriptLoader
+{
+public:
+    spell_hun_mongoose_bite() : SpellScriptLoader("spell_hun_mongoose_bite") { }
+
+    class spell_hun_mongoose_bite_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_hun_mongoose_bite_SpellScript);
+
+        bool Validate(SpellInfo const* /*spellInfo*/) override
+        {
+            if (!sSpellMgr->GetSpellInfo(SPELL_HUNTER_MONGOOSE_BITE))
+                return false;
+            return true;
+        }
+
+        void ApplyBuff()
+        {
+            int32 dur = 0;
+            if (Aura* aur = GetCaster()->GetAura(SPELL_HUNTER_MONGOOSE_FURY))
+                dur = aur->GetDuration();
+
+            GetCaster()->CastSpell(GetCaster(), SPELL_HUNTER_MONGOOSE_FURY, true);
+
+            if (Aura* aur = GetCaster()->GetAura(SPELL_HUNTER_MONGOOSE_FURY))
+                if (dur)
+                    aur->SetDuration(dur);
+        }
+
+        void Register() override
+        {
+            AfterHit += SpellHitFn(spell_hun_mongoose_bite_SpellScript::ApplyBuff);
+        }
+    };
+
+    SpellScript* GetSpellScript() const override
+    {
+        return new spell_hun_mongoose_bite_SpellScript();
+    }
 };
 
 // 2643 - Multi-Shot
@@ -1162,6 +1244,7 @@ void AddSC_hunter_spell_scripts()
     new spell_hun_masters_call();
     new spell_hun_misdirection();
     new spell_hun_misdirection_proc();
+    new spell_hun_mongoose_bite();
     new spell_hun_multi_shot();
     new spell_hun_pet_carrion_feeder();
     new spell_hun_pet_heart_of_the_phoenix();
@@ -1175,4 +1258,5 @@ void AddSC_hunter_spell_scripts()
     new spell_hun_target_only_pet_and_owner();
     new spell_hun_t9_4p_bonus();
     new spell_hun_tnt();
+    new spell_hun_way_of_the_moknathal();
 }
