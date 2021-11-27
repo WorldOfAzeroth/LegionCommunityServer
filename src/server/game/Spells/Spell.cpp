@@ -1165,7 +1165,7 @@ void Spell::SelectImplicitConeTargets(SpellEffIndex effIndex, SpellImplicitTarge
 
     if (uint32 containerTypeMask = GetSearcherTypeMask(objectType, condList))
     {
-        Trinity::WorldObjectSpellConeTargetCheck check(DegToRad(m_spellInfo->ConeAngle), radius, m_caster, m_spellInfo, selectionType, condList);
+		Trinity::WorldObjectSpellConeTargetCheck check(DegToRad(m_spellInfo->ConeAngle), m_spellInfo->Width ? m_spellInfo->Width : m_caster->GetCombatReach(), radius, m_caster, m_spellInfo, selectionType, condList);
         Trinity::WorldObjectListSearcher<Trinity::WorldObjectSpellConeTargetCheck> searcher(m_caster, targets, check, containerTypeMask);
         SearchTargets<Trinity::WorldObjectListSearcher<Trinity::WorldObjectSpellConeTargetCheck> >(searcher, containerTypeMask, m_caster, m_caster, radius);
 
@@ -1245,6 +1245,47 @@ void Spell::SelectImplicitAreaTargets(SpellEffIndex effIndex, SpellImplicitTarge
     SpellEffectInfo const* effect = GetEffect(effIndex);
     if (!effect)
         return;
+	
+    switch (targetType.GetTarget())
+    {
+        case TARGET_UNIT_TARGET_ALLY_OR_RAID:
+            if (Unit* targetedUnit = m_targets.GetUnitTarget())
+            {
+                if (!m_caster->IsInRaidWith(targetedUnit))
+                {
+                    targets.push_back(m_targets.GetUnitTarget());
+
+                    CallScriptObjectAreaTargetSelectHandlers(targets, effIndex, targetType);
+
+                    if (!targets.empty())
+                    {
+                        // Other special target selection goes here
+                        if (uint32 maxTargets = m_spellValue->MaxAffectedTargets)
+                            Trinity::Containers::RandomResize(targets, maxTargets);
+
+                        for (WorldObject* target : targets)
+                        {
+                            if (Unit* unit = target->ToUnit())
+                                AddUnitTarget(unit, effMask, false, true, center);
+                            else if (GameObject* gObjTarget = target->ToGameObject())
+                                AddGOTarget(gObjTarget, effMask);
+                        }
+                    }
+
+                    return;
+                }
+
+                center = targetedUnit;
+            }
+            break;
+        case TARGET_UNIT_CASTER_AND_SUMMONS:
+            targets.push_back(m_caster);
+            break;
+        default:
+            break;
+    }
+
+
     float radius = effect->CalcRadius(m_caster) * m_spellValue->RadiusMod;
     SearchAreaTargets(targets, radius, center, referer, targetType.GetObjectType(), targetType.GetCheckType(), effect->ImplicitTargetConditions);
 
@@ -1328,6 +1369,14 @@ void Spell::SelectImplicitCasterDestTargets(SpellEffIndex effIndex, SpellImplici
             dest = SpellDestination(x, y, liquidLevel, m_caster->GetOrientation());
             break;
         }
+		case TARGET_DEST_CASTER_GROUND:
+            m_caster->UpdateAllowedPositionZ(dest._position.GetPositionX(), dest._position.GetPositionY(), dest._position.m_positionZ);
+            break;
+        case TARGET_DEST_SUMMONER:
+            if (TempSummon const* casterSummon = m_caster->ToTempSummon())
+                if (Unit const* summoner = casterSummon->GetSummoner())
+                    dest = SpellDestination(*summoner);
+            break;
         default:
         {
             if (SpellEffectInfo const* effect = GetEffect(effIndex))
@@ -1386,6 +1435,7 @@ void Spell::SelectImplicitTargetDestTargets(SpellEffIndex effIndex, SpellImplici
     {
         case TARGET_DEST_TARGET_ENEMY:
         case TARGET_DEST_TARGET_ANY:
+		case TARGET_DEST_TARGET_ALLY:
             break;
         default:
         {
@@ -7791,6 +7841,22 @@ bool WorldObjectSpellTargetCheck::operator()(WorldObject* target)
                 if (!_referer->IsInRaidWith(unitTarget))
                     return false;
                 break;
+			case TARGET_CHECK_SUMMONED:
+                if (!unitTarget->IsSummon())
+                    return false;
+                if (unitTarget->ToTempSummon()->GetSummonerGUID() != _caster->GetGUID())
+                    return false;
+                break;
+            case TARGET_CHECK_THREAT:
+                if (_referer->getThreatManager().getThreat(unitTarget, true) <= 0.0f)
+                    return false;
+                break;
+            case TARGET_CHECK_TAP:
+                if (_referer->GetTypeId() != TYPEID_UNIT || unitTarget->GetTypeId() != TYPEID_PLAYER)
+                    return false;
+                if (!_referer->ToCreature()->isTappedBy(unitTarget->ToPlayer()))
+                    return false;
+                break;
             default:
                 break;
         }
@@ -7827,9 +7893,9 @@ bool WorldObjectSpellAreaTargetCheck::operator()(WorldObject* target)
     return WorldObjectSpellTargetCheck::operator ()(target);
 }
 
-WorldObjectSpellConeTargetCheck::WorldObjectSpellConeTargetCheck(float coneAngle, float range, Unit* caster,
+WorldObjectSpellConeTargetCheck::WorldObjectSpellConeTargetCheck(float coneAngle, float lineWidth, float range, Unit* caster,
     SpellInfo const* spellInfo, SpellTargetCheckTypes selectionType, ConditionContainer* condList)
-    : WorldObjectSpellAreaTargetCheck(range, caster, caster, caster, spellInfo, selectionType, condList), _coneAngle(coneAngle) { }
+    : WorldObjectSpellAreaTargetCheck(range, caster, caster, caster, spellInfo, selectionType, condList), _coneAngle(coneAngle), _lineWidth(lineWidth) { }
 
 bool WorldObjectSpellConeTargetCheck::operator()(WorldObject* target)
 {
@@ -7840,6 +7906,12 @@ bool WorldObjectSpellConeTargetCheck::operator()(WorldObject* target)
     }
     else if (_spellInfo->HasAttribute(SPELL_ATTR0_CU_CONE_LINE))
     {
+        /*
+        * GetCombatReach() not a member of worldobject
+        * _lineWidth too many arguments
+        if (!_caster->HasInLine(target, target->GetCombatReach(), _lineWidth))
+            return false;
+        */
         if (!_caster->HasInLine(target, _caster->GetObjectSize() + target->GetObjectSize()))
             return false;
     }
