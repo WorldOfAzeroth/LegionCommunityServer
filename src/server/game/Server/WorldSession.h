@@ -338,6 +338,7 @@ namespace WorldPackets
         class GuildGetRanks;
         class GuildAddRank;
         class GuildDeleteRank;
+        class GuildShiftRank;
         class GuildUpdateInfoText;
         class GuildSetMemberNote;
         class GuildEventLogQuery;
@@ -1362,6 +1363,7 @@ class TC_GAME_API WorldSession
         void HandleGuildSetRankPermissions(WorldPackets::Guild::GuildSetRankPermissions& packet);
         void HandleGuildAddRank(WorldPackets::Guild::GuildAddRank& packet);
         void HandleGuildDeleteRank(WorldPackets::Guild::GuildDeleteRank& packet);
+        void HandleGuildShiftRank(WorldPackets::Guild::GuildShiftRank& shiftRank);
         void HandleGuildUpdateInfoText(WorldPackets::Guild::GuildUpdateInfoText& packet);
         void HandleSaveGuildEmblem(WorldPackets::Guild::SaveGuildEmblem& packet);
         void HandleGuildRequestPartyState(WorldPackets::Guild::RequestGuildPartyState& packet);
