@@ -178,6 +178,7 @@ namespace WorldPackets
         class BattlePetSetFlags;
         class BattlePetClearFanfare;
         class BattlePetSummon;
+        class BattlePetUpdateNotify;
         class CageBattlePet;
     }
 
@@ -1768,6 +1769,7 @@ class TC_GAME_API WorldSession
         void HandleBattlePetSetFlags(WorldPackets::BattlePet::BattlePetSetFlags& battlePetSetFlags);
         void HandleBattlePetClearFanfare(WorldPackets::BattlePet::BattlePetClearFanfare& battlePetClearFanfare);
         void HandleBattlePetSummon(WorldPackets::BattlePet::BattlePetSummon& battlePetSummon);
+        void HandleBattlePetUpdateNotify(WorldPackets::BattlePet::BattlePetUpdateNotify& battlePetUpdateNotify);
         void HandleCageBattlePet(WorldPackets::BattlePet::CageBattlePet& cageBattlePet);
 
         // Warden

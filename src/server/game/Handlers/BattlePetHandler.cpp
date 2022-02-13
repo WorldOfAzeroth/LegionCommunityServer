@@ -84,3 +84,8 @@ void WorldSession::HandleBattlePetSummon(WorldPackets::BattlePet::BattlePetSummo
     else
         GetBattlePetMgr()->DismissPet();
 }
+
+void WorldSession::HandleBattlePetUpdateNotify(WorldPackets::BattlePet::BattlePetUpdateNotify& battlePetUpdateNotify)
+{
+    GetBattlePetMgr()->UpdateBattlePetData(battlePetUpdateNotify.PetGuid);
+}
