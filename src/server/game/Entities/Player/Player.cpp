@@ -6109,8 +6109,8 @@ void Player::CheckAreaExploreAndOutdoor()
         return;
     }
 
-    uint32 val = (uint32)(1 << (areaEntry->AreaBit % 32));
-    uint32 currFields = GetUInt32Value(PLAYER_EXPLORED_ZONES_1 + offset);
+    uint64 val = UI64LIT(1) << (areaEntry->AreaBit % PLAYER_EXPLORED_ZONES_BITS);
+    uint64 currFields = GetUInt32Value(PLAYER_EXPLORED_ZONES_1 + offset);
 
     if (!(currFields & val))
     {
