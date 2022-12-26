@@ -437,11 +437,9 @@ class FlaggedValuesArray32
 
 struct FindCreatureOptions
 {
-    FindCreatureOptions();
-    ~FindCreatureOptions();
+    FindCreatureOptions() = default;
 
     FindCreatureOptions& SetCreatureId(uint32 creatureId) { CreatureId = creatureId; return *this; }
-    FindCreatureOptions& SetStringId(std::string_view stringId) { StringId = stringId; return *this; }
 
     FindCreatureOptions& SetIsAlive(bool isAlive) { IsAlive = isAlive; return *this; }
     FindCreatureOptions& SetIsInCombat(bool isInCombat) { IsInCombat = isInCombat; return *this; }
@@ -459,15 +457,14 @@ struct FindCreatureOptions
     FindCreatureOptions& SetPrivateObjectOwner(ObjectGuid privateObjectOwnerGuid) { PrivateObjectOwnerGuid = privateObjectOwnerGuid; return *this; }
 
     Optional<uint32> CreatureId;
-    Optional<std::string_view> StringId;
 
     Optional<bool> IsAlive;
     Optional<bool> IsInCombat;
     Optional<bool> IsSummon;
 
-    bool IgnorePhases = false;
-    bool IgnoreNotOwnedPrivateObjects = true;
-    bool IgnorePrivateObjects = false;
+    bool IgnorePhases;
+    bool IgnoreNotOwnedPrivateObjects;
+    bool IgnorePrivateObjects;
 
     Optional<uint32> AuraSpellId;
     Optional<ObjectGuid> OwnerGuid;
@@ -481,23 +478,6 @@ struct FindCreatureOptions
 
     FindCreatureOptions& operator=(FindCreatureOptions const&) = delete;
     FindCreatureOptions& operator=(FindCreatureOptions&&) = delete;
-};
-
-struct FindGameObjectOptions
-{
-    Optional<uint32> GameObjectId;
-    Optional<std::string_view> StringId;
-
-    Optional<bool> IsSummon;
-    Optional<bool> IsSpawned = true; // most searches should be for spawned objects only, to search for "any" just clear this field at call site
-
-    bool IgnorePhases = false;
-    bool IgnoreNotOwnedPrivateObjects = true;
-    bool IgnorePrivateObjects = false;
-
-    Optional<ObjectGuid> OwnerGuid;
-    Optional<ObjectGuid> PrivateObjectOwnerGuid;
-    Optional<GameobjectTypes> GameObjectType;
 };
 
 class TC_GAME_API WorldObject : public Object, public WorldLocation

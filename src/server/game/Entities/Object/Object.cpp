@@ -2819,9 +2819,8 @@ Creature* WorldObject::FindNearestCreature(uint32 entry, float range, bool alive
 Creature* WorldObject::FindNearestCreatureWithOptions(float range, FindCreatureOptions const& options) const
 {
     Creature* creature = nullptr;
-    Trinity::NearestCheckCustomizer checkCustomizer(*this, range);
-    Trinity::CreatureWithOptionsInObjectRangeCheck checker(*this, checkCustomizer, options);
-    Trinity::CreatureLastSearcher searcher(this, creature, checker);
+    Trinity::NearestCreatureEntryWithOptionsInObjectRangeCheck checker(*this, range, options);
+    Trinity::CreatureLastSearcher<Trinity::NearestCreatureEntryWithOptionsInObjectRangeCheck> searcher(this, creature, checker);
     if (options.IgnorePhases)
         searcher.i_phaseShift = &PhasingHandler::GetAlwaysVisiblePhaseShift();
 

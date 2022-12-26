@@ -1480,14 +1480,13 @@ namespace Trinity
             NearestCreatureEntryWithLiveStateInObjectRangeCheck(NearestCreatureEntryWithLiveStateInObjectRangeCheck const&) = delete;
     };
 
-    template <typename Customizer = InRangeCheckCustomizer>
-    class CreatureWithOptionsInObjectRangeCheck
+    class NearestCreatureEntryWithOptionsInObjectRangeCheck
     {
         public:
-            CreatureWithOptionsInObjectRangeCheck(WorldObject const& obj, Customizer& customizer, FindCreatureOptions const& args)
-                : i_obj(obj), i_args(args), i_customizer(customizer) { }
+            NearestCreatureEntryWithOptionsInObjectRangeCheck(WorldObject const& obj, float range, FindCreatureOptions const& args)
+                : i_obj(obj), i_args(args), i_range(range) { }
 
-            bool operator()(Creature const* u) const
+            bool operator()(Creature* u)
             {
                 if (u->getDeathState() == DEAD) // Despawned
                     return false;
@@ -1495,13 +1494,10 @@ namespace Trinity
                 if (u->GetGUID() == i_obj.GetGUID())
                     return false;
 
-                if (!i_customizer.Test(u))
+                if (!i_obj.IsWithinDistInMap(u, i_range))
                     return false;
 
                 if (i_args.CreatureId && u->GetEntry() != i_args.CreatureId)
-                    return false;
-
-                if (i_args.StringId && !u->HasStringId(*i_args.StringId))
                     return false;
 
                 if (i_args.IsAlive.has_value() && u->IsAlive() != i_args.IsAlive)
@@ -1529,64 +1525,14 @@ namespace Trinity
                 if (i_args.AuraSpellId && !u->HasAura(*i_args.AuraSpellId))
                     return false;
 
-                i_customizer.Update(u);
+                i_range = i_obj.GetDistance(u);         // use found unit range as new range limit for next check
                 return true;
             }
 
         private:
             WorldObject const& i_obj;
             FindCreatureOptions const& i_args;
-            Customizer& i_customizer;
-    };
-
-    template <typename Customizer = InRangeCheckCustomizer>
-    class GameObjectWithOptionsInObjectRangeCheck
-    {
-    public:
-        GameObjectWithOptionsInObjectRangeCheck(WorldObject const& obj, Customizer& customizer, FindGameObjectOptions const& args)
-            : i_obj(obj), i_args(args), i_customizer(customizer) { }
-
-        bool operator()(GameObject const* go) const
-        {
-            if (i_args.IsSpawned.has_value() && i_args.IsSpawned != go->isSpawned()) // Despawned
-                return false;
-
-            if (go->GetGUID() == i_obj.GetGUID())
-                return false;
-
-            if (!i_customizer.Test(go))
-                return false;
-
-            if (i_args.GameObjectId && go->GetEntry() != i_args.GameObjectId)
-                return false;
-
-            if (i_args.StringId && !go->HasStringId(*i_args.StringId))
-                return false;
-
-            if (i_args.IsSummon.has_value() && (go->GetSpawnId() == 0) != i_args.IsSummon)
-                return false;
-
-            if ((i_args.OwnerGuid && go->GetOwnerGUID() != i_args.OwnerGuid)
-                || (i_args.PrivateObjectOwnerGuid && go->GetPrivateObjectOwner() != i_args.PrivateObjectOwnerGuid))
-                return false;
-
-            if (i_args.IgnorePrivateObjects && go->IsPrivateObject())
-                return false;
-
-            if (i_args.IgnoreNotOwnedPrivateObjects && !go->CheckPrivateObjectOwnerVisibility(&i_obj))
-                return false;
-
-            if (i_args.GameObjectType && go->GetGoType() != i_args.GameObjectType)
-                return false;
-
-            i_customizer.Update(go);
-            return true;
-        }
-
-    private:
-        WorldObject const& i_obj;
-        FindGameObjectOptions const& i_args;
-        Customizer& i_customizer;
+            float i_range;
     };
 
     class AnyPlayerInObjectRangeCheck
