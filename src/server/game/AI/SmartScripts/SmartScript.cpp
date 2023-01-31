@@ -1233,7 +1233,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         {
             EnumFlag<SmartActionSummonCreatureFlags> flags(static_cast<SmartActionSummonCreatureFlags>(e.action.summonCreature.flags));
             bool preferUnit = flags.HasFlag(SmartActionSummonCreatureFlags::PreferUnit);
-            WorldObject* summoner = preferUnit ? unit : Coalesce<WorldObject>(GetBaseObjectOrPlayerTrigger(), unit);
+            WorldObject* summoner = preferUnit ? unit : GetBaseObjectOrUnitInvoker(unit);
             if (!summoner)
                 break;
 
@@ -1271,7 +1271,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_SUMMON_GO:
         {
-            WorldObject* summoner = GetBaseObjectOrUnit(unit);
+            WorldObject* summoner = GetBaseObjectOrUnitInvoker(unit);
             if (!summoner)
                 break;
 
@@ -2496,7 +2496,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_TRIGGER_GAME_EVENT:
         {
-            WorldObject* sourceObject = GetBaseObjectOrUnit(unit);
+            WorldObject* sourceObject = GetBaseObjectOrUnitInvoker(unit);
             for (WorldObject* target : targets)
             {
                 if (e.action.triggerGameEvent.useSaiTargetAsGameEventSource)
@@ -2593,7 +2593,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
     else if (Unit* tempLastInvoker = GetLastInvoker())
         scriptTrigger = tempLastInvoker;
 
-    WorldObject* baseObject = GetBaseObjectOrPlayerTrigger();
+    WorldObject* baseObject = GetBaseObject();
     switch (e.GetTargetType())
     {
         case SMART_TARGET_SELF:
@@ -3000,7 +3000,7 @@ void SmartScript::GetTargets(ObjectVector& targets, SmartScriptHolder const& e, 
 
 void SmartScript::GetWorldObjectsInDist(ObjectVector& targets, float dist) const
 {
-    WorldObject* obj = GetBaseObjectOrPlayerTrigger();
+    WorldObject* obj = GetBaseObject();
     if (!obj)
         return;
 
@@ -3748,22 +3748,14 @@ WorldObject* SmartScript::GetBaseObject() const
         obj = go;
     else if (areaTrigger)
         obj = areaTrigger;
+    else if (player)
+        obj = player;
     return obj;
 }
 
-WorldObject* SmartScript::GetBaseObjectOrUnit(Unit* unit)
+WorldObject* SmartScript::GetBaseObjectOrUnitInvoker(Unit* invoker)
 {
-    WorldObject* summoner = GetBaseObject();
-
-    if (!summoner && unit)
-        return unit;
-
-    return summoner;
-}
-
-WorldObject* SmartScript::GetBaseObjectOrPlayerTrigger() const
-{
-    return trigger ? atPlayer : GetBaseObject();
+    return Coalesce<WorldObject>(GetBaseObject(), invoker);
 }
 
 bool SmartScript::IsUnit(WorldObject* obj)
@@ -4106,17 +4098,6 @@ void SmartScript::OnInitialize(WorldObject* obj, AreaTriggerEntry const* at, Sce
                 go = obj->ToGameObject();
                 TC_LOG_DEBUG("scripts.ai", "SmartScript::OnInitialize: source is GameObject {}", go->GetEntry());
                 break;
-            case TYPEID_PLAYER:
-                if (at)
-                {
-                    mScriptType = SMART_SCRIPT_TYPE_AREATRIGGER;
-                    trigger = at;
-                    atPlayer = obj->ToPlayer();
-                    TC_LOG_DEBUG("scripts.ai", "SmartScript::OnInitialize: source is AreaTrigger {}, triggered by player {}", trigger->ID, atPlayer->GetGUID().ToString());
-                }
-                else
-                    TC_LOG_ERROR("misc", "SmartScript::OnInitialize: !WARNING! Player TypeID is only allowed for AreaTriggers");
-                break;
             case TYPEID_AREATRIGGER:
                 areaTrigger = obj->ToAreaTrigger();
                 mScriptType = areaTrigger->IsServerSide() ? SMART_SCRIPT_TYPE_AREATRIGGER_ENTITY_SERVERSIDE : SMART_SCRIPT_TYPE_AREATRIGGER_ENTITY;
@@ -4126,18 +4107,6 @@ void SmartScript::OnInitialize(WorldObject* obj, AreaTriggerEntry const* at, Sce
                 TC_LOG_ERROR("misc", "SmartScript::OnInitialize: Unhandled TypeID !WARNING!");
                 return;
         }
-    }
-    else if (scene)
-    {
-        mScriptType = SMART_SCRIPT_TYPE_SCENE;
-        sceneTemplate = scene;
-        TC_LOG_DEBUG("scripts.ai", "SmartScript::OnInitialize: source is Scene with id {}", scene->SceneId);
-    }
-    else if (qst)
-    {
-        mScriptType = SMART_SCRIPT_TYPE_QUEST;
-        quest = qst;
-        TC_LOG_DEBUG("scripts.ai", "SmartScript::OnInitialize: source is Quest with id {}", qst->GetQuestId());
     }
     else
     {
