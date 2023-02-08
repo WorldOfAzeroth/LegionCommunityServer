@@ -716,6 +716,26 @@ enum EquipmentSlots : uint8                                 // 19 slots
 #define VISIBLE_ITEM_ENTRY_OFFSET 0
 #define VISIBLE_ITEM_ENCHANTMENT_OFFSET 1
 
+enum ProfessionSlots : uint8
+{
+    PROFESSION_SLOT_PROFESSION1_TOOL     = 19,
+    PROFESSION_SLOT_PROFESSION1_GEAR1    = 20,
+    PROFESSION_SLOT_PROFESSION1_GEAR2    = 21,
+    PROFESSION_SLOT_PROFESSION2_TOOL     = 22,
+    PROFESSION_SLOT_PROFESSION2_GEAR1    = 23,
+    PROFESSION_SLOT_PROFESSION2_GEAR2    = 24,
+    PROFESSION_SLOT_COOKING_TOOL         = 25,
+    PROFESSION_SLOT_COOKING_GEAR1        = 26,
+    PROFESSION_SLOT_FISHING_TOOL         = 27,
+    PROFESSION_SLOT_FISHING_GEAR1        = 28,
+    PROFESSION_SLOT_FISHING_GEAR2        = 29,
+
+    PROFESSION_SLOT_END,
+    PROFESSION_SLOT_START                = PROFESSION_SLOT_PROFESSION1_TOOL,
+
+    PROFESSION_SLOT_MAX_COUNT            = PROFESSION_SLOT_PROFESSION2_TOOL - PROFESSION_SLOT_PROFESSION1_TOOL
+};
+
 enum InventorySlots : uint8                                 // 4 slots
 {
     INVENTORY_SLOT_BAG_START    = 19,
@@ -2147,7 +2167,8 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         uint16 GetSkillStepValue(uint32 skill) const;            // 0...6
         bool HasSkill(uint32 skill) const;
         void LearnSkillRewardedSpells(uint32 skillId, uint32 skillValue, Races race);
-        int32 FindProfessionSlotFor(uint32 skillId) const;
+        int32 GetProfessionSlotFor(uint32 skillId) const;
+        int32 FindEmptyProfessionSlotFor(uint32 skillId) const;
         void SetSkillLineId(uint32 pos, uint16 skillLineId) { SetUInt16Value(AsUnderlyingType(PLAYER_SKILL_LINEID) + SKILL_ID_OFFSET + (pos / 2), pos & 1, skillLineId); }
         void SetSkillStep(uint32 pos, uint16 step) { SetUInt16Value(AsUnderlyingType(PLAYER_SKILL_LINEID) + SKILL_STEP_OFFSET + (pos / 2), pos & 1, step); };
         void SetSkillRank(uint32 pos, uint16 rank) { SetUInt16Value(AsUnderlyingType(PLAYER_SKILL_LINEID) + SKILL_RANK_OFFSET + (pos / 2), pos & 1, rank); }

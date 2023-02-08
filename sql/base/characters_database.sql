@@ -1408,6 +1408,7 @@ CREATE TABLE `character_skills` (
   `skill` smallint unsigned NOT NULL,
   `value` smallint unsigned NOT NULL,
   `max` smallint unsigned NOT NULL,
+  `professionSlot` tinyint NOT NULL DEFAULT -1,
   PRIMARY KEY (`guid`,`skill`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Player System';
 /*!40101 SET character_set_client = @saved_cs_client */;
