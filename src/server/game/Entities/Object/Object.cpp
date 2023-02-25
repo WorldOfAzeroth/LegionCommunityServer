@@ -245,7 +245,7 @@ void Object::BuildCreateUpdateBlockForPlayer(UpdateData* data, Player* target) c
         if (unit->GetVictim())
             flags |= UPDATEFLAG_HAS_TARGET;
 
-    ByteBuffer& buf = data->GetBuffer();
+    ByteBuffer buf(0x400, ByteBuffer::Reserve{});
     buf << uint8(updateType);
     buf << GetGUID();
     buf << uint8(m_objectTypeId);
@@ -272,7 +272,7 @@ void Object::SendUpdateToPlayer(Player* player)
 
 void Object::BuildValuesUpdateBlockForPlayer(UpdateData* data, Player* target) const
 {
-    ByteBuffer& buf = data->GetBuffer();
+    ByteBuffer buf(500, ByteBuffer::Reserve{});
 
     buf << uint8(UPDATETYPE_VALUES);
     buf << GetGUID();
@@ -285,7 +285,7 @@ void Object::BuildValuesUpdateBlockForPlayer(UpdateData* data, Player* target) c
 
 void Object::BuildDestroyUpdateBlock(UpdateData* data) const
 {
-    data->AddDestroyObject(GetGUID());
+    data->AddOutOfRangeGUID(GetGUID());
 }
 
 void Object::BuildOutOfRangeUpdateBlock(UpdateData* data) const
@@ -293,20 +293,12 @@ void Object::BuildOutOfRangeUpdateBlock(UpdateData* data) const
     data->AddOutOfRangeGUID(GetGUID());
 }
 
-ByteBuffer& Object::PrepareValuesUpdateBuffer(UpdateData* data) const
-{
-    ByteBuffer& buffer = data->GetBuffer();
-    buffer << uint8(UPDATETYPE_VALUES);
-    buffer << GetGUID();
-    return buffer;
-}
-
 void Object::DestroyForPlayer(Player* target) const
 {
     ASSERT(target);
 
     UpdateData updateData(target->GetMapId());
-    BuildDestroyUpdateBlock(&updateData);
+    BuildOutOfRangeUpdateBlock(&updateData);
     WorldPacket packet;
     updateData.BuildPacket(&packet);
     target->SendDirectMessage(&packet);
@@ -522,18 +514,13 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const {
 
         *data << areaTrigger->GetRollPitchYaw().PositionXYZStream();
 
-        bool hasAbsoluteOrientation =
-                areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_ABSOLUTE_ORIENTATION);
-        bool hasDynamicShape =
-                areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_DYNAMIC_SHAPE);
+        bool hasAbsoluteOrientation = areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_ABSOLUTE_ORIENTATION);
+        bool hasDynamicShape = areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_DYNAMIC_SHAPE);
         bool hasAttached = areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_ATTACHED);
-        bool hasFaceMovementDir =
-                areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_FACE_MOVEMENT_DIR);
-        bool hasFollowsTerrain =
-                areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_FOLLOWS_TERRAIN);
+        bool hasFaceMovementDir = areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_FACE_MOVEMENT_DIR);
+        bool hasFollowsTerrain = areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_FOLLOWS_TERRAIN);
         bool hasUnk1 = areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_UNK1);
-        bool hasTargetRollPitchYaw =
-                areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_TARGET_ROLL_PITCH_YAW);
+        bool hasTargetRollPitchYaw = areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_TARGET_ROLL_PITCH_YAW);
         bool hasScaleCurveID = createProperties && createProperties->ScaleCurveId != 0;
         bool hasMorphCurveID = createProperties && createProperties->MorphCurveId != 0;
         bool hasFacingCurveID = createProperties && createProperties->FacingCurveId != 0;
@@ -927,7 +914,6 @@ void Object::BuildFieldsUpdate(Player* player, UpdateDataMapType& data_map) cons
 
     BuildValuesUpdateBlockForPlayer(&iter->second, iter->first);
 }
-
 
 uint32 Object::GetUpdateFieldData(Player const* target, uint32*& flags) const
 {

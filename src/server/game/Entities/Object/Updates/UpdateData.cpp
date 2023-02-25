@@ -23,11 +23,6 @@
 
 UpdateData::UpdateData(uint32 map) : m_map(map), m_blockCount(0) { }
 
-void UpdateData::AddDestroyObject(ObjectGuid guid)
-{
-    m_destroyGUIDs.insert(guid);
-}
-
 void UpdateData::AddOutOfRangeGUID(GuidSet& guids)
 {
     m_outOfRangeGUIDs.insert(guids.begin(), guids.end());
@@ -47,21 +42,18 @@ void UpdateData::AddUpdateBlock(const ByteBuffer &block)
 bool UpdateData::BuildPacket(WorldPacket* packet)
 {
     ASSERT(packet->empty());                                // shouldn't happen
-    packet->Initialize(SMSG_UPDATE_OBJECT, 4 + 2 + 1 + (2 + 4 + 17 * (m_destroyGUIDs.size() + m_outOfRangeGUIDs.size())) + m_data.wpos());
+    packet->Initialize(SMSG_UPDATE_OBJECT, 2 + 4 + (m_outOfRangeGUIDs.empty() ? 0 : 1 + 4 + 9 * m_outOfRangeGUIDs.size()) + m_data.wpos());
 
     *packet << uint32(m_blockCount);
     *packet << uint16(m_map);
 
-    if (packet->WriteBit(!m_outOfRangeGUIDs.empty() || !m_destroyGUIDs.empty()))
+    if (packet->WriteBit(!m_outOfRangeGUIDs.empty()))
     {
-        *packet << uint16(m_destroyGUIDs.size());
-        *packet << uint32(m_destroyGUIDs.size() + m_outOfRangeGUIDs.size());
+        *packet << uint16(0);   // object limit to instantly destroy - objects before this index on m_outOfRangeGUIDs list get "smoothly phased out"
+        *packet << uint32(m_outOfRangeGUIDs.size());
 
-        for (ObjectGuid const& destroyGuid : m_destroyGUIDs)
-            *packet << destroyGuid;
-
-        for (ObjectGuid const& outOfRangeGuid : m_outOfRangeGUIDs)
-            *packet << outOfRangeGuid;
+        for (GuidSet::const_iterator i = m_outOfRangeGUIDs.begin(); i != m_outOfRangeGUIDs.end(); ++i)
+            *packet << *i;
     }
 
     *packet << uint32(m_data.size());
@@ -72,7 +64,6 @@ bool UpdateData::BuildPacket(WorldPacket* packet)
 void UpdateData::Clear()
 {
     m_data.clear();
-    m_destroyGUIDs.clear();
     m_outOfRangeGUIDs.clear();
     m_blockCount = 0;
     m_map = 0;

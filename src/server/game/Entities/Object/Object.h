@@ -158,7 +158,7 @@ class TC_GAME_API Object
         bool HasDynamicFlag(uint32 flag) const { return HasFlag(OBJECT_DYNAMIC_FLAGS, flag); }
         void SetDynamicFlag(uint32 flag) { SetFlag(OBJECT_DYNAMIC_FLAGS, flag); }
         void RemoveDynamicFlag(uint32 flag) { RemoveFlag(OBJECT_DYNAMIC_FLAGS, flag); }
-        void ReplaceAllDynamicFlags(uint32 flag) { ToggleFlag(OBJECT_DYNAMIC_FLAGS, flag); }
+        void ReplaceAllDynamicFlags(uint32 flag) { SetUInt32Value(OBJECT_DYNAMIC_FLAGS, flag); }
 
         TypeID GetTypeId() const { return m_objectTypeId; }
         bool isType(uint16 mask) const { return (mask & m_objectType) != 0; }
@@ -169,7 +169,6 @@ class TC_GAME_API Object
         void BuildValuesUpdateBlockForPlayer(UpdateData* data, Player* target) const;
         void BuildDestroyUpdateBlock(UpdateData* data) const;
         void BuildOutOfRangeUpdateBlock(UpdateData* data) const;
-        ByteBuffer& PrepareValuesUpdateBuffer(UpdateData* data) const;
 
         virtual void DestroyForPlayer(Player* target) const;
 

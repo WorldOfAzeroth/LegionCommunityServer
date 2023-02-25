@@ -29,7 +29,7 @@ void WorldSession::HandleDBQueryBulk(WorldPackets::Hotfix::DBQueryBulk& dbQuery)
     DB2StorageBase const* store = sDB2Manager.GetStorage(dbQuery.TableHash);
     if (!store)
     {
-        TC_LOG_ERROR("network", "CMSG_DB_QUERY_BULK: %s requested unsupported unknown hotfix type: %u", GetPlayerInfo().c_str(), dbQuery.TableHash);
+        TC_LOG_ERROR("network", "CMSG_DB_QUERY_BULK: {} requested unsupported unknown hotfix type: {}", GetPlayerInfo(), dbQuery.TableHash);
         return;
     }
 
