@@ -72,8 +72,8 @@ void WorldSession::HandleMoveWorldportAck()
     MapEntry const* mEntry = sMapStore.LookupEntry(loc.GetMapId());
 
     // reset instance validity, except if going to an instance inside an instance
-    if (player->m_InstanceValid == false && !mEntry->IsDungeon())
-        player->m_InstanceValid = true;
+    if (GetPlayer()->m_InstanceValid == false && !mEntry->IsDungeon())
+        GetPlayer()->m_InstanceValid = true;
 
     Map* oldMap = player->GetMap();
     Map* newMap = GetPlayer()->GetTeleportDestInstanceId() ?
