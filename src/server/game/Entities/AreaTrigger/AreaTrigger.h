@@ -55,7 +55,7 @@ class TC_GAME_API AreaTrigger : public WorldObject, public GridObject<AreaTrigge
 
         bool IsServerSide() const { return _areaTriggerTemplate->Id.IsServerSide; }
 
-        bool IsNeverVisibleFor(WorldObject const* seer) const override { return WorldObject::IsNeverVisibleFor(seer) || IsServerSide(); }
+        bool IsNeverVisibleFor(WorldObject const* seer, bool allowServersideObjects = false) const override { return WorldObject::IsNeverVisibleFor(seer) || (IsServerSide() && !allowServersideObjects); }
 
     private:
         bool Create(uint32 areaTriggerCreatePropertiesId, Unit* caster, Unit* target, SpellInfo const* spellInfo, Position const& pos, int32 duration, uint32 spellVisual, Spell const* spell, AuraEffect const* aurEff);
