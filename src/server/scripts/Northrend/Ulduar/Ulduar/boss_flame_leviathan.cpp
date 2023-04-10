@@ -1001,6 +1001,8 @@ class npc_thorims_hammer : public CreatureScript
         }
 };
 
+static constexpr uint32 PATH_ESCORT_MIMIRONS_INFERNO = 266962;
+
 class npc_mimirons_inferno : public CreatureScript
 {
 public:
@@ -1034,7 +1036,10 @@ public:
             EscortAI::UpdateAI(diff);
 
             if (!HasEscortState(STATE_ESCORT_ESCORTING))
-                Start(false, true, ObjectGuid::Empty, nullptr, false, true);
+            {
+                LoadPath(PATH_ESCORT_MIMIRONS_INFERNO);
+                Start(false, ObjectGuid::Empty, nullptr, false, true);
+            }
             else
             {
                 if (infernoTimer <= diff)
