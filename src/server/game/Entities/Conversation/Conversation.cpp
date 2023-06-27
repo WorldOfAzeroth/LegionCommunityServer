@@ -67,6 +67,8 @@ void Conversation::RemoveFromWorld()
 
 void Conversation::Update(uint32 diff)
 {
+    sScriptMgr->OnConversationUpdate(this, diff);
+
     if (GetDuration() > Milliseconds(diff)) {
         _duration -= Milliseconds(diff);
     } else {
@@ -174,7 +176,7 @@ void Conversation::Create(ObjectGuid::LowType lowGuid, uint32 conversationEntry,
 
     for (ConversationActorTemplate const& actor : conversationTemplate->Actors)
         std::visit(ConversationActorFillVisitor(this, creator, map, actor), actor.Data);
-    
+
     std::vector<UF::ConversationLine> lines;
     for (ConversationLineTemplate const* line : conversationTemplate->Lines)
     {
@@ -230,6 +232,7 @@ bool Conversation::Start()
     if (!GetMap()->AddToMap(this))
         return false;
 
+    sScriptMgr->OnConversationStart(this);
     return true;
 }
 
