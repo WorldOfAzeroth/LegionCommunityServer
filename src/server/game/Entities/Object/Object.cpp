@@ -49,6 +49,7 @@
 #include "VMapFactory.h"
 #include "Vehicle.h"
 #include "World.h"
+#include "VMapManager2.h"
 #include "WorldSession.h"
 #include <G3D/Vector3.h>
 
@@ -172,7 +173,7 @@ void Object::BuildCreateUpdateBlockForPlayer(UpdateData* data, Player* target) c
     if (!target)
         return;
 
-    uint8  updateType = UPDATETYPE_CREATE_OBJECT;
+    uint8  updateType = m_isNewObject ? UPDATETYPE_CREATE_OBJECT2 : UPDATETYPE_CREATE_OBJECT;
     uint32 flags      = m_updateFlag;
 
     /** lower flag1 **/
