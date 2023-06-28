@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -20,24 +20,14 @@
 
 #include <boost/asio/deadline_timer.hpp>
 
-#if BOOST_VERSION >= 107000
-#define BasicDeadlineTimerThirdTemplateArg , boost::asio::io_context::executor_type
-#elif BOOST_VERSION >= 106600
-#define BasicDeadlineTimerThirdTemplateArg
-#else
-#define BasicDeadlineTimerThirdTemplateArg , boost::asio::deadline_timer_service<boost::posix_time::ptime, boost::asio::time_traits<boost::posix_time::ptime>>
-#endif
-
-#define DeadlineTimerBase boost::asio::basic_deadline_timer<boost::posix_time::ptime, boost::asio::time_traits<boost::posix_time::ptime> BasicDeadlineTimerThirdTemplateArg>
-
 namespace Trinity
 {
     namespace Asio
     {
-        class DeadlineTimer : public DeadlineTimerBase
+        class DeadlineTimer : public boost::asio::basic_deadline_timer<boost::posix_time::ptime, boost::asio::time_traits<boost::posix_time::ptime>, boost::asio::io_context::executor_type>
         {
         public:
-            using DeadlineTimerBase::basic_deadline_timer;
+            using basic_deadline_timer::basic_deadline_timer;
         };
     }
 }

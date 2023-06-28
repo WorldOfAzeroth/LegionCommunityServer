@@ -20,6 +20,7 @@
 #include "Field.h"
 #include "ObjectMgr.h"
 #include "Player.h"
+#include "StringConvert.h"
 #include "World.h"
 
 WorldPackets::Character::EnumCharacters::EnumCharacters(WorldPacket&& packet) : ClientPacket(std::move(packet))
@@ -111,7 +112,7 @@ WorldPackets::Character::EnumCharactersResult::CharacterInfo::CharacterInfo(Fiel
     ProfessionIds[0] = 0;
     ProfessionIds[1] = 0;
 
-    Tokenizer equipment(fields[25].GetString(), ' ');
+    std::vector<std::string_view> equipment = Trinity::Tokenize(fields[17].GetStringView(), ' ', false);
     ListPosition = fields[27].GetUInt8();
     LastPlayedTime = fields[28].GetUInt32();
     if (ChrSpecializationEntry const* spec = sDB2Manager.GetChrSpecializationByIndex(Class, fields[29].GetUInt8()))
@@ -122,9 +123,9 @@ WorldPackets::Character::EnumCharactersResult::CharacterInfo::CharacterInfo(Fiel
     for (uint8 slot = 0; slot < INVENTORY_SLOT_BAG_END; ++slot)
     {
         uint32 visualBase = slot * 3;
-        VisualItems[slot].InventoryType = Player::GetUInt32ValueFromArray(equipment, visualBase);
-        VisualItems[slot].DisplayId = Player::GetUInt32ValueFromArray(equipment, visualBase + 1);
-        VisualItems[slot].DisplayEnchantId = Player::GetUInt32ValueFromArray(equipment, visualBase + 2);
+        VisualItems[slot].InventoryType = Trinity::StringTo<uint8>(equipment[visualBase + 0]).value_or(0);
+        VisualItems[slot].DisplayId = Trinity::StringTo<uint32>(equipment[visualBase + 1]).value_or(0);
+        VisualItems[slot].DisplayEnchantId = Trinity::StringTo<uint32>(equipment[visualBase + 2]).value_or(0);
     }
 }
 
@@ -204,7 +205,7 @@ WorldPacket const* WorldPackets::Character::EnumCharactersResult::Write()
     _worldPacket.WriteBit(IsDemonHunterCreationAllowed);
     _worldPacket.WriteBit(HasDemonHunterOnRealm);
     _worldPacket.WriteBit(Unknown7x);
-    _worldPacket.WriteBit(DisabledClassesMask.is_initialized());
+    _worldPacket.WriteBit(DisabledClassesMask.has_value());
     _worldPacket.WriteBit(IsAlliedRacesCreationAllowed);
     _worldPacket << uint32(Characters.size());
     _worldPacket << int32(MaxCharacterLevel);
@@ -270,7 +271,7 @@ void WorldPackets::Character::CharacterRenameRequest::Read()
 WorldPacket const* WorldPackets::Character::CharacterRenameResult::Write()
 {
     _worldPacket << uint8(Result);
-    _worldPacket.WriteBit(Guid.is_initialized());
+    _worldPacket.WriteBit(Guid.has_value());
     _worldPacket.WriteBits(Name.length(), 6);
     _worldPacket.FlushBits();
 
@@ -320,7 +321,7 @@ WorldPacket const* WorldPackets::Character::CharFactionChangeResult::Write()
 {
     _worldPacket << uint8(Result);
     _worldPacket << Guid;
-    _worldPacket.WriteBit(Display.is_initialized());
+    _worldPacket.WriteBit(Display.has_value());
     _worldPacket.FlushBits();
 
     if (Display)

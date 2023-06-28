@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -16,14 +16,13 @@
  */
 
 #include "AdhocStatement.h"
-#include "Errors.h"
 #include "MySQLConnection.h"
 #include "QueryResult.h"
 #include <cstdlib>
 #include <cstring>
 
 /*! Basic, ad-hoc queries. */
-BasicStatementTask::BasicStatementTask(const char* sql, bool async) :
+BasicStatementTask::BasicStatementTask(char const* sql, bool async) :
 m_result(nullptr)
 {
     m_sql = strdup(sql);
@@ -47,7 +46,7 @@ bool BasicStatementTask::Execute()
         if (!result || !result->GetRowCount() || !result->NextRow())
         {
             delete result;
-            m_result->set_value(QueryResult(NULL));
+            m_result->set_value(QueryResult(nullptr));
             return false;
         }
 

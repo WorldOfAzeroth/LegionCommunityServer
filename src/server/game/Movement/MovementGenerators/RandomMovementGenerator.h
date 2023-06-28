@@ -35,7 +35,7 @@ class RandomMovementGenerator : public MovementGeneratorMedium< T, RandomMovemen
         bool GetResetPos(T*, float& x, float& y, float& z);
         MovementGeneratorType GetMovementGeneratorType() const override { return RANDOM_MOTION_TYPE; }
     private:
-        TimeTrackerSmall i_nextMoveTime;
+        TimeTracker i_nextMoveTime;
 
         float wander_distance;
 };

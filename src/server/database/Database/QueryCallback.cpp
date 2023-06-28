@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -66,13 +66,13 @@ public:
 
     QueryCallbackData(std::function<void(QueryCallback&, QueryResult)>&& callback) : _string(std::move(callback)), _isPrepared(false) { }
     QueryCallbackData(std::function<void(QueryCallback&, PreparedQueryResult)>&& callback) : _prepared(std::move(callback)), _isPrepared(true) { }
-    QueryCallbackData(QueryCallbackData&& right)
+    QueryCallbackData(QueryCallbackData&& right) noexcept
     {
         _isPrepared = right._isPrepared;
         ConstructActiveMember(this);
         MoveFrom(this, std::move(right));
     }
-    QueryCallbackData& operator=(QueryCallbackData&& right)
+    QueryCallbackData& operator=(QueryCallbackData&& right) noexcept
     {
         if (this != &right)
         {
@@ -117,7 +117,7 @@ QueryCallback::QueryCallback(std::future<PreparedQueryResult>&& result)
     Construct(_prepared, std::move(result));
 }
 
-QueryCallback::QueryCallback(QueryCallback&& right)
+QueryCallback::QueryCallback(QueryCallback&& right) noexcept
 {
     _isPrepared = right._isPrepared;
     ConstructActiveMember(this);
@@ -125,7 +125,7 @@ QueryCallback::QueryCallback(QueryCallback&& right)
     _callbacks = std::move(right._callbacks);
 }
 
-QueryCallback& QueryCallback::operator=(QueryCallback&& right)
+QueryCallback& QueryCallback::operator=(QueryCallback&& right) noexcept
 {
     if (this != &right)
     {
@@ -175,7 +175,7 @@ void QueryCallback::SetNextQuery(QueryCallback&& next)
     MoveFrom(this, std::move(next));
 }
 
-QueryCallback::Status QueryCallback::InvokeIfReady()
+bool QueryCallback::InvokeIfReady()
 {
     QueryCallbackData& callback = _callbacks.front();
     auto checkStateAndReturnCompletion = [this]()
@@ -185,15 +185,15 @@ QueryCallback::Status QueryCallback::InvokeIfReady()
         if (_callbacks.empty())
         {
             ASSERT(!hasNext);
-            return Completed;
+            return true;
         }
 
         // abort chain
         if (!hasNext)
-            return Completed;
+            return true;
 
         ASSERT(_isPrepared == _callbacks.front()._isPrepared);
-        return NextStep;
+        return false;
     };
 
     if (!_isPrepared)
@@ -217,5 +217,5 @@ QueryCallback::Status QueryCallback::InvokeIfReady()
         }
     }
 
-    return NotReady;
+    return false;
 }

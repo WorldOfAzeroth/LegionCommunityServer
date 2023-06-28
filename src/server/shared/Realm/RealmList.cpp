@@ -18,7 +18,7 @@
 
 #include "RealmList.h"
 #include "BattlenetRpcErrorCodes.h"
-#include "BigNumber.h"
+#include "CryptoRandom.h"
 #include "DatabaseEnv.h"
 #include "DeadlineTimer.h"
 #include "Errors.h"
@@ -36,7 +36,6 @@
 
 RealmList::RealmList() : _updateInterval(0)
 {
-    _realmsMutex = Trinity::make_unique<boost::shared_mutex>();
 }
 
 RealmList::~RealmList() = default;
@@ -78,11 +77,11 @@ void RealmList::UpdateRealm(Realm& realm, Battlenet::RealmHandle const& id, uint
     realm.AllowedSecurityLevel = allowedSecurityLevel;
     realm.PopulationLevel = population;
     if (!realm.ExternalAddress || *realm.ExternalAddress != address)
-        realm.ExternalAddress = Trinity::make_unique<boost::asio::ip::address>(std::move(address));
+        realm.ExternalAddress = std::make_unique<boost::asio::ip::address>(std::move(address));
     if (!realm.LocalAddress || *realm.LocalAddress != localAddr)
-        realm.LocalAddress = Trinity::make_unique<boost::asio::ip::address>(std::move(localAddr));
+        realm.LocalAddress = std::make_unique<boost::asio::ip::address>(std::move(localAddr));
     if (!realm.LocalSubnetMask || *realm.LocalSubnetMask != localSubmask)
-        realm.LocalSubnetMask = Trinity::make_unique<boost::asio::ip::address>(std::move(localSubmask));
+        realm.LocalSubnetMask = std::make_unique<boost::asio::ip::address>(std::move(localSubmask));
     realm.Port = port;
 }
 
@@ -93,7 +92,7 @@ void RealmList::UpdateRealms(boost::system::error_code const& error)
 
     TC_LOG_DEBUG("realmlist", "Updating Realm List...");
 
-    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_REALMLIST);
+    LoginDatabasePreparedStatement *stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_REALMLIST);
     PreparedQueryResult result = LoginDatabase.Query(stmt);
 
     std::map<Battlenet::RealmHandle, std::string> existingRealms;
@@ -179,7 +178,7 @@ void RealmList::UpdateRealms(boost::system::error_code const& error)
         TC_LOG_INFO("realmlist", "Removed realm \"%s\".", itr->second.c_str());
 
     {
-        std::unique_lock<boost::shared_mutex> lock(*_realmsMutex);
+        std::unique_lock<std::shared_mutex> lock(_realmsMutex);
 
         _subRegions.swap(newSubRegions);
         _realms.swap(newRealms);
@@ -194,12 +193,12 @@ void RealmList::UpdateRealms(boost::system::error_code const& error)
 
 Realm const* RealmList::GetRealm(Battlenet::RealmHandle const& id) const
 {
-    boost::shared_lock<boost::shared_mutex> lock(*_realmsMutex);
+    std::shared_lock<std::shared_mutex> lock(_realmsMutex);
     auto itr = _realms.find(id);
     if (itr != _realms.end())
         return &itr->second;
 
-    return NULL;
+    return nullptr;
 }
 
 RealmBuildInfo const* RealmList::GetBuildInfo(uint32 build) const
@@ -236,7 +235,7 @@ RealmBuildInfo const* RealmList::GetBuildInfo(uint32 build) const
 
 void RealmList::WriteSubRegions(bgs::protocol::game_utilities::v1::GetAllValuesForAttributeResponse* response) const
 {
-    boost::shared_lock<boost::shared_mutex> lock(*_realmsMutex);
+    std::shared_lock<std::shared_mutex> lock(_realmsMutex);
     for (std::string const& subRegion : _subRegions)
         response->add_attribute_value()->set_string_value(subRegion);
 }
@@ -244,7 +243,7 @@ void RealmList::WriteSubRegions(bgs::protocol::game_utilities::v1::GetAllValuesF
 std::vector<uint8> RealmList::GetRealmEntryJSON(Battlenet::RealmHandle const& id, uint32 build) const
 {
     std::vector<uint8> compressed;
-    boost::shared_lock<boost::shared_mutex> lock(*_realmsMutex);
+    std::shared_lock<std::shared_mutex> lock(_realmsMutex);
     if (Realm const* realm = GetRealm(id))
     {
         if (!(realm->Flags & REALM_FLAG_OFFLINE) && realm->Build == build)
@@ -299,7 +298,7 @@ std::vector<uint8> RealmList::GetRealmList(uint32 build, std::string const& subR
 {
     JSON::RealmList::RealmListUpdates realmList;
     {
-        boost::shared_lock<boost::shared_mutex> lock(*_realmsMutex);
+        std::shared_lock<std::shared_mutex> lock(_realmsMutex);
         for (auto const& realm : _realms)
         {
             if (realm.second.Id.GetSubRegionAddress() != subRegion)
@@ -358,7 +357,7 @@ std::vector<uint8> RealmList::GetRealmList(uint32 build, std::string const& subR
 uint32 RealmList::JoinRealm(uint32 realmAddress, uint32 build, boost::asio::ip::address const& clientAddress, std::array<uint8, 32> const& clientSecret,
     LocaleConstant locale, std::string const& os, std::string accountName, bgs::protocol::game_utilities::v1::ClientResponse* response) const
 {
-    boost::shared_lock<boost::shared_mutex> lock(*_realmsMutex);
+    std::shared_lock<std::shared_mutex> lock(_realmsMutex);
     if (Realm const* realm = GetRealm(Battlenet::RealmHandle(realmAddress)))
     {
         if (realm->Flags & REALM_FLAG_OFFLINE || realm->Build != build)
@@ -384,15 +383,14 @@ uint32 RealmList::JoinRealm(uint32 realmAddress, uint32 build, boost::asio::ip::
         if (compress(compressed.data() + 4, &compressedLength, reinterpret_cast<uint8 const*>(json.c_str()), uLong(json.length() + 1)) != Z_OK)
             return ERROR_UTIL_SERVER_FAILED_TO_SERIALIZE_RESPONSE;
 
-        BigNumber serverSecret;
-        serverSecret.SetRand(8 * 32);
+        std::array<uint8, 32> serverSecret = Trinity::Crypto::GetRandomBytes<32>();
 
         std::array<uint8, 64> keyData;
         memcpy(&keyData[0], clientSecret.data(), 32);
-        memcpy(&keyData[32], serverSecret.AsByteArray(32).get(), 32);
+        memcpy(&keyData[32], serverSecret.data(), 32);
 
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BNET_GAME_ACCOUNT_LOGIN_INFO);
-        stmt->setString(0, ByteArrayToHexStr(keyData.data(), keyData.size()));
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BNET_GAME_ACCOUNT_LOGIN_INFO);
+        stmt->setBinary(0, keyData);
         stmt->setString(1, clientAddress.to_string());
         stmt->setUInt8(2, locale);
         stmt->setString(3, os);
@@ -409,7 +407,7 @@ uint32 RealmList::JoinRealm(uint32 realmAddress, uint32 build, boost::asio::ip::
 
         attribute = response->add_attribute();
         attribute->set_name("Param_JoinSecret");
-        attribute->mutable_value()->set_blob_value(serverSecret.AsByteArray(32).get(), 32);
+        attribute->mutable_value()->set_blob_value(serverSecret.data(), 32);
         return ERROR_OK;
     }
 

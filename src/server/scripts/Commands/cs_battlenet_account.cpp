@@ -19,6 +19,7 @@
 #include "BattlenetAccountMgr.h"
 #include "BigNumber.h"
 #include "Chat.h"
+#include "CryptoRandom.h"
 #include "DatabaseEnv.h"
 #include "IpAddress.h"
 #include "Language.h"
@@ -27,6 +28,8 @@
 #include "ScriptMgr.h"
 #include "Util.h"
 #include "WorldSession.h"
+#include "StringConvert.h"
+
 
 class battlenet_account_commandscript : public CommandScript
 {
@@ -88,7 +91,7 @@ public:
         char* createGameAccountParam = strtok(NULL, " ");
         bool createGameAccount = true;
         if (createGameAccountParam)
-            createGameAccount = StringToBool(createGameAccountParam);
+            createGameAccount = Trinity::StringTo<bool>(createGameAccountParam).value_or(false);
 
         std::string gameAccountName;
         switch (Battlenet::AccountMgr::CreateBattlenetAccount(std::string(accountName), std::string(password), createGameAccount, &gameAccountName))
@@ -143,7 +146,7 @@ public:
         {
             if (param == "on")
             {
-                PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_LOGON_COUNTRY);
+                LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_LOGON_COUNTRY);
                 uint32 ip = Trinity::Net::address_to_uint(Trinity::Net::make_address_v4(handler->GetSession()->GetRemoteAddress()));
                 EndianConvertReverse(ip);
                 stmt->setUInt32(0, ip);
@@ -166,7 +169,7 @@ public:
             }
             else if (param == "off")
             {
-                PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BNET_ACCOUNT_LOCK_CONTRY);
+                LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BNET_ACCOUNT_LOCK_CONTRY);
                 stmt->setString(0, "00");
                 stmt->setUInt32(1, handler->GetSession()->GetBattlenetAccountId());
                 LoginDatabase.Execute(stmt);
@@ -194,7 +197,7 @@ public:
 
         if (!param.empty())
         {
-            PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BNET_ACCOUNT_LOCK);
+            LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BNET_ACCOUNT_LOCK);
 
             if (param == "on")
             {
@@ -347,28 +350,28 @@ public:
 
     static bool HandleAccountLinkCommand(ChatHandler* handler, char const* args)
     {
-        Tokenizer tokens(args, ' ', 2);
-        if (tokens.size() != 2)
+        const auto &vector = Trinity::Tokenize(args, ' ', false);
+        if (vector.size() != 2)
         {
             handler->SendSysMessage(LANG_CMD_SYNTAX);
             handler->SetSentErrorMessage(true);
             return false;
         }
 
-        std::string bnetAccountName = tokens[0];
-        std::string gameAccountName = tokens[1];
+        std::string_view bnetAccountName = vector[0];
+        std::string_view gameAccountName = vector[1];
 
         switch (Battlenet::AccountMgr::LinkWithGameAccount(bnetAccountName, gameAccountName))
         {
             case AccountOpResult::AOR_OK:
-                handler->PSendSysMessage(LANG_ACCOUNT_BNET_LINKED, bnetAccountName.c_str(), gameAccountName.c_str());
+                handler->PSendSysMessage(LANG_ACCOUNT_BNET_LINKED, bnetAccountName, gameAccountName);
                 break;
             case AccountOpResult::AOR_NAME_NOT_EXIST:
-                handler->PSendSysMessage(LANG_ACCOUNT_OR_BNET_DOES_NOT_EXIST, bnetAccountName.c_str(), gameAccountName.c_str());
+                handler->PSendSysMessage(LANG_ACCOUNT_OR_BNET_DOES_NOT_EXIST, bnetAccountName, gameAccountName);
                 handler->SetSentErrorMessage(true);
                 break;
             case AccountOpResult::AOR_ACCOUNT_BAD_LINK:
-                handler->PSendSysMessage(LANG_ACCOUNT_ALREADY_LINKED, gameAccountName.c_str());
+                handler->PSendSysMessage(LANG_ACCOUNT_ALREADY_LINKED, gameAccountName);
                 handler->SetSentErrorMessage(true);
                 break;
             default:
@@ -431,10 +434,9 @@ public:
         std::string accountName = std::to_string(accountId) + '#' + std::to_string(uint32(index));
 
         // Generate random hex string for password, these accounts must not be logged on with GRUNT
-        BigNumber randPassword;
-        randPassword.SetRand(8 * 16);
+        std::array<uint8, 8> randPassword = Trinity::Crypto::GetRandomBytes<8>();
 
-        switch (sAccountMgr->CreateAccount(accountName, ByteArrayToHexStr(randPassword.AsByteArray().get(), randPassword.GetNumBytes()), bnetAccountName, accountId, index))
+        switch (sAccountMgr->CreateAccount(accountName, ByteArrayToHexStr(randPassword), bnetAccountName, accountId, index))
         {
             case AccountOpResult::AOR_OK:
                 handler->PSendSysMessage(LANG_ACCOUNT_CREATED, accountName.c_str());
@@ -477,7 +479,7 @@ public:
             return false;
 
         char* battlenetAccountName = strtok((char*)args, " ");
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_GAME_ACCOUNT_LIST_SMALL);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_GAME_ACCOUNT_LIST_SMALL);
         stmt->setString(0, battlenetAccountName);
         if (PreparedQueryResult accountList = LoginDatabase.Query(stmt))
         {

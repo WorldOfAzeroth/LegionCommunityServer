@@ -81,7 +81,7 @@ class WaypointMovementGenerator<Creature> : public MovementGeneratorMedium< Crea
 
         bool GetResetPos(Creature*, float& x, float& y, float& z);
 
-        TimeTrackerSmall & GetTrackerTimer() { return i_nextMoveTime; }
+        TimeTracker & GetTrackerTimer() { return i_nextMoveTime; }
 
         void UnitSpeedChanged() { i_recalculateSpeed = true; }
 
@@ -107,7 +107,7 @@ class WaypointMovementGenerator<Creature> : public MovementGeneratorMedium< Crea
             return StartMove(creature);
         }
 
-        TimeTrackerSmall i_nextMoveTime;
+        TimeTracker i_nextMoveTime;
         bool i_recalculateSpeed;
 
         bool IsArrivalDone;

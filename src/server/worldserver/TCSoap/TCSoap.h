@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -19,7 +19,6 @@
 #define _TCSOAP_H
 
 #include "Define.h"
-#include <mutex>
 #include <future>
 #include <string>
 
@@ -38,7 +37,7 @@ class SOAPCommand
         {
         }
 
-        void appendToPrintBuffer(const char* msg)
+        void appendToPrintBuffer(std::string_view msg)
         {
             m_printBuffer += msg;
         }
@@ -54,7 +53,7 @@ class SOAPCommand
             return m_success;
         }
 
-        static void print(void* callbackArg, const char* msg)
+        static void print(void* callbackArg, std::string_view msg)
         {
             ((SOAPCommand*)callbackArg)->appendToPrintBuffer(msg);
         }

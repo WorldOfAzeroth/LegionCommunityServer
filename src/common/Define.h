@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -38,6 +37,9 @@
 #    define _GLIBCXX_SYNCHRONIZATION_HAPPENS_BEFORE(A) ANNOTATE_HAPPENS_BEFORE(A)
 #    define _GLIBCXX_SYNCHRONIZATION_HAPPENS_AFTER(A)  ANNOTATE_HAPPENS_AFTER(A)
 #  endif
+#  if defined(VALGRIND)
+#    include <valgrind/memcheck.h>
+#  endif
 #endif
 
 #include <cstddef>
@@ -58,16 +60,8 @@
 #if TRINITY_PLATFORM == TRINITY_PLATFORM_WINDOWS
 #  define TRINITY_PATH_MAX 260
 #  define _USE_MATH_DEFINES
-#  ifndef DECLSPEC_NORETURN
-#    define DECLSPEC_NORETURN __declspec(noreturn)
-#  endif //DECLSPEC_NORETURN
-#  ifndef DECLSPEC_DEPRECATED
-#    define DECLSPEC_DEPRECATED __declspec(deprecated)
-#  endif //DECLSPEC_DEPRECATED
 #else // TRINITY_PLATFORM != TRINITY_PLATFORM_WINDOWS
 #  define TRINITY_PATH_MAX PATH_MAX
-#  define DECLSPEC_NORETURN
-#  define DECLSPEC_DEPRECATED
 #endif // TRINITY_PLATFORM
 
 #if !defined(COREDEBUG)
@@ -80,13 +74,9 @@
 #endif //!COREDEBUG
 
 #if TRINITY_COMPILER == TRINITY_COMPILER_GNU
-#  define ATTR_NORETURN __attribute__((__noreturn__))
 #  define ATTR_PRINTF(F, V) __attribute__ ((__format__ (__printf__, F, V)))
-#  define ATTR_DEPRECATED __attribute__((__deprecated__))
 #else //TRINITY_COMPILER != TRINITY_COMPILER_GNU
-#  define ATTR_NORETURN
 #  define ATTR_PRINTF(F, V)
-#  define ATTR_DEPRECATED
 #endif //TRINITY_COMPILER == TRINITY_COMPILER_GNU
 
 #ifdef TRINITY_API_USE_DYNAMIC_LINKING
@@ -141,6 +131,9 @@
 #define SI64LIT(N) INT64_C(N)
 
 #define SZFMTD "%" PRIuPTR
+
+#define STRING_VIEW_FMT "%.*s"
+#define STRING_VIEW_FMT_ARG(str) static_cast<int>((str).length()), (str).data()
 
 typedef int64_t int64;
 typedef int32_t int32;

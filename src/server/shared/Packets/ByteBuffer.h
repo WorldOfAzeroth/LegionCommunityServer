@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -21,6 +20,7 @@
 
 #include "Define.h"
 #include "ByteConverter.h"
+#include <array>
 #include <string>
 #include <vector>
 #include <cstring>
@@ -31,12 +31,12 @@ class MessageBuffer;
 class TC_SHARED_API ByteBufferException : public std::exception
 {
 public:
-    ~ByteBufferException() throw() { }
+    ~ByteBufferException() noexcept = default;
 
-    char const* what() const throw() override { return msg_.c_str(); }
+    char const* what() const noexcept override { return msg_.c_str(); }
 
 protected:
-    std::string & message() throw() { return msg_; }
+    std::string & message() noexcept { return msg_; }
 
 private:
     std::string msg_;
@@ -47,14 +47,22 @@ class TC_SHARED_API ByteBufferPositionException : public ByteBufferException
 public:
     ByteBufferPositionException(size_t pos, size_t size, size_t valueSize);
 
-    ~ByteBufferPositionException() throw() { }
+    ~ByteBufferPositionException() noexcept = default;
+};
+
+class TC_SHARED_API ByteBufferInvalidValueException : public ByteBufferException
+{
+public:
+    ByteBufferInvalidValueException(char const* type, char const* value);
+
+    ~ByteBufferInvalidValueException() noexcept = default;
 };
 
 class TC_SHARED_API ByteBuffer
 {
     public:
-        static size_t const DEFAULT_SIZE = 0x1000;
-        static uint8 const InitialBitPos = 8;
+        constexpr static size_t DEFAULT_SIZE = 0x1000;
+        constexpr static uint8 InitialBitPos = 8;
 
         // constructor
         ByteBuffer() : _rpos(0), _wpos(0), _bitpos(InitialBitPos), _curbitval(0)
@@ -62,16 +70,24 @@ class TC_SHARED_API ByteBuffer
             _storage.reserve(DEFAULT_SIZE);
         }
 
-        ByteBuffer(size_t reserve) : _rpos(0), _wpos(0), _bitpos(InitialBitPos), _curbitval(0)
+        // reserve/resize tag
+        struct Reserve { };
+        struct Resize { };
+
+        ByteBuffer(size_t size, Reserve) : _rpos(0), _wpos(0), _bitpos(InitialBitPos), _curbitval(0)
         {
-            _storage.reserve(reserve);
+            _storage.reserve(size);
+        }
+
+        ByteBuffer(size_t size, Resize) : _rpos(0), _wpos(size), _bitpos(InitialBitPos), _curbitval(0)
+        {
+            _storage.resize(size);
         }
 
         ByteBuffer(ByteBuffer&& buf) noexcept : _rpos(buf._rpos), _wpos(buf._wpos),
             _bitpos(buf._bitpos), _curbitval(buf._curbitval), _storage(buf.Move()) { }
 
-        ByteBuffer(ByteBuffer const& right) : _rpos(right._rpos), _wpos(right._wpos),
-            _bitpos(right._bitpos), _curbitval(right._curbitval), _storage(right._storage) { }
+        ByteBuffer(ByteBuffer const& right) = default;
 
         ByteBuffer(MessageBuffer&& buffer);
 
@@ -98,7 +114,7 @@ class TC_SHARED_API ByteBuffer
             return *this;
         }
 
-        ByteBuffer& operator=(ByteBuffer&& right)
+        ByteBuffer& operator=(ByteBuffer&& right) noexcept
         {
             if (this != &right)
             {
@@ -112,7 +128,7 @@ class TC_SHARED_API ByteBuffer
             return *this;
         }
 
-        virtual ~ByteBuffer() { }
+        virtual ~ByteBuffer() = default;
 
         void clear()
         {
@@ -123,11 +139,17 @@ class TC_SHARED_API ByteBuffer
             _storage.clear();
         }
 
-        template <typename T> void append(T value)
+        template <typename T>
+        void append(T value)
         {
-            static_assert(std::is_fundamental<T>::value, "append(compound)");
+            static_assert(std::is_trivially_copyable<T>::value, "append(T) must be used with trivially copyable types");
             EndianConvert(value);
             append((uint8 *)&value, sizeof(value));
+        }
+
+        bool HasUnfinishedBitPack() const
+        {
+            return _bitpos != 8;
         }
 
         void FlushBits()
@@ -194,23 +216,10 @@ class TC_SHARED_API ByteBuffer
             return value;
         }
 
-        // Reads a byte (if needed) in-place
-        void ReadByteSeq(uint8& b)
-        {
-            if (b != 0)
-                b ^= read<uint8>();
-        }
-
-        void WriteByteSeq(uint8 b)
-        {
-            if (b != 0)
-                append<uint8>(b ^ 1);
-        }
-
         template <typename T>
         void put(std::size_t pos, T value)
         {
-            static_assert(std::is_fundamental<T>::value, "append(compound)");
+            static_assert(std::is_trivially_copyable<T>::value, "put(size_t, T) must be used with trivially copyable types");
             EndianConvert(value);
             put(pos, (uint8 *)&value, sizeof(value));
         }
@@ -291,20 +300,22 @@ class TC_SHARED_API ByteBuffer
             return *this;
         }
 
-        ByteBuffer &operator<<(const std::string &value)
+        ByteBuffer &operator<<(std::string_view value)
         {
             if (size_t len = value.length())
-                append((uint8 const*)value.c_str(), len);
-            append<uint8>(0);
+                append(reinterpret_cast<uint8 const*>(value.data()), len);
+            append(static_cast<uint8>(0));
             return *this;
         }
 
-        ByteBuffer &operator<<(const char *str)
+        ByteBuffer& operator<<(std::string const& str)
         {
-            if (size_t len = (str ? strlen(str) : 0))
-                append((uint8 const*)str, len);
-            append<uint8>(0);
-            return *this;
+            return operator<<(std::string_view(str));
+        }
+
+        ByteBuffer &operator<<(char const* str)
+        {
+            return operator<<(std::string_view(str ? str : ""));
         }
 
         ByteBuffer &operator>>(bool &value)
@@ -365,16 +376,9 @@ class TC_SHARED_API ByteBuffer
         ByteBuffer &operator>>(float &value);
         ByteBuffer &operator>>(double &value);
 
-        ByteBuffer &operator>>(std::string& value)
+        ByteBuffer& operator>>(std::string& value)
         {
-            value.clear();
-            while (rpos() < size())                         // prevent crash at wrong string format in packet
-            {
-                char c = read<char>();
-                if (c == 0)
-                    break;
-                value += c;
-            }
+            value = ReadCString(true);
             return *this;
         }
 
@@ -435,21 +439,31 @@ class TC_SHARED_API ByteBuffer
             _rpos += skip;
         }
 
-        template <typename T> T read()
+        template <typename T, typename Underlying = T>
+        T read()
         {
             ResetBitPos();
-            T r = read<T>(_rpos);
-            _rpos += sizeof(T);
+            T r = read<T, Underlying>(_rpos);
+            _rpos += sizeof(Underlying);
             return r;
         }
 
-        template <typename T> T read(size_t pos) const
+        template <typename T, typename Underlying = T>
+        T read(size_t pos) const
         {
-            if (pos + sizeof(T) > size())
-                throw ByteBufferPositionException(pos, sizeof(T), size());
-            T val = *((T const*)&_storage[pos]);
+            if (pos + sizeof(Underlying) > size())
+                throw ByteBufferPositionException(pos, sizeof(Underlying), size());
+            Underlying val;
+            std::memcpy(&val, &_storage[pos], sizeof(Underlying));
             EndianConvert(val);
-            return val;
+            return static_cast<T>(val);
+        }
+
+        template<class T>
+        void read(T* dest, size_t count)
+        {
+            static_assert(std::is_trivially_copyable<T>::value, "read(T*, size_t) must be used with trivially copyable types");
+            return read(reinterpret_cast<uint8*>(dest), count * sizeof(T));
         }
 
         void read(uint8 *dest, size_t len)
@@ -460,6 +474,12 @@ class TC_SHARED_API ByteBuffer
             ResetBitPos();
             std::memcpy(dest, &_storage[_rpos], len);
             _rpos += len;
+        }
+
+        template <size_t Size>
+        void read(std::array<uint8, Size>& arr)
+        {
+            read(arr.data(), Size);
         }
 
         void ReadPackedUInt64(uint64& guid)
@@ -475,20 +495,6 @@ class TC_SHARED_API ByteBuffer
                     value |= (uint64(read<uint8>()) << (i * 8));
         }
 
-        std::string ReadString(uint32 length)
-        {
-            if (_rpos + length > size())
-                throw ByteBufferPositionException(_rpos, length, size());
-
-            ResetBitPos();
-            if (!length)
-                return std::string();
-
-            std::string str((char const*)&_storage[_rpos], length);
-            _rpos += length;
-            return str;
-        }
-
         //! Method for writing strings that have their length sent separately in packet
         //! without null-terminating the string
         void WriteString(std::string const& str)
@@ -497,11 +503,21 @@ class TC_SHARED_API ByteBuffer
                 append(str.c_str(), len);
         }
 
+        void WriteString(std::string_view str)
+        {
+            if (size_t len = str.length())
+                append(str.data(), len);
+        }
+
         void WriteString(char const* str, size_t len)
         {
             if (len)
                 append(str, len);
         }
+
+        std::string ReadCString(bool requireValidUtf8 = true);
+
+        std::string ReadString(uint32 length, bool requireValidUtf8 = true);
 
         uint32 ReadPackedTime();
 
@@ -535,22 +551,34 @@ class TC_SHARED_API ByteBuffer
                 _storage.reserve(ressize);
         }
 
+        void shrink_to_fit()
+        {
+            _storage.shrink_to_fit();
+        }
+
         void append(const char *src, size_t cnt)
         {
             return append((const uint8 *)src, cnt);
         }
 
-        template<class T> void append(const T *src, size_t cnt)
+        template<class T>
+        void append(const T *src, size_t cnt)
         {
             return append((const uint8 *)src, cnt * sizeof(T));
         }
 
-        void append(const uint8 *src, size_t cnt);
+        void append(uint8 const* src, size_t cnt);
 
-        void append(const ByteBuffer& buffer)
+        void append(ByteBuffer const& buffer)
         {
             if (!buffer.empty())
                 append(buffer.contents(), buffer.size());
+        }
+
+        template <size_t Size>
+        void append(std::array<uint8, Size> const& arr)
+        {
+            append(arr.data(), Size);
         }
 
         // can be used in SMSG_MONSTER_MOVE opcode
@@ -598,7 +626,7 @@ class TC_SHARED_API ByteBuffer
 
         void AppendPackedTime(time_t time);
 
-        void put(size_t pos, const uint8 *src, size_t cnt);
+        void put(size_t pos, uint8 const* src, size_t cnt);
 
         void print_storage() const;
 

@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2010 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -52,7 +51,6 @@ namespace MMAP
         MMapTileSet loadedTileRefs;        // maps [map grid coords] to [dtTile]
     };
 
-
     typedef std::unordered_map<uint32, MMapData*> MMapDataSet;
 
     // singleton class
@@ -78,10 +76,6 @@ namespace MMAP
             uint32 getLoadedMapsCount() const { return uint32(loadedMMaps.size()); }
         private:
             bool loadMapData(std::string const& basePath, uint32 mapId);
-            bool loadMapImpl(std::string const& basePath, uint32 mapId, int32 x, int32 y);
-            bool loadMapInstanceImpl(std::string const& basePath, uint32 mapId, uint32 instanceId);
-            bool unloadMapImpl(uint32 mapId, int32 x, int32 y);
-            bool unloadMapImpl(uint32 mapId);
             uint32 packTileID(int32 x, int32 y);
 
             MMapDataSet::const_iterator GetMMapData(uint32 mapId) const;
@@ -89,7 +83,6 @@ namespace MMAP
             uint32 loadedTiles;
             bool thread_safe_environment;
 
-            std::unordered_map<uint32, std::vector<uint32>> childMapData;
             std::unordered_map<uint32, uint32> parentMapData;
     };
 }

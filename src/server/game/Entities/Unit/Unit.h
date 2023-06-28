@@ -29,6 +29,7 @@
 #include "Timer.h"
 #include "UnitDefines.h"
 #include "Util.h"
+#include "FlagsArray.h"
 #include <boost/container/flat_set.hpp>
 #include <algorithm>
 #include <array>
@@ -2014,7 +2015,7 @@ class TC_GAME_API Unit : public WorldObject
 
         uint32 m_state;                                     // Even derived shouldn't modify
         uint32 m_CombatTimer;
-        TimeTrackerSmall m_movesplineTimer;
+        TimeTracker m_movesplineTimer;
 
         Diminishing m_Diminishing;
         // Manage all Units that are threatened by us

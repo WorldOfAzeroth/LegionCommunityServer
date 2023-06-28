@@ -27,6 +27,7 @@
 #include <type_traits>
 #include <vector>
 #include <unordered_set>
+#include <sstream>
 
 enum TypeID
 {

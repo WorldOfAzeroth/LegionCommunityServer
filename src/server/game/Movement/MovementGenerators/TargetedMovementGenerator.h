@@ -56,7 +56,7 @@ class TargetedMovementGeneratorMedium : public MovementGeneratorMedium< T, D >, 
         void _setTargetLocation(T* owner, bool updateDestination);
 
         PathGenerator* i_path;
-        TimeTrackerSmall i_recheckDistance;
+        TimeTracker i_recheckDistance;
         float i_offset;
         float i_angle;
         bool i_recalculateTravel : 1;

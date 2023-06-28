@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -32,16 +31,21 @@ class TC_COMMON_API ConfigMgr
 
 public:
     /// Method used only for loading main configuration files (bnetserver.conf and worldserver.conf)
-    bool LoadInitial(std::string const& file, std::vector<std::string> args, std::string& error);
+    bool LoadInitial(std::string file, std::vector<std::string> args, std::string& error);
+    bool LoadAdditionalFile(std::string file, bool keepOnReload, std::string& error);
+
+    /// Overrides configuration with environment variables and returns overridden keys
+    std::vector<std::string> OverrideWithEnvVariablesIfAny();
 
     static ConfigMgr* instance();
 
-    bool Reload(std::string& error);
+    bool Reload(std::vector<std::string>& errors);
 
-    std::string GetStringDefault(std::string const& name, const std::string& def) const;
-    bool GetBoolDefault(std::string const& name, bool def) const;
-    int GetIntDefault(std::string const& name, int def) const;
-    float GetFloatDefault(std::string const& name, float def) const;
+    std::string GetStringDefault(std::string const& name, const std::string& def, bool quiet = false) const;
+    bool GetBoolDefault(std::string const& name, bool def, bool quiet = false) const;
+    int32 GetIntDefault(std::string const& name, int32 def, bool quiet = false) const;
+    int64 GetInt64Default(std::string const& name, int64 def, bool quiet = false) const;
+    float GetFloatDefault(std::string const& name, float def, bool quiet = false) const;
 
     std::string const& GetFilename();
     std::vector<std::string> const& GetArguments() const;
@@ -49,7 +53,7 @@ public:
 
 private:
     template<class T>
-    T GetValueDefault(std::string const& name, T def) const;
+    T GetValueDefault(std::string const& name, T def, bool quiet) const;
 };
 
 #define sConfigMgr ConfigMgr::instance()

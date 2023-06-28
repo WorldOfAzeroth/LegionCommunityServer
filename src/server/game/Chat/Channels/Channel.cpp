@@ -31,6 +31,7 @@
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "SocialMgr.h"
+#include "StringConvert.h"
 #include "World.h"
 #include "WorldSession.h"
 #include <sstream>
@@ -72,7 +73,7 @@ Channel::Channel(std::string const& name, uint32 team /*= 0*/) :
     // If storing custom channels in the db is enabled either load or save the channel
     if (sWorld->getBoolConfig(CONFIG_PRESERVE_CUSTOM_CHANNELS))
     {
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHANNEL);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHANNEL);
         stmt->setString(0, _channelName);
         stmt->setUInt32(1, _channelTeam);
         if (PreparedQueryResult result = CharacterDatabase.Query(stmt)) // load
@@ -86,17 +87,17 @@ Channel::Channel(std::string const& name, uint32 team /*= 0*/) :
 
             if (!bannedList.empty())
             {
-                Tokenizer tokens(bannedList, ' ');
-                for (auto const& token : tokens)
+                for (std::string_view guid : Trinity::Tokenize(bannedList, ' ', false))
                 {
-                    std::string bannedGuidStr(token);
-                    ObjectGuid bannedGuid;
-                    bannedGuid.SetRawValue(uint64(strtoull(bannedGuidStr.substr(0, 16).c_str(), nullptr, 16)), uint64(strtoull(bannedGuidStr.substr(16).c_str(), nullptr, 16)));
-                    if (!bannedGuid.IsEmpty())
-                    {
-                        TC_LOG_DEBUG("chat.system", "Channel (%s) loaded player %s into bannedStore", _channelName.c_str(), bannedGuid.ToString().c_str());
-                        _bannedStore.insert(bannedGuid);
-                    }
+                    // legacy db content might not have 0x prefix, account for that
+                    std::string bannedGuidStr(guid.size() > 2 && guid.substr(0, 2) == "0x" ? guid.substr(2) : guid);
+                    ObjectGuid banned;
+                    banned.SetRawValue(uint64(strtoull(bannedGuidStr.substr(0, 16).c_str(), nullptr, 16)), uint64(strtoull(bannedGuidStr.substr(16).c_str(), nullptr, 16)));
+                    if (!banned)
+                        continue;
+
+                    TC_LOG_DEBUG("chat.system", "Channel(%s) loaded player %s into bannedStore", name.c_str(), banned.ToString().c_str());
+                    _bannedStore.insert(banned);
                 }
             }
         }
@@ -146,7 +147,7 @@ void Channel::UpdateChannelInDB() const
         for (ObjectGuid const& guid : _bannedStore)
             banlist << guid << ' ';
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHANNEL);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHANNEL);
         stmt->setBool(0, _announceEnabled);
         stmt->setBool(1, _ownershipEnabled);
         stmt->setString(2, _channelPassword);
@@ -161,7 +162,7 @@ void Channel::UpdateChannelInDB() const
 
 void Channel::UpdateChannelUseageInDB() const
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHANNEL_USAGE);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHANNEL_USAGE);
     stmt->setString(0, _channelName);
     stmt->setUInt32(1, _channelTeam);
     CharacterDatabase.Execute(stmt);
@@ -171,7 +172,7 @@ void Channel::CleanOldChannelsInDB()
 {
     if (sWorld->getIntConfig(CONFIG_PRESERVE_CUSTOM_CHANNEL_DURATION) > 0)
     {
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_OLD_CHANNELS);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_OLD_CHANNELS);
         stmt->setUInt32(0, sWorld->getIntConfig(CONFIG_PRESERVE_CUSTOM_CHANNEL_DURATION) * DAY);
         CharacterDatabase.Execute(stmt);
 

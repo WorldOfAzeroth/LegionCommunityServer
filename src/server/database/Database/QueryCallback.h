@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -18,21 +18,19 @@
 #ifndef _QUERY_CALLBACK_H
 #define _QUERY_CALLBACK_H
 
-#include "Define.h"
 #include "DatabaseEnvFwd.h"
+#include "Define.h"
 #include <functional>
-#include <future>
 #include <list>
 #include <queue>
-#include <utility>
 
 class TC_DATABASE_API QueryCallback
 {
 public:
     explicit QueryCallback(QueryResultFuture&& result);
     explicit QueryCallback(PreparedQueryResultFuture&& result);
-    QueryCallback(QueryCallback&& right);
-    QueryCallback& operator=(QueryCallback&& right);
+    QueryCallback(QueryCallback&& right) noexcept;
+    QueryCallback& operator=(QueryCallback&& right) noexcept;
     ~QueryCallback();
 
     QueryCallback&& WithCallback(std::function<void(QueryResult)>&& callback);
@@ -44,14 +42,8 @@ public:
     // Moves std::future from next to this object
     void SetNextQuery(QueryCallback&& next);
 
-    enum Status
-    {
-        NotReady,
-        NextStep,
-        Completed
-    };
-
-    Status InvokeIfReady();
+    // returns true when completed
+    bool InvokeIfReady();
 
 private:
     QueryCallback(QueryCallback const& right) = delete;
