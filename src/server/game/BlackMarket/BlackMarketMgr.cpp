@@ -18,6 +18,7 @@
 #include "BlackMarketMgr.h"
 #include "AccountMgr.h"
 #include "BlackMarketPackets.h"
+#include "CharacterCache.h"
 #include "Containers.h"
 #include "DatabaseEnv.h"
 #include "Item.h"
@@ -279,13 +280,13 @@ void BlackMarketMgr::SendAuctionWonMail(BlackMarketEntry* entry, CharacterDataba
     }
     else
     {
-        bidderAccId = ObjectMgr::GetPlayerAccountIdByGUID(bidderGuid);
+        bidderAccId = sCharacterCache->GetCharacterAccountIdByGuid(bidderGuid);
         if (!bidderAccId) // Account exists
             return;
 
         logGmTrade = AccountMgr::HasPermission(bidderAccId, rbac::RBAC_PERM_LOG_GM_TRADE, realm.Id.Realm);
 
-        if (logGmTrade && !ObjectMgr::GetPlayerNameByGUID(bidderGuid, bidderName))
+        if (logGmTrade && !sCharacterCache->GetCharacterNameByGuid(bidderGuid, bidderName))
             bidderName = sObjectMgr->GetTrinityStringForDBCLocale(LANG_UNKNOWN);
     }
 
@@ -325,7 +326,7 @@ void BlackMarketMgr::SendAuctionOutbidMail(BlackMarketEntry* entry, CharacterDat
 
     uint32 oldBidder_accId = 0;
     if (!oldBidder)
-        oldBidder_accId = ObjectMgr::GetPlayerAccountIdByGUID(oldBidder_guid);
+        oldBidder_accId = sCharacterCache->GetCharacterAccountIdByGuid(oldBidder_guid);
 
     // old bidder exist
     if (!oldBidder && !oldBidder_accId)
@@ -436,7 +437,7 @@ bool BlackMarketEntry::LoadFromDB(Field* fields)
     _bidder = fields[4].GetUInt64();
 
     // Either no bidder or existing player
-    if (_bidder && !sObjectMgr->GetPlayerAccountIdByGUID(ObjectGuid::Create<HighGuid::Player>(_bidder))) // Probably a better way to check if player exists
+    if (_bidder && !sCharacterCache->GetCharacterAccountIdByGuid(ObjectGuid::Create<HighGuid::Player>(_bidder))) // Probably a better way to check if player exists
     {
         TC_LOG_ERROR("misc", "Black market auction %i does not have a valid bidder (GUID: " UI64FMTD " ).", _marketId, _bidder);
         return false;

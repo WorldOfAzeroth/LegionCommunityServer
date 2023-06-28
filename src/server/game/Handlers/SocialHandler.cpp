@@ -18,6 +18,7 @@
 
 #include "WorldSession.h"
 #include "AccountMgr.h"
+#include "CharacterCache.h"
 #include "DatabaseEnv.h"
 #include "Log.h"
 #include "ObjectAccessor.h"
@@ -55,14 +56,11 @@ void WorldSession::HandleAddFriendOpcodeCallBack(std::string const& friendNote, 
     if (!GetPlayer())
         return;
 
-    ObjectGuid friendGuid;
     FriendsResult friendResult = FRIEND_NOT_FOUND;
-
-    if (result)
+    ObjectGuid friendGuid = sCharacterCache->GetCharacterGuidByName(packet.Name);
+    if (!friendGuid.IsEmpty())
     {
-        Field* fields = result->Fetch();
-
-        if (ObjectGuid::LowType lowGuid = fields[0].GetUInt64())
+        if (CharacterCacheEntry const* characterInfo = sCharacterCache->GetCharacterCacheByGuid(friendGuid))
         {
             friendGuid = ObjectGuid::Create<HighGuid::Player>(lowGuid);
             uint32 team = Player::TeamForRace(fields[1].GetUInt8());
@@ -117,15 +115,7 @@ void WorldSession::HandleAddIgnoreOpcode(WorldPackets::Social::AddIgnore& packet
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUID_BY_NAME);
     stmt->setString(0, packet.Name);
 
-    _queryProcessor.AddQuery(CharacterDatabase.AsyncQuery(stmt).WithPreparedCallback(std::bind(&WorldSession::HandleAddIgnoreOpcodeCallBack, this, std::placeholders::_1)));
-}
-
-void WorldSession::HandleAddIgnoreOpcodeCallBack(PreparedQueryResult result)
-{
-    if (!GetPlayer())
-        return;
-
-    ObjectGuid ignoreGuid;
+    ObjectGuid ignoreGuid = sWorld->GetCharacterGuidByName(packet.Name);
     FriendsResult ignoreResult = FRIEND_IGNORE_NOT_FOUND;
 
     if (result)
