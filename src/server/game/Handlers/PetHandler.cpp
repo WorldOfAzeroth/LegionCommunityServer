@@ -518,7 +518,7 @@ void WorldSession::HandlePetRename(WorldPackets::Pet::PetRename& packet)
     ObjectGuid petguid = packet.RenameData.PetGUID;
 
     std::string name = packet.RenameData.NewName;
-    DeclinedName* declinedname = packet.RenameData.DeclinedNames.get_ptr();
+    Optional<DeclinedName> const& declinedname = packet.RenameData.DeclinedNames;
 
     Pet* pet = ObjectAccessor::GetPet(*_player, petguid);
                                                             // check it!
@@ -530,13 +530,13 @@ void WorldSession::HandlePetRename(WorldPackets::Pet::PetRename& packet)
     PetNameInvalidReason res = ObjectMgr::CheckPetName(name);
     if (res != PET_NAME_SUCCESS)
     {
-        SendPetNameInvalid(res, name, NULL);
+        SendPetNameInvalid(res, name, {});
         return;
     }
 
     if (sObjectMgr->IsReservedName(name))
     {
-        SendPetNameInvalid(PET_NAME_RESERVED, name, NULL);
+        SendPetNameInvalid(PET_NAME_RESERVED, name, {});
         return;
     }
 

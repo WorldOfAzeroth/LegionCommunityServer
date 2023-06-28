@@ -63,14 +63,14 @@ void WorldSession::SendUpdateTrade(bool trader_data /*= true*/)
     {
         if (Item* item = view_trade->GetItem(TradeSlots(i)))
         {
-            WorldPackets::Trade::TradeUpdated::TradeItem tradeItem;
+            WorldPackets::Trade::TradeItem tradeItem;
             tradeItem.Slot = i;
             tradeItem.Item.Initialize(item);
             tradeItem.StackCount = item->GetCount();
             tradeItem.GiftCreator = item->GetGuidValue(ITEM_FIELD_GIFTCREATOR);
             if (!item->HasFlag(ITEM_FIELD_FLAGS, ITEM_FIELD_FLAG_WRAPPED))
             {
-                tradeItem.Unwrapped = boost::in_place();
+                tradeItem.Unwrapped.emplace();
 
                 tradeItem.Unwrapped->EnchantID = item->GetEnchantmentId(PERM_ENCHANTMENT_SLOT);
                 tradeItem.Unwrapped->OnUseEnchantmentID = item->GetEnchantmentId(USE_ENCHANTMENT_SLOT);

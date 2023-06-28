@@ -4201,7 +4201,7 @@ void Spell::EffectCharge(SpellEffIndex /*effIndex*/)
         Optional<Movement::SpellEffectExtraData> spellEffectExtraData;
         if (effectInfo->MiscValueB)
         {
-            spellEffectExtraData = boost::in_place();
+            spellEffectExtraData.emplace();
             spellEffectExtraData->Target = unitTarget->GetGUID();
             spellEffectExtraData->SpellVisualId = effectInfo->MiscValueB;
         }

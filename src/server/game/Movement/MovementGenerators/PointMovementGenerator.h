@@ -54,7 +54,7 @@ class PointMovementGenerator : public MovementGeneratorMedium< T, PointMovementG
         float i_x, i_y, i_z;
         float speed;
         Unit const* i_faceTarget;
-        Movement::SpellEffectExtraData const* i_spellEffectExtra;
+        std::unique_ptr<Movement::SpellEffectExtraData> i_spellEffectExtra;
         bool m_generatePath;
         bool i_recalculateSpeed;
 };

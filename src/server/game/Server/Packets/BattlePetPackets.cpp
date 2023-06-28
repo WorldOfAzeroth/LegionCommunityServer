@@ -44,7 +44,7 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::BattlePet cons
     data << uint32(pet.Speed);
     data << uint8(pet.Quality);
     data.WriteBits(pet.Name.size(), 7);
-    data.WriteBit(pet.OwnerInfo.is_initialized());
+    data.WriteBit(pet.OwnerInfo.has_value());
     data.WriteBit(pet.Name.empty()); // NoRename
     data.FlushBits();
 

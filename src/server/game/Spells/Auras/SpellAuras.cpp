@@ -170,11 +170,9 @@ void AuraApplication::BuildUpdatePacket(WorldPackets::Spells::AuraInfo& auraInfo
     if (remove)
         return;
 
-    auraInfo.AuraData = boost::in_place();
-
     Aura const* aura = GetBase();
 
-    WorldPackets::Spells::AuraDataInfo& auraData = auraInfo.AuraData.get();
+    WorldPackets::Spells::AuraDataInfo& auraData = auraInfo.AuraData.emplace();
     auraData.CastID = aura->GetCastGUID();
     auraData.SpellID = aura->GetId();
     auraData.SpellXSpellVisualID = aura->GetSpellXSpellVisualId();
