@@ -15,15 +15,15 @@
 //-----------------------------------------------------------------------------
 // Public functions
 
-bool DirectoryExists(const TCHAR * szDirectory)
+bool DirectoryExists(LPCTSTR szDirectory)
 {
-#ifdef PLATFORM_WINDOWS
+#ifdef CASCLIB_PLATFORM_WINDOWS
 
     DWORD dwAttributes = GetFileAttributes(szDirectory);
     if((dwAttributes != INVALID_FILE_ATTRIBUTES) && (dwAttributes & FILE_ATTRIBUTE_DIRECTORY))
         return true;
 
-#else // PLATFORM_WINDOWS
+#else // CASCLIB_PLATFORM_WINDOWS
 
     DIR * dir = opendir(szDirectory);
 
@@ -38,23 +38,33 @@ bool DirectoryExists(const TCHAR * szDirectory)
     return false;
 }
 
+bool MakeDirectory(LPCTSTR szDirectory)
+{
+#ifdef CASCLIB_PLATFORM_WINDOWS
+
+    BOOL bResult = CreateDirectory(szDirectory, NULL);
+    return (bResult) ? true : false;
+
+#else
+
+    return (mkdir(szDirectory, 0755) == 0);
+
+#endif
+}
+
 int ScanIndexDirectory(
-    const TCHAR * szIndexPath,
+    LPCTSTR szIndexPath,
     INDEX_FILE_FOUND pfnOnFileFound,
-    PDWORD MainIndexes,
-    PDWORD OldIndexArray,
     void * pvContext)
 {
-#ifdef PLATFORM_WINDOWS
+#ifdef CASCLIB_PLATFORM_WINDOWS
 
     WIN32_FIND_DATA wf;
-    TCHAR * szSearchMask;
     HANDLE hFind;
+    TCHAR szSearchMask[MAX_PATH];
 
     // Prepare the search mask
-    szSearchMask = CombinePath(szIndexPath, _T("*"));
-    if(szSearchMask == NULL)
-        return ERROR_NOT_ENOUGH_MEMORY;
+    CombinePath(szSearchMask, _countof(szSearchMask), szIndexPath, _T("*"), NULL);
 
     // Prepare directory search
     hFind = FindFirstFile(szSearchMask, &wf);
@@ -67,7 +77,7 @@ int ScanIndexDirectory(
             if(!(wf.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
             {
                 // Let the callback scan the file name
-                pfnOnFileFound(wf.cFileName, MainIndexes, OldIndexArray, pvContext);
+                pfnOnFileFound(wf.cFileName, pvContext);
             }
         }
 
@@ -75,9 +85,7 @@ int ScanIndexDirectory(
         FindClose(hFind);
     }
 
-    CASC_FREE(szSearchMask);
-
-#else // PLATFORM_WINDOWS
+#else // CASCLIB_PLATFORM_WINDOWS
 
     struct dirent * dir_entry;
     DIR * dir;
@@ -89,7 +97,7 @@ int ScanIndexDirectory(
         {
             if(dir_entry->d_type != DT_DIR)
             {
-                pfnOnFileFound(dir_entry->d_name, MainIndexes, OldIndexArray, pvContext);
+                pfnOnFileFound(dir_entry->d_name, pvContext);
             }
         }
 
