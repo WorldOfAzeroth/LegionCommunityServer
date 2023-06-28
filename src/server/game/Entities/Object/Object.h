@@ -138,6 +138,7 @@ class TC_GAME_API Object
 
         void BuildValuesUpdateBlockForPlayer(UpdateData* data, Player* target) const;
         void BuildOutOfRangeUpdateBlock(UpdateData* data) const;
+        ByteBuffer& PrepareValuesUpdateBuffer(UpdateData* data) const;
 
         virtual void DestroyForPlayer(Player* target) const;
 
@@ -339,6 +340,7 @@ class TC_GAME_API Object
         bool PrintIndexError(uint32 index, bool set) const;
         Object(Object const& right) = delete;
         Object& operator=(Object const& right) = delete;
+
 };
 
 template<class T>

@@ -241,7 +241,7 @@ void Object::BuildCreateUpdateBlockForPlayer(UpdateData* data, Player* target) c
         if (unit->GetVictim())
             flags |= UPDATEFLAG_HAS_TARGET;
 
-    ByteBuffer buf(0x400);
+    ByteBuffer& buf = data->GetBuffer();
     buf << uint8(updateType);
     buf << GetGUID();
     buf << uint8(m_objectTypeId);
@@ -268,7 +268,7 @@ void Object::SendUpdateToPlayer(Player* player)
 
 void Object::BuildValuesUpdateBlockForPlayer(UpdateData* data, Player* target) const
 {
-    ByteBuffer buf(500);
+    ByteBuffer& buf = PrepareValuesUpdateBuffer(data);
 
     buf << uint8(UPDATETYPE_VALUES);
     buf << GetGUID();
@@ -282,6 +282,14 @@ void Object::BuildValuesUpdateBlockForPlayer(UpdateData* data, Player* target) c
 void Object::BuildOutOfRangeUpdateBlock(UpdateData* data) const
 {
     data->AddOutOfRangeGUID(GetGUID());
+}
+
+ByteBuffer& Object::PrepareValuesUpdateBuffer(UpdateData* data) const
+{
+    ByteBuffer& buffer = data->GetBuffer();
+    buffer << uint8(UPDATETYPE_VALUES);
+    buffer << GetGUID();
+    return buffer;
 }
 
 void Object::DestroyForPlayer(Player* target) const
@@ -1034,14 +1042,10 @@ void Object::_LoadIntoDataField(std::string const& data, uint32 startOffset, uin
     if (data.empty())
         return;
 
-    Tokenizer tokens(data, ' ', count);
-
-    if (tokens.size() != count)
-        return;
-
-    for (uint32 index = 0; index < count; ++index)
+    auto tokens = Trinity::Tokenize(data, ' ', true);
+    for (uint32 index = 0; index < count && tokens.size() == count; ++index)
     {
-        m_uint32Values[startOffset + index] = atoul(tokens[index]);
+        m_uint32Values[startOffset + index] = Trinity::StringTo<uint32>(tokens[index]).value_or(0);
         _changesMask[startOffset + index] = 1;
     }
 }
