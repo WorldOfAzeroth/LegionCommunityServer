@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -50,26 +50,26 @@ public:
             lasherClicked = false;
         }
 
-        void OnSpellClick(Unit* clicker, bool& result) override
+        void OnSpellClick(Unit* clicker, bool spellClickHandled) override
         {
-            if (!result)
+            if (!spellClickHandled)
                 return;
 
             if (roll_chance_i(CHANCE_HOSTILE))
             {
                 me->CastSpell(me, SPELL_INFECTED_WOULD);
                 me->SetEntry(NPC_CORRUPTED_LASHER);
-                me->setFaction(FACTION_HOSTILE);
+                me->SetFaction(FACTION_HOSTILE);
             }
             else
             {
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNINTERACTIBLE);
+                me->SetUnitFlag(UNIT_FLAG_UNINTERACTIBLE);
             }
 
-            me->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK);
+            me->RemoveNpcFlag(UNIT_NPC_FLAG_SPELLCLICK);
             me->CastSpell(me, SPELL_STAND);
             me->GetMotionMaster()->MoveRandom(8.0f);
-            events.ScheduleEvent(EVENT_CHECK_OOC, 20000);
+            events.ScheduleEvent(EVENT_CHECK_OOC, 20s);
             lasherClicked = true;
 
             if (Player* player = clicker->ToPlayer())
@@ -91,7 +91,7 @@ public:
                     if (!me->IsInCombat())
                         me->DespawnOrUnsummon();
                     else
-                        events.ScheduleEvent(EVENT_CHECK_OOC, 5000);
+                        events.ScheduleEvent(EVENT_CHECK_OOC, 5s);
                     break;
                 }
             }
@@ -234,12 +234,12 @@ public: spell_ruumbos_silly_dance() : SpellScriptLoader("spell_ruumbos_silly_dan
             {
                 if (Player* player = GetHitPlayer())
                 {
-                    player->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_DANCE);
+                    player->SetEmoteState(EMOTE_STATE_DANCE);
 
                     if (player->GetMapId() == MAP_KALIMDOR)
                     {
-                        player->SummonCreature(NPC_DRIZZLE, DrizzleSpawnPos, TEMPSUMMON_TIMED_DESPAWN, 20000);
-                        player->SummonCreature(NPC_FERLI, FerliSpawnPos, TEMPSUMMON_TIMED_DESPAWN, 20000);
+                        player->SummonCreature(NPC_DRIZZLE, DrizzleSpawnPos, TEMPSUMMON_TIMED_DESPAWN, 20s);
+                        player->SummonCreature(NPC_FERLI, FerliSpawnPos, TEMPSUMMON_TIMED_DESPAWN, 20s);
                     }
                 }
             }

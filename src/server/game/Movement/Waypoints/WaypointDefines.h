@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -19,6 +19,7 @@
 #define TRINITY_WAYPOINTDEFINES_H
 
 #include "Define.h"
+#include "Optional.h"
 #include <vector>
 
 enum WaypointMoveType
@@ -33,8 +34,8 @@ enum WaypointMoveType
 
 struct WaypointNode
 {
-    WaypointNode() : id(0), x(0.f), y(0.f), z(0.f), orientation(0.f), delay(0), eventId(0), moveType(WAYPOINT_MOVE_TYPE_RUN), eventChance(0) { }
-    WaypointNode(uint32 _id, float _x, float _y, float _z, float _orientation = 0.f, uint32 _delay = 0)
+    WaypointNode() : id(0), x(0.f), y(0.f), z(0.f), delay(0), eventId(0), moveType(WAYPOINT_MOVE_TYPE_RUN), eventChance(0) { }
+    WaypointNode(uint32 _id, float _x, float _y, float _z, Optional<float> _orientation = { }, uint32 _delay = 0)
     {
         id = _id;
         x = _x;
@@ -48,7 +49,8 @@ struct WaypointNode
     }
 
     uint32 id;
-    float x, y, z, orientation;
+    float x, y, z;
+    Optional<float> orientation;
     uint32 delay;
     uint32 eventId;
     uint32 moveType;

@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -23,8 +22,6 @@
 #include "WaypointDefines.h"
 #include <unordered_map>
 
-typedef std::unordered_map<uint32, WaypointPath> WaypointPathContainer;
-
 class TC_GAME_API WaypointMgr
 {
     public:
@@ -37,18 +34,10 @@ class TC_GAME_API WaypointMgr
         void Load();
 
         // Returns the path from a given id
-        WaypointPath const* GetPath(uint32 id) const
-        {
-            WaypointPathContainer::const_iterator itr = _waypointStore.find(id);
-            if (itr != _waypointStore.end())
-                return &itr->second;
-
-            return nullptr;
-        }
+        WaypointPath const* GetPath(uint32 id) const;
 
     private:
-        WaypointMgr();
-        ~WaypointMgr() { }
+        WaypointMgr() { }
 
         std::unordered_map<uint32, WaypointPath> _waypointStore;
 };

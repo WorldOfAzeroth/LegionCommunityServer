@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -111,11 +110,14 @@ void ExtractGameobjectModels()
     for (uint32 rec = 0; rec < db2.GetRecordCount(); ++rec)
     {
         DB2Record record = db2.GetRecord(rec);
+        if (!record)
+            continue;
+
         uint32 fileId = record.GetUInt32("FileDataID");
         if (!fileId)
             continue;
 
-        std::string fileName = Trinity::StringFormat("FILE%08X.xxx", fileId);
+        std::string fileName = Trinity::StringFormat("FILE{:08X}.xxx", fileId);
         bool result = false;
         uint32 header;
         if (!GetHeaderMagic(fileName, &header))
@@ -130,7 +132,7 @@ void ExtractGameobjectModels()
         else if (header == MODEL_MD20 || header == MODEL_MD21)
             result = ExtractSingleModel(fileName);
         else
-            ASSERT(false, "%s header: %d - %c%c%c%c", fileName.c_str(), header, (header >> 24) & 0xFF, (header >> 16) & 0xFF, (header >> 8) & 0xFF, header & 0xFF);
+            ABORT_MSG("%s header: %d - %c%c%c%c", fileName.c_str(), header, (header >> 24) & 0xFF, (header >> 16) & 0xFF, (header >> 8) & 0xFF, header & 0xFF);
 
         if (result)
         {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -21,7 +21,6 @@
 #include "Player.h"
 #include "StringConvert.h"
 #include "TaxiPackets.h"
-#include <limits>
 #include <sstream>
 
 void PlayerTaxi::InitTaxiNodesForLevel(uint32 race, uint32 chrClass, uint8 level)
@@ -32,7 +31,7 @@ void PlayerTaxi::InitTaxiNodesForLevel(uint32 race, uint32 chrClass, uint8 level
     {
         case CLASS_DEATH_KNIGHT:
         {
-            for (std::size_t i = 0; i < TaxiMaskSize; ++i)
+            for (std::size_t i = 0; i < m_taximask.size(); ++i)
                 m_taximask[i] |= sOldContinentsNodesMask[i] & factionMask[i];
             break;
         }
@@ -100,7 +99,7 @@ bool PlayerTaxi::LoadTaxiMask(std::string const& data)
 {
     bool warn = false;
     std::vector<std::string_view> tokens = Trinity::Tokenize(data, ' ', false);
-    for (size_t index = 0; (index < TaxiMaskSize) && (index < tokens.size()); ++index)
+    for (size_t index = 0; (index < m_taximask.size()) && (index < tokens.size()); ++index)
     {
         if (Optional<uint32> mask = Trinity::StringTo<uint32>(tokens[index]))
         {
@@ -122,13 +121,13 @@ void PlayerTaxi::AppendTaximaskTo(WorldPackets::Taxi::ShowTaxiNodes& data, bool 
 {
     if (all)
     {
-        data.CanLandNodes = &sTaxiNodesMask;              // all existed nodes
-        data.CanUseNodes = &sTaxiNodesMask;
+        data.CanLandNodes = sTaxiNodesMask;              // all existed nodes
+        data.CanUseNodes = sTaxiNodesMask;
     }
     else
     {
-        data.CanLandNodes = &m_taximask;                  // known nodes
-        data.CanUseNodes = &m_taximask;
+        data.CanLandNodes = m_taximask;                  // known nodes
+        data.CanUseNodes = m_taximask;
     }
 }
 
@@ -145,6 +144,8 @@ bool PlayerTaxi::LoadTaxiDestinationsFromString(const std::string& values, uint3
         else
             return false;
     }
+    else
+        return false;
 
     while ((++itr) != tokens.end())
     {
@@ -182,6 +183,8 @@ std::string PlayerTaxi::SaveTaxiDestinationsToString()
     if (m_TaxiDestinations.empty())
         return "";
 
+    ASSERT(m_TaxiDestinations.size() >= 2);
+
     std::ostringstream ss;
     ss << m_flightMasterFactionId << ' ';
 
@@ -206,7 +209,7 @@ uint32 PlayerTaxi::GetCurrentTaxiPath() const
 
 std::ostringstream& operator<<(std::ostringstream& ss, PlayerTaxi const& taxi)
 {
-    for (std::size_t i = 0; i < TaxiMaskSize; ++i)
+    for (std::size_t i = 0; i < taxi.m_taximask.size(); ++i)
         ss << uint32(taxi.m_taximask[i]) << ' ';
     return ss;
 }

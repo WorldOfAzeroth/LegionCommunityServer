@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -19,6 +18,7 @@
 #define __BATTLEGROUNDNA_H
 
 #include "Arena.h"
+#include "EventMap.h"
 
 enum BattlegroundNAObjectTypes
 {
@@ -41,10 +41,17 @@ enum BattlegroundNAGameObjects
     BG_NA_OBJECT_TYPE_BUFF_2    = 184664
 };
 
+inline constexpr Seconds BG_NA_REMOVE_DOORS_TIMER    = 5s;
+
+enum BattlegroundNAEvents
+{
+    BG_NA_EVENT_REMOVE_DOORS    = 1
+};
+
 class BattlegroundNA : public Arena
 {
     public:
-        BattlegroundNA();
+        BattlegroundNA(BattlegroundTemplate const* battlegroundTemplate);
 
         /* inherited from BattlegroundClass */
         void StartingEventCloseDoors() override;
@@ -52,6 +59,10 @@ class BattlegroundNA : public Arena
 
         void HandleAreaTrigger(Player* source, uint32 trigger, bool entered) override;
         bool SetupBattleground() override;
-        void FillInitialWorldStates(WorldPackets::WorldState::InitWorldStates& packet) override;
+
+    private:
+        void PostUpdateImpl(uint32 diff) override;
+
+        EventMap _events;
 };
 #endif

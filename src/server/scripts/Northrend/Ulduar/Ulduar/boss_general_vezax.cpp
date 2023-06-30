@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -16,14 +16,13 @@
  */
 
 #include "ScriptMgr.h"
+#include "Containers.h"
 #include "InstanceScript.h"
 #include "Map.h"
 #include "MotionMaster.h"
-#include "ObjectAccessor.h"
 #include "Player.h"
 #include "ScriptedCreature.h"
 #include "SpellAuraEffects.h"
-#include "SpellInfo.h"
 #include "SpellScript.h"
 #include "ulduar.h"
 
@@ -108,7 +107,7 @@ class boss_general_vezax : public CreatureScript
 
         struct boss_general_vezaxAI : public BossAI
         {
-            boss_general_vezaxAI(Creature* creature) : BossAI(creature, BOSS_VEZAX)
+            boss_general_vezaxAI(Creature* creature) : BossAI(creature, DATA_VEZAX)
             {
                 Initialize();
             }
@@ -133,20 +132,20 @@ class boss_general_vezax : public CreatureScript
                 Initialize();
             }
 
-            void EnterCombat(Unit* /*who*/) override
+            void JustEngagedWith(Unit* who) override
             {
-                _EnterCombat();
+                BossAI::JustEngagedWith(who);
 
                 Talk(SAY_AGGRO);
                 DoCast(me, SPELL_AURA_OF_DESPAIR);
                 CheckShamanisticRage();
 
-                events.ScheduleEvent(EVENT_SHADOW_CRASH, urand(8000, 10000));
-                events.ScheduleEvent(EVENT_SEARING_FLAMES, 12000);
-                events.ScheduleEvent(EVENT_MARK_OF_THE_FACELESS, urand(35000, 40000));
-                events.ScheduleEvent(EVENT_SARONITE_VAPORS, 30000);
-                events.ScheduleEvent(EVENT_SURGE_OF_DARKNESS, 60000);
-                events.ScheduleEvent(EVENT_BERSERK, 600000);
+                events.ScheduleEvent(EVENT_SHADOW_CRASH, 8s, 10s);
+                events.ScheduleEvent(EVENT_SEARING_FLAMES, 12s);
+                events.ScheduleEvent(EVENT_MARK_OF_THE_FACELESS, 35s, 40s);
+                events.ScheduleEvent(EVENT_SARONITE_VAPORS, 30s);
+                events.ScheduleEvent(EVENT_SURGE_OF_DARKNESS, 1min);
+                events.ScheduleEvent(EVENT_BERSERK, 10min);
             }
 
             void UpdateAI(uint32 diff) override
@@ -167,35 +166,35 @@ class boss_general_vezax : public CreatureScript
                         {
                             Unit* target = CheckPlayersInRange(RAID_MODE<uint8>(4, 9), 15.0f, 50.0f);
                             if (!target)
-                                target = SelectTarget(SELECT_TARGET_RANDOM, 0, 150.0f, true);
+                                target = SelectTarget(SelectTargetMethod::Random, 0, 150.0f, true);
                             if (target)
                                 DoCast(target, SPELL_SHADOW_CRASH);
-                            events.ScheduleEvent(EVENT_SHADOW_CRASH, urand(8000, 12000));
+                            events.ScheduleEvent(EVENT_SHADOW_CRASH, 8s, 12s);
                             break;
                         }
                         case EVENT_SEARING_FLAMES:
                             DoCastAOE(SPELL_SEARING_FLAMES);
-                            events.ScheduleEvent(EVENT_SEARING_FLAMES, urand(14000, 17500));
+                            events.ScheduleEvent(EVENT_SEARING_FLAMES, 14s, 17500ms);
                             break;
                         case EVENT_MARK_OF_THE_FACELESS:
                         {
                             Unit* target = CheckPlayersInRange(RAID_MODE<uint8>(4, 9), 15.0f, 50.0f);
                             if (!target)
-                                target = SelectTarget(SELECT_TARGET_RANDOM, 0, 150.0f, true);
+                                target = SelectTarget(SelectTargetMethod::Random, 0, 150.0f, true);
                             if (target)
                                 DoCast(target, SPELL_MARK_OF_THE_FACELESS);
-                            events.ScheduleEvent(EVENT_MARK_OF_THE_FACELESS, urand(35000, 45000));
+                            events.ScheduleEvent(EVENT_MARK_OF_THE_FACELESS, 35s, 45s);
                             break;
                         }
                         case EVENT_SURGE_OF_DARKNESS:
                             Talk(EMOTE_SURGE_OF_DARKNESS);
                             Talk(SAY_SURGE_OF_DARKNESS);
                             DoCast(me, SPELL_SURGE_OF_DARKNESS);
-                            events.ScheduleEvent(EVENT_SURGE_OF_DARKNESS, urand(50000, 70000));
+                            events.ScheduleEvent(EVENT_SURGE_OF_DARKNESS, 50s, 70s);
                             break;
                         case EVENT_SARONITE_VAPORS:
                             DoCast(SPELL_SUMMON_SARONITE_VAPORS);
-                            events.ScheduleEvent(EVENT_SARONITE_VAPORS, urand(30000, 35000));
+                            events.ScheduleEvent(EVENT_SARONITE_VAPORS, 30s, 35s);
                             if (++vaporCount == 6 && smellSaronite)
                             {
                                 Talk(SAY_HARDMODE);
@@ -221,9 +220,9 @@ class boss_general_vezax : public CreatureScript
                 DoMeleeAttackIfReady();
             }
 
-            void SpellHitTarget(Unit* who, SpellInfo const* spell) override
+            void SpellHitTarget(WorldObject* target, SpellInfo const* spellInfo) override
             {
-                if (who && who->GetTypeId() == TYPEID_PLAYER && spell->Id == SPELL_SHADOW_CRASH_HIT)
+                if (target->GetTypeId() == TYPEID_PLAYER && spellInfo->Id == SPELL_SHADOW_CRASH_HIT)
                     shadowDodger = false;
             }
 
@@ -237,7 +236,7 @@ class boss_general_vezax : public CreatureScript
             {
                 _JustDied();
                 Talk(SAY_DEATH);
-                instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_AURA_OF_DESPAIR);
+                instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_AURA_OF_DESPAIR, true, true);
             }
 
             void CheckShamanisticRage()
@@ -272,7 +271,7 @@ class boss_general_vezax : public CreatureScript
                         break;
                     case ACTION_ANIMUS_DIE:
                         me->RemoveAurasDueToSpell(SPELL_SARONITE_BARRIER);
-                        events.ScheduleEvent(EVENT_SEARING_FLAMES, urand(7000, 12000));
+                        events.ScheduleEvent(EVENT_SEARING_FLAMES, 7s, 12s);
                         animusDead = true;
                         break;
                 }
@@ -280,7 +279,7 @@ class boss_general_vezax : public CreatureScript
 
             /*  Player Range Check
                 Purpose: If there are playersMin people within rangeMin, rangeMax: return a random players in that range.
-                If not, return NULL and allow other target selection
+                If not, return nullptr and allow other target selection
             */
             Unit* CheckPlayersInRange(uint8 playersMin, float rangeMin, float rangeMax)
             {
@@ -299,11 +298,11 @@ class boss_general_vezax : public CreatureScript
                 }
 
                 if (PlayerList.empty())
-                    return NULL;
+                    return nullptr;
 
                 size_t size = PlayerList.size();
                 if (size < playersMin)
-                    return NULL;
+                    return nullptr;
 
                 return Trinity::Containers::SelectRandomContainerElement(PlayerList);
             }
@@ -331,13 +330,13 @@ class boss_saronite_animus : public CreatureScript
             {
                 DoCast(me, SPELL_VISUAL_SARONITE_ANIMUS);
                 events.Reset();
-                events.ScheduleEvent(EVENT_PROFOUND_OF_DARKNESS, 3000);
+                events.ScheduleEvent(EVENT_PROFOUND_OF_DARKNESS, 3s);
             }
 
             void JustDied(Unit* /*killer*/) override
             {
-                if (Creature* Vezax = ObjectAccessor::GetCreature(*me, instance->GetGuidData(BOSS_VEZAX)))
-                    Vezax->AI()->DoAction(ACTION_ANIMUS_DIE);
+                if (Creature* vezax = instance->GetCreature(DATA_VEZAX))
+                    vezax->AI()->DoAction(ACTION_ANIMUS_DIE);
             }
 
             void UpdateAI(uint32 diff) override
@@ -356,7 +355,7 @@ class boss_saronite_animus : public CreatureScript
                     {
                         case EVENT_PROFOUND_OF_DARKNESS:
                             DoCastAOE(SPELL_PROFOUND_OF_DARKNESS, true);
-                            events.ScheduleEvent(EVENT_PROFOUND_OF_DARKNESS, 3000);
+                            events.ScheduleEvent(EVENT_PROFOUND_OF_DARKNESS, 3s);
                             break;
                         default:
                             break;
@@ -398,7 +397,7 @@ class npc_saronite_vapors : public CreatureScript
             void Reset() override
             {
                 events.Reset();
-                events.ScheduleEvent(EVENT_RANDOM_MOVE, urand(5000, 7500));
+                events.ScheduleEvent(EVENT_RANDOM_MOVE, 5s, 7500ms);
             }
 
             void UpdateAI(uint32 diff) override
@@ -411,7 +410,7 @@ class npc_saronite_vapors : public CreatureScript
                     {
                         case EVENT_RANDOM_MOVE:
                             me->GetMotionMaster()->MoveRandom(30.0f);
-                            events.ScheduleEvent(EVENT_RANDOM_MOVE, urand(5000, 7500));
+                            events.ScheduleEvent(EVENT_RANDOM_MOVE, 5s, 7500ms);
                             break;
                         default:
                             break;
@@ -419,23 +418,23 @@ class npc_saronite_vapors : public CreatureScript
                 }
             }
 
-            void DamageTaken(Unit* /*who*/, uint32& damage) override
+            void DamageTaken(Unit* /*who*/, uint32& damage, DamageEffectType /*damageType*/, SpellInfo const* /*spellInfo = nullptr*/) override
             {
                 // This can't be on JustDied. In 63322 dummy handler caster needs to be this NPC
                 // if caster == target then damage mods will increase the damage taken
                 if (damage >= me->GetHealth())
                 {
                     damage = 0;
-                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_UNINTERACTIBLE);
+                    me->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_UNINTERACTIBLE);
                     me->SetControlled(true, UNIT_STATE_ROOT);
                     me->SetStandState(UNIT_STAND_STATE_DEAD);
                     me->SetHealth(me->GetMaxHealth());
                     me->RemoveAllAuras();
                     DoCast(me, SPELL_SARONITE_VAPORS);
-                    me->DespawnOrUnsummon(30000);
+                    me->DespawnOrUnsummon(30s);
 
-                    if (Creature* Vezax = ObjectAccessor::GetCreature(*me, instance->GetGuidData(BOSS_VEZAX)))
-                        Vezax->AI()->DoAction(ACTION_VAPORS_DIE);
+                    if (Creature* vezax = instance->GetCreature(DATA_VEZAX))
+                        vezax->AI()->DoAction(ACTION_VAPORS_DIE);
                 }
             }
 
@@ -450,6 +449,7 @@ class npc_saronite_vapors : public CreatureScript
         }
 };
 
+// 63276 - Mark of the Faceless
 class spell_general_vezax_mark_of_the_faceless : public SpellScriptLoader
 {
     public:
@@ -467,7 +467,11 @@ class spell_general_vezax_mark_of_the_faceless : public SpellScriptLoader
             void HandleEffectPeriodic(AuraEffect const* aurEff)
             {
                 if (Unit* caster = GetCaster())
-                    caster->CastCustomSpell(SPELL_MARK_OF_THE_FACELESS_DAMAGE, SPELLVALUE_BASE_POINT1, aurEff->GetAmount(), GetTarget(), true);
+                {
+                    CastSpellExtraArgs args(TRIGGERED_FULL_MASK);
+                    args.AddSpellMod(SPELLVALUE_BASE_POINT1, aurEff->GetAmount());
+                    caster->CastSpell(GetTarget(), SPELL_MARK_OF_THE_FACELESS_DAMAGE, args);
+                }
             }
 
             void Register() override
@@ -482,6 +486,7 @@ class spell_general_vezax_mark_of_the_faceless : public SpellScriptLoader
         }
 };
 
+// 63278 - Mark of the Faceless
 class spell_general_vezax_mark_of_the_faceless_leech : public SpellScriptLoader
 {
     public:
@@ -511,6 +516,7 @@ class spell_general_vezax_mark_of_the_faceless_leech : public SpellScriptLoader
         }
 };
 
+// 63322 - Saronite Vapors
 class spell_general_vezax_saronite_vapors : public SpellScriptLoader
 {
     public:
@@ -530,9 +536,11 @@ class spell_general_vezax_saronite_vapors : public SpellScriptLoader
                 if (Unit* caster = GetCaster())
                 {
                     int32 mana = int32(aurEff->GetAmount() * std::pow(2.0f, GetStackAmount())); // mana restore - bp * 2^stackamount
-                    int32 damage = mana * 2;
-                    caster->CastCustomSpell(GetTarget(), SPELL_SARONITE_VAPORS_ENERGIZE, &mana, NULL, NULL, true);
-                    caster->CastCustomSpell(GetTarget(), SPELL_SARONITE_VAPORS_DAMAGE, &damage, NULL, NULL, true);
+                    CastSpellExtraArgs args1(TRIGGERED_FULL_MASK), args2(TRIGGERED_FULL_MASK);
+                    args1.AddSpellBP0(mana);
+                    args2.AddSpellBP0(mana * 2);
+                    caster->CastSpell(GetTarget(), SPELL_SARONITE_VAPORS_ENERGIZE, args1);
+                    caster->CastSpell(GetTarget(), SPELL_SARONITE_VAPORS_DAMAGE, args2);
                 }
             }
 

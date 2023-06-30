@@ -18,7 +18,8 @@
 #include "AuthenticationPackets.h"
 #include "BigNumber.h"
 #include "CharacterTemplateDataStore.h"
-#include "HmacHash.h"
+#include "CryptoHash.h"
+#include "HMAC.h"
 #include "ObjectMgr.h"
 #include "RSA.h"
 #include "Util.h"
@@ -73,7 +74,7 @@ const WorldPacket* WorldPackets::Auth::Pong::Write()
 
 WorldPacket const* WorldPackets::Auth::AuthChallenge::Write()
 {
-    _worldPacket.append(DosChallenge, 8);
+    _worldPacket.append(DosChallenge.data(), DosChallenge.size());
     _worldPacket.append(Challenge.data(), Challenge.size());
     _worldPacket << uint8(DosZeroBits);
     return &_worldPacket;
@@ -249,7 +250,7 @@ OHYtKG3GK3GEcFDwZU2LPHq21EroUAdtRfbrJ4KW2yc8igtXKxTBYw==
 -----END RSA PRIVATE KEY-----
 )";
 
-std::unique_ptr<Trinity::Crypto::RSA> ConnectToRSA;
+std::unique_ptr<Trinity::Crypto::RsaSignature> ConnectToRSA;
 
 uint8 const WherePacketHmac[] =
 {
@@ -262,8 +263,8 @@ uint8 const WherePacketHmac[] =
 
 bool WorldPackets::Auth::ConnectTo::InitializeEncryption()
 {
-    std::unique_ptr<Trinity::Crypto::RSA> rsa = std::make_unique<Trinity::Crypto::RSA>();
-    if (!rsa->LoadFromString(RSAPrivateKey, Trinity::Crypto::RSA::PrivateKey{}))
+    std::unique_ptr<Trinity::Crypto::RsaSignature> rsa = std::make_unique<Trinity::Crypto::RsaSignature>();
+    if (!rsa->LoadKeyFromString(RSAPrivateKey))
         return false;
 
     ConnectToRSA = std::move(rsa);
@@ -273,21 +274,21 @@ bool WorldPackets::Auth::ConnectTo::InitializeEncryption()
 WorldPackets::Auth::ConnectTo::ConnectTo() : ServerPacket(SMSG_CONNECT_TO, 8 + 4 + 256 + 1)
 {
     Payload.Where.fill(0);
-    HexStrToByteArray("F41DCB2D728CF3337A4FF338FA89DB01BBBE9C3B65E9DA96268687353E48B94C", Payload.PanamaKey);
+    Trinity::Impl::HexStrToByteArray("F41DCB2D728CF3337A4FF338FA89DB01BBBE9C3B65E9DA96268687353E48B94C", Payload.PanamaKey, false);
     Payload.Adler32 = 0xA0A66C10;
 }
 
 WorldPacket const* WorldPackets::Auth::ConnectTo::Write()
 {
-    HmacSha1 hmacHash(64, WherePacketHmac);
-    hmacHash.UpdateData(Payload.Where.data(), 16);
-    hmacHash.UpdateData((uint8* const)&Payload.Type, 1);
-    hmacHash.UpdateData((uint8* const)&Payload.Port, 2);
-    hmacHash.UpdateData((uint8* const)Haiku.c_str(), 71);
-    hmacHash.UpdateData(Payload.PanamaKey, 32);
-    hmacHash.UpdateData(PiDigits, 108);
-    hmacHash.UpdateData(&Payload.XorMagic, 1);
-    hmacHash.Finalize();
+    ByteBuffer signBuffer;
+    signBuffer.append(WherePacketHmac, 64);
+    signBuffer.append(Payload.Where.data(), 16);
+    signBuffer << uint32(Payload.Type);
+    signBuffer << uint16(Payload.Port);
+    signBuffer.append(Haiku.data(), 71);
+    signBuffer.append(Payload.PanamaKey, 32);
+    signBuffer.append(PiDigits, 108);
+    signBuffer << uint8(Payload.XorMagic);
 
     ByteBuffer payload;
     payload << uint32(Payload.Adler32);
@@ -298,22 +299,20 @@ WorldPacket const* WorldPackets::Auth::ConnectTo::Write()
     payload.append(Payload.PanamaKey, 32);
     payload.append(PiDigits, 108);
     payload << uint8(Payload.XorMagic);
-    payload.append(hmacHash.GetDigest(), hmacHash.GetLength());
 
-    uint32 rsaSize = ConnectToRSA->GetOutputSize();
-    if (payload.size() < rsaSize)
-        payload.resize(rsaSize);
+
+    Trinity::Crypto::RsaSignature rsa(*ConnectToRSA);
+    Trinity::Crypto::RsaSignature::SHA256 digestGenerator;
+    std::vector<uint8> signature;
+    rsa.Sign(signBuffer.contents(), signBuffer.size(), digestGenerator, signature);
+    payload.append(signature.data(), signature.size());
+    _worldPacket.append(payload);
+
 
     _worldPacket << uint64(Key);
     _worldPacket << uint32(Serial);
-    size_t encryptedPayloadPos = _worldPacket.wpos();
-    _worldPacket.resize(_worldPacket.size() + rsaSize);
     _worldPacket << uint8(Con);
 
-    ConnectToRSA->Encrypt(payload.contents(), payload.size(),
-        _worldPacket.contents() + encryptedPayloadPos,
-        Trinity::Crypto::RSA::PrivateKey{},
-        Trinity::Crypto::RSA::NoPadding{});
 
     return &_worldPacket;
 }

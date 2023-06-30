@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -19,7 +19,7 @@
 #include "Errors.h"
 #include "SharedDefines.h"
 
-BattlegroundScore::BattlegroundScore(ObjectGuid playerGuid, uint32 team) : PlayerGuid(playerGuid), TeamId(team == ALLIANCE ? BG_TEAM_ALLIANCE : BG_TEAM_HORDE),
+BattlegroundScore::BattlegroundScore(ObjectGuid playerGuid, uint32 team) : PlayerGuid(playerGuid), TeamId(team == ALLIANCE ? PVP_TEAM_ALLIANCE : PVP_TEAM_HORDE),
     KillingBlows(0), Deaths(0), HonorableKills(0), BonusHonor(0), DamageDone(0), HealingDone(0)
 {
 }
@@ -51,12 +51,12 @@ void BattlegroundScore::UpdateScore(uint32 type, uint32 value)
             HealingDone += value;
             break;
         default:
-            ASSERT(false, "Not implemented Battleground score type %u!", type);
+            ABORT_MSG("Not implemented Battleground score type %u!", type);
             break;
     }
 }
 
-void BattlegroundScore::BuildPvPLogPlayerDataPacket(WorldPackets::Battleground::PVPLogData::PlayerData& playerData) const
+void BattlegroundScore::BuildPvPLogPlayerDataPacket(WorldPackets::Battleground::PVPMatchStatistics::PVPMatchPlayerStatistics& playerData) const
 {
     playerData.PlayerGUID = PlayerGuid;
     playerData.Kills = KillingBlows;

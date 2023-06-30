@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -20,9 +19,12 @@
 #define TRINITYCORE_CORPSE_H
 
 #include "Object.h"
+#include "GridObject.h"
 #include "DatabaseEnvFwd.h"
 #include "GridDefines.h"
-#include "Loot.h"
+#include "IteratorPair.h"
+
+struct Loot;
 
 enum CorpseType
 {
@@ -59,24 +61,31 @@ class TC_GAME_API Corpse : public WorldObject, public GridObject<Corpse>
         bool Create(ObjectGuid::LowType guidlow, Map* map);
         bool Create(ObjectGuid::LowType guidlow, Player* owner);
 
+        void Update(uint32 diff) override;
+
         void SaveToDB();
         bool LoadCorpseFromDB(ObjectGuid::LowType guid, Field* fields);
 
-        void DeleteFromDB(CharacterDatabaseTransaction& trans);
-        static void DeleteFromDB(ObjectGuid const& ownerGuid, CharacterDatabaseTransaction& trans);
+        void DeleteFromDB(CharacterDatabaseTransaction trans);
+        static void DeleteFromDB(ObjectGuid const& ownerGuid, CharacterDatabaseTransaction trans);
 
-        ObjectGuid GetOwnerGUID() const { return GetGuidValue(CORPSE_FIELD_OWNER); }
+        ObjectGuid GetOwnerGUID() const override { return GetGuidValue(CORPSE_FIELD_OWNER); }
+        void SetOwnerGUID(ObjectGuid owner) { SetGuidValue(CORPSE_FIELD_OWNER, owner); }
+        void SetDisplayId(uint32 displayId) { SetUInt32Value(CORPSE_FIELD_DISPLAY_ID, displayId); }
+        uint32 GetFaction() const override { return GetUInt32Value(CORPSE_FIELD_FACTIONTEMPLATE); }
+
 
         time_t const& GetGhostTime() const { return m_time; }
-        void ResetGhostTime() { m_time = time(NULL); }
+        void ResetGhostTime();
         CorpseType GetType() const { return m_type; }
 
         CellCoord const& GetCellCoord() const { return _cellCoord; }
         void SetCellCoord(CellCoord const& cellCoord) { _cellCoord = cellCoord; }
 
-        Loot loot;                                          // remove insignia ONLY at BG
+        std::unique_ptr<Loot> m_loot;
+        Loot* GetLootForPlayer(Player const* /*player*/) const override { return m_loot.get(); }
+
         Player* lootRecipient;
-        bool lootForBody;
 
         bool IsExpired(time_t t) const;
 

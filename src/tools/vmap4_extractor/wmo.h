@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -19,11 +18,11 @@
 #ifndef WMO_H
 #define WMO_H
 
+#include "vec3d.h"
+#include <memory>
 #include <string>
 #include <unordered_set>
 #include <vector>
-#include "vec3d.h"
-#include "cascfile.h"
 
 // MOPY flags
 enum MopyFlags
@@ -65,7 +64,7 @@ namespace WMO
 }
 
 /* for whatever reason a certain company just can't stick to one coordinate system... */
-static inline Vec3D fixCoords(const Vec3D &v){ return Vec3D(v.z, v.x, v.y); }
+static inline Vec3D fixCoords(Vec3D const& v){ return Vec3D(v.z, v.x, v.y); }
 
 struct WMODoodadData
 {
@@ -86,6 +85,7 @@ public:
     float bbcorn2[3];
     uint16 flags, numLod;
 
+    std::vector<char> GroupNames;
     WMODoodadData DoodadData;
     std::unordered_set<uint32> ValidDoodadNames;
     std::vector<uint32> groupFileDataIDs;
@@ -123,9 +123,8 @@ private:
 public:
     // MOGP
 
-    char* MOPY;
-    uint16* MOVI;
-    uint16* MoviEx;
+    std::unique_ptr<uint16[]> MPY2;
+    std::unique_ptr<uint32[]> MOVX;
     float* MOVT;
     uint16* MOBA;
     int* MobaEx;
@@ -142,7 +141,7 @@ public:
     uint16 nBatchB;
     uint32 nBatchC, fogIdx, groupLiquid, groupWMOID;
 
-    int mopy_size, moba_size;
+    int moba_size;
     int LiquEx_size;
     unsigned int nVertices; // number when loaded
     int nTriangles; // number when loaded
@@ -156,6 +155,7 @@ public:
     bool open(WMORoot* rootWMO);
     int ConvertToVMAPGroupWmo(FILE* output, bool preciseVectorData);
     uint32 GetLiquidTypeId(uint32 liquidTypeId);
+    bool ShouldSkip(WMORoot const* root) const;
 };
 
 namespace MapObject

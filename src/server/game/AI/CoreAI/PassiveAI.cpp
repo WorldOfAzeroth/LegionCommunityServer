@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -18,15 +17,38 @@
 
 #include "PassiveAI.h"
 #include "Creature.h"
+#include "MovementDefines.h"
 
-PassiveAI::PassiveAI(Creature* c) : CreatureAI(c) { me->SetReactState(REACT_PASSIVE); }
-PossessedAI::PossessedAI(Creature* c) : CreatureAI(c) { me->SetReactState(REACT_PASSIVE); }
-NullCreatureAI::NullCreatureAI(Creature* c) : CreatureAI(c) { me->SetReactState(REACT_PASSIVE); }
+PassiveAI::PassiveAI(Creature* c, uint32 scriptId) : CreatureAI(c, scriptId)
+{
+    me->SetReactState(REACT_PASSIVE);
+}
+
+PossessedAI::PossessedAI(Creature* c, uint32 scriptId) : CreatureAI(c, scriptId)
+{
+    me->SetReactState(REACT_PASSIVE);
+}
+
+NullCreatureAI::NullCreatureAI(Creature* c, uint32 scriptId) : CreatureAI(c, scriptId)
+{
+    me->SetReactState(REACT_PASSIVE);
+}
+
+int32 NullCreatureAI::Permissible(Creature const* creature)
+{
+    if (creature->HasNpcFlag(UNIT_NPC_FLAG_SPELLCLICK))
+        return PERMIT_BASE_PROACTIVE + 50;
+
+    if (creature->IsTrigger())
+        return PERMIT_BASE_PROACTIVE;
+
+    return PERMIT_BASE_IDLE;
+}
 
 void PassiveAI::UpdateAI(uint32)
 {
-    if (me->IsInCombat() && me->getAttackers().empty())
-        EnterEvadeMode(EVADE_REASON_NO_HOSTILES);
+    if (me->IsEngaged() && !me->IsInCombat())
+        EnterEvadeMode(EvadeReason::NoHostiles);
 }
 
 void PossessedAI::AttackStart(Unit* target)
@@ -48,26 +70,19 @@ void PossessedAI::UpdateAI(uint32 /*diff*/)
 void PossessedAI::JustDied(Unit* /*u*/)
 {
     // We died while possessed, disable our loot
-    me->RemoveFlag(OBJECT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
+    me->RemoveDynamicFlag(UNIT_DYNFLAG_LOOTABLE);
 }
 
-void PossessedAI::KilledUnit(Unit* victim)
-{
-    // We killed a creature, disable victim's loot
-    if (victim->GetTypeId() == TYPEID_UNIT)
-        victim->RemoveFlag(OBJECT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
-}
-
-void PossessedAI::OnCharmed(bool /*apply*/)
-{
-    me->NeedChangeAI = true;
-    me->IsAIEnabled = false;
-}
-
-void CritterAI::DamageTaken(Unit* /*done_by*/, uint32&)
+void CritterAI::JustEngagedWith(Unit* /*who*/)
 {
     if (!me->HasUnitState(UNIT_STATE_FLEEING))
         me->SetControlled(true, UNIT_STATE_FLEEING);
+}
+
+void CritterAI::MovementInform(uint32 type, uint32 /*id*/)
+{
+    if (type == TIMED_FLEEING_MOTION_TYPE)
+        EnterEvadeMode(EvadeReason::Other);
 }
 
 void CritterAI::EnterEvadeMode(EvadeReason why)
@@ -77,8 +92,28 @@ void CritterAI::EnterEvadeMode(EvadeReason why)
     CreatureAI::EnterEvadeMode(why);
 }
 
-void TriggerAI::IsSummonedBy(Unit* summoner)
+int32 CritterAI::Permissible(Creature const* creature)
+{
+    if (creature->IsCritter() && !creature->HasUnitTypeMask(UNIT_MASK_GUARDIAN))
+        return PERMIT_BASE_PROACTIVE;
+
+    return PERMIT_BASE_NO;
+}
+
+void TriggerAI::IsSummonedBy(WorldObject* summoner)
 {
     if (me->m_spells[0])
-        me->CastSpell(me, me->m_spells[0], false, nullptr, nullptr, summoner->GetGUID());
+    {
+        CastSpellExtraArgs extra;
+        extra.OriginalCaster = summoner->GetGUID();
+        me->CastSpell(me, me->m_spells[0], extra);
+    }
+}
+
+int32 TriggerAI::Permissible(Creature const* creature)
+{
+    if (creature->IsTrigger() && creature->m_spells[0])
+        return PERMIT_BASE_SPECIAL;
+
+    return PERMIT_BASE_NO;
 }

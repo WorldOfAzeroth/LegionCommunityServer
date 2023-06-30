@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -21,6 +20,7 @@
 #include "Config.h"
 #include "DatabaseEnv.h"
 #include "Log.h"
+#include "SRP6.h"
 #include "Util.h"
 #include "World.h"
 #include <boost/asio/buffer.hpp>
@@ -40,8 +40,7 @@ void RASession::Start()
     if (_socket.available() > 0)
     {
         // Handle subnegotiation
-        char buf[1024];
-        memset(buf, 0, sizeof(buf));
+        char buf[1024] = { };
         _socket.read_some(boost::asio::buffer(buf));
 
         // Send the end-of-negotiation packet
@@ -57,7 +56,7 @@ void RASession::Start()
     if (username.empty())
         return;
 
-    TC_LOG_INFO("commands.ra", "Accepting RA connection from user %s (IP: %s)", username.c_str(), GetRemoteIpAddress().c_str());
+    TC_LOG_INFO("commands.ra", "Accepting RA connection from user {} (IP: {})", username, GetRemoteIpAddress());
 
     Send("Password: ");
 
@@ -72,7 +71,7 @@ void RASession::Start()
         return;
     }
 
-    TC_LOG_INFO("commands.ra", "User %s (IP: %s) authenticated correctly to RA", username.c_str(), GetRemoteIpAddress().c_str());
+    TC_LOG_INFO("commands.ra", "User {} (IP: {}) authenticated correctly to RA", username, GetRemoteIpAddress());
 
     // Authentication successful, send the motd
     for (std::string const& line : sWorld->GetMotd())
@@ -92,7 +91,7 @@ void RASession::Start()
     _socket.close();
 }
 
-int RASession::Send(const char* data)
+int RASession::Send(std::string_view data)
 {
     std::ostream os(&_writeBuffer);
     os << data;
@@ -133,7 +132,7 @@ bool RASession::CheckAccessLevel(const std::string& user)
 
     if (!result)
     {
-        TC_LOG_INFO("commands.ra", "User %s does not exist in database", user.c_str());
+        TC_LOG_INFO("commands.ra", "User {} does not exist in database", user);
         return false;
     }
 
@@ -141,12 +140,12 @@ bool RASession::CheckAccessLevel(const std::string& user)
 
     if (fields[1].GetUInt8() < sConfigMgr->GetIntDefault("Ra.MinLevel", SEC_ADMINISTRATOR))
     {
-        TC_LOG_INFO("commands.ra", "User %s has no privilege to login", user.c_str());
+        TC_LOG_INFO("commands.ra", "User {} has no privilege to login", user);
         return false;
     }
     else if (fields[2].GetInt32() != -1)
     {
-        TC_LOG_INFO("commands.ra", "User %s has to be assigned on all realms (with RealmID = '-1')", user.c_str());
+        TC_LOG_INFO("commands.ra", "User {} has to be assigned on all realms (with RealmID = '-1')", user);
         return false;
     }
 
@@ -161,22 +160,21 @@ bool RASession::CheckPassword(const std::string& user, const std::string& pass)
     std::string safe_pass = pass;
     Utf8ToUpperOnlyLatin(safe_pass);
 
-    std::string hash = AccountMgr::CalculateShaPassHash(safe_user, safe_pass);
-
     LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_CHECK_PASSWORD_BY_NAME);
 
     stmt->setString(0, safe_user);
-    stmt->setString(1, hash);
 
-    PreparedQueryResult result = LoginDatabase.Query(stmt);
-
-    if (!result)
+    if (PreparedQueryResult result = LoginDatabase.Query(stmt))
     {
-        TC_LOG_INFO("commands.ra", "Wrong password for user: %s", user.c_str());
-        return false;
+        Trinity::Crypto::SRP6::Salt salt = (*result)[0].GetBinary<Trinity::Crypto::SRP6::SALT_LENGTH>();
+        Trinity::Crypto::SRP6::Verifier verifier = (*result)[1].GetBinary<Trinity::Crypto::SRP6::VERIFIER_LENGTH>();
+
+        if (Trinity::Crypto::SRP6::CheckLogin(safe_user, safe_pass, salt, verifier))
+            return true;
     }
 
-    return true;
+    TC_LOG_INFO("commands.ra", "Wrong password for user: {}", user);
+    return false;
 }
 
 bool RASession::ProcessCommand(std::string& command)
@@ -184,7 +182,7 @@ bool RASession::ProcessCommand(std::string& command)
     if (command.length() == 0)
         return true;
 
-    TC_LOG_INFO("commands.ra", "Received command: %s", command.c_str());
+    TC_LOG_INFO("commands.ra", "Received command: {}", command);
 
     // handle quit, exit and logout commands to terminate connection
     if (command == "quit" || command == "exit" || command == "logout")
@@ -206,9 +204,9 @@ bool RASession::ProcessCommand(std::string& command)
     return false;
 }
 
-void RASession::CommandPrint(void* callbackArg, const char* text)
+void RASession::CommandPrint(void* callbackArg, std::string_view text)
 {
-    if (!text || !*text)
+    if (text.empty())
         return;
 
     RASession* session = static_cast<RASession*>(callbackArg);

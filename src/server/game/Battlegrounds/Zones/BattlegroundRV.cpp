@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -21,9 +20,8 @@
 #include "Log.h"
 #include "ObjectAccessor.h"
 #include "Player.h"
-#include "WorldStatePackets.h"
 
-BattlegroundRV::BattlegroundRV()
+BattlegroundRV::BattlegroundRV(BattlegroundTemplate const* battlegroundTemplate) : Arena(battlegroundTemplate)
 {
     BgObjects.resize(BG_RV_OBJECT_MAX);
 
@@ -99,12 +97,6 @@ void BattlegroundRV::HandleAreaTrigger(Player* player, uint32 trigger, bool ente
             Battleground::HandleAreaTrigger(player, trigger, entered);
             break;
     }
-}
-
-void BattlegroundRV::FillInitialWorldStates(WorldPackets::WorldState::InitWorldStates& packet)
-{
-    packet.Worldstates.emplace_back(uint32(BG_RV_WORLD_STATE), 1);
-    Arena::FillInitialWorldStates(packet);
 }
 
 bool BattlegroundRV::SetupBattleground()

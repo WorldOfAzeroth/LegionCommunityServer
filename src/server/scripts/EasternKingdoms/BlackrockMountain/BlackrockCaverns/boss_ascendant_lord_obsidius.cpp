@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -56,10 +56,10 @@ class boss_ascendant_lord_obsidius : public CreatureScript
                 _Reset();
             }
 
-            void EnterCombat(Unit* /*who*/) override
+            void JustEngagedWith(Unit* who) override
             {
-                _EnterCombat();
-                events.ScheduleEvent(EVENT_MANA_TAP, 30000);
+                BossAI::JustEngagedWith(who);
+                events.ScheduleEvent(EVENT_MANA_TAP, 30s);
                 Talk(YELL_AGGRO);
             }
 
@@ -91,7 +91,7 @@ class boss_ascendant_lord_obsidius : public CreatureScript
                     {
                         case EVENT_MANA_TAP:
                             DoCastVictim(SPELL_MANA_TAP, true);
-                            events.ScheduleEvent(EVENT_MANA_TAP, urand(14000, 22000));
+                            events.ScheduleEvent(EVENT_MANA_TAP, 14s, 22s);
                             break;
                     }
                 }

@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -21,14 +20,15 @@
 #include "Corpse.h"
 #include "DatabaseEnv.h"
 #include "DB2Stores.h"
+#include "GameTime.h"
 #include "Log.h"
+#include "Loot.h"
 #include "Map.h"
-#include "ObjectAccessor.h"
 #include "PhasingHandler.h"
 #include "Player.h"
 #include "StringConvert.h"
 #include "UpdateData.h"
-#include "World.h"
+#include <sstream>
 
 Corpse::Corpse(CorpseType type) : WorldObject(type != CORPSE_BONES), m_type(type)
 {
@@ -40,10 +40,9 @@ Corpse::Corpse(CorpseType type) : WorldObject(type != CORPSE_BONES), m_type(type
     m_valuesCount = CORPSE_END;
     _dynamicValuesCount = CORPSE_DYNAMIC_END;
 
-    m_time = time(NULL);
+    m_time = GameTime::GetGameTime();
 
-    lootForBody = false;
-    lootRecipient = NULL;
+    lootRecipient = nullptr;
 }
 
 Corpse::~Corpse() { }
@@ -80,21 +79,29 @@ bool Corpse::Create(ObjectGuid::LowType guidlow, Player* owner)
 
     if (!IsPositionValid())
     {
-        TC_LOG_ERROR("entities.player", "Corpse (guidlow " UI64FMTD ", owner %s) not created. Suggested coordinates isn't valid (X: %f Y: %f)",
-            guidlow, owner->GetName().c_str(), owner->GetPositionX(), owner->GetPositionY());
+        TC_LOG_ERROR("entities.player", "Corpse (guidlow {}, owner {}) not created. Suggested coordinates isn't valid (X: {} Y: {})",
+            guidlow, owner->GetName(), owner->GetPositionX(), owner->GetPositionY());
         return false;
     }
 
     Object::_Create(ObjectGuid::Create<HighGuid::Corpse>(owner->GetMapId(), 0, guidlow));
 
     SetObjectScale(1.0f);
-    SetGuidValue(CORPSE_FIELD_OWNER, owner->GetGUID());
+    SetOwnerGUID(owner->GetGUID());
 
     _cellCoord = Trinity::ComputeCellCoord(GetPositionX(), GetPositionY());
 
     PhasingHandler::InheritPhaseShift(this, owner);
 
     return true;
+}
+
+void Corpse::Update(uint32 diff)
+{
+    WorldObject::Update(diff);
+
+    if (m_loot)
+        m_loot->Update();
 }
 
 void Corpse::SaveToDB()
@@ -134,12 +141,12 @@ void Corpse::SaveToDB()
     CharacterDatabase.CommitTransaction(trans);
 }
 
-void Corpse::DeleteFromDB(CharacterDatabaseTransaction& trans)
+void Corpse::DeleteFromDB(CharacterDatabaseTransaction trans)
 {
     DeleteFromDB(GetOwnerGUID(), trans);
 }
 
-void Corpse::DeleteFromDB(ObjectGuid const& ownerGuid, CharacterDatabaseTransaction& trans)
+void Corpse::DeleteFromDB(ObjectGuid const& ownerGuid, CharacterDatabaseTransaction trans)
 {
     CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CORPSE);
     stmt->setUInt64(0, ownerGuid.GetCounter());
@@ -148,6 +155,11 @@ void Corpse::DeleteFromDB(ObjectGuid const& ownerGuid, CharacterDatabaseTransact
     stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CORPSE_PHASES);
     stmt->setUInt64(0, ownerGuid.GetCounter());
     CharacterDatabase.ExecuteOrAppend(trans, stmt);
+}
+
+void Corpse::ResetGhostTime()
+{
+    m_time = GameTime::GetGameTime();
 }
 
 bool Corpse::LoadCorpseFromDB(ObjectGuid::LowType guid, Field* fields)
@@ -160,23 +172,24 @@ bool Corpse::LoadCorpseFromDB(ObjectGuid::LowType guid, Field* fields)
     float posZ   = fields[2].GetFloat();
     float o      = fields[3].GetFloat();
     uint32 mapId = fields[4].GetUInt16();
+    uint32 bytes1 = fields[7].GetUInt32();
+    uint32 bytes2 = fields[8].GetUInt32();
 
     Object::_Create(ObjectGuid::Create<HighGuid::Corpse>(mapId, 0, guid));
 
     SetObjectScale(1.0f);
-    SetUInt32Value(CORPSE_FIELD_DISPLAY_ID, fields[5].GetUInt32());
+    SetDisplayId(fields[5].GetUInt32());
     _LoadIntoDataField(fields[6].GetString(), CORPSE_FIELD_ITEM, EQUIPMENT_SLOT_END);
-    SetUInt32Value(CORPSE_FIELD_BYTES_1, fields[7].GetUInt32());
-    SetUInt32Value(CORPSE_FIELD_BYTES_2, fields[8].GetUInt32());
+    SetUInt32Value(CORPSE_FIELD_BYTES_1, bytes1);
+    SetUInt32Value(CORPSE_FIELD_BYTES_2, bytes2);
     SetUInt32Value(CORPSE_FIELD_FLAGS, fields[9].GetUInt8());
     SetUInt32Value(CORPSE_FIELD_DYNAMIC_FLAGS, fields[10].GetUInt8());
     SetGuidValue(CORPSE_FIELD_OWNER, ObjectGuid::Create<HighGuid::Player>(fields[14].GetUInt64()));
-    if (CharacterInfo const* characterInfo = sWorld->GetCharacterInfo(GetGuidValue(CORPSE_FIELD_OWNER)))
-        SetUInt32Value(CORPSE_FIELD_FACTIONTEMPLATE, sChrRacesStore.AssertEntry(characterInfo->Race)->FactionID);
+    SetUInt32Value(CORPSE_FIELD_FACTIONTEMPLATE, sChrRacesStore.AssertEntry((bytes1 >> 8) & 0xFF)->FactionID);
 
-    m_time = time_t(fields[11].GetUInt32());
+    m_time = time_t(fields[12].GetUInt32());
 
-    uint32 instanceId  = fields[13].GetUInt32();
+    uint32 instanceId  = fields[14].GetUInt32();
 
     // place
     SetLocationInstanceId(instanceId);
@@ -185,8 +198,8 @@ bool Corpse::LoadCorpseFromDB(ObjectGuid::LowType guid, Field* fields)
 
     if (!IsPositionValid())
     {
-        TC_LOG_ERROR("entities.player", "Corpse (%s, owner: %s) is not created, given coordinates are not valid (X: %f, Y: %f, Z: %f)",
-            GetGUID().ToString().c_str(), GetOwnerGUID().ToString().c_str(), posX, posY, posZ);
+        TC_LOG_ERROR("entities.player", "Corpse ({}, owner: {}) is not created, given coordinates are not valid (X: {}, Y: {}, Z: {})",
+            GetGUID().ToString(), GetOwnerGUID().ToString(), posX, posY, posZ);
         return false;
     }
 

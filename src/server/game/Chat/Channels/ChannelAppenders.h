@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -21,6 +21,7 @@
 #include "Channel.h"
 #include "ChannelPackets.h"
 #include "CharacterCache.h"
+#include "GridNotifiers.h"
 #include "World.h"
 
 // initial packet data (notify type and channel name)
@@ -31,16 +32,17 @@ class ChannelNameBuilder
         ChannelNameBuilder(Channel const* source, PacketModifier const& modifier)
             : _source(source), _modifier(modifier){ }
 
-        WorldPackets::Packet* operator()(LocaleConstant locale) const
+        Trinity::PacketSenderOwning<WorldPackets::Channel::ChannelNotify>* operator()(LocaleConstant locale) const
         {
             // LocalizedPacketDo sends client DBC locale, we need to get available to server locale
             LocaleConstant localeIdx = sWorld->GetAvailableDbcLocale(locale);
 
-            WorldPackets::Channel::ChannelNotify* data = new WorldPackets::Channel::ChannelNotify();
-            data->Type = _modifier.NotificationType;
-            data->_Channel = _source->GetName(localeIdx);
-            _modifier.Append(*data);
-            return data;
+            Trinity::PacketSenderOwning<WorldPackets::Channel::ChannelNotify>* sender = new Trinity::PacketSenderOwning<WorldPackets::Channel::ChannelNotify>();
+            sender->Data.Type = _modifier.NotificationType;
+            sender->Data._Channel = _source->GetName(localeIdx);
+            _modifier.Append(sender->Data);
+            sender->Data.Write();
+            return sender;
         }
 
         private:
@@ -185,8 +187,8 @@ struct ChannelOwnerAppend
 {
     explicit ChannelOwnerAppend(Channel const* channel, ObjectGuid const& ownerGuid) : _channel(channel), _ownerGuid(ownerGuid)
     {
-        if (CharacterCacheEntry const* characterInfo = sCharacterCache->GetCharacterCacheByGuid(_ownerGuid))
-            _ownerName = characterInfo->Name;
+        if (CharacterCacheEntry const* cInfo = sCharacterCache->GetCharacterCacheByGuid(_ownerGuid))
+            _ownerName = cInfo->Name;
     }
 
     static uint8 const NotificationType = CHAT_CHANNEL_OWNER_NOTICE;

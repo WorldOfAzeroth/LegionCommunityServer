@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -113,8 +112,8 @@ AccountOpResult AccountMgr::DeleteAccount(uint32 accountId)
             if (Player* p = ObjectAccessor::FindConnectedPlayer(guid))
             {
                 WorldSession* s = p->GetSession();
-                s->KickPlayer();                            // mark session to remove at next session list update
-                s->LogoutPlayer(false);                     // logout player without waiting next session list update
+                s->KickPlayer("AccountMgr::DeleteAccount Deleting the account"); // mark session to remove at next session list update
+                s->LogoutPlayer(false); // logout player without waiting next session list update
             }
 
             Player::DeleteFromDB(guid, accountId, false);       // no need to update realm characters
@@ -294,15 +293,6 @@ uint32 AccountMgr::GetId(std::string_view username)
     return (result) ? (*result)[0].GetUInt32() : 0;
 }
 
-uint32 AccountMgr::GetSecurity(uint32 accountId)
-{
-    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_GET_ACCOUNT_ACCESS_GMLEVEL);
-    stmt->setUInt32(0, accountId);
-    PreparedQueryResult result = LoginDatabase.Query(stmt);
-
-    return (result) ? (*result)[0].GetUInt8() : uint32(SEC_PLAYER);
-}
-
 uint32 AccountMgr::GetSecurity(uint32 accountId, int32 realmId)
 {
     LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_GET_GMLEVEL_BY_REALMID);
@@ -311,6 +301,17 @@ uint32 AccountMgr::GetSecurity(uint32 accountId, int32 realmId)
     PreparedQueryResult result = LoginDatabase.Query(stmt);
 
     return (result) ? (*result)[0].GetUInt8() : uint32(SEC_PLAYER);
+}
+
+QueryCallback AccountMgr::GetSecurityAsync(uint32 accountId, int32 realmId, std::function<void(uint32)> callback)
+{
+    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_GET_GMLEVEL_BY_REALMID);
+    stmt->setUInt32(0, accountId);
+    stmt->setInt32(1, realmId);
+    return LoginDatabase.AsyncQuery(stmt).WithPreparedCallback([callback = std::move(callback)](PreparedQueryResult result)
+    {
+        callback(result ? uint32((*result)[0].GetUInt8()) : uint32(SEC_PLAYER));
+    });
 }
 
 bool AccountMgr::GetName(uint32 accountId, std::string& name)
@@ -472,7 +473,7 @@ void AccountMgr::LoadRBAC()
         uint32 linkedPermissionId = field[1].GetUInt32();
         if (linkedPermissionId == permissionId)
         {
-            TC_LOG_ERROR("sql.sql", "RBAC Permission %u has itself as linked permission. Ignored", permissionId);
+            TC_LOG_ERROR("sql.sql", "RBAC Permission {} has itself as linked permission. Ignored", permissionId);
             continue;
         }
         permission->AddLinkedPermission(linkedPermissionId);
@@ -481,7 +482,7 @@ void AccountMgr::LoadRBAC()
     while (result->NextRow());
 
     TC_LOG_DEBUG("rbac", "AccountMgr::LoadRBAC: Loading default permissions");
-    result = LoginDatabase.PQuery("SELECT secId, permissionId FROM rbac_default_permissions WHERE (realmId = %u OR realmId = -1) ORDER BY secId ASC", realm.Id.Realm);
+    result = LoginDatabase.PQuery("SELECT secId, permissionId FROM rbac_default_permissions WHERE (realmId = {} OR realmId = -1) ORDER BY secId ASC", realm.Id.Realm);
     if (!result)
     {
         TC_LOG_INFO("server.loading", ">> Loaded 0 default permission definitions. DB table `rbac_default_permissions` is empty.");
@@ -505,7 +506,7 @@ void AccountMgr::LoadRBAC()
     }
     while (result->NextRow());
 
-    TC_LOG_INFO("server.loading", ">> Loaded %u permission definitions, %u linked permissions and %u default permissions in %u ms", count1, count2, count3, GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded {} permission definitions, {} linked permissions and {} default permissions in {} ms", count1, count2, count3, GetMSTimeDiffToNow(oldMSTime));
 }
 
 void AccountMgr::UpdateAccountAccess(rbac::RBACData* rbac, uint32 accountId, uint8 securityLevel, int32 realmId)
@@ -544,12 +545,12 @@ void AccountMgr::UpdateAccountAccess(rbac::RBACData* rbac, uint32 accountId, uin
 
 rbac::RBACPermission const* AccountMgr::GetRBACPermission(uint32 permissionId) const
 {
-    TC_LOG_TRACE("rbac", "AccountMgr::GetRBACPermission: %u", permissionId);
+    TC_LOG_TRACE("rbac", "AccountMgr::GetRBACPermission: {}", permissionId);
     rbac::RBACPermissionsContainer::const_iterator it = _permissions.find(permissionId);
     if (it != _permissions.end())
         return it->second;
 
-    return NULL;
+    return nullptr;
 }
 
 bool AccountMgr::HasPermission(uint32 accountId, uint32 permissionId, uint32 realmId)
@@ -560,11 +561,11 @@ bool AccountMgr::HasPermission(uint32 accountId, uint32 permissionId, uint32 rea
         return false;
     }
 
-    rbac::RBACData rbac(accountId, "", realmId, GetSecurity(accountId));
+    rbac::RBACData rbac(accountId, "", realmId, GetSecurity(accountId, realmId));
     rbac.LoadFromDB();
     bool hasPermission = rbac.HasPermission(permissionId);
 
-    TC_LOG_DEBUG("rbac", "AccountMgr::HasPermission [AccountId: %u, PermissionId: %u, realmId: %d]: %u",
+    TC_LOG_DEBUG("rbac", "AccountMgr::HasPermission [AccountId: {}, PermissionId: {}, realmId: {}]: {}",
                    accountId, permissionId, realmId, hasPermission);
     return hasPermission;
 }
@@ -580,6 +581,6 @@ void AccountMgr::ClearRBAC()
 
 rbac::RBACPermissionContainer const& AccountMgr::GetRBACDefaultPermissions(uint8 secLevel)
 {
-    TC_LOG_TRACE("rbac", "AccountMgr::GetRBACDefaultPermissions: secLevel %u - size: %u", secLevel, uint32(_defaultPermissions[secLevel].size()));
+    TC_LOG_TRACE("rbac", "AccountMgr::GetRBACDefaultPermissions: secLevel {} - size: {}", secLevel, uint32(_defaultPermissions[secLevel].size()));
     return _defaultPermissions[secLevel];
 }

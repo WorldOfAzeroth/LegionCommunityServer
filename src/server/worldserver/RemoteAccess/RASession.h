@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -22,7 +21,6 @@
 #include <memory>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/streambuf.hpp>
-#include "Common.h"
 
 #include <future>
 
@@ -43,13 +41,13 @@ public:
     unsigned short GetRemotePort() const { return _socket.remote_endpoint().port(); }
 
 private:
-    int Send(const char* data);
+    int Send(std::string_view data);
     std::string ReadString();
     bool CheckAccessLevel(const std::string& user);
     bool CheckPassword(const std::string& user, const std::string& pass);
     bool ProcessCommand(std::string& command);
 
-    static void CommandPrint(void* callbackArg, const char* text);
+    static void CommandPrint(void* callbackArg, std::string_view text);
     static void CommandFinished(void* callbackArg, bool);
 
     tcp::socket _socket;

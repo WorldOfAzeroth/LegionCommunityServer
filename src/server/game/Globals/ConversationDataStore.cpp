@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -26,43 +26,17 @@
 namespace
 {
     std::unordered_map<uint32, ConversationTemplate>       _conversationTemplateStore;
-    std::unordered_map<uint32, ConversationActorTemplate>  _conversationActorTemplateStore;
     std::unordered_map<uint32, ConversationLineTemplate>   _conversationLineTemplateStore;
 }
 
 void ConversationDataStore::LoadConversationTemplates()
 {
-    _conversationActorTemplateStore.clear();
     _conversationLineTemplateStore.clear();
     _conversationTemplateStore.clear();
 
-    std::unordered_map<uint32, std::vector<ConversationActorTemplate const*>> actorsByConversation;
-    std::unordered_map<uint32, std::vector<ObjectGuid::LowType>> actorGuidsByConversation;
+    std::unordered_map<uint32, std::vector<ConversationActorTemplate>> actorsByConversation;
 
-    if (QueryResult actorTemplates = WorldDatabase.Query("SELECT Id, CreatureId, CreatureModelId FROM conversation_actor_template"))
-    {
-        uint32 oldMSTime = getMSTime();
-
-        do
-        {
-            Field* fields = actorTemplates->Fetch();
-
-            uint32 id = fields[0].GetUInt32();
-            ConversationActorTemplate& conversationActor = _conversationActorTemplateStore[id];
-            conversationActor.Id = id;
-            conversationActor.CreatureId = fields[1].GetUInt32();
-            conversationActor.CreatureModelId = fields[2].GetUInt32();
-        }
-        while (actorTemplates->NextRow());
-
-        TC_LOG_INFO("server.loading", ">> Loaded " SZFMTD " Conversation actor templates in %u ms", _conversationActorTemplateStore.size(), GetMSTimeDiffToNow(oldMSTime));
-    }
-    else
-    {
-        TC_LOG_INFO("server.loading", ">> Loaded 0 Conversation actor templates. DB table `conversation_actor_template` is empty.");
-    }
-
-    if (QueryResult lineTemplates = WorldDatabase.Query("SELECT Id, StartTime, UiCameraID, ActorIdx, Flags FROM conversation_line_template"))
+    if (QueryResult lineTemplates = WorldDatabase.Query("SELECT Id, UiCameraID, ActorIdx, Flags FROM conversation_line_template"))
     {
         uint32 oldMSTime = getMSTime();
 
@@ -74,83 +48,170 @@ void ConversationDataStore::LoadConversationTemplates()
 
             if (!sConversationLineStore.LookupEntry(id))
             {
-                TC_LOG_ERROR("sql.sql", "Table `conversation_line_template` has template for non existing ConversationLine (ID: %u), skipped", id);
+                TC_LOG_ERROR("sql.sql", "Table `conversation_line_template` has template for non existing ConversationLine (ID: {}), skipped", id);
                 continue;
             }
 
             ConversationLineTemplate& conversationLine = _conversationLineTemplateStore[id];
             conversationLine.Id         = id;
-            conversationLine.StartTime  = fields[1].GetUInt32();
-            conversationLine.UiCameraID = fields[2].GetUInt32();
-            conversationLine.ActorIdx   = fields[3].GetUInt8();
-            conversationLine.Flags      = fields[4].GetUInt8();
+            conversationLine.UiCameraID = fields[1].GetUInt32();
+            conversationLine.ActorIdx   = fields[2].GetUInt8();
+            conversationLine.Flags      = fields[3].GetUInt8();
         }
         while (lineTemplates->NextRow());
 
-        TC_LOG_INFO("server.loading", ">> Loaded " SZFMTD " Conversation line templates in %u ms", _conversationLineTemplateStore.size(), GetMSTimeDiffToNow(oldMSTime));
+        TC_LOG_INFO("server.loading", ">> Loaded {} Conversation line templates in {} ms", _conversationLineTemplateStore.size(), GetMSTimeDiffToNow(oldMSTime));
     }
     else
     {
         TC_LOG_INFO("server.loading", ">> Loaded 0 Conversation line templates. DB table `conversation_line_template` is empty.");
     }
 
-    if (QueryResult actors = WorldDatabase.Query("SELECT ConversationId, ConversationActorId, ConversationActorGuid, Idx FROM conversation_actors"))
+    if (QueryResult actors = WorldDatabase.Query("SELECT ConversationId, ConversationActorId, ConversationActorGuid, Idx, CreatureId, CreatureDisplayInfoId, NoActorObject, ActivePlayerObject FROM conversation_actors"))
     {
         uint32 oldMSTime = getMSTime();
         uint32 count = 0;
+
+        struct ConversationActorDbRow
+        {
+            uint32 ConversationId = 0;
+            uint32 ActorIndex = 0;
+
+            ObjectGuid::LowType SpawnId = 0;
+            uint32 CreatureId = 0;
+            uint32 CreatureDisplayInfoId = 0;
+
+            bool operator()(ConversationActorWorldObjectTemplate& worldObject) const
+            {
+                if (!sObjectMgr->GetCreatureData(SpawnId))
+                {
+                    TC_LOG_ERROR("sql.sql", "Table `conversation_actors` references an invalid creature guid (GUID: {}) for Conversation {} and Idx {}, skipped.", SpawnId, ConversationId, ActorIndex);
+                    return false;
+                }
+
+                if (CreatureId)
+                    TC_LOG_ERROR("sql.sql", "Table `conversation_actors` with ConversationActorGuid cannot have CreatureId ({}). Conversation {} and Idx {}.", CreatureId, ConversationId, ActorIndex);
+
+                if (CreatureDisplayInfoId)
+                    TC_LOG_ERROR("sql.sql", "Table `conversation_actors` with ConversationActorGuid cannot have CreatureDisplayInfoId ({}). Conversation {} and Idx {}.", CreatureDisplayInfoId, ConversationId, ActorIndex);
+
+                worldObject.SpawnId = SpawnId;
+                return true;
+            }
+
+            bool operator()(ConversationActorNoObjectTemplate& noObject) const
+            {
+                if (!sObjectMgr->GetCreatureTemplate(CreatureId))
+                {
+                    TC_LOG_ERROR("sql.sql", "Table `conversation_actors` references an invalid creature id ({}) for Conversation {} and Idx {}, skipped.", CreatureId, ConversationId, ActorIndex);
+                    return false;
+                }
+
+                if (CreatureDisplayInfoId && !sCreatureDisplayInfoStore.LookupEntry(CreatureDisplayInfoId))
+                {
+                    TC_LOG_ERROR("sql.sql", "Table `conversation_actors` references an invalid creature display id ({}) for Conversation {} and Idx {}, skipped.", CreatureDisplayInfoId, ConversationId, ActorIndex);
+                    return false;
+                }
+
+                if (SpawnId)
+                    TC_LOG_ERROR("sql.sql", "Table `conversation_actors` with NoActorObject cannot have ConversationActorGuid ({}). Conversation {} and Idx {}.", SpawnId, ConversationId, ActorIndex);
+
+                noObject.CreatureId = CreatureId;
+                noObject.CreatureDisplayInfoId = CreatureDisplayInfoId;
+                return true;
+            }
+
+            bool operator()([[maybe_unused]] ConversationActorActivePlayerTemplate& activePlayer) const
+            {
+                if (SpawnId)
+                    TC_LOG_ERROR("sql.sql", "Table `conversation_actors` with ActivePlayerObject cannot have ConversationActorGuid ({}). Conversation {} and Idx {}.", SpawnId, ConversationId, ActorIndex);
+
+                if (CreatureId)
+                    TC_LOG_ERROR("sql.sql", "Table `conversation_actors` with ActivePlayerObject cannot have CreatureId ({}). Conversation {} and Idx {}.", CreatureId, ConversationId, ActorIndex);
+
+                if (CreatureDisplayInfoId)
+                    TC_LOG_ERROR("sql.sql", "Table `conversation_actors` with ActivePlayerObject cannot have CreatureDisplayInfoId ({}). Conversation {} and Idx {}.", CreatureDisplayInfoId, ConversationId, ActorIndex);
+
+                return true;
+            }
+
+            bool operator()(ConversationActorTalkingHeadTemplate& talkingHead) const
+            {
+                if (!sObjectMgr->GetCreatureTemplate(CreatureId))
+                {
+                    TC_LOG_ERROR("sql.sql", "Table `conversation_actors` references an invalid creature id ({}) for Conversation {} and Idx {}, skipped.", CreatureId, ConversationId, ActorIndex);
+                    return false;
+                }
+
+                if (CreatureDisplayInfoId && !sCreatureDisplayInfoStore.LookupEntry(CreatureDisplayInfoId))
+                {
+                    TC_LOG_ERROR("sql.sql", "Table `conversation_actors` references an invalid creature display id ({}) for Conversation {} and Idx {}, skipped.", CreatureDisplayInfoId, ConversationId, ActorIndex);
+                    return false;
+                }
+
+                if (SpawnId)
+                    TC_LOG_ERROR("sql.sql", "Table `conversation_actors` with TalkingHead cannot have ConversationActorGuid ({}). Conversation {} and Idx {}.", SpawnId, ConversationId, ActorIndex);
+
+                talkingHead.CreatureId = CreatureId;
+                talkingHead.CreatureDisplayInfoId = CreatureDisplayInfoId;
+                return true;
+            }
+        };
 
         do
         {
             Field* fields = actors->Fetch();
 
-            uint32 conversationId         = fields[0].GetUInt32();
-            uint32 actorId                = fields[1].GetUInt32();
-            ObjectGuid::LowType actorGuid = fields[2].GetUInt64();
-            uint16 idx                    = fields[3].GetUInt16();
+            ConversationActorDbRow data;
+            ConversationActorTemplate actor;
+            data.ConversationId           = fields[0].GetUInt32();
+            actor.Id                      = fields[1].GetUInt32();
+            data.SpawnId                  = fields[2].GetUInt64();
+            data.ActorIndex = actor.Index = fields[3].GetUInt16();
+            data.CreatureId               = fields[4].GetUInt32();
+            data.CreatureDisplayInfoId    = fields[5].GetUInt32();
+            bool noActorObject            = fields[6].GetUInt8() == 1;
+            bool activePlayerObject       = fields[7].GetUInt8() == 1;
 
-            if (actorId != 0 && actorGuid != 0)
-            {
-                TC_LOG_ERROR("sql.sql", "Table `conversation_actors` references both actor (ID: %u) and actorGuid (GUID: " UI64FMTD ") for Conversation %u, skipped.", actorId, actorGuid, conversationId);
+            if (activePlayerObject)
+                actor.Data.emplace<ConversationActorActivePlayerTemplate>();
+            else if (noActorObject)
+                actor.Data.emplace<ConversationActorNoObjectTemplate>();
+            else if (data.SpawnId)
+                actor.Data.emplace<ConversationActorWorldObjectTemplate>();
+            else
+                actor.Data.emplace<ConversationActorTalkingHeadTemplate>();
+
+            bool valid = std::visit(data, actor.Data);
+            if (!valid)
                 continue;
-            }
 
-            if (actorId != 0)
-            {
-                if (ConversationActorTemplate const* conversationActorTemplate = Trinity::Containers::MapGetValuePtr(_conversationActorTemplateStore, actorId))
-                {
-                    std::vector<ConversationActorTemplate const*>& actors = actorsByConversation[conversationId];
-                    if (actors.size() <= idx)
-                        actors.resize(idx + 1);
-                    actors[idx] = conversationActorTemplate;
-                    ++count;
-                }
-                else
-                    TC_LOG_ERROR("sql.sql", "Table `conversation_actors` references an invalid actor (ID: %u) for Conversation %u, skipped", actorId, conversationId);
-            }
-            else if (actorGuid != 0)
-            {
-                if (sObjectMgr->GetCreatureData(actorGuid))
-                {
-                    std::vector<ObjectGuid::LowType>& guids = actorGuidsByConversation[conversationId];
-                    if (guids.size() <= idx)
-                        guids.resize(idx + 1);
-                    guids[idx] = actorGuid;
-                    ++count;
-                }
-                else
-                    TC_LOG_ERROR("sql.sql", "Table `conversation_actors` references an invalid creature guid (GUID: " UI64FMTD ") for Conversation %u, skipped", actorGuid, conversationId);
-            }
-        }
-        while (actors->NextRow());
+            actorsByConversation[data.ConversationId].push_back(actor);
+            ++count;
+        } while (actors->NextRow());
 
-        TC_LOG_INFO("server.loading", ">> Loaded %u Conversation actors in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
+        TC_LOG_INFO("server.loading", ">> Loaded {} Conversation actors in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     }
     else
     {
         TC_LOG_INFO("server.loading", ">> Loaded 0 Conversation actors. DB table `conversation_actors` is empty.");
     }
 
-    if (QueryResult templates = WorldDatabase.Query("SELECT Id, FirstLineId, LastLineEndTime, ScriptName FROM conversation_template"))
+    // Validate FirstLineId
+    std::unordered_map<uint32, uint32> prevConversationLineIds;
+    for (ConversationLineEntry const* conversationLine : sConversationLineStore)
+        if (conversationLine->NextConversationLineID)
+            prevConversationLineIds[conversationLine->NextConversationLineID] = conversationLine->ID;
+
+    auto getFirstLineIdFromAnyLineId = [&](uint32 lineId)
+    {
+        while (uint32 const* prevLineId = Trinity::Containers::MapGetValuePtr(prevConversationLineIds, lineId))
+            lineId = *prevLineId;
+
+        return lineId;
+    };
+
+    if (QueryResult templates = WorldDatabase.Query("SELECT Id, FirstLineId, TextureKitId, ScriptName FROM conversation_template"))
     {
         uint32 oldMSTime = getMSTime();
 
@@ -161,22 +222,29 @@ void ConversationDataStore::LoadConversationTemplates()
             ConversationTemplate conversationTemplate;
             conversationTemplate.Id                 = fields[0].GetUInt32();
             conversationTemplate.FirstLineId        = fields[1].GetUInt32();
-            conversationTemplate.LastLineEndTime    = fields[2].GetUInt32();
+            conversationTemplate.TextureKitId       = fields[2].GetUInt32();
             conversationTemplate.ScriptId           = sObjectMgr->GetScriptId(fields[3].GetString());
 
             conversationTemplate.Actors = std::move(actorsByConversation[conversationTemplate.Id]);
-            conversationTemplate.ActorGuids = std::move(actorGuidsByConversation[conversationTemplate.Id]);
+
+            uint32 correctedFirstLineId = getFirstLineIdFromAnyLineId(conversationTemplate.FirstLineId);
+            if (conversationTemplate.FirstLineId != correctedFirstLineId)
+            {
+                TC_LOG_ERROR("sql.sql", "Table `conversation_template` has incorrect FirstLineId {}, it should be {} for Conversation {}, corrected",
+                    conversationTemplate.FirstLineId, correctedFirstLineId, conversationTemplate.Id);
+                conversationTemplate.FirstLineId = correctedFirstLineId;
+            }
 
             ConversationLineEntry const* currentConversationLine = sConversationLineStore.LookupEntry(conversationTemplate.FirstLineId);
             if (!currentConversationLine)
-                TC_LOG_ERROR("sql.sql", "Table `conversation_template` references an invalid line (ID: %u) for Conversation %u, skipped", conversationTemplate.FirstLineId, conversationTemplate.Id);
+                TC_LOG_ERROR("sql.sql", "Table `conversation_template` references an invalid line (ID: {}) for Conversation {}, skipped", conversationTemplate.FirstLineId, conversationTemplate.Id);
 
             while (currentConversationLine != nullptr)
             {
                 if (ConversationLineTemplate const* conversationLineTemplate = Trinity::Containers::MapGetValuePtr(_conversationLineTemplateStore, currentConversationLine->ID))
                     conversationTemplate.Lines.push_back(conversationLineTemplate);
                 else
-                    TC_LOG_ERROR("sql.sql", "Table `conversation_line_template` has missing template for line (ID: %u) in Conversation %u, skipped", currentConversationLine->ID, conversationTemplate.Id);
+                    TC_LOG_ERROR("sql.sql", "Table `conversation_line_template` has missing template for line (ID: {}) in Conversation {}, skipped", currentConversationLine->ID, conversationTemplate.Id);
 
                 if (!currentConversationLine->NextConversationLineID)
                     break;
@@ -184,11 +252,11 @@ void ConversationDataStore::LoadConversationTemplates()
                 currentConversationLine = sConversationLineStore.AssertEntry(currentConversationLine->NextConversationLineID);
             }
 
-            _conversationTemplateStore[conversationTemplate.Id] = conversationTemplate;
+            _conversationTemplateStore[conversationTemplate.Id] = std::move(conversationTemplate);
         }
         while (templates->NextRow());
 
-        TC_LOG_INFO("server.loading", ">> Loaded " SZFMTD " Conversation templates in %u ms", _conversationTemplateStore.size(), GetMSTimeDiffToNow(oldMSTime));
+        TC_LOG_INFO("server.loading", ">> Loaded {} Conversation templates in {} ms", _conversationTemplateStore.size(), GetMSTimeDiffToNow(oldMSTime));
     }
     else
     {
@@ -199,6 +267,11 @@ void ConversationDataStore::LoadConversationTemplates()
 ConversationTemplate const* ConversationDataStore::GetConversationTemplate(uint32 conversationId) const
 {
     return Trinity::Containers::MapGetValuePtr(_conversationTemplateStore, conversationId);
+}
+
+ConversationLineTemplate const* ConversationDataStore::GetConversationLineTemplate(uint32 conversationLineId) const
+{
+    return Trinity::Containers::MapGetValuePtr(_conversationLineTemplateStore, conversationLineId);
 }
 
 ConversationDataStore* ConversationDataStore::Instance()

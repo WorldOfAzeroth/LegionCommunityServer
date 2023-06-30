@@ -4816,8 +4816,8 @@ google::protobuf::ServiceDescriptor const* ChannelService::descriptor() {
 }
 
 void ChannelService::RemoveMember(::bgs::protocol::channel::v1::RemoveMemberRequest const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChannelService.RemoveMember(bgs.protocol.channel.v1.RemoveMemberRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChannelService.RemoveMember(bgs.protocol.channel.v1.RemoveMemberRequest: {})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::NoData response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -4827,8 +4827,8 @@ void ChannelService::RemoveMember(::bgs::protocol::channel::v1::RemoveMemberRequ
 }
 
 void ChannelService::SendMessage(::bgs::protocol::channel::v1::SendMessageRequest const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChannelService.SendMessage(bgs.protocol.channel.v1.SendMessageRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChannelService.SendMessage(bgs.protocol.channel.v1.SendMessageRequest: {})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::NoData response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -4838,8 +4838,8 @@ void ChannelService::SendMessage(::bgs::protocol::channel::v1::SendMessageReques
 }
 
 void ChannelService::UpdateChannelState(::bgs::protocol::channel::v1::UpdateChannelStateRequest const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChannelService.UpdateChannelState(bgs.protocol.channel.v1.UpdateChannelStateRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChannelService.UpdateChannelState(bgs.protocol.channel.v1.UpdateChannelStateRequest: {})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::NoData response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -4849,8 +4849,8 @@ void ChannelService::UpdateChannelState(::bgs::protocol::channel::v1::UpdateChan
 }
 
 void ChannelService::UpdateMemberState(::bgs::protocol::channel::v1::UpdateMemberStateRequest const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChannelService.UpdateMemberState(bgs.protocol.channel.v1.UpdateMemberStateRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChannelService.UpdateMemberState(bgs.protocol.channel.v1.UpdateMemberStateRequest: {})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::NoData response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -4860,8 +4860,8 @@ void ChannelService::UpdateMemberState(::bgs::protocol::channel::v1::UpdateMembe
 }
 
 void ChannelService::Dissolve(::bgs::protocol::channel::v1::DissolveRequest const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChannelService.Dissolve(bgs.protocol.channel.v1.DissolveRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChannelService.Dissolve(bgs.protocol.channel.v1.DissolveRequest: {})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::NoData response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -4875,18 +4875,18 @@ void ChannelService::CallServerMethod(uint32 token, uint32 methodId, MessageBuff
     case 2: {
       ::bgs::protocol::channel::v1::RemoveMemberRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChannelService.RemoveMember server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChannelService.RemoveMember server method call.", GetCallerInfo());
         SendResponse(service_hash_, 2, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChannelService.RemoveMember(bgs.protocol.channel.v1.RemoveMemberRequest{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChannelService.RemoveMember(bgs.protocol.channel.v1.RemoveMemberRequest: {}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::NoData::descriptor());
         ChannelService* self = static_cast<ChannelService*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChannelService.RemoveMember() returned bgs.protocol.NoData{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChannelService.RemoveMember() returned bgs.protocol.NoData: {} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 2, token, response);
         else
@@ -4901,18 +4901,18 @@ void ChannelService::CallServerMethod(uint32 token, uint32 methodId, MessageBuff
     case 3: {
       ::bgs::protocol::channel::v1::SendMessageRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChannelService.SendMessage server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChannelService.SendMessage server method call.", GetCallerInfo());
         SendResponse(service_hash_, 3, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChannelService.SendMessage(bgs.protocol.channel.v1.SendMessageRequest{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChannelService.SendMessage(bgs.protocol.channel.v1.SendMessageRequest: {}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::NoData::descriptor());
         ChannelService* self = static_cast<ChannelService*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChannelService.SendMessage() returned bgs.protocol.NoData{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChannelService.SendMessage() returned bgs.protocol.NoData: {} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 3, token, response);
         else
@@ -4927,18 +4927,18 @@ void ChannelService::CallServerMethod(uint32 token, uint32 methodId, MessageBuff
     case 4: {
       ::bgs::protocol::channel::v1::UpdateChannelStateRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChannelService.UpdateChannelState server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChannelService.UpdateChannelState server method call.", GetCallerInfo());
         SendResponse(service_hash_, 4, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChannelService.UpdateChannelState(bgs.protocol.channel.v1.UpdateChannelStateRequest{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChannelService.UpdateChannelState(bgs.protocol.channel.v1.UpdateChannelStateRequest: {}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::NoData::descriptor());
         ChannelService* self = static_cast<ChannelService*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChannelService.UpdateChannelState() returned bgs.protocol.NoData{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChannelService.UpdateChannelState() returned bgs.protocol.NoData: {} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 4, token, response);
         else
@@ -4953,18 +4953,18 @@ void ChannelService::CallServerMethod(uint32 token, uint32 methodId, MessageBuff
     case 5: {
       ::bgs::protocol::channel::v1::UpdateMemberStateRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChannelService.UpdateMemberState server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChannelService.UpdateMemberState server method call.", GetCallerInfo());
         SendResponse(service_hash_, 5, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChannelService.UpdateMemberState(bgs.protocol.channel.v1.UpdateMemberStateRequest{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChannelService.UpdateMemberState(bgs.protocol.channel.v1.UpdateMemberStateRequest: {}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::NoData::descriptor());
         ChannelService* self = static_cast<ChannelService*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChannelService.UpdateMemberState() returned bgs.protocol.NoData{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChannelService.UpdateMemberState() returned bgs.protocol.NoData: {} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 5, token, response);
         else
@@ -4979,18 +4979,18 @@ void ChannelService::CallServerMethod(uint32 token, uint32 methodId, MessageBuff
     case 6: {
       ::bgs::protocol::channel::v1::DissolveRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChannelService.Dissolve server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChannelService.Dissolve server method call.", GetCallerInfo());
         SendResponse(service_hash_, 6, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChannelService.Dissolve(bgs.protocol.channel.v1.DissolveRequest{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChannelService.Dissolve(bgs.protocol.channel.v1.DissolveRequest: {}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::NoData::descriptor());
         ChannelService* self = static_cast<ChannelService*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChannelService.Dissolve() returned bgs.protocol.NoData{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChannelService.Dissolve() returned bgs.protocol.NoData: {} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 6, token, response);
         else
@@ -5010,32 +5010,32 @@ void ChannelService::CallServerMethod(uint32 token, uint32 methodId, MessageBuff
 }
 
 uint32 ChannelService::HandleRemoveMember(::bgs::protocol::channel::v1::RemoveMemberRequest const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChannelService.RemoveMember({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChannelService.RemoveMember(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 ChannelService::HandleSendMessage(::bgs::protocol::channel::v1::SendMessageRequest const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChannelService.SendMessage({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChannelService.SendMessage(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 ChannelService::HandleUpdateChannelState(::bgs::protocol::channel::v1::UpdateChannelStateRequest const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChannelService.UpdateChannelState({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChannelService.UpdateChannelState(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 ChannelService::HandleUpdateMemberState(::bgs::protocol::channel::v1::UpdateMemberStateRequest const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChannelService.UpdateMemberState({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChannelService.UpdateMemberState(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 ChannelService::HandleDissolve(::bgs::protocol::channel::v1::DissolveRequest const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChannelService.Dissolve({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChannelService.Dissolve(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
@@ -5053,44 +5053,44 @@ google::protobuf::ServiceDescriptor const* ChannelListener::descriptor() {
 }
 
 void ChannelListener::OnJoin(::bgs::protocol::channel::v1::JoinNotification const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChannelListener.OnJoin(bgs.protocol.channel.v1.JoinNotification{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChannelListener.OnJoin(bgs.protocol.channel.v1.JoinNotification: {})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 1, request);
 }
 
 void ChannelListener::OnMemberAdded(::bgs::protocol::channel::v1::MemberAddedNotification const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChannelListener.OnMemberAdded(bgs.protocol.channel.v1.MemberAddedNotification{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChannelListener.OnMemberAdded(bgs.protocol.channel.v1.MemberAddedNotification: {})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 2, request);
 }
 
 void ChannelListener::OnLeave(::bgs::protocol::channel::v1::LeaveNotification const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChannelListener.OnLeave(bgs.protocol.channel.v1.LeaveNotification{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChannelListener.OnLeave(bgs.protocol.channel.v1.LeaveNotification: {})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 3, request);
 }
 
 void ChannelListener::OnMemberRemoved(::bgs::protocol::channel::v1::MemberRemovedNotification const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChannelListener.OnMemberRemoved(bgs.protocol.channel.v1.MemberRemovedNotification{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChannelListener.OnMemberRemoved(bgs.protocol.channel.v1.MemberRemovedNotification: {})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 4, request);
 }
 
 void ChannelListener::OnSendMessage(::bgs::protocol::channel::v1::SendMessageNotification const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChannelListener.OnSendMessage(bgs.protocol.channel.v1.SendMessageNotification{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChannelListener.OnSendMessage(bgs.protocol.channel.v1.SendMessageNotification: {})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 5, request);
 }
 
 void ChannelListener::OnUpdateChannelState(::bgs::protocol::channel::v1::UpdateChannelStateNotification const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChannelListener.OnUpdateChannelState(bgs.protocol.channel.v1.UpdateChannelStateNotification{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChannelListener.OnUpdateChannelState(bgs.protocol.channel.v1.UpdateChannelStateNotification: {})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 6, request);
 }
 
 void ChannelListener::OnUpdateMemberState(::bgs::protocol::channel::v1::UpdateMemberStateNotification const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChannelListener.OnUpdateMemberState(bgs.protocol.channel.v1.UpdateMemberStateNotification{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChannelListener.OnUpdateMemberState(bgs.protocol.channel.v1.UpdateMemberStateNotification: {})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 7, request);
 }
 
@@ -5099,13 +5099,13 @@ void ChannelListener::CallServerMethod(uint32 token, uint32 methodId, MessageBuf
     case 1: {
       ::bgs::protocol::channel::v1::JoinNotification request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChannelListener.OnJoin server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChannelListener.OnJoin server method call.", GetCallerInfo());
         SendResponse(service_hash_, 1, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnJoin(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChannelListener.OnJoin(bgs.protocol.channel.v1.JoinNotification{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChannelListener.OnJoin(bgs.protocol.channel.v1.JoinNotification: {}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 1, token, status);
       break;
@@ -5113,13 +5113,13 @@ void ChannelListener::CallServerMethod(uint32 token, uint32 methodId, MessageBuf
     case 2: {
       ::bgs::protocol::channel::v1::MemberAddedNotification request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChannelListener.OnMemberAdded server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChannelListener.OnMemberAdded server method call.", GetCallerInfo());
         SendResponse(service_hash_, 2, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnMemberAdded(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChannelListener.OnMemberAdded(bgs.protocol.channel.v1.MemberAddedNotification{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChannelListener.OnMemberAdded(bgs.protocol.channel.v1.MemberAddedNotification: {}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 2, token, status);
       break;
@@ -5127,13 +5127,13 @@ void ChannelListener::CallServerMethod(uint32 token, uint32 methodId, MessageBuf
     case 3: {
       ::bgs::protocol::channel::v1::LeaveNotification request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChannelListener.OnLeave server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChannelListener.OnLeave server method call.", GetCallerInfo());
         SendResponse(service_hash_, 3, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnLeave(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChannelListener.OnLeave(bgs.protocol.channel.v1.LeaveNotification{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChannelListener.OnLeave(bgs.protocol.channel.v1.LeaveNotification: {}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 3, token, status);
       break;
@@ -5141,13 +5141,13 @@ void ChannelListener::CallServerMethod(uint32 token, uint32 methodId, MessageBuf
     case 4: {
       ::bgs::protocol::channel::v1::MemberRemovedNotification request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChannelListener.OnMemberRemoved server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChannelListener.OnMemberRemoved server method call.", GetCallerInfo());
         SendResponse(service_hash_, 4, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnMemberRemoved(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChannelListener.OnMemberRemoved(bgs.protocol.channel.v1.MemberRemovedNotification{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChannelListener.OnMemberRemoved(bgs.protocol.channel.v1.MemberRemovedNotification: {}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 4, token, status);
       break;
@@ -5155,13 +5155,13 @@ void ChannelListener::CallServerMethod(uint32 token, uint32 methodId, MessageBuf
     case 5: {
       ::bgs::protocol::channel::v1::SendMessageNotification request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChannelListener.OnSendMessage server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChannelListener.OnSendMessage server method call.", GetCallerInfo());
         SendResponse(service_hash_, 5, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnSendMessage(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChannelListener.OnSendMessage(bgs.protocol.channel.v1.SendMessageNotification{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChannelListener.OnSendMessage(bgs.protocol.channel.v1.SendMessageNotification: {}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 5, token, status);
       break;
@@ -5169,13 +5169,13 @@ void ChannelListener::CallServerMethod(uint32 token, uint32 methodId, MessageBuf
     case 6: {
       ::bgs::protocol::channel::v1::UpdateChannelStateNotification request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChannelListener.OnUpdateChannelState server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChannelListener.OnUpdateChannelState server method call.", GetCallerInfo());
         SendResponse(service_hash_, 6, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnUpdateChannelState(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChannelListener.OnUpdateChannelState(bgs.protocol.channel.v1.UpdateChannelStateNotification{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChannelListener.OnUpdateChannelState(bgs.protocol.channel.v1.UpdateChannelStateNotification: {}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 6, token, status);
       break;
@@ -5183,13 +5183,13 @@ void ChannelListener::CallServerMethod(uint32 token, uint32 methodId, MessageBuf
     case 7: {
       ::bgs::protocol::channel::v1::UpdateMemberStateNotification request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChannelListener.OnUpdateMemberState server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChannelListener.OnUpdateMemberState server method call.", GetCallerInfo());
         SendResponse(service_hash_, 7, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnUpdateMemberState(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChannelListener.OnUpdateMemberState(bgs.protocol.channel.v1.UpdateMemberStateNotification{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChannelListener.OnUpdateMemberState(bgs.protocol.channel.v1.UpdateMemberStateNotification: {}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 7, token, status);
       break;
@@ -5202,44 +5202,44 @@ void ChannelListener::CallServerMethod(uint32 token, uint32 methodId, MessageBuf
 }
 
 uint32 ChannelListener::HandleOnJoin(::bgs::protocol::channel::v1::JoinNotification const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChannelListener.OnJoin({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChannelListener.OnJoin(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 ChannelListener::HandleOnMemberAdded(::bgs::protocol::channel::v1::MemberAddedNotification const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChannelListener.OnMemberAdded({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChannelListener.OnMemberAdded(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 ChannelListener::HandleOnLeave(::bgs::protocol::channel::v1::LeaveNotification const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChannelListener.OnLeave({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChannelListener.OnLeave(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 ChannelListener::HandleOnMemberRemoved(::bgs::protocol::channel::v1::MemberRemovedNotification const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChannelListener.OnMemberRemoved({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChannelListener.OnMemberRemoved(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 ChannelListener::HandleOnSendMessage(::bgs::protocol::channel::v1::SendMessageNotification const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChannelListener.OnSendMessage({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChannelListener.OnSendMessage(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 ChannelListener::HandleOnUpdateChannelState(::bgs::protocol::channel::v1::UpdateChannelStateNotification const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChannelListener.OnUpdateChannelState({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChannelListener.OnUpdateChannelState(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 ChannelListener::HandleOnUpdateMemberState(::bgs::protocol::channel::v1::UpdateMemberStateNotification const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChannelListener.OnUpdateMemberState({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChannelListener.OnUpdateMemberState(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 

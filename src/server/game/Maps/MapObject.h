@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -35,7 +35,7 @@ enum MapObjectCellMoveState
 class TC_GAME_API MapObject
 {
     friend class Map; //map for moving creatures
-    friend class ObjectGridLoader; //grid loader for loading creatures
+    friend class ObjectGridLoaderBase; //grid loader for loading creatures
 
 protected:
     MapObject() : _moveState(MAP_OBJECT_CELL_MOVE_NONE)

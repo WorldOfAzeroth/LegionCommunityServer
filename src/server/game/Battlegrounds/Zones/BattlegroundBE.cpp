@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -19,11 +18,31 @@
 #include "BattlegroundBE.h"
 #include "Log.h"
 #include "Player.h"
-#include "WorldStatePackets.h"
 
-BattlegroundBE::BattlegroundBE()
+BattlegroundBE::BattlegroundBE(BattlegroundTemplate const* battlegroundTemplate) : Arena(battlegroundTemplate)
 {
     BgObjects.resize(BG_BE_OBJECT_MAX);
+}
+
+void BattlegroundBE::PostUpdateImpl(uint32 diff)
+{
+    if (GetStatus() != STATUS_IN_PROGRESS)
+        return;
+
+    _events.Update(diff);
+
+    while (uint32 eventId = _events.ExecuteEvent())
+    {
+        switch (eventId)
+        {
+            case BG_BE_EVENT_REMOVE_DOORS:
+                for (uint32 i = BG_BE_OBJECT_DOOR_1; i <= BG_BE_OBJECT_DOOR_2; ++i)
+                    DelObject(i);
+                break;
+            default:
+                break;
+        }
+    }
 }
 
 void BattlegroundBE::StartingEventCloseDoors()
@@ -39,6 +58,7 @@ void BattlegroundBE::StartingEventOpenDoors()
 {
     for (uint32 i = BG_BE_OBJECT_DOOR_1; i <= BG_BE_OBJECT_DOOR_2; ++i)
         DoorOpen(i);
+    _events.ScheduleEvent(BG_BE_EVENT_REMOVE_DOORS, BG_BE_REMOVE_DOORS_TIMER);
 
     for (uint32 i = BG_BE_OBJECT_BUFF_1; i <= BG_BE_OBJECT_BUFF_2; ++i)
         SpawnBGObject(i, 60);
@@ -58,12 +78,6 @@ void BattlegroundBE::HandleAreaTrigger(Player* player, uint32 trigger, bool ente
             Battleground::HandleAreaTrigger(player, trigger, entered);
             break;
     }
-}
-
-void BattlegroundBE::FillInitialWorldStates(WorldPackets::WorldState::InitWorldStates& packet)
-{
-    packet.Worldstates.emplace_back(0x9f3, 1);
-    Arena::FillInitialWorldStates(packet);
 }
 
 bool BattlegroundBE::SetupBattleground()

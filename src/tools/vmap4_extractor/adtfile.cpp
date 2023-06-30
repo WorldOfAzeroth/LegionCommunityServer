@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -19,7 +18,6 @@
 #include "vmapexport.h"
 #include "adtfile.h"
 #include "StringFormat.h"
-#include <algorithm>
 #include <cstdio>
 #include "Errors.h"
 
@@ -27,7 +25,7 @@ char const* GetPlainName(char const* FileName)
 {
     const char * szTemp;
 
-    if((szTemp = strrchr(FileName, '\\')) != NULL)
+    if((szTemp = strrchr(FileName, '\\')) != nullptr)
         FileName = szTemp + 1;
     return FileName;
 }
@@ -36,7 +34,7 @@ char* GetPlainName(char* FileName)
 {
     char * szTemp;
 
-    if((szTemp = strrchr(FileName, '\\')) != NULL)
+    if((szTemp = strrchr(FileName, '\\')) != nullptr)
         FileName = szTemp + 1;
     return FileName;
 }
@@ -72,7 +70,7 @@ char* GetExtension(char* FileName)
 {
     if (char* szTemp = strrchr(FileName, '.'))
         return szTemp;
-    return NULL;
+    return nullptr;
 }
 
 extern CASC::StorageHandle CascStorage;
@@ -184,7 +182,7 @@ bool ADTFile::init(uint32 map_num, uint32 originalMapId)
                     }
                     else
                     {
-                        std::string fileName = Trinity::StringFormat("FILE%08X.xxx", doodadDef.Id);
+                        std::string fileName = Trinity::StringFormat("FILE{:08X}.xxx", doodadDef.Id);
                         ExtractSingleModel(fileName);
                         Doodad::Extract(doodadDef, fileName.c_str(), map_num, originalMapId, dirfile, dirfileCache);
                     }
@@ -209,7 +207,7 @@ bool ADTFile::init(uint32 map_num, uint32 originalMapId)
                     }
                     else
                     {
-                        std::string fileName = Trinity::StringFormat("FILE%08X.xxx", mapObjDef.Id);
+                        std::string fileName = Trinity::StringFormat("FILE{:08X}.xxx", mapObjDef.Id);
                         ExtractSingleWmo(fileName);
                         MapObject::Extract(mapObjDef, fileName.c_str(), false, map_num, originalMapId, dirfile, dirfileCache);
                         Doodad::ExtractSet(WmoDoodads[fileName], mapObjDef, false, map_num, originalMapId, dirfile, dirfileCache);
@@ -245,10 +243,10 @@ bool ADTFile::initFromCache(uint32 map_num, uint32 originalMapId)
     for (ADTOutputCache const& cached : *dirfileCache)
     {
         fwrite(&map_num, sizeof(uint32), 1, dirfile);
-        uint32 flags = cached.Flags;
+        uint8 flags = cached.Flags;
         if (map_num != originalMapId)
             flags |= MOD_PARENT_SPAWN;
-        fwrite(&flags, sizeof(uint32), 1, dirfile);
+        fwrite(&flags, sizeof(uint8), 1, dirfile);
         fwrite(cached.Data.data(), cached.Data.size(), 1, dirfile);
     }
 

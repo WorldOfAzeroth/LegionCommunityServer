@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -19,7 +19,6 @@
 #include "GridNotifiers.h"
 #include "halls_of_origination.h"
 #include "InstanceScript.h"
-#include "Map.h"
 #include "ObjectAccessor.h"
 #include "Player.h"
 #include "ScriptedCreature.h"
@@ -111,11 +110,11 @@ public:
             _Reset();
             CleanStalkers();
             me->RemoveAurasDueToSpell(SPELL_SHIELD_OF_LIGHT);
-            events.ScheduleEvent(EVENT_DIVINE_RECKONING, urand(10000, 12000));
-            events.ScheduleEvent(EVENT_BURNING_LIGHT, 12000);
+            events.ScheduleEvent(EVENT_DIVINE_RECKONING, 10s, 12s);
+            events.ScheduleEvent(EVENT_BURNING_LIGHT, 12s);
         }
 
-        void DamageTaken(Unit* /*attacker*/, uint32& damage) override
+        void DamageTaken(Unit* /*attacker*/, uint32& damage, DamageEffectType /*damageType*/, SpellInfo const* /*spellInfo = nullptr*/) override
         {
             if ((me->HealthBelowPctDamaged(66, damage) && _phase == PHASE_FIRST_SHIELD) ||
                 (me->HealthBelowPctDamaged(33, damage) && _phase == PHASE_SECOND_SHIELD))
@@ -131,7 +130,6 @@ public:
                 DoCast(me, SPELL_TELEPORT);
 
                 DoCast(me, SPELL_SHIELD_OF_LIGHT);
-                me->SetFlag(UNIT_FIELD_FLAGS, uint32(UNIT_FLAG_UNK_31));
 
                 DoCastAOE(SPELL_ACTIVATE_BEACONS);
 
@@ -178,11 +176,11 @@ public:
             }
         }
 
-        void EnterCombat(Unit* /*who*/) override
+        void JustEngagedWith(Unit* who) override
         {
             instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me, 1);
             Talk(SAY_AGGRO);
-            _EnterCombat();
+            BossAI::JustEngagedWith(who);
         }
 
         void JustDied(Unit* /*killer*/) override
@@ -221,16 +219,16 @@ public:
                 {
                     case EVENT_DIVINE_RECKONING:
                         DoCastVictim(SPELL_DIVINE_RECKONING);
-                        events.ScheduleEvent(EVENT_DIVINE_RECKONING, urand(10000, 12000));
+                        events.ScheduleEvent(EVENT_DIVINE_RECKONING, 10s, 12s);
                         break;
                     case EVENT_BURNING_LIGHT:
                     {
-                        Unit* unit = SelectTarget(SELECT_TARGET_RANDOM, 0, NonTankTargetSelector(me));
+                        Unit* unit = SelectTarget(SelectTargetMethod::Random, 0, NonTankTargetSelector(me));
                         if (!unit)
-                            unit = SelectTarget(SELECT_TARGET_RANDOM, 0, 0.0f, true);
+                            unit = SelectTarget(SelectTargetMethod::Random, 0, 0.0f, true);
                         DoCast(unit, SPELL_BURNING_LIGHT);
-                        events.ScheduleEvent(EVENT_SEAR, 2000);
-                        events.ScheduleEvent(EVENT_BURNING_LIGHT, 12000);
+                        events.ScheduleEvent(EVENT_SEAR, 2s);
+                        events.ScheduleEvent(EVENT_BURNING_LIGHT, 12s);
                         break;
                     }
                     case EVENT_SEAR:
@@ -327,9 +325,14 @@ class spell_anhuur_disable_beacon_beams : public SpellScriptLoader
 
             void Notify(SpellEffIndex /*index*/)
             {
-                if (InstanceScript* const script = GetCaster()->GetInstanceScript())
-                    if (Creature* anhuur = ObjectAccessor::GetCreature(*GetCaster(), script->GetGuidData(DATA_ANHUUR_GUID)))
-                        anhuur->AI()->DoAction(ACTION_DISABLE_BEACON);
+                GameObject* caster = GetGObjCaster();
+                if (!caster)
+                    return;
+
+                if (InstanceScript* instance = caster->GetInstanceScript())
+                    if (Creature* anhuur = instance->GetCreature(DATA_TEMPLE_GUARDIAN_ANHUUR))
+                        if (CreatureAI* ai = anhuur->AI())
+                            ai->DoAction(ACTION_DISABLE_BEACON);
             }
 
             void Register() override
@@ -342,33 +345,6 @@ class spell_anhuur_disable_beacon_beams : public SpellScriptLoader
         SpellScript* GetSpellScript() const override
         {
             return new spell_anhuur_disable_beacon_beams_SpellScript();
-        }
-};
-
-class spell_anhuur_activate_beacons : public SpellScriptLoader
-{
-    public:
-        spell_anhuur_activate_beacons() : SpellScriptLoader("spell_anhuur_activate_beacons") { }
-
-        class spell_anhuur_activate_beacons_SpellScript : public SpellScript
-        {
-            PrepareSpellScript(spell_anhuur_activate_beacons_SpellScript);
-
-            void Activate(SpellEffIndex index)
-            {
-                PreventHitDefaultEffect(index);
-                GetHitGObj()->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NOT_SELECTABLE);
-            }
-
-            void Register() override
-            {
-                OnEffectHitTarget += SpellEffectFn(spell_anhuur_activate_beacons_SpellScript::Activate, EFFECT_0, SPELL_EFFECT_ACTIVATE_OBJECT);
-            }
-        };
-
-        SpellScript* GetSpellScript() const override
-        {
-            return new spell_anhuur_activate_beacons_SpellScript();
         }
 };
 
@@ -385,9 +361,9 @@ public:
         {
             if (Unit* caster = GetCaster())
             {
-                CustomSpellValues values;
-                values.AddSpellMod(SPELLVALUE_BASE_POINT0, aurEff->GetAmount());
-                caster->CastCustomSpell(aurEff->GetSpellEffectInfo()->TriggerSpell, values, GetTarget());
+                CastSpellExtraArgs args;
+                args.AddSpellMod(SPELLVALUE_BASE_POINT0, aurEff->GetAmount());
+                caster->CastSpell(GetTarget(), aurEff->GetSpellEffectInfo().TriggerSpell, args);
             }
         }
 
@@ -408,6 +384,5 @@ void AddSC_boss_temple_guardian_anhuur()
     new boss_temple_guardian_anhuur();
     new spell_anhuur_shield_of_light();
     new spell_anhuur_disable_beacon_beams();
-    new spell_anhuur_activate_beacons();
     new spell_anhuur_divine_reckoning();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -19,8 +19,19 @@
 #include "GameObject.h"
 #include "InstanceScript.h"
 #include "Map.h"
-#include "Player.h"
 #include "scholomance.h"
+
+DungeonEncounterData const encounters[] =
+{
+    { DATA_DOCTORTHEOLENKRASTINOV, {{ 458 }} },
+    { DATA_INSTRUCTORMALICIA, {{ 457 }} },
+    { DATA_LADYILLUCIABAROV, {{ 462 }} },
+    { DATA_LORDALEXEIBAROV, {{ 461 }} },
+    { DATA_LOREKEEPERPOLKELT, {{ 459 }} },
+    { DATA_THERAVENIAN, {{ 460 }} },
+    { DATA_DARKMASTERGANDLING, {{ 463 }} },
+    { DATA_KIRTONOS, {{ 451 }} }
+};
 
 Position const GandlingLoc = { 180.7712f, -5.428603f, 75.57024f, 1.291544f };
 
@@ -40,6 +51,7 @@ class instance_scholomance : public InstanceMapScript
             {
                 SetHeaders(DataHeader);
                 SetBossNumber(EncounterCount);
+                LoadDungeonEncounterData(encounters);
             }
 
             void OnGameObjectCreate(GameObject* go) override
@@ -162,7 +174,7 @@ class instance_scholomance : public InstanceMapScript
                     instance->SummonCreature(NPC_DARKMASTER_GANDLING, GandlingLoc);
             }
 
-            void ReadSaveDataMore(std::istringstream& /*data*/) override
+            void AfterDataLoad() override
             {
                 CheckToSpawnGandling();
             }

@@ -21,6 +21,7 @@
 
 #include "ByteBuffer.h"
 #include "Opcodes.h"
+#include "Duration.h"
 
 class WorldPacket : public ByteBuffer
 {
@@ -86,9 +87,13 @@ class WorldPacket : public ByteBuffer
 
         ConnectionType GetConnection() const { return _connection; }
 
+        TimePoint GetReceivedTime() const { return m_receivedTime; }
+        void SetReceiveTime(TimePoint receivedTime) { m_receivedTime = receivedTime; }
+
     protected:
         uint32 m_opcode;
         ConnectionType _connection;
+        TimePoint m_receivedTime; // only set for a specific set of opcodes, for performance reasons.
 };
 
 #endif

@@ -1868,17 +1868,6 @@ struct GMSurveySurveysMeta
     }
 };
 
-struct GameObjectArtKitMeta
-{
-    static DB2Meta const* Instance()
-    {
-        static char const* types = "ii";
-        static uint8 const arraySizes[2] = { 1, 3 };
-        static DB2Meta instance(-1, 2, 0x6F65BC41, types, arraySizes, -1);
-        return &instance;
-    }
-};
-
 struct GameObjectDiffAnimMapMeta
 {
     static DB2Meta const* Instance()

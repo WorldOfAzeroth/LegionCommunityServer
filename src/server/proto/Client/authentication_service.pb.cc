@@ -7164,14 +7164,14 @@ google::protobuf::ServiceDescriptor const* AuthenticationListener::descriptor() 
 }
 
 void AuthenticationListener::OnModuleLoad(::bgs::protocol::authentication::v1::ModuleLoadRequest const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method AuthenticationListener.OnModuleLoad(bgs.protocol.authentication.v1.ModuleLoadRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method AuthenticationListener.OnModuleLoad(bgs.protocol.authentication.v1.ModuleLoadRequest{})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 1, request);
 }
 
 void AuthenticationListener::OnModuleMessage(::bgs::protocol::authentication::v1::ModuleMessageRequest const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method AuthenticationListener.OnModuleMessage(bgs.protocol.authentication.v1.ModuleMessageRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method AuthenticationListener.OnModuleMessage(bgs.protocol.authentication.v1.ModuleMessageRequest{})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::NoData response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -7181,20 +7181,20 @@ void AuthenticationListener::OnModuleMessage(::bgs::protocol::authentication::v1
 }
 
 void AuthenticationListener::OnServerStateChange(::bgs::protocol::authentication::v1::ServerStateChangeRequest const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method AuthenticationListener.OnServerStateChange(bgs.protocol.authentication.v1.ServerStateChangeRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method AuthenticationListener.OnServerStateChange(bgs.protocol.authentication.v1.ServerStateChangeRequest{})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 4, request);
 }
 
 void AuthenticationListener::OnLogonComplete(::bgs::protocol::authentication::v1::LogonResult const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method AuthenticationListener.OnLogonComplete(bgs.protocol.authentication.v1.LogonResult{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method AuthenticationListener.OnLogonComplete(bgs.protocol.authentication.v1.LogonResult{})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 5, request);
 }
 
 void AuthenticationListener::OnMemModuleLoad(::bgs::protocol::authentication::v1::MemModuleLoadRequest const* request, std::function<void(::bgs::protocol::authentication::v1::MemModuleLoadResponse const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method AuthenticationListener.OnMemModuleLoad(bgs.protocol.authentication.v1.MemModuleLoadRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method AuthenticationListener.OnMemModuleLoad(bgs.protocol.authentication.v1.MemModuleLoadRequest{})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::authentication::v1::MemModuleLoadResponse response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -7204,32 +7204,32 @@ void AuthenticationListener::OnMemModuleLoad(::bgs::protocol::authentication::v1
 }
 
 void AuthenticationListener::OnLogonUpdate(::bgs::protocol::authentication::v1::LogonUpdateRequest const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method AuthenticationListener.OnLogonUpdate(bgs.protocol.authentication.v1.LogonUpdateRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method AuthenticationListener.OnLogonUpdate(bgs.protocol.authentication.v1.LogonUpdateRequest{})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 10, request);
 }
 
 void AuthenticationListener::OnVersionInfoUpdated(::bgs::protocol::authentication::v1::VersionInfoNotification const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method AuthenticationListener.OnVersionInfoUpdated(bgs.protocol.authentication.v1.VersionInfoNotification{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method AuthenticationListener.OnVersionInfoUpdated(bgs.protocol.authentication.v1.VersionInfoNotification{})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 11, request);
 }
 
 void AuthenticationListener::OnLogonQueueUpdate(::bgs::protocol::authentication::v1::LogonQueueUpdateRequest const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method AuthenticationListener.OnLogonQueueUpdate(bgs.protocol.authentication.v1.LogonQueueUpdateRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method AuthenticationListener.OnLogonQueueUpdate(bgs.protocol.authentication.v1.LogonQueueUpdateRequest{})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 12, request);
 }
 
 void AuthenticationListener::OnLogonQueueEnd(::bgs::protocol::NoData const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method AuthenticationListener.OnLogonQueueEnd(bgs.protocol.NoData{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method AuthenticationListener.OnLogonQueueEnd(bgs.protocol.NoData{})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 13, request);
 }
 
 void AuthenticationListener::OnGameAccountSelected(::bgs::protocol::authentication::v1::GameAccountSelectedRequest const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method AuthenticationListener.OnGameAccountSelected(bgs.protocol.authentication.v1.GameAccountSelectedRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method AuthenticationListener.OnGameAccountSelected(bgs.protocol.authentication.v1.GameAccountSelectedRequest{})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 14, request);
 }
 
@@ -7238,13 +7238,13 @@ void AuthenticationListener::CallServerMethod(uint32 token, uint32 methodId, Mes
     case 1: {
       ::bgs::protocol::authentication::v1::ModuleLoadRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for AuthenticationListener.OnModuleLoad server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for AuthenticationListener.OnModuleLoad server method call.", GetCallerInfo());
         SendResponse(service_hash_, 1, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnModuleLoad(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationListener.OnModuleLoad(bgs.protocol.authentication.v1.ModuleLoadRequest{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationListener.OnModuleLoad(bgs.protocol.authentication.v1.ModuleLoadRequest{}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 1, token, status);
       break;
@@ -7252,18 +7252,18 @@ void AuthenticationListener::CallServerMethod(uint32 token, uint32 methodId, Mes
     case 2: {
       ::bgs::protocol::authentication::v1::ModuleMessageRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for AuthenticationListener.OnModuleMessage server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for AuthenticationListener.OnModuleMessage server method call.", GetCallerInfo());
         SendResponse(service_hash_, 2, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationListener.OnModuleMessage(bgs.protocol.authentication.v1.ModuleMessageRequest{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationListener.OnModuleMessage(bgs.protocol.authentication.v1.ModuleMessageRequest{}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::NoData::descriptor());
         AuthenticationListener* self = static_cast<AuthenticationListener*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationListener.OnModuleMessage() returned bgs.protocol.NoData{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationListener.OnModuleMessage() returned bgs.protocol.NoData{} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 2, token, response);
         else
@@ -7278,13 +7278,13 @@ void AuthenticationListener::CallServerMethod(uint32 token, uint32 methodId, Mes
     case 4: {
       ::bgs::protocol::authentication::v1::ServerStateChangeRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for AuthenticationListener.OnServerStateChange server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for AuthenticationListener.OnServerStateChange server method call.", GetCallerInfo());
         SendResponse(service_hash_, 4, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnServerStateChange(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationListener.OnServerStateChange(bgs.protocol.authentication.v1.ServerStateChangeRequest{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationListener.OnServerStateChange(bgs.protocol.authentication.v1.ServerStateChangeRequest{}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 4, token, status);
       break;
@@ -7292,13 +7292,13 @@ void AuthenticationListener::CallServerMethod(uint32 token, uint32 methodId, Mes
     case 5: {
       ::bgs::protocol::authentication::v1::LogonResult request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for AuthenticationListener.OnLogonComplete server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for AuthenticationListener.OnLogonComplete server method call.", GetCallerInfo());
         SendResponse(service_hash_, 5, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnLogonComplete(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationListener.OnLogonComplete(bgs.protocol.authentication.v1.LogonResult{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationListener.OnLogonComplete(bgs.protocol.authentication.v1.LogonResult{}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 5, token, status);
       break;
@@ -7306,18 +7306,18 @@ void AuthenticationListener::CallServerMethod(uint32 token, uint32 methodId, Mes
     case 6: {
       ::bgs::protocol::authentication::v1::MemModuleLoadRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for AuthenticationListener.OnMemModuleLoad server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for AuthenticationListener.OnMemModuleLoad server method call.", GetCallerInfo());
         SendResponse(service_hash_, 6, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationListener.OnMemModuleLoad(bgs.protocol.authentication.v1.MemModuleLoadRequest{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationListener.OnMemModuleLoad(bgs.protocol.authentication.v1.MemModuleLoadRequest{}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::authentication::v1::MemModuleLoadResponse::descriptor());
         AuthenticationListener* self = static_cast<AuthenticationListener*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationListener.OnMemModuleLoad() returned bgs.protocol.authentication.v1.MemModuleLoadResponse{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationListener.OnMemModuleLoad() returned bgs.protocol.authentication.v1.MemModuleLoadResponse{} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 6, token, response);
         else
@@ -7332,13 +7332,13 @@ void AuthenticationListener::CallServerMethod(uint32 token, uint32 methodId, Mes
     case 10: {
       ::bgs::protocol::authentication::v1::LogonUpdateRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for AuthenticationListener.OnLogonUpdate server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for AuthenticationListener.OnLogonUpdate server method call.", GetCallerInfo());
         SendResponse(service_hash_, 10, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnLogonUpdate(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationListener.OnLogonUpdate(bgs.protocol.authentication.v1.LogonUpdateRequest{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationListener.OnLogonUpdate(bgs.protocol.authentication.v1.LogonUpdateRequest{}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 10, token, status);
       break;
@@ -7346,13 +7346,13 @@ void AuthenticationListener::CallServerMethod(uint32 token, uint32 methodId, Mes
     case 11: {
       ::bgs::protocol::authentication::v1::VersionInfoNotification request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for AuthenticationListener.OnVersionInfoUpdated server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for AuthenticationListener.OnVersionInfoUpdated server method call.", GetCallerInfo());
         SendResponse(service_hash_, 11, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnVersionInfoUpdated(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationListener.OnVersionInfoUpdated(bgs.protocol.authentication.v1.VersionInfoNotification{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationListener.OnVersionInfoUpdated(bgs.protocol.authentication.v1.VersionInfoNotification{}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 11, token, status);
       break;
@@ -7360,13 +7360,13 @@ void AuthenticationListener::CallServerMethod(uint32 token, uint32 methodId, Mes
     case 12: {
       ::bgs::protocol::authentication::v1::LogonQueueUpdateRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for AuthenticationListener.OnLogonQueueUpdate server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for AuthenticationListener.OnLogonQueueUpdate server method call.", GetCallerInfo());
         SendResponse(service_hash_, 12, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnLogonQueueUpdate(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationListener.OnLogonQueueUpdate(bgs.protocol.authentication.v1.LogonQueueUpdateRequest{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationListener.OnLogonQueueUpdate(bgs.protocol.authentication.v1.LogonQueueUpdateRequest{}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 12, token, status);
       break;
@@ -7374,13 +7374,13 @@ void AuthenticationListener::CallServerMethod(uint32 token, uint32 methodId, Mes
     case 13: {
       ::bgs::protocol::NoData request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for AuthenticationListener.OnLogonQueueEnd server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for AuthenticationListener.OnLogonQueueEnd server method call.", GetCallerInfo());
         SendResponse(service_hash_, 13, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnLogonQueueEnd(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationListener.OnLogonQueueEnd(bgs.protocol.NoData{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationListener.OnLogonQueueEnd(bgs.protocol.NoData{}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 13, token, status);
       break;
@@ -7388,13 +7388,13 @@ void AuthenticationListener::CallServerMethod(uint32 token, uint32 methodId, Mes
     case 14: {
       ::bgs::protocol::authentication::v1::GameAccountSelectedRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for AuthenticationListener.OnGameAccountSelected server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for AuthenticationListener.OnGameAccountSelected server method call.", GetCallerInfo());
         SendResponse(service_hash_, 14, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnGameAccountSelected(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationListener.OnGameAccountSelected(bgs.protocol.authentication.v1.GameAccountSelectedRequest{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationListener.OnGameAccountSelected(bgs.protocol.authentication.v1.GameAccountSelectedRequest{}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 14, token, status);
       break;
@@ -7407,62 +7407,62 @@ void AuthenticationListener::CallServerMethod(uint32 token, uint32 methodId, Mes
 }
 
 uint32 AuthenticationListener::HandleOnModuleLoad(::bgs::protocol::authentication::v1::ModuleLoadRequest const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method AuthenticationListener.OnModuleLoad({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method AuthenticationListener.OnModuleLoad({})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 AuthenticationListener::HandleOnModuleMessage(::bgs::protocol::authentication::v1::ModuleMessageRequest const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method AuthenticationListener.OnModuleMessage({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method AuthenticationListener.OnModuleMessage({})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 AuthenticationListener::HandleOnServerStateChange(::bgs::protocol::authentication::v1::ServerStateChangeRequest const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method AuthenticationListener.OnServerStateChange({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method AuthenticationListener.OnServerStateChange({})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 AuthenticationListener::HandleOnLogonComplete(::bgs::protocol::authentication::v1::LogonResult const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method AuthenticationListener.OnLogonComplete({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method AuthenticationListener.OnLogonComplete({})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 AuthenticationListener::HandleOnMemModuleLoad(::bgs::protocol::authentication::v1::MemModuleLoadRequest const* request, ::bgs::protocol::authentication::v1::MemModuleLoadResponse* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method AuthenticationListener.OnMemModuleLoad({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method AuthenticationListener.OnMemModuleLoad({})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 AuthenticationListener::HandleOnLogonUpdate(::bgs::protocol::authentication::v1::LogonUpdateRequest const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method AuthenticationListener.OnLogonUpdate({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method AuthenticationListener.OnLogonUpdate({})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 AuthenticationListener::HandleOnVersionInfoUpdated(::bgs::protocol::authentication::v1::VersionInfoNotification const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method AuthenticationListener.OnVersionInfoUpdated({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method AuthenticationListener.OnVersionInfoUpdated({})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 AuthenticationListener::HandleOnLogonQueueUpdate(::bgs::protocol::authentication::v1::LogonQueueUpdateRequest const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method AuthenticationListener.OnLogonQueueUpdate({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method AuthenticationListener.OnLogonQueueUpdate({})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 AuthenticationListener::HandleOnLogonQueueEnd(::bgs::protocol::NoData const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method AuthenticationListener.OnLogonQueueEnd({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method AuthenticationListener.OnLogonQueueEnd({})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 AuthenticationListener::HandleOnGameAccountSelected(::bgs::protocol::authentication::v1::GameAccountSelectedRequest const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method AuthenticationListener.OnGameAccountSelected({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method AuthenticationListener.OnGameAccountSelected({})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
@@ -7480,8 +7480,8 @@ google::protobuf::ServiceDescriptor const* AuthenticationService::descriptor() {
 }
 
 void AuthenticationService::Logon(::bgs::protocol::authentication::v1::LogonRequest const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method AuthenticationService.Logon(bgs.protocol.authentication.v1.LogonRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method AuthenticationService.Logon(bgs.protocol.authentication.v1.LogonRequest{})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::NoData response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -7491,8 +7491,8 @@ void AuthenticationService::Logon(::bgs::protocol::authentication::v1::LogonRequ
 }
 
 void AuthenticationService::ModuleNotify(::bgs::protocol::authentication::v1::ModuleNotification const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method AuthenticationService.ModuleNotify(bgs.protocol.authentication.v1.ModuleNotification{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method AuthenticationService.ModuleNotify(bgs.protocol.authentication.v1.ModuleNotification{})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::NoData response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -7502,8 +7502,8 @@ void AuthenticationService::ModuleNotify(::bgs::protocol::authentication::v1::Mo
 }
 
 void AuthenticationService::ModuleMessage(::bgs::protocol::authentication::v1::ModuleMessageRequest const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method AuthenticationService.ModuleMessage(bgs.protocol.authentication.v1.ModuleMessageRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method AuthenticationService.ModuleMessage(bgs.protocol.authentication.v1.ModuleMessageRequest{})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::NoData response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -7513,8 +7513,8 @@ void AuthenticationService::ModuleMessage(::bgs::protocol::authentication::v1::M
 }
 
 void AuthenticationService::SelectGameAccount_DEPRECATED(::bgs::protocol::EntityId const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method AuthenticationService.SelectGameAccount_DEPRECATED(bgs.protocol.EntityId{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method AuthenticationService.SelectGameAccount_DEPRECATED(bgs.protocol.EntityId{})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::NoData response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -7524,8 +7524,8 @@ void AuthenticationService::SelectGameAccount_DEPRECATED(::bgs::protocol::Entity
 }
 
 void AuthenticationService::GenerateSSOToken(::bgs::protocol::authentication::v1::GenerateSSOTokenRequest const* request, std::function<void(::bgs::protocol::authentication::v1::GenerateSSOTokenResponse const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method AuthenticationService.GenerateSSOToken(bgs.protocol.authentication.v1.GenerateSSOTokenRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method AuthenticationService.GenerateSSOToken(bgs.protocol.authentication.v1.GenerateSSOTokenRequest{})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::authentication::v1::GenerateSSOTokenResponse response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -7535,8 +7535,8 @@ void AuthenticationService::GenerateSSOToken(::bgs::protocol::authentication::v1
 }
 
 void AuthenticationService::SelectGameAccount(::bgs::protocol::authentication::v1::SelectGameAccountRequest const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method AuthenticationService.SelectGameAccount(bgs.protocol.authentication.v1.SelectGameAccountRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method AuthenticationService.SelectGameAccount(bgs.protocol.authentication.v1.SelectGameAccountRequest{})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::NoData response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -7546,8 +7546,8 @@ void AuthenticationService::SelectGameAccount(::bgs::protocol::authentication::v
 }
 
 void AuthenticationService::VerifyWebCredentials(::bgs::protocol::authentication::v1::VerifyWebCredentialsRequest const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method AuthenticationService.VerifyWebCredentials(bgs.protocol.authentication.v1.VerifyWebCredentialsRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method AuthenticationService.VerifyWebCredentials(bgs.protocol.authentication.v1.VerifyWebCredentialsRequest{})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::NoData response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -7557,8 +7557,8 @@ void AuthenticationService::VerifyWebCredentials(::bgs::protocol::authentication
 }
 
 void AuthenticationService::GenerateWebCredentials(::bgs::protocol::authentication::v1::GenerateWebCredentialsRequest const* request, std::function<void(::bgs::protocol::authentication::v1::GenerateWebCredentialsResponse const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method AuthenticationService.GenerateWebCredentials(bgs.protocol.authentication.v1.GenerateWebCredentialsRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method AuthenticationService.GenerateWebCredentials(bgs.protocol.authentication.v1.GenerateWebCredentialsRequest{})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::authentication::v1::GenerateWebCredentialsResponse response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -7572,18 +7572,18 @@ void AuthenticationService::CallServerMethod(uint32 token, uint32 methodId, Mess
     case 1: {
       ::bgs::protocol::authentication::v1::LogonRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for AuthenticationService.Logon server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for AuthenticationService.Logon server method call.", GetCallerInfo());
         SendResponse(service_hash_, 1, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationService.Logon(bgs.protocol.authentication.v1.LogonRequest{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationService.Logon(bgs.protocol.authentication.v1.LogonRequest{}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::NoData::descriptor());
         AuthenticationService* self = static_cast<AuthenticationService*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationService.Logon() returned bgs.protocol.NoData{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationService.Logon() returned bgs.protocol.NoData{} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 1, token, response);
         else
@@ -7598,18 +7598,18 @@ void AuthenticationService::CallServerMethod(uint32 token, uint32 methodId, Mess
     case 2: {
       ::bgs::protocol::authentication::v1::ModuleNotification request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for AuthenticationService.ModuleNotify server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for AuthenticationService.ModuleNotify server method call.", GetCallerInfo());
         SendResponse(service_hash_, 2, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationService.ModuleNotify(bgs.protocol.authentication.v1.ModuleNotification{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationService.ModuleNotify(bgs.protocol.authentication.v1.ModuleNotification{}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::NoData::descriptor());
         AuthenticationService* self = static_cast<AuthenticationService*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationService.ModuleNotify() returned bgs.protocol.NoData{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationService.ModuleNotify() returned bgs.protocol.NoData{} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 2, token, response);
         else
@@ -7624,18 +7624,18 @@ void AuthenticationService::CallServerMethod(uint32 token, uint32 methodId, Mess
     case 3: {
       ::bgs::protocol::authentication::v1::ModuleMessageRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for AuthenticationService.ModuleMessage server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for AuthenticationService.ModuleMessage server method call.", GetCallerInfo());
         SendResponse(service_hash_, 3, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationService.ModuleMessage(bgs.protocol.authentication.v1.ModuleMessageRequest{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationService.ModuleMessage(bgs.protocol.authentication.v1.ModuleMessageRequest{}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::NoData::descriptor());
         AuthenticationService* self = static_cast<AuthenticationService*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationService.ModuleMessage() returned bgs.protocol.NoData{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationService.ModuleMessage() returned bgs.protocol.NoData{} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 3, token, response);
         else
@@ -7650,18 +7650,18 @@ void AuthenticationService::CallServerMethod(uint32 token, uint32 methodId, Mess
     case 4: {
       ::bgs::protocol::EntityId request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for AuthenticationService.SelectGameAccount_DEPRECATED server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for AuthenticationService.SelectGameAccount_DEPRECATED server method call.", GetCallerInfo());
         SendResponse(service_hash_, 4, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationService.SelectGameAccount_DEPRECATED(bgs.protocol.EntityId{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationService.SelectGameAccount_DEPRECATED(bgs.protocol.EntityId{}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::NoData::descriptor());
         AuthenticationService* self = static_cast<AuthenticationService*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationService.SelectGameAccount_DEPRECATED() returned bgs.protocol.NoData{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationService.SelectGameAccount_DEPRECATED() returned bgs.protocol.NoData{} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 4, token, response);
         else
@@ -7676,18 +7676,18 @@ void AuthenticationService::CallServerMethod(uint32 token, uint32 methodId, Mess
     case 5: {
       ::bgs::protocol::authentication::v1::GenerateSSOTokenRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for AuthenticationService.GenerateSSOToken server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for AuthenticationService.GenerateSSOToken server method call.", GetCallerInfo());
         SendResponse(service_hash_, 5, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationService.GenerateSSOToken(bgs.protocol.authentication.v1.GenerateSSOTokenRequest{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationService.GenerateSSOToken(bgs.protocol.authentication.v1.GenerateSSOTokenRequest{}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::authentication::v1::GenerateSSOTokenResponse::descriptor());
         AuthenticationService* self = static_cast<AuthenticationService*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationService.GenerateSSOToken() returned bgs.protocol.authentication.v1.GenerateSSOTokenResponse{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationService.GenerateSSOToken() returned bgs.protocol.authentication.v1.GenerateSSOTokenResponse{} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 5, token, response);
         else
@@ -7702,18 +7702,18 @@ void AuthenticationService::CallServerMethod(uint32 token, uint32 methodId, Mess
     case 6: {
       ::bgs::protocol::authentication::v1::SelectGameAccountRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for AuthenticationService.SelectGameAccount server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for AuthenticationService.SelectGameAccount server method call.", GetCallerInfo());
         SendResponse(service_hash_, 6, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationService.SelectGameAccount(bgs.protocol.authentication.v1.SelectGameAccountRequest{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationService.SelectGameAccount(bgs.protocol.authentication.v1.SelectGameAccountRequest{}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::NoData::descriptor());
         AuthenticationService* self = static_cast<AuthenticationService*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationService.SelectGameAccount() returned bgs.protocol.NoData{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationService.SelectGameAccount() returned bgs.protocol.NoData{} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 6, token, response);
         else
@@ -7728,18 +7728,18 @@ void AuthenticationService::CallServerMethod(uint32 token, uint32 methodId, Mess
     case 7: {
       ::bgs::protocol::authentication::v1::VerifyWebCredentialsRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for AuthenticationService.VerifyWebCredentials server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for AuthenticationService.VerifyWebCredentials server method call.", GetCallerInfo());
         SendResponse(service_hash_, 7, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationService.VerifyWebCredentials(bgs.protocol.authentication.v1.VerifyWebCredentialsRequest{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationService.VerifyWebCredentials(bgs.protocol.authentication.v1.VerifyWebCredentialsRequest{}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::NoData::descriptor());
         AuthenticationService* self = static_cast<AuthenticationService*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationService.VerifyWebCredentials() returned bgs.protocol.NoData{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationService.VerifyWebCredentials() returned bgs.protocol.NoData{} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 7, token, response);
         else
@@ -7754,18 +7754,18 @@ void AuthenticationService::CallServerMethod(uint32 token, uint32 methodId, Mess
     case 8: {
       ::bgs::protocol::authentication::v1::GenerateWebCredentialsRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for AuthenticationService.GenerateWebCredentials server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for AuthenticationService.GenerateWebCredentials server method call.", GetCallerInfo());
         SendResponse(service_hash_, 8, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationService.GenerateWebCredentials(bgs.protocol.authentication.v1.GenerateWebCredentialsRequest{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationService.GenerateWebCredentials(bgs.protocol.authentication.v1.GenerateWebCredentialsRequest{}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::authentication::v1::GenerateWebCredentialsResponse::descriptor());
         AuthenticationService* self = static_cast<AuthenticationService*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method AuthenticationService.GenerateWebCredentials() returned bgs.protocol.authentication.v1.GenerateWebCredentialsResponse{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method AuthenticationService.GenerateWebCredentials() returned bgs.protocol.authentication.v1.GenerateWebCredentialsResponse{} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 8, token, response);
         else
@@ -7785,50 +7785,50 @@ void AuthenticationService::CallServerMethod(uint32 token, uint32 methodId, Mess
 }
 
 uint32 AuthenticationService::HandleLogon(::bgs::protocol::authentication::v1::LogonRequest const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method AuthenticationService.Logon({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method AuthenticationService.Logon({})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 AuthenticationService::HandleModuleNotify(::bgs::protocol::authentication::v1::ModuleNotification const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method AuthenticationService.ModuleNotify({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method AuthenticationService.ModuleNotify({})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 AuthenticationService::HandleModuleMessage(::bgs::protocol::authentication::v1::ModuleMessageRequest const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method AuthenticationService.ModuleMessage({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method AuthenticationService.ModuleMessage({})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 AuthenticationService::HandleSelectGameAccount_DEPRECATED(::bgs::protocol::EntityId const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method AuthenticationService.SelectGameAccount_DEPRECATED({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method AuthenticationService.SelectGameAccount_DEPRECATED({})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 AuthenticationService::HandleGenerateSSOToken(::bgs::protocol::authentication::v1::GenerateSSOTokenRequest const* request, ::bgs::protocol::authentication::v1::GenerateSSOTokenResponse* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method AuthenticationService.GenerateSSOToken({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method AuthenticationService.GenerateSSOToken({})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 AuthenticationService::HandleSelectGameAccount(::bgs::protocol::authentication::v1::SelectGameAccountRequest const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method AuthenticationService.SelectGameAccount({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method AuthenticationService.SelectGameAccount({})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 AuthenticationService::HandleVerifyWebCredentials(::bgs::protocol::authentication::v1::VerifyWebCredentialsRequest const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method AuthenticationService.VerifyWebCredentials({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method AuthenticationService.VerifyWebCredentials({})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 AuthenticationService::HandleGenerateWebCredentials(::bgs::protocol::authentication::v1::GenerateWebCredentialsRequest const* request, ::bgs::protocol::authentication::v1::GenerateWebCredentialsResponse* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method AuthenticationService.GenerateWebCredentials({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method AuthenticationService.GenerateWebCredentials({})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 

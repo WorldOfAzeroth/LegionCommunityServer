@@ -4469,8 +4469,8 @@ google::protobuf::ServiceDescriptor const* ChallengeService::descriptor() {
 }
 
 void ChallengeService::ChallengePicked(::bgs::protocol::challenge::v1::ChallengePickedRequest const* request, std::function<void(::bgs::protocol::challenge::v1::ChallengePickedResponse const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChallengeService.ChallengePicked(bgs.protocol.challenge.v1.ChallengePickedRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChallengeService.ChallengePicked(bgs.protocol.challenge.v1.ChallengePickedRequest: {})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::challenge::v1::ChallengePickedResponse response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -4480,8 +4480,8 @@ void ChallengeService::ChallengePicked(::bgs::protocol::challenge::v1::Challenge
 }
 
 void ChallengeService::ChallengeAnswered(::bgs::protocol::challenge::v1::ChallengeAnsweredRequest const* request, std::function<void(::bgs::protocol::challenge::v1::ChallengeAnsweredResponse const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChallengeService.ChallengeAnswered(bgs.protocol.challenge.v1.ChallengeAnsweredRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChallengeService.ChallengeAnswered(bgs.protocol.challenge.v1.ChallengeAnsweredRequest: {})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::challenge::v1::ChallengeAnsweredResponse response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -4491,8 +4491,8 @@ void ChallengeService::ChallengeAnswered(::bgs::protocol::challenge::v1::Challen
 }
 
 void ChallengeService::ChallengeCancelled(::bgs::protocol::challenge::v1::ChallengeCancelledRequest const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChallengeService.ChallengeCancelled(bgs.protocol.challenge.v1.ChallengeCancelledRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChallengeService.ChallengeCancelled(bgs.protocol.challenge.v1.ChallengeCancelledRequest: {})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::NoData response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -4502,8 +4502,8 @@ void ChallengeService::ChallengeCancelled(::bgs::protocol::challenge::v1::Challe
 }
 
 void ChallengeService::SendChallengeToUser(::bgs::protocol::challenge::v1::SendChallengeToUserRequest const* request, std::function<void(::bgs::protocol::challenge::v1::SendChallengeToUserResponse const*)> responseCallback) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChallengeService.SendChallengeToUser(bgs.protocol.challenge.v1.SendChallengeToUserRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChallengeService.SendChallengeToUser(bgs.protocol.challenge.v1.SendChallengeToUserRequest: {})",
+    GetCallerInfo(), request->ShortDebugString());
   std::function<void(MessageBuffer)> callback = [responseCallback](MessageBuffer buffer) -> void {
     ::bgs::protocol::challenge::v1::SendChallengeToUserResponse response;
     if (response.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize()))
@@ -4517,18 +4517,18 @@ void ChallengeService::CallServerMethod(uint32 token, uint32 methodId, MessageBu
     case 1: {
       ::bgs::protocol::challenge::v1::ChallengePickedRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChallengeService.ChallengePicked server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChallengeService.ChallengePicked server method call.", GetCallerInfo());
         SendResponse(service_hash_, 1, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChallengeService.ChallengePicked(bgs.protocol.challenge.v1.ChallengePickedRequest{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChallengeService.ChallengePicked(bgs.protocol.challenge.v1.ChallengePickedRequest: {}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::challenge::v1::ChallengePickedResponse::descriptor());
         ChallengeService* self = static_cast<ChallengeService*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChallengeService.ChallengePicked() returned bgs.protocol.challenge.v1.ChallengePickedResponse{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChallengeService.ChallengePicked() returned bgs.protocol.challenge.v1.ChallengePickedResponse: {} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 1, token, response);
         else
@@ -4543,18 +4543,18 @@ void ChallengeService::CallServerMethod(uint32 token, uint32 methodId, MessageBu
     case 2: {
       ::bgs::protocol::challenge::v1::ChallengeAnsweredRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChallengeService.ChallengeAnswered server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChallengeService.ChallengeAnswered server method call.", GetCallerInfo());
         SendResponse(service_hash_, 2, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChallengeService.ChallengeAnswered(bgs.protocol.challenge.v1.ChallengeAnsweredRequest{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChallengeService.ChallengeAnswered(bgs.protocol.challenge.v1.ChallengeAnsweredRequest: {}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::challenge::v1::ChallengeAnsweredResponse::descriptor());
         ChallengeService* self = static_cast<ChallengeService*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChallengeService.ChallengeAnswered() returned bgs.protocol.challenge.v1.ChallengeAnsweredResponse{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChallengeService.ChallengeAnswered() returned bgs.protocol.challenge.v1.ChallengeAnsweredResponse: {} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 2, token, response);
         else
@@ -4569,18 +4569,18 @@ void ChallengeService::CallServerMethod(uint32 token, uint32 methodId, MessageBu
     case 3: {
       ::bgs::protocol::challenge::v1::ChallengeCancelledRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChallengeService.ChallengeCancelled server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChallengeService.ChallengeCancelled server method call.", GetCallerInfo());
         SendResponse(service_hash_, 3, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChallengeService.ChallengeCancelled(bgs.protocol.challenge.v1.ChallengeCancelledRequest{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChallengeService.ChallengeCancelled(bgs.protocol.challenge.v1.ChallengeCancelledRequest: {}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::NoData::descriptor());
         ChallengeService* self = static_cast<ChallengeService*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChallengeService.ChallengeCancelled() returned bgs.protocol.NoData{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChallengeService.ChallengeCancelled() returned bgs.protocol.NoData: {} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 3, token, response);
         else
@@ -4595,18 +4595,18 @@ void ChallengeService::CallServerMethod(uint32 token, uint32 methodId, MessageBu
     case 4: {
       ::bgs::protocol::challenge::v1::SendChallengeToUserRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChallengeService.SendChallengeToUser server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChallengeService.SendChallengeToUser server method call.", GetCallerInfo());
         SendResponse(service_hash_, 4, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChallengeService.SendChallengeToUser(bgs.protocol.challenge.v1.SendChallengeToUserRequest{ %s }).",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str());
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChallengeService.SendChallengeToUser(bgs.protocol.challenge.v1.SendChallengeToUserRequest: {}).",
+        GetCallerInfo(), request.ShortDebugString());
       std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> continuation = [token](ServiceBase* service, uint32 status, ::google::protobuf::Message const* response)
       {
         ASSERT(response->GetDescriptor() == ::bgs::protocol::challenge::v1::SendChallengeToUserResponse::descriptor());
         ChallengeService* self = static_cast<ChallengeService*>(service);
-        TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChallengeService.SendChallengeToUser() returned bgs.protocol.challenge.v1.SendChallengeToUserResponse{ %s } status %u.",
-          self->GetCallerInfo().c_str(), response->ShortDebugString().c_str(), status);
+        TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChallengeService.SendChallengeToUser() returned bgs.protocol.challenge.v1.SendChallengeToUserResponse: {} status %u.",
+          self->GetCallerInfo(), response->ShortDebugString(), status);
         if (!status)
           self->SendResponse(self->service_hash_, 4, token, response);
         else
@@ -4626,26 +4626,26 @@ void ChallengeService::CallServerMethod(uint32 token, uint32 methodId, MessageBu
 }
 
 uint32 ChallengeService::HandleChallengePicked(::bgs::protocol::challenge::v1::ChallengePickedRequest const* request, ::bgs::protocol::challenge::v1::ChallengePickedResponse* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChallengeService.ChallengePicked({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChallengeService.ChallengePicked(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 ChallengeService::HandleChallengeAnswered(::bgs::protocol::challenge::v1::ChallengeAnsweredRequest const* request, ::bgs::protocol::challenge::v1::ChallengeAnsweredResponse* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChallengeService.ChallengeAnswered({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChallengeService.ChallengeAnswered(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 ChallengeService::HandleChallengeCancelled(::bgs::protocol::challenge::v1::ChallengeCancelledRequest const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChallengeService.ChallengeCancelled({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChallengeService.ChallengeCancelled(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 ChallengeService::HandleSendChallengeToUser(::bgs::protocol::challenge::v1::SendChallengeToUserRequest const* request, ::bgs::protocol::challenge::v1::SendChallengeToUserResponse* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChallengeService.SendChallengeToUser({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChallengeService.SendChallengeToUser(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
@@ -4663,26 +4663,26 @@ google::protobuf::ServiceDescriptor const* ChallengeListener::descriptor() {
 }
 
 void ChallengeListener::OnChallengeUser(::bgs::protocol::challenge::v1::ChallengeUserRequest const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChallengeListener.OnChallengeUser(bgs.protocol.challenge.v1.ChallengeUserRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChallengeListener.OnChallengeUser(bgs.protocol.challenge.v1.ChallengeUserRequest: {})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 1, request);
 }
 
 void ChallengeListener::OnChallengeResult(::bgs::protocol::challenge::v1::ChallengeResultRequest const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChallengeListener.OnChallengeResult(bgs.protocol.challenge.v1.ChallengeResultRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChallengeListener.OnChallengeResult(bgs.protocol.challenge.v1.ChallengeResultRequest: {})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 2, request);
 }
 
 void ChallengeListener::OnExternalChallenge(::bgs::protocol::challenge::v1::ChallengeExternalRequest const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChallengeListener.OnExternalChallenge(bgs.protocol.challenge.v1.ChallengeExternalRequest{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChallengeListener.OnExternalChallenge(bgs.protocol.challenge.v1.ChallengeExternalRequest: {})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 3, request);
 }
 
 void ChallengeListener::OnExternalChallengeResult(::bgs::protocol::challenge::v1::ChallengeExternalResult const* request) {
-  TC_LOG_DEBUG("service.protobuf", "%s Server called client method ChallengeListener.OnExternalChallengeResult(bgs.protocol.challenge.v1.ChallengeExternalResult{ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_DEBUG("service.protobuf", "{} Server called client method ChallengeListener.OnExternalChallengeResult(bgs.protocol.challenge.v1.ChallengeExternalResult: {})",
+    GetCallerInfo(), request->ShortDebugString());
   SendRequest(service_hash_, 4, request);
 }
 
@@ -4691,13 +4691,13 @@ void ChallengeListener::CallServerMethod(uint32 token, uint32 methodId, MessageB
     case 1: {
       ::bgs::protocol::challenge::v1::ChallengeUserRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChallengeListener.OnChallengeUser server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChallengeListener.OnChallengeUser server method call.", GetCallerInfo());
         SendResponse(service_hash_, 1, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnChallengeUser(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChallengeListener.OnChallengeUser(bgs.protocol.challenge.v1.ChallengeUserRequest{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChallengeListener.OnChallengeUser(bgs.protocol.challenge.v1.ChallengeUserRequest: {}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 1, token, status);
       break;
@@ -4705,13 +4705,13 @@ void ChallengeListener::CallServerMethod(uint32 token, uint32 methodId, MessageB
     case 2: {
       ::bgs::protocol::challenge::v1::ChallengeResultRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChallengeListener.OnChallengeResult server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChallengeListener.OnChallengeResult server method call.", GetCallerInfo());
         SendResponse(service_hash_, 2, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnChallengeResult(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChallengeListener.OnChallengeResult(bgs.protocol.challenge.v1.ChallengeResultRequest{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChallengeListener.OnChallengeResult(bgs.protocol.challenge.v1.ChallengeResultRequest: {}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 2, token, status);
       break;
@@ -4719,13 +4719,13 @@ void ChallengeListener::CallServerMethod(uint32 token, uint32 methodId, MessageB
     case 3: {
       ::bgs::protocol::challenge::v1::ChallengeExternalRequest request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChallengeListener.OnExternalChallenge server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChallengeListener.OnExternalChallenge server method call.", GetCallerInfo());
         SendResponse(service_hash_, 3, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnExternalChallenge(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChallengeListener.OnExternalChallenge(bgs.protocol.challenge.v1.ChallengeExternalRequest{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChallengeListener.OnExternalChallenge(bgs.protocol.challenge.v1.ChallengeExternalRequest: {}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 3, token, status);
       break;
@@ -4733,13 +4733,13 @@ void ChallengeListener::CallServerMethod(uint32 token, uint32 methodId, MessageB
     case 4: {
       ::bgs::protocol::challenge::v1::ChallengeExternalResult request;
       if (!request.ParseFromArray(buffer.GetReadPointer(), buffer.GetActiveSize())) {
-        TC_LOG_DEBUG("service.protobuf", "%s Failed to parse request for ChallengeListener.OnExternalChallengeResult server method call.", GetCallerInfo().c_str());
+        TC_LOG_DEBUG("service.protobuf", "{} Failed to parse request for ChallengeListener.OnExternalChallengeResult server method call.", GetCallerInfo());
         SendResponse(service_hash_, 4, token, ERROR_RPC_MALFORMED_REQUEST);
         return;
       }
       uint32 status = HandleOnExternalChallengeResult(&request);
-      TC_LOG_DEBUG("service.protobuf", "%s Client called server method ChallengeListener.OnExternalChallengeResult(bgs.protocol.challenge.v1.ChallengeExternalResult{ %s }) status %u.",
-        GetCallerInfo().c_str(), request.ShortDebugString().c_str(), status);
+      TC_LOG_DEBUG("service.protobuf", "{} Client called server method ChallengeListener.OnExternalChallengeResult(bgs.protocol.challenge.v1.ChallengeExternalResult: {}) status %u.",
+        GetCallerInfo(), request.ShortDebugString(), status);
       if (status)
         SendResponse(service_hash_, 4, token, status);
       break;
@@ -4752,26 +4752,26 @@ void ChallengeListener::CallServerMethod(uint32 token, uint32 methodId, MessageB
 }
 
 uint32 ChallengeListener::HandleOnChallengeUser(::bgs::protocol::challenge::v1::ChallengeUserRequest const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChallengeListener.OnChallengeUser({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChallengeListener.OnChallengeUser(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 ChallengeListener::HandleOnChallengeResult(::bgs::protocol::challenge::v1::ChallengeResultRequest const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChallengeListener.OnChallengeResult({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChallengeListener.OnChallengeResult(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 ChallengeListener::HandleOnExternalChallenge(::bgs::protocol::challenge::v1::ChallengeExternalRequest const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChallengeListener.OnExternalChallenge({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChallengeListener.OnExternalChallenge(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 
 uint32 ChallengeListener::HandleOnExternalChallengeResult(::bgs::protocol::challenge::v1::ChallengeExternalResult const* request) {
-  TC_LOG_ERROR("service.protobuf", "%s Client tried to call not implemented method ChallengeListener.OnExternalChallengeResult({ %s })",
-    GetCallerInfo().c_str(), request->ShortDebugString().c_str());
+  TC_LOG_ERROR("service.protobuf", "{} Client tried to call not implemented method ChallengeListener.OnExternalChallengeResult(: {})",
+    GetCallerInfo(), request->ShortDebugString());
   return ERROR_RPC_NOT_IMPLEMENTED;
 }
 

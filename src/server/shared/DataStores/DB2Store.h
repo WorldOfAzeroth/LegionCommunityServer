@@ -31,6 +31,10 @@ class TC_SHARED_API DB2StorageBase
 {
 public:
     DB2StorageBase(char const* fileName, DB2LoadInfo const* loadInfo);
+    DB2StorageBase(DB2StorageBase const&) = delete;
+    DB2StorageBase(DB2StorageBase&&) = delete;
+    DB2StorageBase& operator=(DB2StorageBase const&) = delete;
+    DB2StorageBase& operator=(DB2StorageBase&&) = delete;
     virtual ~DB2StorageBase();
 
     uint32 GetTableHash() const { return _tableHash; }

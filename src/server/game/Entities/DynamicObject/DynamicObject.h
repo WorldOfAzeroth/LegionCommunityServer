@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -20,6 +19,7 @@
 #define TRINITYCORE_DYNAMICOBJECT_H
 
 #include "Object.h"
+#include "GridObject.h"
 #include "MapObject.h"
 
 class Unit;
@@ -42,7 +42,7 @@ class TC_GAME_API DynamicObject : public WorldObject, public GridObject<DynamicO
         void AddToWorld() override;
         void RemoveFromWorld() override;
 
-        bool CreateDynamicObject(ObjectGuid::LowType guidlow, Unit* caster, SpellInfo const* spell, Position const& pos, float radius, DynamicObjectType type, uint32 spellXSpellVisualId);
+        bool CreateDynamicObject(ObjectGuid::LowType guidlow, Unit* caster, SpellInfo const* spell, Position const& pos, float radius, DynamicObjectType type, SpellCastVisual spellVisual);
         void Update(uint32 p_time) override;
         void Remove();
         void SetDuration(int32 newDuration);
@@ -53,6 +53,7 @@ class TC_GAME_API DynamicObject : public WorldObject, public GridObject<DynamicO
         void SetCasterViewpoint();
         void RemoveCasterViewpoint();
         Unit* GetCaster() const { return _caster; }
+        uint32 GetFaction() const override;
         void BindToCaster();
         void UnbindFromCaster();
         uint32 GetSpellId() const {  return GetUInt32Value(DYNAMICOBJECT_SPELLID); }
@@ -65,7 +66,6 @@ class TC_GAME_API DynamicObject : public WorldObject, public GridObject<DynamicO
         Aura* _removedAura;
         Unit* _caster;
         int32 _duration; // for non-aura dynobjects
-        uint32 _spellXSpellVisualId;
         bool _isViewpoint;
 };
 #endif

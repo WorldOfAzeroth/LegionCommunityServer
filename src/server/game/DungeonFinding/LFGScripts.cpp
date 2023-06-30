@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -27,6 +27,7 @@
 #include "Map.h"
 #include "ObjectAccessor.h"
 #include "Player.h"
+#include "QueryPackets.h"
 #include "ScriptMgr.h"
 #include "SharedDefines.h"
 #include "WorldSession.h"
@@ -61,8 +62,8 @@ void LFGPlayerScript::OnLogin(Player* player, bool /*loginFirst*/)
         ObjectGuid gguid2 = group->GetGUID();
         if (gguid != gguid2)
         {
-            TC_LOG_ERROR("lfg", "%s on group %s but LFG has group %s saved... Fixing.",
-                player->GetSession()->GetPlayerInfo().c_str(), gguid2.ToString().c_str(), gguid.ToString().c_str());
+            TC_LOG_ERROR("lfg", "{} on group {} but LFG has group {} saved... Fixing.",
+                player->GetSession()->GetPlayerInfo(), gguid2.ToString(), gguid.ToString());
             sLFGMgr->SetupGroupMember(guid, group->GetGUID());
         }
     }
@@ -86,15 +87,17 @@ void LFGPlayerScript::OnMapChanged(Player* player)
         {
             sLFGMgr->LeaveLfg(player->GetGUID());
             player->RemoveAurasDueToSpell(LFG_SPELL_LUCK_OF_THE_DRAW);
-            player->TeleportTo(player->m_homebindMapId, player->m_homebindX, player->m_homebindY, player->m_homebindZ, 0.0f);
-            TC_LOG_ERROR("lfg", "LFGPlayerScript::OnMapChanged, Player %s (%s) is in LFG dungeon map but does not have a valid group! "
-                "Teleporting to homebind.", player->GetName().c_str(), player->GetGUID().ToString().c_str());
+            player->TeleportTo(player->m_homebind);
+            TC_LOG_ERROR("lfg", "LFGPlayerScript::OnMapChanged, Player {} {} is in LFG dungeon map but does not have a valid group! "
+                "Teleporting to homebind.", player->GetName(), player->GetGUID().ToString());
             return;
         }
 
-        for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
-            if (Player* member = itr->GetSource())
-                player->GetSession()->SendNameQueryOpcode(member->GetGUID());
+        WorldPackets::Query::QueryPlayerNamesResponse response;
+        for (Group::MemberSlot const& memberSlot : group->GetMemberSlots())
+            player->GetSession()->BuildNameQueryData(memberSlot.guid, response.Players.emplace_back());
+
+        player->SendDirectMessage(response.Write());
 
         if (sLFGMgr->selectedRandomLfgDungeon(player->GetGUID()))
             player->CastSpell(player, LFG_SPELL_LUCK_OF_THE_DRAW, true);
@@ -106,8 +109,8 @@ void LFGPlayerScript::OnMapChanged(Player* player)
         {
             sLFGMgr->LeaveLfg(group->GetGUID());
             group->Disband();
-            TC_LOG_DEBUG("lfg", "LFGPlayerScript::OnMapChanged, Player %s(%s) is last in the lfggroup so we disband the group.",
-                player->GetName().c_str(), player->GetGUID().ToString().c_str());
+            TC_LOG_DEBUG("lfg", "LFGPlayerScript::OnMapChanged, Player {}({}) is last in the lfggroup so we disband the group.",
+                player->GetName(), player->GetGUID().ToString());
         }
         player->RemoveAurasDueToSpell(LFG_SPELL_LUCK_OF_THE_DRAW);
     }
@@ -125,14 +128,14 @@ void LFGGroupScript::OnAddMember(Group* group, ObjectGuid guid)
 
     if (leader == guid)
     {
-        TC_LOG_DEBUG("lfg", "LFGScripts::OnAddMember [%s]: added [%s] leader [%s]", gguid.ToString().c_str(), guid.ToString().c_str(), leader.ToString().c_str());
+        TC_LOG_DEBUG("lfg", "LFGScripts::OnAddMember [{}]: added [{}] leader [{}]", gguid.ToString(), guid.ToString(), leader.ToString());
         sLFGMgr->SetLeader(gguid, guid);
     }
     else
     {
         LfgState gstate = sLFGMgr->GetState(gguid);
         LfgState state = sLFGMgr->GetState(guid);
-        TC_LOG_DEBUG("lfg", "LFGScripts::OnAddMember [%s]: added [%s] leader [%s] gstate: %u, state: %u", gguid.ToString().c_str(), guid.ToString().c_str(), leader.ToString().c_str(), gstate, state);
+        TC_LOG_DEBUG("lfg", "LFGScripts::OnAddMember [{}]: added [{}] leader [{}] gstate: {}, state: {}", gguid.ToString(), guid.ToString(), leader.ToString(), gstate, state);
 
         if (state == LFG_STATE_QUEUED)
             sLFGMgr->LeaveLfg(guid);
@@ -151,8 +154,8 @@ void LFGGroupScript::OnRemoveMember(Group* group, ObjectGuid guid, RemoveMethod 
         return;
 
     ObjectGuid gguid = group->GetGUID();
-    TC_LOG_DEBUG("lfg", "LFGScripts::OnRemoveMember [%s]: remove [%s] Method: %d Kicker: [%s] Reason: %s",
-        gguid.ToString().c_str(), guid.ToString().c_str(), method, kicker.ToString().c_str(), (reason ? reason : ""));
+    TC_LOG_DEBUG("lfg", "LFGScripts::OnRemoveMember [{}]: remove [{}] Method: {} Kicker: [{}] Reason: {}",
+        gguid.ToString(), guid.ToString(), method, kicker.ToString(), (reason ? reason : ""));
 
     bool isLFG = group->isLFGGroup();
 
@@ -186,6 +189,8 @@ void LFGGroupScript::OnRemoveMember(Group* group, ObjectGuid guid, RemoveMethod 
         if (method == GROUP_REMOVEMETHOD_LEAVE && state == LFG_STATE_DUNGEON &&
             players >= LFG_GROUP_KICK_VOTES_NEEDED)
             player->CastSpell(player, LFG_SPELL_DUNGEON_DESERTER, true);
+        else if (method == GROUP_REMOVEMETHOD_KICK_LFG)
+            player->RemoveAurasDueToSpell(LFG_SPELL_DUNGEON_COOLDOWN);
         //else if (state == LFG_STATE_BOOT)
             // Update internal kick cooldown of kicked
 
@@ -205,7 +210,7 @@ void LFGGroupScript::OnDisband(Group* group)
         return;
 
     ObjectGuid gguid = group->GetGUID();
-    TC_LOG_DEBUG("lfg", "LFGScripts::OnDisband [%s]", gguid.ToString().c_str());
+    TC_LOG_DEBUG("lfg", "LFGScripts::OnDisband [{}]", gguid.ToString());
 
     sLFGMgr->RemoveGroupData(gguid);
 }
@@ -217,8 +222,8 @@ void LFGGroupScript::OnChangeLeader(Group* group, ObjectGuid newLeaderGuid, Obje
 
     ObjectGuid gguid = group->GetGUID();
 
-    TC_LOG_DEBUG("lfg", "LFGScripts::OnChangeLeader [%s]: old [%s] new [%s]",
-        gguid.ToString().c_str(), newLeaderGuid.ToString().c_str(), oldLeaderGuid.ToString().c_str());
+    TC_LOG_DEBUG("lfg", "LFGScripts::OnChangeLeader [{}]: old [{}] new [{}]",
+        gguid.ToString(), newLeaderGuid.ToString(), oldLeaderGuid.ToString());
 
     sLFGMgr->SetLeader(gguid, newLeaderGuid);
 }
@@ -230,8 +235,8 @@ void LFGGroupScript::OnInviteMember(Group* group, ObjectGuid guid)
 
     ObjectGuid gguid = group->GetGUID();
     ObjectGuid leader = group->GetLeaderGUID();
-    TC_LOG_DEBUG("lfg", "LFGScripts::OnInviteMember [%s]: invite [%s] leader [%s]",
-        gguid.ToString().c_str(), guid.ToString().c_str(), leader.ToString().c_str());
+    TC_LOG_DEBUG("lfg", "LFGScripts::OnInviteMember [{}]: invite [{}] leader [{}]",
+        gguid.ToString(), guid.ToString(), leader.ToString());
 
     // No gguid ==  new group being formed
     // No leader == after group creation first invite is new leader

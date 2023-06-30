@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -86,18 +85,15 @@ enum BattlegroundRVData
     BG_RV_FIRE_TO_PILLAR_TIMER                   = 20000,
     BG_RV_CLOSE_FIRE_TIMER                       =  5000,
     BG_RV_FIRST_TIMER                            = 20133,
-
-    BG_RV_WORLD_STATE                            = 0xe1a
 };
 
 class BattlegroundRV : public Arena
 {
     public:
-        BattlegroundRV();
+        BattlegroundRV(BattlegroundTemplate const* battlegroundTemplate);
 
         /* inherited from BattlegroundClass */
         void StartingEventOpenDoors() override;
-        void FillInitialWorldStates(WorldPackets::WorldState::InitWorldStates& packet) override;
 
         void HandleAreaTrigger(Player* source, uint32 trigger, bool entered) override;
         bool SetupBattleground() override;

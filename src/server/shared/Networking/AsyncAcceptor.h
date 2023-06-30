@@ -1,5 +1,5 @@
 /*
- * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
+ * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -79,15 +79,6 @@ public:
             TC_LOG_INFO("network", "Failed to open acceptor %s", errorCode.message().c_str());
             return false;
         }
-
-#if TRINITY_PLATFORM != TRINITY_PLATFORM_WINDOWS
-        _acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true), errorCode);
-        if (errorCode)
-        {
-            TC_LOG_INFO("network", "Failed to set reuse_address option on acceptor %s", errorCode.message().c_str());
-            return false;
-        }
-#endif
 
         _acceptor.bind(_endpoint, errorCode);
         if (errorCode)

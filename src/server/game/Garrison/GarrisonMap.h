@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -26,7 +26,7 @@ class Player;
 class TC_GAME_API GarrisonMap : public Map
 {
 public:
-    GarrisonMap(uint32 id, time_t, uint32 instanceId, Map* parent, ObjectGuid const& owner);
+    GarrisonMap(uint32 id, time_t, uint32 instanceId, ObjectGuid const& owner);
 
     void LoadGridObjects(NGridType* grid, Cell const& cell) override;
     Garrison* GetGarrison();

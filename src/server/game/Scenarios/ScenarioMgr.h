@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -25,8 +25,8 @@
 #include <unordered_map>
 #include <vector>
 
+class InstanceMap;
 class InstanceScenario;
-class Map;
 struct ScenarioEntry;
 struct ScenarioStepEntry;
 
@@ -65,33 +65,32 @@ struct ScenarioPOIPoint
 {
     int32 X;
     int32 Y;
+    int32 Z;
 
-    ScenarioPOIPoint() : X(0), Y(0) { }
-    ScenarioPOIPoint(int32 _X, int32 _Y) : X(_X), Y(_Y) { }
+    ScenarioPOIPoint() : X(0), Y(0), Z(0) { }
+    ScenarioPOIPoint(int32 x, int32 y, int32 z) : X(x), Y(y), Z(z) { }
 };
 
 struct ScenarioPOI
 {
     int32 BlobIndex;
     int32 MapID;
-    int32 WorldMapAreaID;
-    int32 Floor;
+    int32 UiMapID;
     int32 Priority;
     int32 Flags;
     int32 WorldEffectID;
     int32 PlayerConditionID;
+    int32 NavigationPlayerConditionID;
     std::vector<ScenarioPOIPoint> Points;
 
-    ScenarioPOI() : BlobIndex(0), MapID(0), WorldMapAreaID(0), Floor(0), Priority(0), Flags(0), WorldEffectID(0), PlayerConditionID(0) { }
+    ScenarioPOI() : BlobIndex(0), MapID(0), UiMapID(0), Priority(0), Flags(0), WorldEffectID(0), PlayerConditionID(0), NavigationPlayerConditionID(0) { }
 
-    ScenarioPOI(int32 _BlobIndex, int32 _MapID, int32 _WorldMapAreaID, int32 _Floor, int32 _Priority, int32 _Flags, int32 _WorldEffectID,
-        int32 _PlayerConditionID, std::vector<ScenarioPOIPoint> points) :
-        BlobIndex(_BlobIndex), MapID(_MapID), WorldMapAreaID(_WorldMapAreaID), Floor(_Floor), Priority(_Priority), Flags(_Flags), WorldEffectID(_WorldEffectID),
-        PlayerConditionID(_PlayerConditionID), Points(std::move(points)) { }
+    ScenarioPOI(int32 blobIndex, int32 mapID, int32 uiMapID, int32 priority, int32 flags, int32 worldEffectID,
+        int32 playerConditionID, int32 navigationPlayerConditionID, std::vector<ScenarioPOIPoint> points) :
+        BlobIndex(blobIndex), MapID(mapID), UiMapID(uiMapID), Priority(priority), Flags(flags), WorldEffectID(worldEffectID),
+        PlayerConditionID(playerConditionID), NavigationPlayerConditionID(navigationPlayerConditionID), Points(std::move(points)) { }
 
-    ScenarioPOI(ScenarioPOI&& scenarioPOI) :
-        BlobIndex(scenarioPOI.BlobIndex), MapID(scenarioPOI.MapID), WorldMapAreaID(scenarioPOI.WorldMapAreaID), Floor(scenarioPOI.Floor), Priority(scenarioPOI.Priority),
-        Flags(scenarioPOI.Flags), WorldEffectID(scenarioPOI.WorldEffectID), PlayerConditionID(scenarioPOI.PlayerConditionID), Points(std::move(scenarioPOI.Points)) { }
+    ScenarioPOI(ScenarioPOI&& scenarioPOI) = default;
 };
 
 typedef std::vector<ScenarioPOI> ScenarioPOIVector;
@@ -106,7 +105,7 @@ private:
 public:
     static ScenarioMgr* Instance();
 
-    InstanceScenario* CreateInstanceScenario(Map const* map, TeamId team) const;
+    InstanceScenario* CreateInstanceScenario(InstanceMap const* map, TeamId team) const;
 
     void LoadDBData();
     void LoadDB2Data();

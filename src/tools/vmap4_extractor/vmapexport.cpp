@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -23,33 +22,23 @@
 #include "DB2CascFileSource.h"
 #include "ExtractorDB2LoadInfo.h"
 #include "StringFormat.h"
+#include "VMapDefinitions.h"
 #include "vmapexport.h"
 #include "wdtfile.h"
-#include "wmo.h"
+#include <algorithm>
 #include <CascLib.h>
 #include <boost/filesystem/operations.hpp>
 #include <fstream>
-#include <iostream>
-#include <list>
 #include <map>
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
 #include <cstdio>
 #include <cerrno>
-#include <sys/stat.h>
 
-#ifdef WIN32
+#ifdef _WIN32
     #include <direct.h>
     #define mkdir _mkdir
-#else
-    #define ERROR_PATH_NOT_FOUND ERROR_FILE_NOT_FOUND
 #endif
-
-//------------------------------------------------------------------------------
-// Defines
-
-#define MPQ_BLOCK_SIZE 0x1000
 
 //-----------------------------------------------------------------------------
 
@@ -115,7 +104,7 @@ bool OpenCascStorage(int locale)
 
         return true;
     }
-    catch (boost::filesystem::filesystem_error& error)
+    catch (boost::filesystem::filesystem_error const& error)
     {
         printf("error opening casc storage : %s\n", error.what());
         return false;
@@ -176,7 +165,7 @@ bool ExtractSingleWmo(std::string& fname)
     int p = 0;
     // Select root wmo files
     char const* rchr = strrchr(plain_name, '_');
-    if (rchr != NULL)
+    if (rchr != nullptr)
     {
         char cpy[4];
         memcpy(cpy, rchr, 4);
@@ -212,7 +201,7 @@ bool ExtractSingleWmo(std::string& fname)
     //printf("root has %d groups\n", froot->nGroups);
     for (std::size_t i = 0; i < froot.groupFileDataIDs.size(); ++i)
     {
-        std::string s = Trinity::StringFormat("FILE%08X.xxx", froot.groupFileDataIDs[i]);
+        std::string s = Trinity::StringFormat("FILE{:08X}.xxx", froot.groupFileDataIDs[i]);
         WMOGroup fgroup(s);
         if (!fgroup.open(&froot))
         {
@@ -492,6 +481,9 @@ int main(int argc, char ** argv)
             strncpy(m.name, map_name, max_map_name_length);
             m.name[max_map_name_length - 1] = '\0';
             m.parent_id = int16(record.GetUInt16("ParentMapID"));
+            if (m.parent_id < 0)
+                m.parent_id = int16(record.GetUInt16("CosmeticParentMapID"));
+
             if (m.parent_id >= 0)
                 maps_that_are_parents.insert(m.parent_id);
         }
@@ -517,10 +509,10 @@ int main(int argc, char ** argv)
     printf("\n");
     if (!success)
     {
-        printf("ERROR: Extract %s. Work NOT complete.\n   Precise vector data=%d.\nPress any key.\n", versionString, preciseVectorData);
+        printf("ERROR: Extract %s. Work NOT complete.\n   Precise vector data=%d.\nPress any key.\n", VMAP::VMAP_MAGIC, preciseVectorData);
         getchar();
     }
 
-    printf("Extract %s. Work complete. No errors.\n", versionString);
+    printf("Extract %s. Work complete. No errors.\n", VMAP::VMAP_MAGIC);
     return 0;
 }

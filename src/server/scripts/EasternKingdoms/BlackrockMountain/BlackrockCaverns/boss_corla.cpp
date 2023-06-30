@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -58,12 +58,12 @@ class boss_corla : public CreatureScript
             {
                 _Reset();
                 combatPhase = false;
-                events.ScheduleEvent(EVENT_DRAIN_ESSENSE, 2000);
+                events.ScheduleEvent(EVENT_DRAIN_ESSENSE, 2s);
             }
 
-            void EnterCombat(Unit* /*who*/) override
+            void JustEngagedWith(Unit* who) override
             {
-                _EnterCombat();
+                BossAI::JustEngagedWith(who);
                 Talk(YELL_AGGRO);
                 events.Reset();
                 combatPhase = true;
@@ -93,15 +93,15 @@ class boss_corla : public CreatureScript
                         {
                             case EVENT_DRAIN_ESSENSE:
                                 DoCast(me, SPELL_DRAIN_ESSENSE);
-                                events.ScheduleEvent(EVENT_STOP_DRAIN_ESSENSE, 15000);
+                                events.ScheduleEvent(EVENT_STOP_DRAIN_ESSENSE, 15s);
                                 break;
                             case EVENT_STOP_DRAIN_ESSENSE:
                                 me->InterruptSpell(CURRENT_CHANNELED_SPELL);
-                                events.ScheduleEvent(EVENT_EVOLUTION, 2000);
+                                events.ScheduleEvent(EVENT_EVOLUTION, 2s);
                                 break;
                             case EVENT_EVOLUTION:
                                 DoCast(me, SPELL_EVOLUTION);
-                                events.ScheduleEvent(EVENT_DRAIN_ESSENSE, 2000);
+                                events.ScheduleEvent(EVENT_DRAIN_ESSENSE, 2s);
                                 break;
                             default:
                                 break;

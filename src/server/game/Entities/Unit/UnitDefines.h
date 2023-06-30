@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -19,9 +19,9 @@
 #define UnitDefines_h__
 
 #include "Define.h"
+#include "EnumFlag.h"
 #include <string>
 
-#define DEFAULT_COMBAT_REACH        1.5f
 #define MIN_MELEE_REACH             2.0f
 #define NOMINAL_MELEE_RANGE         5.0f
 #define MELEE_RANGE                 (NOMINAL_MELEE_RANGE - MIN_MELEE_REACH * 2) //center to center for players
@@ -43,8 +43,11 @@ enum UnitStandStateType : uint8
     UNIT_STAND_STATE_SIT_HIGH_CHAIR    = 6,
     UNIT_STAND_STATE_DEAD              = 7,
     UNIT_STAND_STATE_KNEEL             = 8,
-    UNIT_STAND_STATE_SUBMERGED         = 9
+    UNIT_STAND_STATE_SUBMERGED         = 9,
+
+    MAX_UNIT_STAND_STATE
 };
+
 
 // byte flag value (UNIT_FIELD_BYTES_1, 2)
 enum UnitStandFlags : uint8
@@ -164,6 +167,16 @@ enum UnitMoveType
 };
 
 #define MAX_MOVE_TYPE     9
+
+enum DamageEffectType : uint8
+{
+    DIRECT_DAMAGE           = 0,                            // used for normal weapon damage (not for class abilities or spells)
+    SPELL_DIRECT_DAMAGE     = 1,                            // spell/class abilities damage
+    DOT                     = 2,
+    HEAL                    = 3,
+    NODAMAGE                = 4,                            // used also in case when damage applied to health but not applied to spell channelInterruptFlags/etc
+    SELF_DAMAGE             = 5
+};
 
 // Value masks for UNIT_FIELD_FLAGS
 // EnumUtils: DESCRIBE THIS
@@ -295,7 +308,7 @@ enum UnitFlags3 : uint32
     UNIT_FLAG3_UNK21                                        = 0x00200000,
     UNIT_FLAG3_DONT_FADE_OUT                                = 0x00400000,
     UNIT_FLAG3_UNK23                                        = 0x00800000,
-    UNIT_FLAG3_UNK24                                        = 0x01000000,
+    UNIT_FLAG3_FORCE_HIDE_NAMEPLATE                         = 0x01000000,
     UNIT_FLAG3_UNK25                                        = 0x02000000,
     UNIT_FLAG3_UNK26                                        = 0x04000000,
     UNIT_FLAG3_UNK27                                        = 0x08000000,
@@ -310,7 +323,7 @@ enum UnitFlags3 : uint32
                                                                UNIT_FLAG3_UNK12 | /* UNIT_FLAG3_FAKE_DEAD | */ /* UNIT_FLAG3_NO_FACING_ON_INTERACT_AND_FAST_FACING_CHASE | */ /* UNIT_FLAG3_UNTARGETABLE_FROM_UI | */
                                                                /* UNIT_FLAG3_NO_FACING_ON_INTERACT_WHILE_FAKE_DEAD | */ UNIT_FLAG3_ALREADY_SKINNED | /* UNIT_FLAG3_SUPPRESS_ALL_NPC_SOUNDS | */ /* UNIT_FLAG3_SUPPRESS_NPC_SOUNDS | */
                                                                UNIT_FLAG3_UNK20 | UNIT_FLAG3_UNK21 | /* UNIT_FLAG3_DONT_FADE_OUT | */ UNIT_FLAG3_UNK23 |
-                                                               UNIT_FLAG3_UNK24 | UNIT_FLAG3_UNK25 | UNIT_FLAG3_UNK26 | UNIT_FLAG3_UNK27 |
+                                                               /* UNIT_FLAG3_FORCE_HIDE_NAMEPLATE | */ UNIT_FLAG3_UNK25 | UNIT_FLAG3_UNK26 | UNIT_FLAG3_UNK27 |
                                                                UNIT_FLAG3_UNK28 | UNIT_FLAG3_UNK29 | UNIT_FLAG3_UNK30 | UNIT_FLAG3_UNK31), // SKIP
     UNIT_FLAG3_ALLOWED                                      = (0xFFFFFFFF & ~UNIT_FLAG3_DISALLOWED) // SKIP
 };
@@ -465,6 +478,8 @@ enum MovementFlags3 : uint32
 {
     MOVEMENTFLAG3_NONE              = 0x00000000,
     MOVEMENTFLAG3_DISABLE_INERTIA   = 0x00000001,
+    MOVEMENTFLAG3_CAN_ADV_FLY       = 0x00000002,
+    MOVEMENTFLAG3_ADV_FLYING        = 0x00000004,
 };
 
 enum HitInfo

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -25,21 +25,28 @@ EndScriptData */
 #include "ScriptMgr.h"
 #include "AreaBoundary.h"
 #include "CellImpl.h"
+#include "CreatureAI.h"
 #include "GridNotifiersImpl.h"
 #include "InstanceScript.h"
 #include "Map.h"
 #include "onyxias_lair.h"
 #include "TemporarySummon.h"
+#include <queue>
 
 BossBoundaryData const boundaries =
 {
     { DATA_ONYXIA, new CircleBoundary(Position(-34.3697f, -212.3296f), 100.0) }
 };
 
+DungeonEncounterData const encounters[] =
+{
+    { DATA_ONYXIA, {{ 1084 }} }
+};
+
 class instance_onyxias_lair : public InstanceMapScript
 {
 public:
-    instance_onyxias_lair() : InstanceMapScript(OLScriptName, 249) { }
+    instance_onyxias_lair() : InstanceMapScript(OnyxiaScriptName, 249) { }
 
     InstanceScript* GetInstanceScript(InstanceMap* map) const override
     {
@@ -53,6 +60,7 @@ public:
             SetHeaders(DataHeader);
             SetBossNumber(EncounterCount);
             LoadBossBoundaries(boundaries);
+            LoadDungeonEncounterData(encounters);
 
             onyxiaLiftoffTimer = 0;
             manyWhelpsCounter = 0;
@@ -89,7 +97,7 @@ public:
                     Position goPos = go->GetPosition();
                     if (Creature* temp = go->SummonCreature(NPC_WHELP, goPos, TEMPSUMMON_CORPSE_DESPAWN))
                     {
-                        temp->SetInCombatWithZone();
+                        temp->AI()->DoZoneInCombat();
                         ++manyWhelpsCounter;
                     }
                     break;
@@ -112,7 +120,9 @@ public:
                 //THIS GOB IS A TRAP - What shall i do? =(
                 //Cast it spell? Copyed Heigan method
                 floorEruption->SendCustomAnim(floorEruption->GetGoAnimProgress());
-                floorEruption->CastSpell(nullptr, instance->GetDifficultyID() == DIFFICULTY_10_N ? 17731 : 69294); //pFloorEruption->GetGOInfo()->trap.spellId
+                CastSpellExtraArgs args;
+                args.OriginalCaster = onyxiaGUID;
+                floorEruption->CastSpell(floorEruption, floorEruption->GetGOInfo()->trap.spell, args);
 
                 //Get all immediatly nearby floors
                 std::list<GameObject*> nearFloorList;
@@ -240,7 +250,7 @@ public:
             }
         }
 
-        bool CheckAchievementCriteriaMeet(uint32 criteriaId, Player const* /*source*/, Unit const* /*target = NULL*/, uint32 /*miscValue1 = 0*/) override
+        bool CheckAchievementCriteriaMeet(uint32 criteriaId, Player const* /*source*/, Unit const* /*target = nullptr*/, uint32 /*miscValue1 = 0*/) override
         {
             switch (criteriaId)
             {

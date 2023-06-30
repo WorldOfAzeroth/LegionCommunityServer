@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -22,6 +22,7 @@
 #include <unordered_set>
 
 struct ScenarioData;
+struct ScenarioEntry;
 struct ScenarioStepEntry;
 
 namespace WorldPackets
@@ -63,10 +64,13 @@ class TC_GAME_API Scenario : public CriteriaHandler
         virtual void Update(uint32 /*diff*/) { }
 
         bool IsComplete();
+        bool IsCompletedStep(ScenarioStepEntry const* step);
         void SetStepState(ScenarioStepEntry const* step, ScenarioStepState state) { _stepStates[step] = state; }
+        ScenarioEntry const* GetEntry() const;
         ScenarioStepState GetStepState(ScenarioStepEntry const* step);
         ScenarioStepEntry const* GetStep() const { return _currentstep; }
         ScenarioStepEntry const* GetFirstStep() const;
+        ScenarioStepEntry const* GetLastStep() const;
 
         void SendScenarioState(Player* player);
         void SendBootPlayer(Player* player);
@@ -74,7 +78,7 @@ class TC_GAME_API Scenario : public CriteriaHandler
     protected:
         GuidUnorderedSet _players;
 
-        void SendCriteriaUpdate(Criteria const* criteria, CriteriaProgress const* progress, uint32 timeElapsed, bool timedCompleted) const override;
+        void SendCriteriaUpdate(Criteria const* criteria, CriteriaProgress const* progress, Seconds timeElapsed, bool timedCompleted) const override;
         void SendCriteriaProgressRemoved(uint32 /*criteriaId*/) override { }
 
         bool CanUpdateCriteriaTree(Criteria const* criteria, CriteriaTree const* tree, Player* referencePlayer) const override;
@@ -91,7 +95,7 @@ class TC_GAME_API Scenario : public CriteriaHandler
         std::vector<WorldPackets::Scenario::BonusObjectiveData> GetBonusObjectivesData();
         std::vector<WorldPackets::Achievement::CriteriaProgress> GetCriteriasProgress();
 
-        CriteriaList const& GetCriteriaByType(CriteriaTypes type) const override;
+        CriteriaList const& GetCriteriaByType(CriteriaType type, uint32 asset) const override;
         ScenarioData const* _data;
 
     private:

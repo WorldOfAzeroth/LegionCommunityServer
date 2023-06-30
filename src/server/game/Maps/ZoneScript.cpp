@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -17,8 +17,24 @@
 
 #include "ZoneScript.h"
 #include "Creature.h"
+#include "GameEventSender.h"
+
+ZoneScript::ZoneScript() = default;
+ZoneScript::ZoneScript(ZoneScript const& right) = default;
+ZoneScript::ZoneScript(ZoneScript&& right) noexcept = default;
+ZoneScript& ZoneScript::operator=(ZoneScript const& right) = default;
+ZoneScript& ZoneScript::operator=(ZoneScript&& right) noexcept = default;
+ZoneScript::~ZoneScript() = default;
 
 uint32 ZoneScript::GetCreatureEntry(ObjectGuid::LowType /*guidLow*/, CreatureData const* data)
 {
     return data->id;
+}
+
+void ZoneScript::TriggerGameEvent(uint32 gameEventId, WorldObject* source /*= nullptr*/, WorldObject* target /*= nullptr*/)
+{
+    if (source)
+        GameEvents::Trigger(gameEventId, source, target);
+    else
+        ProcessEvent(nullptr, gameEventId, nullptr);
 }

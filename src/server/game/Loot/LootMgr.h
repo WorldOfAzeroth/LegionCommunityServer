@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -22,8 +21,8 @@
 #include "Define.h"
 #include "ConditionMgr.h"
 #include "ObjectGuid.h"
-#include "SharedDefines.h"
 #include <list>
+#include <memory>
 #include <set>
 #include <unordered_map>
 #include <vector>
@@ -33,18 +32,20 @@ class LootTemplate;
 class Player;
 struct Loot;
 struct LootItem;
+enum LootType : uint8;
+enum class ItemContext : uint8;
 
 struct TC_GAME_API LootStoreItem
 {
-    uint32  itemid;                                         // id of the item
-    uint32  reference;                                      // referenced TemplateleId
-    float   chance;                                         // chance to drop for both quest and non-quest items, chance to be used for refs
-    uint16  lootmode;
-    bool    needs_quest;                                    // quest drop (quest is required for item to drop)
-    uint8   groupid;
-    uint8   mincount;                                       // mincount for drop items
-    uint8   maxcount;                                       // max drop count for the item mincount or Ref multiplicator
-    ConditionContainer conditions;                               // additional loot condition
+    uint32 itemid;                                         // id of the item
+    uint32 reference;                                      // referenced TemplateleId
+    float chance;                                          // chance to drop for both quest and non-quest items, chance to be used for refs
+    uint16 lootmode;
+    bool needs_quest;                                      // quest drop (quest is required for item to drop)
+    uint8 groupid;
+    uint8 mincount;                                        // mincount for drop items
+    uint8 maxcount;                                        // max drop count for the item mincount or Ref multiplicator
+    ConditionContainer conditions;                         // additional loot condition
 
     // Constructor
     // displayid is filled in IsValid() which must be called after
@@ -73,14 +74,14 @@ class TC_GAME_API LootStore
         void Verify() const;
 
         uint32 LoadAndCollectLootIds(LootIdSet& ids_set);
-        void CheckLootRefs(LootIdSet* ref_set = NULL) const; // check existence reference and remove it from ref_set
+        void CheckLootRefs(LootIdSet* ref_set = nullptr) const; // check existence reference and remove it from ref_set
         void ReportUnusedIds(LootIdSet const& ids_set) const;
         void ReportNonExistingId(uint32 lootId) const;
-        void ReportNonExistingId(uint32 lootId, const char* ownerType, uint32 ownerId) const;
+        void ReportNonExistingId(uint32 lootId, char const* ownerType, uint32 ownerId) const;
 
         bool HaveLootFor(uint32 loot_id) const { return m_LootTemplates.find(loot_id) != m_LootTemplates.end(); }
         bool HaveQuestLootFor(uint32 loot_id) const;
-        bool HaveQuestLootForPlayer(uint32 loot_id, Player* player) const;
+        bool HaveQuestLootForPlayer(uint32 loot_id, Player const* player) const;
 
         LootTemplate const* GetLootFor(uint32 loot_id) const;
         void ResetConditions();
@@ -111,10 +112,13 @@ class TC_GAME_API LootTemplate
         // Adds an entry to the group (at loading stage)
         void AddEntry(LootStoreItem* item);
         // Rolls for every item in the template and adds the rolled items the the loot
-        void Process(Loot& loot, bool rate, uint16 lootMode, uint8 groupId = 0) const;
-        void CopyConditions(const ConditionContainer& conditions);
+        void Process(Loot& loot, bool rate, uint16 lootMode, uint8 groupId, Player const* personalLooter = nullptr) const;
+        void ProcessPersonalLoot(std::unordered_map<Player*, std::unique_ptr<Loot>>& personalLoot, bool rate, uint16 lootMode) const;
+        void CopyConditions(ConditionContainer const& conditions);
         void CopyConditions(LootItem* li) const;
 
+        // True if template includes at least 1 drop for the player
+        bool HasDropForPlayer(Player const* player, uint8 groupId = 0, bool strictUsabilityCheck = false) const;
         // True if template includes at least 1 quest drop entry
         bool HasQuestDrop(LootTemplateMap const& store, uint8 groupId = 0) const;
         // True if template includes at least 1 quest drop for an active quest of the player
@@ -134,6 +138,12 @@ class TC_GAME_API LootTemplate
         LootTemplate(LootTemplate const&) = delete;
         LootTemplate& operator=(LootTemplate const&) = delete;
 };
+
+std::unordered_map<ObjectGuid, std::unique_ptr<Loot>> GenerateDungeonEncounterPersonalLoot(uint32 dungeonEncounterId,
+    uint32 lootId, LootStore const& store, LootType type, WorldObject const* lootOwner,
+    uint32 minMoney, uint32 maxMoney,
+    uint16 lootMode, ItemContext context,
+    std::vector<Player*> const& tappers);
 
 //=====================================================
 

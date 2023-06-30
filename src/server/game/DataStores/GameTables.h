@@ -59,6 +59,12 @@ struct GtBaseMPEntry
     float DemonHunter = 0.0f;
 };
 
+struct GtBattlePetXPEntry
+{
+    float Wins = 0.0f;
+    float Xp = 0.0f;
+};
+
 struct GtCombatRatingsEntry
 {
     float Amplify = 0.0f;
@@ -72,8 +78,8 @@ struct GtCombatRatingsEntry
     float CritMelee = 0.0f;
     float CritRanged = 0.0f;
     float CritSpell = 0.0f;
-    float MultiStrike = 0.0f;
-    float Readiness = 0.0f;
+    float Corruption = 0.0f;
+    float CorruptionResistance = 0.0f;
     float Speed = 0.0f;
     float ResilienceCritTaken = 0.0f;
     float ResiliencePlayerDamage = 0.0f;
@@ -212,6 +218,7 @@ TC_GAME_API extern GameTable<GtArtifactKnowledgeMultiplierEntry>    sArtifactKno
 TC_GAME_API extern GameTable<GtArtifactLevelXPEntry>                sArtifactLevelXPGameTable;
 TC_GAME_API extern GameTable<GtBarberShopCostBaseEntry>             sBarberShopCostBaseGameTable;
 TC_GAME_API extern GameTable<GtBaseMPEntry>                         sBaseMPGameTable;
+TC_GAME_API extern GameTable<GtBattlePetXPEntry>                    sBattlePetXPGameTable;
 TC_GAME_API extern GameTable<GtCombatRatingsEntry>                  sCombatRatingsGameTable;
 TC_GAME_API extern GameTable<GtCombatRatingsMultByILvl>             sCombatRatingsMultByILvlGameTable;
 TC_GAME_API extern GameTable<GtHonorLevelEntry>                     sHonorLevelGameTable;
@@ -307,5 +314,13 @@ inline float GetSpellScalingColumnForClass(GtSpellScalingEntry const* row, int32
 
     return 0.0f;
 }
+
+inline float GetBattlePetXPPerLevel(GtBattlePetXPEntry const* row)
+{
+    return row->Wins * row->Xp;
+}
+
+template<class T>
+float GetIlvlStatMultiplier(T const* row, InventoryType invType);
 
 #endif // GameTables_h__

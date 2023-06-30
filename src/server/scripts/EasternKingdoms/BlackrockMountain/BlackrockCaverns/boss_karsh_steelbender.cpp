@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -56,11 +56,11 @@ class boss_karsh_steelbender : public CreatureScript
                 _Reset();
             }
 
-            void EnterCombat(Unit* /*who*/) override
+            void JustEngagedWith(Unit* who) override
             {
-                _EnterCombat();
+                BossAI::JustEngagedWith(who);
                 Talk(YELL_AGGRO);
-                events.ScheduleEvent(EVENT_CLEAVE, 10000);
+                events.ScheduleEvent(EVENT_CLEAVE, 10s);
             }
 
             void KilledUnit(Unit* who) override
@@ -91,7 +91,7 @@ class boss_karsh_steelbender : public CreatureScript
                     {
                         case EVENT_CLEAVE:
                             DoCastVictim(SPELL_CLEAVE);
-                            events.ScheduleEvent(EVENT_CLEAVE, 10000);
+                            events.ScheduleEvent(EVENT_CLEAVE, 10s);
                             break;
                         default:
                             break;

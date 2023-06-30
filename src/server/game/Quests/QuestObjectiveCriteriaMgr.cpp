@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -19,7 +19,10 @@
 #include "AchievementPackets.h"
 #include "DatabaseEnv.h"
 #include "DB2Structure.h"
+#include "GameTime.h"
+#include "Group.h"
 #include "Log.h"
+#include "Map.h"
 #include "ObjectMgr.h"
 #include "Player.h"
 
@@ -34,8 +37,8 @@ QuestObjectiveCriteriaMgr::~QuestObjectiveCriteriaMgr()
 void QuestObjectiveCriteriaMgr::CheckAllQuestObjectiveCriteria(Player* referencePlayer)
 {
     // suppress sending packets
-    for (uint32 i = 0; i < CRITERIA_TYPE_TOTAL; ++i)
-        UpdateCriteria(CriteriaTypes(i), 0, 0, 0, nullptr, referencePlayer);
+    for (uint32 i = 0; i < uint32(CriteriaType::Count); ++i)
+        UpdateCriteria(CriteriaType(i), 0, 0, 0, nullptr, referencePlayer);
 }
 
 void QuestObjectiveCriteriaMgr::Reset()
@@ -85,19 +88,19 @@ void QuestObjectiveCriteriaMgr::LoadFromDB(PreparedQueryResult objectiveResult, 
 
     if (criteriaResult)
     {
-        time_t now = time(nullptr);
+        time_t now = GameTime::GetGameTime();
         do
         {
             Field* fields = criteriaResult->Fetch();
             uint32 criteriaId = fields[0].GetUInt32();
             uint64 counter = fields[1].GetUInt64();
-            time_t date = time_t(fields[2].GetUInt32());
+            time_t date = fields[2].GetInt64();
 
             Criteria const* criteria = sCriteriaMgr->GetCriteria(criteriaId);
             if (!criteria)
             {
                 // Removing non-existing criteria data for all characters
-                TC_LOG_ERROR("criteria.quest", "Non-existing quest objective criteria %u data has been removed from the table `character_queststatus_objectives_criteria_progress`.", criteriaId);
+                TC_LOG_ERROR("criteria.quest", "Non-existing quest objective criteria {} data has been removed from the table `character_queststatus_objectives_criteria_progress`.", criteriaId);
 
                 CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_QUEST_PROGRESS_CRITERIA);
                 stmt->setUInt32(0, criteriaId);
@@ -117,7 +120,7 @@ void QuestObjectiveCriteriaMgr::LoadFromDB(PreparedQueryResult objectiveResult, 
     }
 }
 
-void QuestObjectiveCriteriaMgr::SaveToDB(CharacterDatabaseTransaction& trans)
+void QuestObjectiveCriteriaMgr::SaveToDB(CharacterDatabaseTransaction trans)
 {
     CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_QUESTSTATUS_OBJECTIVES_CRITERIA);
     stmt->setUInt64(0, _owner->GetGUID().GetCounter());
@@ -152,7 +155,7 @@ void QuestObjectiveCriteriaMgr::SaveToDB(CharacterDatabaseTransaction& trans)
                 stmt->setUInt64(0, _owner->GetGUID().GetCounter());
                 stmt->setUInt32(1, criteriaProgres.first);
                 stmt->setUInt64(2, criteriaProgres.second.Counter);
-                stmt->setUInt32(3, uint32(criteriaProgres.second.Date));
+                stmt->setInt64(3, criteriaProgres.second.Date);
                 trans->Append(stmt);
             }
 
@@ -161,36 +164,35 @@ void QuestObjectiveCriteriaMgr::SaveToDB(CharacterDatabaseTransaction& trans)
     }
 }
 
-void QuestObjectiveCriteriaMgr::ResetCriteria(CriteriaTypes type, uint64 miscValue1, uint64 miscValue2, bool evenIfCriteriaComplete)
+void QuestObjectiveCriteriaMgr::ResetCriteria(CriteriaFailEvent failEvent, int32 failAsset, bool evenIfCriteriaComplete)
 {
-    TC_LOG_DEBUG("criteria.quest", "QuestObjectiveCriteriaMgr::ResetCriteria(%u, " UI64FMTD ", " UI64FMTD ")", type, miscValue1, miscValue2);
+    TC_LOG_DEBUG("criteria.quest", "QuestObjectiveCriteriaMgr::ResetCriteria({}, {}, {})", uint32(failEvent), failAsset, evenIfCriteriaComplete ? "true" : "false");
 
     // disable for gamemasters with GM-mode enabled
     if (_owner->IsGameMaster())
         return;
 
-    CriteriaList const& playerCriteriaList = GetCriteriaByType(type);
-    for (Criteria const* playerCriteria : playerCriteriaList)
+    if (CriteriaList const* playerCriteriaList = sCriteriaMgr->GetCriteriaByFailEvent(failEvent, failAsset))
     {
-        if (playerCriteria->Entry->FailEvent != miscValue1 || (playerCriteria->Entry->FailAsset && playerCriteria->Entry->FailAsset != int64(miscValue2)))
-            continue;
-
-        std::vector<CriteriaTree const*> const* trees = sCriteriaMgr->GetCriteriaTreesByCriteria(playerCriteria->ID);
-        bool allComplete = true;
-        for (CriteriaTree const* tree : *trees)
+        for (Criteria const* playerCriteria : *playerCriteriaList)
         {
-            // don't update already completed criteria if not forced
-            if (!(IsCompletedCriteriaTree(tree) && !evenIfCriteriaComplete))
+            std::vector<CriteriaTree const*> const* trees = sCriteriaMgr->GetCriteriaTreesByCriteria(playerCriteria->ID);
+            bool allComplete = true;
+            for (CriteriaTree const* tree : *trees)
             {
-                allComplete = false;
-                break;
+                // don't update already completed criteria if not forced
+                if (!(IsCompletedCriteriaTree(tree) && !evenIfCriteriaComplete))
+                {
+                    allComplete = false;
+                    break;
+                }
             }
+
+            if (allComplete)
+                continue;
+
+            RemoveCriteriaProgress(playerCriteria);
         }
-
-        if (allComplete)
-            continue;
-
-        RemoveCriteriaProgress(playerCriteria);
     }
 }
 
@@ -224,18 +226,14 @@ void QuestObjectiveCriteriaMgr::SendAllData(Player const* /*receiver*/) const
     }
 }
 
-void QuestObjectiveCriteriaMgr::CompletedObjective(QuestObjective const* questObjective, Player* referencePlayer)
+void QuestObjectiveCriteriaMgr::CompletedObjective(QuestObjective const* questObjective, Player* /*referencePlayer*/)
 {
-    // disable for gamemasters with GM-mode enabled
-    if (_owner->IsGameMaster())
-        return;
-
     if (HasCompletedObjective(questObjective))
         return;
 
-    referencePlayer->KillCreditCriteriaTreeObjective(*questObjective);
+    _owner->KillCreditCriteriaTreeObjective(*questObjective);
 
-    TC_LOG_INFO("criteria.quest", "QuestObjectiveCriteriaMgr::CompletedObjective(%u). %s", questObjective->ID, GetOwnerInfo().c_str());
+    TC_LOG_INFO("criteria.quest", "QuestObjectiveCriteriaMgr::CompletedObjective({}). {}", questObjective->ID, GetOwnerInfo());
 
     _completedObjectives.insert(questObjective->ID);
 }
@@ -245,7 +243,7 @@ bool QuestObjectiveCriteriaMgr::HasCompletedObjective(QuestObjective const* ques
     return _completedObjectives.find(questObjective->ID) != _completedObjectives.end();
 }
 
-void QuestObjectiveCriteriaMgr::SendCriteriaUpdate(Criteria const* criteria, CriteriaProgress const* progress, uint32 timeElapsed, bool timedCompleted) const
+void QuestObjectiveCriteriaMgr::SendCriteriaUpdate(Criteria const* criteria, CriteriaProgress const* progress, Seconds timeElapsed, bool timedCompleted) const
 {
     WorldPackets::Achievement::CriteriaUpdate criteriaUpdate;
 
@@ -278,7 +276,30 @@ bool QuestObjectiveCriteriaMgr::CanUpdateCriteriaTree(Criteria const* criteria, 
 
     if (HasCompletedObjective(objective))
     {
-        TC_LOG_TRACE("criteria.quest", "QuestObjectiveCriteriaMgr::CanUpdateCriteriaTree: (Id: %u Type %s Quest Objective %u) Objective already completed",
+        TC_LOG_TRACE("criteria.quest", "QuestObjectiveCriteriaMgr::CanUpdateCriteriaTree: (Id: {} Type {} Quest Objective {}) Objective already completed",
+            criteria->ID, CriteriaMgr::GetCriteriaTypeString(criteria->Entry->Type), objective->ID);
+        return false;
+    }
+
+    if (_owner->GetQuestStatus(objective->QuestID) != QUEST_STATUS_INCOMPLETE)
+    {
+        TC_LOG_TRACE("criteria.quest", "QuestObjectiveCriteriaMgr::CanUpdateCriteriaTree: (Id: {} Type {} Quest Objective {}) Not on quest",
+            criteria->ID, CriteriaMgr::GetCriteriaTypeString(criteria->Entry->Type), objective->ID);
+        return false;
+    }
+
+    Quest const* quest = ASSERT_NOTNULL(sObjectMgr->GetQuestTemplate(objective->QuestID));
+    if (_owner->GetGroup() && _owner->GetGroup()->isRaidGroup() && !quest->IsAllowedInRaid(referencePlayer->GetMap()->GetDifficultyID()))
+    {
+        TC_LOG_TRACE("criteria.quest", "QuestObjectiveCriteriaMgr::CanUpdateCriteriaTree: (Id: {} Type {} Quest Objective {}) Quest cannot be completed in raid group",
+            criteria->ID, CriteriaMgr::GetCriteriaTypeString(criteria->Entry->Type), objective->ID);
+        return false;
+    }
+
+    uint16 slot = _owner->FindQuestSlot(objective->QuestID);
+    if (slot >= MAX_QUEST_LOG_SIZE || !_owner->IsQuestObjectiveCompletable(slot, quest, *objective))
+    {
+        TC_LOG_TRACE("criteria.quest", "QuestObjectiveCriteriaMgr::CanUpdateCriteriaTree: (Id: {} Type {} Quest Objective {}) Objective not completable",
             criteria->ID, CriteriaMgr::GetCriteriaTypeString(criteria->Entry->Type), objective->ID);
         return false;
     }
@@ -311,10 +332,10 @@ void QuestObjectiveCriteriaMgr::SendPacket(WorldPacket const* data) const
 
 std::string QuestObjectiveCriteriaMgr::GetOwnerInfo() const
 {
-    return Trinity::StringFormat("%s %s", _owner->GetGUID().ToString().c_str(), _owner->GetName().c_str());
+    return Trinity::StringFormat("{} {}", _owner->GetGUID().ToString(), _owner->GetName());
 }
 
-CriteriaList const& QuestObjectiveCriteriaMgr::GetCriteriaByType(CriteriaTypes type) const
+CriteriaList const& QuestObjectiveCriteriaMgr::GetCriteriaByType(CriteriaType type, uint32 /*asset*/) const
 {
     return sCriteriaMgr->GetQuestObjectiveCriteriaByType(type);
 }

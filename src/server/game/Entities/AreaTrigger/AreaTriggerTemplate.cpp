@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -23,92 +23,101 @@
 
 AreaTriggerScaleInfo::AreaTriggerScaleInfo()
 {
-    memset(OverrideScale, 0, sizeof(OverrideScale));
-    memset(ExtraScale, 0, sizeof(ExtraScale));
+    memset(Data.Raw, 0, sizeof(Data.Raw));
+}
 
-    ExtraScale[5].AsFloat = 1.0000001f;
-    ExtraScale[6].AsInt32 = 1;
+AreaTriggerShapeInfo::AreaTriggerShapeInfo()
+{
+    Type = AREATRIGGER_TYPE_MAX;
+    memset(DefaultDatas.Data, 0, sizeof(DefaultDatas.Data));
+}
+
+float AreaTriggerShapeInfo::GetMaxSearchRadius() const
+{
+    switch (Type)
+    {
+        case AREATRIGGER_TYPE_SPHERE:
+            return std::max(SphereDatas.Radius, SphereDatas.RadiusTarget);
+        case AREATRIGGER_TYPE_BOX:
+            return std::sqrt(BoxDatas.Extents[0] * BoxDatas.Extents[0] / 4 + BoxDatas.Extents[1] * BoxDatas.Extents[1] / 4);
+        case AREATRIGGER_TYPE_CYLINDER:
+            return std::max(CylinderDatas.Radius, CylinderDatas.RadiusTarget);
+        case AREATRIGGER_TYPE_DISK:
+            return std::max(DiskDatas.OuterRadius, DiskDatas.OuterRadiusTarget);
+        case AREATRIGGER_TYPE_BOUNDED_PLANE:
+            return std::sqrt(BoundedPlaneDatas.Extents[0] * BoundedPlaneDatas.Extents[0] / 4 + BoundedPlaneDatas.Extents[1] * BoundedPlaneDatas.Extents[1] / 4);
+        default:
+            break;
+    }
+
+    return 0.0f;
 }
 
 AreaTriggerTemplate::AreaTriggerTemplate()
 {
-    Id = 0;
-    Type = AREATRIGGER_TYPE_MAX;
+    Id = { 0, false };
     Flags = 0;
-    ScriptId = 0;
-    MaxSearchRadius = 0.0f;
-
-    memset(DefaultDatas.Data, 0, sizeof(DefaultDatas.Data));
 }
 
 AreaTriggerTemplate::~AreaTriggerTemplate()
 {
 }
 
-// Init the MaxSearchRadius that will be used in TrinitySearcher, avoiding calculate it at each update
-void AreaTriggerTemplate::InitMaxSearchRadius()
+AreaTriggerCreateProperties::AreaTriggerCreateProperties()
 {
-    switch (Type)
-    {
-        case AREATRIGGER_TYPE_SPHERE:
-        {
-            MaxSearchRadius = std::max(SphereDatas.Radius, SphereDatas.RadiusTarget);
-            break;
-        }
-        case AREATRIGGER_TYPE_BOX:
-        {
-            MaxSearchRadius = std::sqrt(BoxDatas.Extents[0] * BoxDatas.Extents[0] / 4 + BoxDatas.Extents[1] * BoxDatas.Extents[1] / 4);
-            break;
-        }
-        case AREATRIGGER_TYPE_POLYGON:
-        {
-            if (PolygonDatas.Height <= 0.0f)
-                PolygonDatas.Height = 1.0f;
-
-            Position center(0.0f, 0.0f);
-            for (TaggedPosition<Position::XY> const& vertice : PolygonVertices)
-            {
-                float pointDist = center.GetExactDist2d(vertice);
-
-                if (pointDist > MaxSearchRadius)
-                    MaxSearchRadius = pointDist;
-            }
-
-            break;
-        }
-        case AREATRIGGER_TYPE_CYLINDER:
-        {
-            MaxSearchRadius = CylinderDatas.Radius;
-            break;
-        }
-        default:
-            break;
-    }
-}
-
-AreaTriggerMiscTemplate::AreaTriggerMiscTemplate()
-{
-    MiscId = 0;
-    AreaTriggerEntry = 0;
+    Id = 0;
 
     MoveCurveId = 0;
     ScaleCurveId = 0;
     MorphCurveId = 0;
     FacingCurveId = 0;
 
+    AnimId = 0;
+    AnimKitId = 0;
+
     DecalPropertiesId = 0;
 
     TimeToTarget = 0;
     TimeToTargetScale = 0;
 
+    // legacy code from before it was known what each curve field does
+    // wtf? thats not how you pack curve data
+    float tmp = 1.0000001f;
+    memcpy(&ExtraScale.Data.Raw[5], &tmp, sizeof(tmp));
+    // also OverrideActive does nothing on ExtraScale
+    ExtraScale.Data.Structured.OverrideActive = 1;
+
     Template = nullptr;
+
+    ScriptId = 0;
 }
 
-AreaTriggerMiscTemplate::~AreaTriggerMiscTemplate()
+AreaTriggerCreateProperties::~AreaTriggerCreateProperties()
 {
 }
 
-bool AreaTriggerMiscTemplate::HasSplines() const
+bool AreaTriggerCreateProperties::HasSplines() const
 {
     return SplinePoints.size() >= 2;
+}
+
+float AreaTriggerCreateProperties::GetMaxSearchRadius() const
+{
+    if (Shape.Type == AREATRIGGER_TYPE_POLYGON)
+    {
+        Position center(0.0f, 0.0f);
+        float maxSearchRadius = 0.0f;
+
+        for (TaggedPosition<Position::XY> const& vertice : PolygonVertices)
+        {
+            float pointDist = center.GetExactDist2d(vertice);
+
+            if (pointDist > maxSearchRadius)
+                maxSearchRadius = pointDist;
+        }
+
+        return maxSearchRadius;
+    }
+
+    return Shape.GetMaxSearchRadius();
 }

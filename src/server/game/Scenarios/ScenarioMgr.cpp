@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -16,6 +16,7 @@
  */
 
 #include "ScenarioMgr.h"
+#include "Containers.h"
 #include "DatabaseEnv.h"
 #include "DB2Stores.h"
 #include "InstanceScenario.h"
@@ -29,7 +30,7 @@ ScenarioMgr* ScenarioMgr::Instance()
     return &instance;
 }
 
-InstanceScenario* ScenarioMgr::CreateInstanceScenario(Map const* map, TeamId team) const
+InstanceScenario* ScenarioMgr::CreateInstanceScenario(InstanceMap const* map, TeamId team) const
 {
     auto dbDataItr = _scenarioDBData.find(std::make_pair(map->GetId(), map->GetDifficultyID()));
     // No scenario registered for this map and difficulty in the database
@@ -52,7 +53,7 @@ InstanceScenario* ScenarioMgr::CreateInstanceScenario(Map const* map, TeamId tea
     auto itr = _scenarioData.find(scenarioID);
     if (itr == _scenarioData.end())
     {
-        TC_LOG_ERROR("scenario", "Table `scenarios` contained data linking scenario (Id: %u) to map (Id: %u), difficulty (Id: %u) but no scenario data was found related to that scenario Id.", scenarioID, map->GetId(), map->GetDifficultyID());
+        TC_LOG_ERROR("scenario", "Table `scenarios` contained data linking scenario (Id: {}) to map (Id: {}), difficulty (Id: {}) but no scenario data was found related to that scenario Id.", scenarioID, map->GetId(), map->GetDifficultyID());
         return nullptr;
     }
 
@@ -83,14 +84,14 @@ void ScenarioMgr::LoadDBData()
         uint32 scenarioAllianceId = fields[2].GetUInt32();
         if (scenarioAllianceId > 0 && _scenarioData.find(scenarioAllianceId) == _scenarioData.end())
         {
-            TC_LOG_ERROR("sql.sql", "ScenarioMgr::LoadDBData: DB Table `scenarios`, column scenario_A contained an invalid scenario (Id: %u)!", scenarioAllianceId);
+            TC_LOG_ERROR("sql.sql", "ScenarioMgr::LoadDBData: DB Table `scenarios`, column scenario_A contained an invalid scenario (Id: {})!", scenarioAllianceId);
             continue;
         }
 
         uint32 scenarioHordeId = fields[3].GetUInt32();
         if (scenarioHordeId > 0 && _scenarioData.find(scenarioHordeId) == _scenarioData.end())
         {
-            TC_LOG_ERROR("sql.sql", "ScenarioMgr::LoadDBData: DB Table `scenarios`, column scenario_H contained an invalid scenario (Id: %u)!", scenarioHordeId);
+            TC_LOG_ERROR("sql.sql", "ScenarioMgr::LoadDBData: DB Table `scenarios`, column scenario_H contained an invalid scenario (Id: {})!", scenarioHordeId);
             continue;
         }
 
@@ -105,7 +106,7 @@ void ScenarioMgr::LoadDBData()
     }
     while (result->NextRow());
 
-    TC_LOG_INFO("server.loading", ">> Loaded " SZFMTD " instance scenario entries in %u ms", _scenarioDBData.size(), GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded {} instance scenario entries in {} ms", _scenarioDBData.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ScenarioMgr::LoadDB2Data()
@@ -147,70 +148,70 @@ void ScenarioMgr::LoadScenarioPOI()
 
     uint32 count = 0;
 
-    //                                                      0            1        2     6          7           8       9       10         11               12
-    QueryResult result = WorldDatabase.Query("SELECT CriteriaTreeID, BlobIndex, Idx1, MapID, WorldMapAreaId, Floor, Priority, Flags, WorldEffectID, PlayerConditionID FROM scenario_poi ORDER BY CriteriaTreeID, Idx1");
+    //                                                      0            1        2     3       4         5       6          7               8                        9
+    QueryResult result = WorldDatabase.Query("SELECT CriteriaTreeID, BlobIndex, Idx1, MapID, UiMapID, Priority, Flags, WorldEffectID, PlayerConditionID, NavigationPlayerConditionID FROM scenario_poi ORDER BY CriteriaTreeID, Idx1");
     if (!result)
     {
         TC_LOG_ERROR("server.loading", ">> Loaded 0 scenario POI definitions. DB table `scenario_poi` is empty.");
         return;
     }
 
-    //                                                       0        1    2  3
-    QueryResult points = WorldDatabase.Query("SELECT CriteriaTreeID, Idx1, X, Y FROM scenario_poi_points ORDER BY CriteriaTreeID DESC, Idx1, Idx2");
+    //                                                       0        1    2  3  4
+    QueryResult pointsResult = WorldDatabase.Query("SELECT CriteriaTreeID, Idx1, X, Y, Z FROM scenario_poi_points ORDER BY CriteriaTreeID DESC, Idx1, Idx2");
 
-    std::vector<std::vector<std::vector<ScenarioPOIPoint>>> POIs;
+    std::unordered_map<int32, std::map<int32, std::vector<ScenarioPOIPoint>>> allPoints;
 
-    if (points)
+    if (pointsResult)
     {
-        // The first result should have the highest criteriaTreeId
-        Field* fields = points->Fetch();
-        uint32 criteriaTreeIdMax = fields[0].GetInt32();
-        POIs.resize(criteriaTreeIdMax + 1);
+        Field* fields = pointsResult->Fetch();
 
         do
         {
-            fields = points->Fetch();
+            fields = pointsResult->Fetch();
 
             int32 CriteriaTreeID = fields[0].GetInt32();
             int32 Idx1 = fields[1].GetInt32();
             int32 X = fields[2].GetInt32();
             int32 Y = fields[3].GetInt32();
+            int32 Z = fields[4].GetInt32();
 
-            if (int32(POIs[CriteriaTreeID].size()) <= Idx1 + 1)
-                POIs[CriteriaTreeID].resize(Idx1 + 10);
-
-            ScenarioPOIPoint point(X, Y);
-            POIs[CriteriaTreeID][Idx1].push_back(point);
-        } while (points->NextRow());
+            allPoints[CriteriaTreeID][Idx1].emplace_back(X, Y, Z);
+        } while (pointsResult->NextRow());
     }
 
     do
     {
         Field* fields = result->Fetch();
 
-        int32 CriteriaTreeID = fields[0].GetInt32();
-        int32 BlobIndex = fields[1].GetInt32();
-        int32 Idx1 = fields[2].GetInt32();
-        int32 MapID = fields[3].GetInt32();
-        int32 WorldMapAreaId = fields[4].GetInt32();
-        int32 Floor = fields[5].GetInt32();
-        int32 Priority = fields[6].GetInt32();
-        int32 Flags = fields[7].GetInt32();
-        int32 WorldEffectID = fields[8].GetInt32();
-        int32 PlayerConditionID = fields[9].GetInt32();
+        int32 criteriaTreeID = fields[0].GetInt32();
+        int32 blobIndex = fields[1].GetInt32();
+        int32 idx1 = fields[2].GetInt32();
+        int32 mapID = fields[3].GetInt32();
+        int32 uiMapID = fields[4].GetInt32();
+        int32 priority = fields[5].GetInt32();
+        int32 flags = fields[6].GetInt32();
+        int32 worldEffectID = fields[7].GetInt32();
+        int32 playerConditionID = fields[8].GetInt32();
+        int32 navigationPlayerConditionID = fields[9].GetInt32();
 
-        if (!sCriteriaMgr->GetCriteriaTree(CriteriaTreeID))
-            TC_LOG_ERROR("sql.sql", "`scenario_poi` CriteriaTreeID (%u) Idx1 (%u) does not correspond to a valid criteria tree", CriteriaTreeID, Idx1);
+        if (!sCriteriaMgr->GetCriteriaTree(criteriaTreeID))
+            TC_LOG_ERROR("sql.sql", "`scenario_poi` CriteriaTreeID ({}) Idx1 ({}) does not correspond to a valid criteria tree", criteriaTreeID, idx1);
 
-        if (CriteriaTreeID < int32(POIs.size()) && Idx1 < int32(POIs[CriteriaTreeID].size()))
-            _scenarioPOIStore[CriteriaTreeID].emplace_back(BlobIndex, MapID, WorldMapAreaId, Floor, Priority, Flags, WorldEffectID, PlayerConditionID, POIs[CriteriaTreeID][Idx1]);
-        else
-            TC_LOG_ERROR("server.loading", "Table scenario_poi references unknown scenario poi points for criteria tree id %i POI id %i", CriteriaTreeID, BlobIndex);
+        if (std::map<int32, std::vector<ScenarioPOIPoint>>* blobs = Trinity::Containers::MapGetValuePtr(allPoints, criteriaTreeID))
+        {
+            if (std::vector<ScenarioPOIPoint>* points = Trinity::Containers::MapGetValuePtr(*blobs, idx1))
+            {
+                _scenarioPOIStore[criteriaTreeID].emplace_back(blobIndex, mapID, uiMapID, priority, flags, worldEffectID, playerConditionID, navigationPlayerConditionID, std::move(*points));
+                ++count;
+                continue;
+            }
+        }
 
-        ++count;
+        TC_LOG_ERROR("server.loading", "Table scenario_poi references unknown scenario poi points for criteria tree id {} POI id {}", criteriaTreeID, blobIndex);
+
     } while (result->NextRow());
 
-    TC_LOG_INFO("server.loading", ">> Loaded %u scenario POI definitions in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded {} scenario POI definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
 ScenarioPOIVector const* ScenarioMgr::GetScenarioPOIs(int32 criteriaTreeID) const

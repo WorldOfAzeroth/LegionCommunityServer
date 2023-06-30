@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -59,8 +59,7 @@ namespace Trainer
         std::array<uint32, 3> ReqAbility = { };
         uint8 ReqLevel = 0;
 
-        uint32 LearnedSpellId = 0;
-        bool IsCastable() const { return LearnedSpellId != SpellId; }
+        bool IsCastable() const;
     };
 
     class Trainer
@@ -68,7 +67,7 @@ namespace Trainer
     public:
         Trainer(uint32 id, Type type, std::string greeting, std::vector<Spell> spells);
 
-        void SendSpells(Creature const* npc, Player const* player, LocaleConstant locale) const;
+        void SendSpells(Creature const* npc, Player* player, LocaleConstant locale) const;
         void TeachSpell(Creature const* npc, Player* player, uint32 spellId) const;
 
     private:

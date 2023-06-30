@@ -68,7 +68,7 @@ namespace WorldPackets
             WorldPacket const* Write() override;
 
             std::array<uint8, 16> Challenge = { };
-            uint32 DosChallenge[8] = { }; ///< Encryption seeds
+            std::array<uint32, 8> DosChallenge = { };
             uint8 DosZeroBits = 0;
         };
 

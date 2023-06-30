@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -161,6 +161,13 @@ uint32 Battlenet::AccountMgr::GetIdByGameAccount(uint32 gameAccountId)
     return 0;
 }
 
+QueryCallback Battlenet::AccountMgr::GetIdByGameAccountAsync(uint32 gameAccountId)
+{
+    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_ACCOUNT_ID_BY_GAME_ACCOUNT);
+    stmt->setUInt32(0, gameAccountId);
+    return LoginDatabase.AsyncQuery(stmt);
+}
+
 uint8 Battlenet::AccountMgr::GetMaxIndex(uint32 accountId)
 {
     LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_MAX_ACCOUNT_INDEX);
@@ -170,4 +177,19 @@ uint8 Battlenet::AccountMgr::GetMaxIndex(uint32 accountId)
         return (*result)[0].GetUInt8();
 
     return 0;
+}
+
+std::string Battlenet::AccountMgr::CalculateShaPassHash(std::string_view name, std::string_view password)
+{
+    Trinity::Crypto::SHA256 email;
+    email.UpdateData(name);
+    email.Finalize();
+
+    Trinity::Crypto::SHA256 sha;
+    sha.UpdateData(ByteArrayToHexStr(email.GetDigest()));
+    sha.UpdateData(":");
+    sha.UpdateData(password);
+    sha.Finalize();
+
+    return ByteArrayToHexStr(sha.GetDigest(), true);
 }

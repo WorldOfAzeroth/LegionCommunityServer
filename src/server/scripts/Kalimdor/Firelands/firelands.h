@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -119,7 +119,7 @@ struct firelands_bossAI : public BossAI
 {
     firelands_bossAI(Creature* creature, uint32 bossId) : BossAI(creature, bossId) { }
 
-    void EnterCombat(Unit* target) override;
+    void JustEngagedWith(Unit* target) override;
     void JustDied(Unit* killer) override;
     void EnterEvadeMode(EvadeReason why) override;
 };

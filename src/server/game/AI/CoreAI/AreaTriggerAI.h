@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -25,10 +25,12 @@ class Unit;
 
 class TC_GAME_API AreaTriggerAI
 {
+        uint32 _scriptId;
+
     protected:
         AreaTrigger* const at;
     public:
-        explicit AreaTriggerAI(AreaTrigger* a);
+        explicit AreaTriggerAI(AreaTrigger* a, uint32 scriptId = {});
         virtual ~AreaTriggerAI();
 
         // Called when the AreaTrigger has just been initialized, just before added to map
@@ -54,12 +56,15 @@ class TC_GAME_API AreaTriggerAI
 
         // Called when the AreaTrigger is removed
         virtual void OnRemove() { }
+
+        // Gets the id of the AI (script id)
+        uint32 GetId() { return _scriptId; }
 };
 
 class NullAreaTriggerAI : public AreaTriggerAI
 {
     public:
-        explicit NullAreaTriggerAI(AreaTrigger* areaTrigger) : AreaTriggerAI(areaTrigger) { }
+        using AreaTriggerAI::AreaTriggerAI;
 };
 
 #endif

@@ -70,10 +70,10 @@ struct MovementInfo
     } jump;
 
     // spline
-    float splineElevation;
+    float stepUpStartElevation;
 
     MovementInfo() :
-        flags(0), flags2(0), time(0), pitch(0.0f), splineElevation(0.0f)
+            flags(0), flags2(0), time(0), pitch(0.0f), stepUpStartElevation(0.0f)
     {
         pos.Relocate(0.0f, 0.0f, 0.0f, 0.0f);
         transport.Reset();
@@ -106,6 +106,68 @@ struct MovementInfo
     }
 
     void OutDebug();
+};
+
+enum class MovementForceType : uint8
+{
+    SingleDirectional   = 0, // always in a single direction
+    Gravity             = 1  // pushes/pulls away from a single point
+};
+
+struct MovementForce
+{
+    ObjectGuid ID;
+    TaggedPosition<Position::XYZ> Origin;
+    TaggedPosition<Position::XYZ> Direction;
+    uint32 TransportID = 0;
+    float Magnitude = 0.0f;
+    MovementForceType Type = MovementForceType::SingleDirectional;
+    int32 Unused910 = 0;
+};
+
+class MovementForces
+{
+public:
+    using Container = std::vector<MovementForce>;
+
+    Container const* GetForces() const { return &_forces; }
+    bool Add(MovementForce const& newForce)
+    {
+        auto itr = FindMovementForce(newForce.ID);
+        if (itr == _forces.end())
+        {
+            _forces.push_back(newForce);
+            return true;
+        }
+
+        return false;
+    }
+
+    bool Remove(ObjectGuid id)
+    {
+        auto itr = FindMovementForce(id);
+        if (itr != _forces.end())
+        {
+            _forces.erase(itr);
+            return true;
+        }
+
+        return false;
+    }
+
+    float GetModMagnitude() const { return _modMagnitude; }
+    void SetModMagnitude(float modMagnitude) { _modMagnitude = modMagnitude; }
+
+    bool IsEmpty() const { return _forces.empty() && _modMagnitude == 1.0f; }
+
+private:
+    Container::iterator FindMovementForce(ObjectGuid id)
+    {
+        return std::find_if(_forces.begin(), _forces.end(), [id](MovementForce const& force) { return force.ID == id; });
+    }
+
+    Container _forces;
+    float _modMagnitude = 1.0f;
 };
 
 #endif // MovementInfo_h__

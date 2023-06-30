@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -175,16 +174,16 @@ void Doodad::Extract(ADT::MDDF const& doodadDef, char const* ModelInstName, uint
 
     Vec3D position = fixCoords(doodadDef.Position);
 
-    uint16 nameSet = 0;// not used for models
+    uint8 nameSet = 0;// not used for models
     uint32 uniqueId = GenerateUniqueObjectId(doodadDef.UniqueId, 0);
-    uint32 tcflags = MOD_M2;
+    uint8 tcflags = MOD_M2;
     if (mapID != originalMapId)
         tcflags |= MOD_PARENT_SPAWN;
 
     //write mapID, Flags, NameSet, UniqueId, Pos, Rot, Scale, name
     fwrite(&mapID, sizeof(uint32), 1, pDirfile);
-    fwrite(&tcflags, sizeof(uint32), 1, pDirfile);
-    fwrite(&nameSet, sizeof(uint16), 1, pDirfile);
+    fwrite(&tcflags, sizeof(uint8), 1, pDirfile);
+    fwrite(&nameSet, sizeof(uint8), 1, pDirfile);
     fwrite(&uniqueId, sizeof(uint32), 1, pDirfile);
     fwrite(&position, sizeof(Vec3D), 1, pDirfile);
     fwrite(&doodadDef.Rotation, sizeof(Vec3D), 1, pDirfile);
@@ -199,7 +198,7 @@ void Doodad::Extract(ADT::MDDF const& doodadDef, char const* ModelInstName, uint
         ADTOutputCache& cacheModelData = dirfileCache->back();
         cacheModelData.Flags = tcflags & ~MOD_PARENT_SPAWN;
         cacheModelData.Data.resize(
-            sizeof(uint16) +    // nameSet
+            sizeof(uint8) +     // nameSet
             sizeof(uint32) +    // uniqueId
             sizeof(Vec3D) +     // position
             sizeof(Vec3D) +     // doodadDef.Rotation
@@ -210,7 +209,7 @@ void Doodad::Extract(ADT::MDDF const& doodadDef, char const* ModelInstName, uint
         uint8* cacheData = cacheModelData.Data.data();
 #define CACHE_WRITE(value, size, cnt, dest) memcpy(dest, value, size * cnt); dest += size * cnt;
 
-        CACHE_WRITE(&nameSet, sizeof(uint16), 1, cacheData);
+        CACHE_WRITE(&nameSet, sizeof(uint8), 1, cacheData);
         CACHE_WRITE(&uniqueId, sizeof(uint32), 1, cacheData);
         CACHE_WRITE(&position, sizeof(Vec3D), 1, cacheData);
         CACHE_WRITE(&doodadDef.Rotation, sizeof(Vec3D), 1, cacheData);
@@ -285,16 +284,16 @@ void Doodad::ExtractSet(WMODoodadData const& doodadData, ADT::MODF const& wmo, b
         rotation.x = G3D::toDegrees(rotation.x);
         rotation.y = G3D::toDegrees(rotation.y);
 
-        uint16 nameSet = 0;     // not used for models
+        uint8 nameSet = 0;     // not used for models
         uint32 uniqueId = GenerateUniqueObjectId(wmo.UniqueId, doodadId);
-        uint32 tcflags = MOD_M2;
+        uint8 tcflags = MOD_M2;
         if (mapID != originalMapId)
             tcflags |= MOD_PARENT_SPAWN;
 
         //write mapID, Flags, NameSet, UniqueId, Pos, Rot, Scale, name
         fwrite(&mapID, sizeof(uint32), 1, pDirfile);
-        fwrite(&tcflags, sizeof(uint32), 1, pDirfile);
-        fwrite(&nameSet, sizeof(uint16), 1, pDirfile);
+        fwrite(&tcflags, sizeof(uint8), 1, pDirfile);
+        fwrite(&nameSet, sizeof(uint8), 1, pDirfile);
         fwrite(&uniqueId, sizeof(uint32), 1, pDirfile);
         fwrite(&position, sizeof(Vec3D), 1, pDirfile);
         fwrite(&rotation, sizeof(Vec3D), 1, pDirfile);
@@ -308,7 +307,7 @@ void Doodad::ExtractSet(WMODoodadData const& doodadData, ADT::MODF const& wmo, b
             ADTOutputCache& cacheModelData = dirfileCache->back();
             cacheModelData.Flags = tcflags & ~MOD_PARENT_SPAWN;
             cacheModelData.Data.resize(
-                sizeof(uint16) +    // nameSet
+                sizeof(uint8) +     // nameSet
                 sizeof(uint32) +    // uniqueId
                 sizeof(Vec3D) +     // position
                 sizeof(Vec3D) +     // rotation
@@ -317,7 +316,7 @@ void Doodad::ExtractSet(WMODoodadData const& doodadData, ADT::MODF const& wmo, b
                 nlen);              // ModelInstName
 
             uint8* cacheData = cacheModelData.Data.data();
-            CACHE_WRITE(&nameSet, sizeof(uint16), 1, cacheData);
+            CACHE_WRITE(&nameSet, sizeof(uint8), 1, cacheData);
             CACHE_WRITE(&uniqueId, sizeof(uint32), 1, cacheData);
             CACHE_WRITE(&position, sizeof(Vec3D), 1, cacheData);
             CACHE_WRITE(&rotation, sizeof(Vec3D), 1, cacheData);

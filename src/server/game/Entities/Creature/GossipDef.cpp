@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -17,6 +16,7 @@
  */
 
 #include "GossipDef.h"
+#include "Containers.h"
 #include "Creature.h"
 #include "DB2Stores.h"
 #include "Log.h"
@@ -26,6 +26,9 @@
 #include "Player.h"
 #include "QuestDef.h"
 #include "QuestPackets.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
+#include "Util.h"
 #include "World.h"
 #include "WorldSession.h"
 
@@ -35,156 +38,182 @@ GossipMenu::GossipMenu()
     _locale = DEFAULT_LOCALE;
 }
 
-GossipMenu::~GossipMenu()
-{
-    ClearMenu();
-}
+GossipMenu::~GossipMenu() = default;
 
-uint32 GossipMenu::AddMenuItem(int32 optionIndex, uint8 icon, std::string const& message, uint32 sender, uint32 action, std::string const& boxMessage, uint32 boxMoney, bool coded /*= false*/)
+uint32 GossipMenu::AddMenuItem(int32 gossipOptionId, int32 orderIndex, GossipOptionNpc optionNpc, std::string optionText, uint32 actionMenuId, uint32 actionPoiId,
+                               bool boxCoded, uint32 boxMoney, std::string boxText, uint32 sender, uint32 action)
 {
     ASSERT(_menuItems.size() <= GOSSIP_MAX_MENU_ITEMS);
 
     // Find a free new id - script case
-    if (optionIndex == -1)
+    if (orderIndex == -1)
     {
-        optionIndex = 0;
+        orderIndex = 0;
+        if (_menuId)
+        {
+            // set baseline orderIndex as higher than whatever exists in db
+            Trinity::IteratorPair bounds = sObjectMgr->GetGossipMenuItemsMapBounds(_menuId);
+            auto itr = std::max_element(bounds.begin(), bounds.end(), [](GossipMenuItemsContainer::value_type const& a, GossipMenuItemsContainer::value_type const& b)
+            {
+                return a.second.OrderIndex < b.second.OrderIndex;
+            });
+            if (itr != bounds.end())
+                orderIndex = itr->second.OrderIndex + 1;
+        }
+
         if (!_menuItems.empty())
         {
             for (GossipMenuItemContainer::const_iterator itr = _menuItems.begin(); itr != _menuItems.end(); ++itr)
             {
-                if (int32(itr->first) > optionIndex)
+                if (int32(itr->OrderIndex) > orderIndex)
                     break;
 
-                optionIndex = itr->first + 1;
+                orderIndex = itr->OrderIndex + 1;
             }
         }
     }
 
-    GossipMenuItem& menuItem = _menuItems[optionIndex];
+    if (!gossipOptionId)
+        gossipOptionId = -(int32(_menuId) * 100 + orderIndex);
 
-    menuItem.MenuItemIcon    = icon;
-    menuItem.Message         = message;
-    menuItem.IsCoded         = coded;
-    menuItem.Sender          = sender;
-    menuItem.OptionType      = action;
-    menuItem.BoxMessage      = boxMessage;
-    menuItem.BoxMoney        = boxMoney;
-    return optionIndex;
+    auto where = std::lower_bound(_menuItems.begin(), _menuItems.end(), orderIndex, [](GossipMenuItem const& item, int32 index)
+    {
+        return int32(item.OrderIndex) < index;
+    });
+
+    GossipMenuItem& menuItem = *_menuItems.emplace(where);
+    menuItem.GossipOptionID = gossipOptionId;
+    menuItem.OrderIndex = orderIndex;
+    menuItem.OptionNpc = optionNpc;
+    menuItem.OptionText = std::move(optionText);
+    menuItem.BoxCoded = boxCoded;
+    menuItem.BoxMoney = boxMoney;
+    menuItem.BoxText = std::move(boxText);
+    menuItem.ActionMenuID = actionMenuId;
+    menuItem.ActionPoiID = actionPoiId;
+    menuItem.Sender = sender;
+    menuItem.Action = action;
+    return orderIndex;
 }
 
 /**
  * @name AddMenuItem
  * @brief Adds a localized gossip menu item from db by menu id and menu item id.
  * @param menuId Gossip menu id.
- * @param optionIndex Gossip menu item index.
+ * @param menuItemId Gossip menu item id.
  * @param sender Identifier of the current menu.
  * @param action Custom action given to OnGossipHello.
  */
-void GossipMenu::AddMenuItem(uint32 menuId, uint32 optionIndex, uint32 sender, uint32 action)
+void GossipMenu::AddMenuItem(uint32 menuId, uint32 menuItemId, uint32 sender, uint32 action)
 {
     /// Find items for given menu id.
-    GossipMenuItemsMapBounds bounds = sObjectMgr->GetGossipMenuItemsMapBounds(menuId);
-    /// Return if there are none.
-    if (bounds.first == bounds.second)
+    Trinity::IteratorPair bounds = sObjectMgr->GetGossipMenuItemsMapBounds(menuId);
+
+    /// Find the one with the given menu item id.
+    auto itr = std::find_if(bounds.begin(), bounds.end(), [menuItemId](std::pair<uint32 const, GossipMenuItems> const& itemPair)
+    {
+        return itemPair.second.OrderIndex == menuItemId;
+    });
+
+    if (itr == bounds.end())
         return;
 
-    /// Iterate over each of them.
-    for (GossipMenuItemsContainer::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
+    AddMenuItem(itr->second, sender, action);
+}
+
+void GossipMenu::AddMenuItem(GossipMenuItems const& menuItem, uint32 sender, uint32 action)
+{
+    /// Store texts for localization.
+    std::string strOptionText, strBoxText;
+    BroadcastTextEntry const* optionBroadcastText = sBroadcastTextStore.LookupEntry(menuItem.OptionBroadcastTextID);
+    BroadcastTextEntry const* boxBroadcastText = sBroadcastTextStore.LookupEntry(menuItem.BoxBroadcastTextID);
+
+    /// OptionText
+    if (optionBroadcastText)
+        strOptionText = DB2Manager::GetBroadcastTextValue(optionBroadcastText, GetLocale());
+    else
     {
-        /// Find the one with the given menu item id.
-        if (itr->second.OptionIndex != optionIndex)
-            continue;
+        strOptionText = menuItem.OptionText;
 
-        /// Store texts for localization.
-        std::string strOptionText, strBoxText;
-        BroadcastTextEntry const* optionBroadcastText = sBroadcastTextStore.LookupEntry(itr->second.OptionBroadcastTextId);
-        BroadcastTextEntry const* boxBroadcastText = sBroadcastTextStore.LookupEntry(itr->second.BoxBroadcastTextId);
-
-        /// OptionText
-        if (optionBroadcastText)
-            strOptionText = DB2Manager::GetBroadcastTextValue(optionBroadcastText, GetLocale());
-        else
-            strOptionText = itr->second.OptionText;
-
-        /// BoxText
-        if (boxBroadcastText)
-            strBoxText = DB2Manager::GetBroadcastTextValue(boxBroadcastText, GetLocale());
-        else
-            strBoxText = itr->second.BoxText;
-
-        /// Check need of localization.
-        if (GetLocale() != DEFAULT_LOCALE)
-        {
-            if (!optionBroadcastText)
-            {
-                /// Find localizations from database.
-                if (GossipMenuItemsLocale const* gossipMenuLocale = sObjectMgr->GetGossipMenuItemsLocale(menuId, optionIndex))
-                    ObjectMgr::GetLocaleString(gossipMenuLocale->OptionText, GetLocale(), strOptionText);
-            }
-
-            if (!boxBroadcastText)
-            {
-                /// Find localizations from database.
-                if (GossipMenuItemsLocale const* gossipMenuLocale = sObjectMgr->GetGossipMenuItemsLocale(menuId, optionIndex))
-                    ObjectMgr::GetLocaleString(gossipMenuLocale->BoxText, GetLocale(), strBoxText);
-            }
-        }
-
-        /// Add menu item with existing method. Menu item id -1 is also used in ADD_GOSSIP_ITEM macro.
-        uint32 newOptionIndex = AddMenuItem(-1, itr->second.OptionIcon, strOptionText, sender, action, strBoxText, itr->second.BoxMoney, itr->second.BoxCoded);
-        AddGossipMenuItemData(newOptionIndex, itr->second.ActionMenuId, itr->second.ActionPoiId, itr->second.TrainerId);
+        /// Find localizations from database.
+        if (GetLocale() != LOCALE_enUS)
+            if (GossipMenuItemsLocale const* gossipMenuLocale = sObjectMgr->GetGossipMenuItemsLocale(menuItem.MenuID, menuItem.OrderIndex))
+                ObjectMgr::GetLocaleString(gossipMenuLocale->OptionText, GetLocale(), strBoxText);
     }
+
+    /// BoxText
+    if (boxBroadcastText)
+        strBoxText = DB2Manager::GetBroadcastTextValue(boxBroadcastText, GetLocale());
+    else
+    {
+        strBoxText = menuItem.BoxText;
+
+        /// Find localizations from database.
+        if (GetLocale() != LOCALE_enUS)
+            if (GossipMenuItemsLocale const* gossipMenuLocale = sObjectMgr->GetGossipMenuItemsLocale(menuItem.MenuID, menuItem.OrderIndex))
+                ObjectMgr::GetLocaleString(gossipMenuLocale->BoxText, GetLocale(), strBoxText);
+    }
+
+    AddMenuItem(menuItem.GossipOptionID, menuItem.OrderIndex, menuItem.OptionNpc, std::move(strOptionText),
+        menuItem.ActionMenuID, menuItem.ActionPoiID, menuItem.BoxCoded, menuItem.BoxMoney, std::move(strBoxText), sender, action);
 }
 
-void GossipMenu::AddGossipMenuItemData(uint32 optionIndex, uint32 gossipActionMenuId, uint32 gossipActionPoi, uint32 trainerId)
+GossipMenuItem const* GossipMenu::GetItem(int32 gossipOptionId) const
 {
-    GossipMenuItemData& itemData = _menuItemData[optionIndex];
+    auto itr = std::find_if(_menuItems.begin(), _menuItems.end(), [gossipOptionId](GossipMenuItem const& item)
+    {
+        return item.GossipOptionID == gossipOptionId;
+    });
 
-    itemData.GossipActionMenuId  = gossipActionMenuId;
-    itemData.GossipActionPoi     = gossipActionPoi;
-    itemData.TrainerId           = trainerId;
+    if (itr != _menuItems.end())
+        return &*itr;
+
+    return nullptr;
 }
 
-uint32 GossipMenu::GetMenuItemSender(uint32 menuItemId) const
+GossipMenuItem const* GossipMenu::GetItemByIndex(uint32 orderIndex) const
 {
-    GossipMenuItemContainer::const_iterator itr = _menuItems.find(menuItemId);
-    if (itr == _menuItems.end())
-        return 0;
+    auto itr = std::find_if(_menuItems.begin(), _menuItems.end(), [orderIndex](GossipMenuItem const& item)
+    {
+        return item.OrderIndex == orderIndex;
+    });
 
-    return itr->second.Sender;
+    if (itr != _menuItems.end())
+        return &*itr;
+
+    return nullptr;
 }
 
-uint32 GossipMenu::GetMenuItemAction(uint32 menuItemId) const
+uint32 GossipMenu::GetMenuItemSender(uint32 orderIndex) const
 {
-    GossipMenuItemContainer::const_iterator itr = _menuItems.find(menuItemId);
-    if (itr == _menuItems.end())
-        return 0;
+    GossipMenuItem const* item = GetItemByIndex(orderIndex);
+    if (item)
+        return item->Sender;
 
-    return itr->second.OptionType;
+    return 0;
 }
 
-bool GossipMenu::IsMenuItemCoded(uint32 menuItemId) const
+uint32 GossipMenu::GetMenuItemAction(uint32 orderIndex) const
 {
-    GossipMenuItemContainer::const_iterator itr = _menuItems.find(menuItemId);
-    if (itr == _menuItems.end())
-        return false;
+    GossipMenuItem const* item = GetItemByIndex(orderIndex);
+    if (item)
+        return item->Action;
 
-    return itr->second.IsCoded;
+    return 0;
 }
 
-bool GossipMenu::HasMenuItemType(uint32 optionType) const
+bool GossipMenu::IsMenuItemCoded(uint32 orderIndex) const
 {
-    for (auto const& menuItemPair : _menuItems)
-        if (menuItemPair.second.OptionType == optionType)
-            return true;
+    GossipMenuItem const* item = GetItemByIndex(orderIndex);
+    if (item)
+        return item->BoxCoded;
 
-    return false;
+    return 0;
 }
 
 void GossipMenu::ClearMenu()
 {
     _menuItems.clear();
-    _menuItemData.clear();
 }
 
 PlayerMenu::PlayerMenu(WorldSession* session) : _session(session)
@@ -193,10 +222,7 @@ PlayerMenu::PlayerMenu(WorldSession* session) : _session(session)
         _gossipMenu.SetLocale(_session->GetSessionDbLocaleIndex());
 }
 
-PlayerMenu::~PlayerMenu()
-{
-    ClearMenus();
-}
+PlayerMenu::~PlayerMenu() = default;
 
 void PlayerMenu::ClearMenus()
 {
@@ -212,28 +238,26 @@ void PlayerMenu::SendGossipMenu(uint32 titleTextId, ObjectGuid objectGUID)
     WorldPackets::NPC::GossipMessage packet;
     packet.GossipGUID = objectGUID;
     packet.GossipID = _gossipMenu.GetMenuId();
-    packet.TextID = titleTextId;
+    if (GossipMenuAddon const* addon = sObjectMgr->GetGossipMenuAddon(packet.GossipID))
+        packet.FriendshipFactionID = addon->FriendshipFactionID;
 
-    packet.GossipOptions.resize(_gossipMenu.GetMenuItems().size());
-    uint32 count = 0;
-    for (GossipMenuItemContainer::const_iterator itr = _gossipMenu.GetMenuItems().begin(); itr != _gossipMenu.GetMenuItems().end(); ++itr)
+    if (NpcText const* text = sObjectMgr->GetNpcText(titleTextId))
+        packet.TextID = Trinity::Containers::SelectRandomWeightedContainerElement(text->Data, [](NpcTextData const& data) { return data.Probability; })->BroadcastTextID;
+
+    packet.GossipOptions.reserve(_gossipMenu.GetMenuItems().size());
+    for (GossipMenuItem const& item : _gossipMenu.GetMenuItems())
     {
-        WorldPackets::NPC::ClientGossipOptions& opt = packet.GossipOptions[count];
-        GossipMenuItem const& item = itr->second;
-        opt.ClientOption = itr->first;
-        opt.OptionNPC = item.MenuItemIcon;
-        opt.OptionFlags = item.IsCoded;     // makes pop up box password
+        WorldPackets::NPC::ClientGossipOptions& opt = packet.GossipOptions.emplace_back();
+        opt.GossipOptionID = item.GossipOptionID;
+        opt.OptionNPC = item.OptionNpc;
+        opt.OptionFlags = item.BoxCoded;    // makes pop up box password
         opt.OptionCost = item.BoxMoney;     // money required to open menu, 2.0.3
-        opt.Text = item.Message;            // text for gossip item
-        opt.Confirm = item.BoxMessage;      // accept text (related to money) pop up box, 2.0.3
-        ++count;
+        opt.Text = item.OptionText;         // text for gossip item
+        opt.Confirm = item.BoxText;         // accept text (related to money) pop up box, 2.0.3
     }
 
-    // Store this instead of checking the Singleton every loop iteration
-    bool questLevelInTitle = sWorld->getBoolConfig(CONFIG_UI_QUESTLEVELS_IN_DIALOGS);
-
     packet.GossipText.resize(_questMenu.GetMenuItemCount());
-    count = 0;
+    uint32 count = 0;
     for (uint8 i = 0; i < _questMenu.GetMenuItemCount(); ++i)
     {
         QuestMenuItem const& item = _questMenu.GetItem(i);
@@ -242,21 +266,17 @@ void PlayerMenu::SendGossipMenu(uint32 titleTextId, ObjectGuid objectGUID)
         {
             WorldPackets::NPC::ClientGossipText& text = packet.GossipText[count];
             text.QuestID = questID;
+            text.ContentTuningID = quest->GetContentTuningId();
             text.QuestType = item.QuestIcon;
-            text.QuestLevel = quest->GetQuestLevel();
-            text.QuestMaxScalingLevel = quest->GetQuestMaxScalingLevel();
             text.QuestFlags[0] = quest->GetFlags();
             text.QuestFlags[1] = quest->GetFlagsEx();
-            text.Repeatable = quest->IsRepeatable();
+            text.Repeatable = quest->IsAutoComplete() && quest->IsRepeatable() && !quest->IsDailyOrWeekly() && !quest->IsMonthly();
 
             text.QuestTitle = quest->GetLogTitle();
             LocaleConstant localeConstant = _session->GetSessionDbLocaleIndex();
             if (localeConstant != LOCALE_enUS)
                 if (QuestTemplateLocale const* localeData = sObjectMgr->GetQuestLocale(questID))
                     ObjectMgr::GetLocaleString(localeData->LogTitle, localeConstant, text.QuestTitle);
-
-            if (questLevelInTitle)
-                AddQuestLevelToTitle(text.QuestTitle, quest->GetQuestLevel());
 
             ++count;
         }
@@ -281,7 +301,7 @@ void PlayerMenu::SendPointOfInterest(uint32 id) const
     PointOfInterest const* pointOfInterest = sObjectMgr->GetPointOfInterest(id);
     if (!pointOfInterest)
     {
-        TC_LOG_ERROR("sql.sql", "Request to send non-existing PointOfInterest (Id: %u), ignored.", id);
+        TC_LOG_ERROR("sql.sql", "Request to send non-existing PointOfInterest (Id: {}), ignored.", id);
         return;
     }
 
@@ -307,13 +327,10 @@ void PlayerMenu::SendPointOfInterest(uint32 id) const
 
 QuestMenu::QuestMenu()
 {
-    _questMenuItems.reserve(16);                                   // can be set for max from most often sizes to speedup push_back and less memory use
+    _questMenuItems.reserve(4);                                    // can be set for max from most often sizes to speedup push_back and less memory use
 }
 
-QuestMenu::~QuestMenu()
-{
-    ClearMenu();
-}
+QuestMenu::~QuestMenu() = default;
 
 void QuestMenu::AddMenuItem(uint32 QuestId, uint8 Icon)
 {
@@ -363,9 +380,6 @@ void PlayerMenu::SendQuestGiverQuestListMessage(Object* questgiver)
                 ObjectMgr::GetLocaleString(questGreetingLocale->Greeting, localeConstant, questList.Greeting);
     }
 
-    // Store this instead of checking the Singleton every loop iteration
-    bool questLevelInTitle = sWorld->getBoolConfig(CONFIG_UI_QUESTLEVELS_IN_DIALOGS);
-
     for (uint32 i = 0; i < _questMenu.GetMenuItemCount(); ++i)
     {
         QuestMenuItem const& questMenuItem = _questMenu.GetItem(i);
@@ -374,34 +388,35 @@ void PlayerMenu::SendQuestGiverQuestListMessage(Object* questgiver)
 
         if (Quest const* quest = sObjectMgr->GetQuestTemplate(questID))
         {
-            std::string title = quest->GetLogTitle();
+            questList.QuestDataText.emplace_back();
+            WorldPackets::NPC::ClientGossipText& text = questList.QuestDataText.back();
+            text.QuestID = questID;
+            text.ContentTuningID = quest->GetContentTuningId();
+            text.QuestType = questMenuItem.QuestIcon;
+            text.QuestFlags[0] = quest->GetFlags();
+            text.QuestFlags[1] = quest->GetFlagsEx();
+            text.Repeatable = quest->IsAutoComplete() && quest->IsRepeatable() && !quest->IsDailyOrWeekly() && !quest->IsMonthly();
 
+            text.QuestTitle = quest->GetLogTitle();
+            LocaleConstant localeConstant = _session->GetSessionDbLocaleIndex();
             if (localeConstant != LOCALE_enUS)
-                if (QuestTemplateLocale const* questTemplateLocale = sObjectMgr->GetQuestLocale(questID))
-                    ObjectMgr::GetLocaleString(questTemplateLocale->LogTitle, localeConstant, title);
-
-            if (questLevelInTitle)
-                AddQuestLevelToTitle(title, quest->GetQuestLevel());
-
-            bool repeatable = false; // NYI
-
-            questList.QuestDataText.emplace_back(questID, questMenuItem.QuestIcon, quest->GetQuestLevel(), quest->GetQuestMaxScalingLevel(),
-                quest->GetFlags(), quest->GetFlagsEx(), repeatable, std::move(title));
+                if (QuestTemplateLocale const* localeData = sObjectMgr->GetQuestLocale(questID))
+                    ObjectMgr::GetLocaleString(localeData->LogTitle, localeConstant, text.QuestTitle);
         }
     }
 
     _session->SendPacket(questList.Write());
-    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUEST_GIVER_QUEST_LIST_MESSAGE NPC=%s", guid.ToString().c_str());
+    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUEST_GIVER_QUEST_LIST_MESSAGE NPC={}", guid.ToString());
 }
 
-void PlayerMenu::SendQuestGiverStatus(uint32 questStatus, ObjectGuid npcGUID) const
+void PlayerMenu::SendQuestGiverStatus(QuestGiverStatus questStatus, ObjectGuid npcGUID) const
 {
     WorldPackets::Quest::QuestGiverStatus packet;
     packet.QuestGiver.Guid = npcGUID;
     packet.QuestGiver.Status = questStatus;
 
     _session->SendPacket(packet.Write());
-    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_STATUS NPC=%s, status=%u", npcGUID.ToString().c_str(), questStatus);
+    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_STATUS NPC={}, status={}", npcGUID.ToString(), AsUnderlyingType(questStatus));
 }
 
 void PlayerMenu::SendQuestGiverQuestDetails(Quest const* quest, ObjectGuid npcGUID, bool autoLaunched, bool displayPopup) const
@@ -431,22 +446,27 @@ void PlayerMenu::SendQuestGiverQuestDetails(Quest const* quest, ObjectGuid npcGU
         }
     }
 
-    if (sWorld->getBoolConfig(CONFIG_UI_QUESTLEVELS_IN_DIALOGS))
-        AddQuestLevelToTitle(packet.QuestTitle, quest->GetQuestLevel());
-
     packet.QuestGiverGUID = npcGUID;
-    packet.InformUnit = _session->GetPlayer()->GetDivider();
+    packet.InformUnit = _session->GetPlayer()->GetPlayerSharingQuest();
     packet.QuestID = quest->GetQuestId();
+    packet.QuestPackageID = quest->GetQuestPackageID();
     packet.PortraitGiver = quest->GetQuestGiverPortrait();
+    packet.PortraitGiverMount = quest->GetQuestGiverPortraitMount();
+    packet.PortraitGiverModelSceneID = quest->GetQuestGiverPortraitModelSceneId();
     packet.PortraitTurnIn = quest->GetQuestTurnInPortrait();
+    packet.QuestSessionBonus = 0; //quest->GetQuestSessionBonus(); // this is only sent while quest session is active
     packet.AutoLaunched = autoLaunched;
     packet.DisplayPopup = displayPopup;
     packet.QuestFlags[0] = quest->GetFlags() & (sWorld->getBoolConfig(CONFIG_QUEST_IGNORE_AUTO_ACCEPT) ? ~QUEST_FLAGS_AUTO_ACCEPT : ~0);
     packet.QuestFlags[1] = quest->GetFlagsEx();
+    packet.QuestFlags[2] = quest->GetFlagsEx2();
     packet.SuggestedPartyMembers = quest->GetSuggestedPlayers();
 
-    if (quest->GetSrcSpell())
-        packet.LearnSpells.push_back(quest->GetSrcSpell());
+    // RewardSpell can teach multiple spells in trigger spell effects. But not all effects must be SPELL_EFFECT_LEARN_SPELL. See example spell 33950
+    if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(quest->GetRewSpell(), DIFFICULTY_NONE))
+        for (SpellEffectInfo const& spellEffectInfo : spellInfo->GetEffects())
+            if (spellEffectInfo.IsEffect(SPELL_EFFECT_LEARN_SPELL))
+                packet.LearnSpells.push_back(spellEffectInfo.TriggerSpell);
 
     quest->BuildQuestRewards(packet.Rewards, _session->GetPlayer());
 
@@ -469,150 +489,20 @@ void PlayerMenu::SendQuestGiverQuestDetails(Quest const* quest, ObjectGuid npcGU
 
     _session->SendPacket(packet.Write());
 
-    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_QUEST_DETAILS NPC=%s, questid=%u", npcGUID.ToString().c_str(), quest->GetQuestId());
+    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUEST_GIVER_QUEST_DETAILS NPC={}, questid={}", npcGUID.ToString(), quest->GetQuestId());
 }
 
 void PlayerMenu::SendQuestQueryResponse(Quest const* quest) const
 {
-    WorldPackets::Quest::QueryQuestInfoResponse packet;
-
-    packet.Allow = true;
-    packet.QuestID = quest->GetQuestId();
-
-    packet.Info.LogTitle = quest->GetLogTitle();
-    packet.Info.LogDescription = quest->GetLogDescription();
-    packet.Info.QuestDescription = quest->GetQuestDescription();
-    packet.Info.AreaDescription = quest->GetAreaDescription();
-    packet.Info.QuestCompletionLog = quest->GetQuestCompletionLog();
-    packet.Info.PortraitGiverText = quest->GetPortraitGiverText();
-    packet.Info.PortraitGiverName = quest->GetPortraitGiverName();
-    packet.Info.PortraitTurnInText = quest->GetPortraitTurnInText();
-    packet.Info.PortraitTurnInName = quest->GetPortraitTurnInName();
-
-    LocaleConstant localeConstant = _session->GetSessionDbLocaleIndex();
-    if (localeConstant != LOCALE_enUS)
+    if (sWorld->getBoolConfig(CONFIG_CACHE_DATA_QUERIES))
+        _session->SendPacket(&quest->QueryData[static_cast<uint32>(_session->GetSessionDbLocaleIndex())]);
+    else
     {
-        if (QuestTemplateLocale const* questTemplateLocale = sObjectMgr->GetQuestLocale(quest->GetQuestId()))
-        {
-            ObjectMgr::GetLocaleString(questTemplateLocale->LogTitle,           localeConstant, packet.Info.LogTitle);
-            ObjectMgr::GetLocaleString(questTemplateLocale->LogDescription,     localeConstant, packet.Info.LogDescription);
-            ObjectMgr::GetLocaleString(questTemplateLocale->QuestDescription,   localeConstant, packet.Info.QuestDescription);
-            ObjectMgr::GetLocaleString(questTemplateLocale->AreaDescription,    localeConstant, packet.Info.AreaDescription);
-            ObjectMgr::GetLocaleString(questTemplateLocale->QuestCompletionLog, localeConstant, packet.Info.QuestCompletionLog);
-            ObjectMgr::GetLocaleString(questTemplateLocale->PortraitGiverText,  localeConstant, packet.Info.PortraitGiverText);
-            ObjectMgr::GetLocaleString(questTemplateLocale->PortraitGiverName,  localeConstant, packet.Info.PortraitGiverName);
-            ObjectMgr::GetLocaleString(questTemplateLocale->PortraitTurnInText, localeConstant, packet.Info.PortraitTurnInText);
-            ObjectMgr::GetLocaleString(questTemplateLocale->PortraitTurnInName, localeConstant, packet.Info.PortraitTurnInName);
-        }
+        WorldPacket queryPacket = quest->BuildQueryData(_session->GetSessionDbLocaleIndex(), _session->GetPlayer());
+        _session->SendPacket(&queryPacket);
     }
 
-    if (sWorld->getBoolConfig(CONFIG_UI_QUESTLEVELS_IN_DIALOGS))
-        AddQuestLevelToTitle(packet.Info.LogTitle, quest->GetQuestLevel());
-
-    packet.Info.QuestID = quest->GetQuestId();
-    packet.Info.QuestType = quest->GetQuestType();
-    packet.Info.QuestLevel = quest->GetQuestLevel();
-    packet.Info.QuestMaxScalingLevel = quest->GetQuestMaxScalingLevel();
-    packet.Info.QuestPackageID = quest->GetQuestPackageID();
-    packet.Info.QuestMinLevel = quest->GetMinLevel();
-    packet.Info.QuestSortID = quest->GetZoneOrSort();
-    packet.Info.QuestInfoID = quest->GetQuestInfoID();
-    packet.Info.SuggestedGroupNum = quest->GetSuggestedPlayers();
-    packet.Info.RewardNextQuest = quest->GetNextQuestInChain();
-    packet.Info.RewardXPDifficulty = quest->GetXPDifficulty();
-    packet.Info.RewardXPMultiplier = quest->GetXPMultiplier();
-
-    if (!quest->HasFlag(QUEST_FLAGS_HIDDEN_REWARDS))
-        packet.Info.RewardMoney = quest->RewardMoney < 0 ? quest->RewardMoney : _session->GetPlayer()->GetQuestMoneyReward(quest);
-
-    packet.Info.RewardMoneyDifficulty = quest->GetRewMoneyDifficulty();
-    packet.Info.RewardMoneyMultiplier = quest->GetMoneyMultiplier();
-    packet.Info.RewardBonusMoney = quest->GetRewMoneyMaxLevel();
-    for (uint8 i = 0; i < QUEST_REWARD_DISPLAY_SPELL_COUNT; ++i)
-        packet.Info.RewardDisplaySpell[i] = quest->RewardDisplaySpell[i];
-
-    packet.Info.RewardSpell = quest->GetRewSpell();
-
-    packet.Info.RewardHonor = quest->GetRewHonor();
-    packet.Info.RewardKillHonor = quest->GetRewKillHonor();
-
-    packet.Info.RewardArtifactXPDifficulty = quest->GetArtifactXPDifficulty();
-    packet.Info.RewardArtifactXPMultiplier = quest->GetArtifactXPMultiplier();
-    packet.Info.RewardArtifactCategoryID = quest->GetArtifactCategoryId();
-
-    packet.Info.StartItem = quest->GetSrcItemId();
-    packet.Info.Flags = quest->GetFlags();
-    packet.Info.FlagsEx = quest->GetFlagsEx();
-    packet.Info.RewardTitle = quest->GetRewTitle();
-    packet.Info.RewardArenaPoints = quest->GetRewArenaPoints();
-    packet.Info.RewardSkillLineID = quest->GetRewardSkillId();
-    packet.Info.RewardNumSkillUps = quest->GetRewardSkillPoints();
-    packet.Info.RewardFactionFlags = quest->GetRewardReputationMask();
-    packet.Info.PortraitGiver = quest->GetQuestGiverPortrait();
-    packet.Info.PortraitTurnIn = quest->GetQuestTurnInPortrait();
-
-    for (uint8 i = 0; i < QUEST_ITEM_DROP_COUNT; ++i)
-    {
-        packet.Info.ItemDrop[i] = quest->ItemDrop[i];
-        packet.Info.ItemDropQuantity[i] = quest->ItemDropQuantity[i];
-    }
-
-    if (!quest->HasFlag(QUEST_FLAGS_HIDDEN_REWARDS))
-    {
-        for (uint8 i = 0; i < QUEST_REWARD_ITEM_COUNT; ++i)
-        {
-            packet.Info.RewardItems[i] = quest->RewardItemId[i];
-            packet.Info.RewardAmount[i] = quest->RewardItemCount[i];
-        }
-        for (uint8 i = 0; i < QUEST_REWARD_CHOICES_COUNT; ++i)
-        {
-            packet.Info.UnfilteredChoiceItems[i].ItemID = quest->RewardChoiceItemId[i];
-            packet.Info.UnfilteredChoiceItems[i].Quantity = quest->RewardChoiceItemCount[i];
-        }
-    }
-
-    for (uint8 i = 0; i < QUEST_REWARD_REPUTATIONS_COUNT; ++i)
-    {
-        packet.Info.RewardFactionID[i] = quest->RewardFactionId[i];
-        packet.Info.RewardFactionValue[i] = quest->RewardFactionValue[i];
-        packet.Info.RewardFactionOverride[i] = quest->RewardFactionOverride[i];
-        packet.Info.RewardFactionCapIn[i] = quest->RewardFactionCapIn[i];
-    }
-
-    packet.Info.POIContinent = quest->GetPOIContinent();
-    packet.Info.POIx = quest->GetPOIx();
-    packet.Info.POIy = quest->GetPOIy();
-    packet.Info.POIPriority = quest->GetPOIPriority();
-
-    packet.Info.AllowableRaces = quest->GetAllowableRaces();
-    packet.Info.QuestRewardID = quest->GetRewardId();
-    packet.Info.Expansion = quest->GetExpansion();
-
-    for (QuestObjective const& questObjective : quest->GetObjectives())
-    {
-        packet.Info.Objectives.push_back(questObjective);
-
-        if (localeConstant != LOCALE_enUS)
-        {
-            if (QuestObjectivesLocale const* questObjectivesLocale = sObjectMgr->GetQuestObjectivesLocale(questObjective.ID))
-                ObjectMgr::GetLocaleString(questObjectivesLocale->Description, localeConstant, packet.Info.Objectives.back().Description);
-        }
-    }
-
-    for (uint32 i = 0; i < QUEST_REWARD_CURRENCY_COUNT; ++i)
-    {
-        packet.Info.RewardCurrencyID[i] = quest->RewardCurrencyId[i];
-        packet.Info.RewardCurrencyQty[i] = quest->RewardCurrencyCount[i];
-    }
-
-    packet.Info.AcceptedSoundKitID = quest->GetSoundAccept();
-    packet.Info.CompleteSoundKitID = quest->GetSoundTurnIn();
-    packet.Info.AreaGroupID = quest->GetAreaGroupID();
-    packet.Info.TimeAllowed = quest->GetLimitTime();
-
-    _session->SendPacket(packet.Write());
-
-    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUEST_QUERY_RESPONSE questid=%u", quest->GetQuestId());
+    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUEST_QUERY_RESPONSE questid={}", quest->GetQuestId());
 }
 
 void PlayerMenu::SendQuestGiverOfferReward(Quest const* quest, ObjectGuid npcGUID, bool autoLaunched) const
@@ -642,9 +532,6 @@ void PlayerMenu::SendQuestGiverOfferReward(Quest const* quest, ObjectGuid npcGUI
             ObjectMgr::GetLocaleString(questOfferRewardLocale->RewardText, locale, packet.RewardText);
     }
 
-    if (sWorld->getBoolConfig(CONFIG_UI_QUESTLEVELS_IN_DIALOGS))
-        AddQuestLevelToTitle(packet.QuestTitle, quest->GetQuestLevel());
-
     WorldPackets::Quest::QuestGiverOfferReward& offer = packet.QuestData;
 
     quest->BuildQuestRewards(offer.Rewards, _session->GetPlayer());
@@ -652,7 +539,9 @@ void PlayerMenu::SendQuestGiverOfferReward(Quest const* quest, ObjectGuid npcGUI
 
     // Is there a better way? what about game objects?
     if (Creature const* creature = ObjectAccessor::GetCreature(*_session->GetPlayer(), npcGUID))
+    {
         offer.QuestGiverCreatureID = creature->GetCreatureTemplate()->Entry;
+    }
 
     offer.QuestID = quest->GetQuestId();
     offer.AutoLaunched = autoLaunched;
@@ -663,13 +552,16 @@ void PlayerMenu::SendQuestGiverOfferReward(Quest const* quest, ObjectGuid npcGUI
 
     offer.QuestFlags[0] = quest->GetFlags();
     offer.QuestFlags[1] = quest->GetFlagsEx();
+    offer.QuestFlags[2] = quest->GetFlagsEx2();
 
     packet.PortraitTurnIn = quest->GetQuestTurnInPortrait();
     packet.PortraitGiver = quest->GetQuestGiverPortrait();
+    packet.PortraitGiverMount = quest->GetQuestGiverPortraitMount();
+    packet.PortraitGiverModelSceneID = quest->GetQuestGiverPortraitModelSceneId();
     packet.QuestPackageID = quest->GetQuestPackageID();
 
     _session->SendPacket(packet.Write());
-    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_OFFER_REWARD NPC=%s, questid=%u", npcGUID.ToString().c_str(), quest->GetQuestId());
+    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_OFFER_REWARD NPC={}, questid={}", npcGUID.ToString(), quest->GetQuestId());
 }
 
 void PlayerMenu::SendQuestGiverRequestItems(Quest const* quest, ObjectGuid npcGUID, bool canComplete, bool autoLaunched) const
@@ -677,7 +569,7 @@ void PlayerMenu::SendQuestGiverRequestItems(Quest const* quest, ObjectGuid npcGU
     // We can always call to RequestItems, but this packet only goes out if there are actually
     // items.  Otherwise, we'll skip straight to the OfferReward
 
-    if (!quest->HasSpecialFlag(QUEST_SPECIAL_FLAGS_DELIVER) && canComplete)
+    if (!quest->HasQuestObjectiveType(QUEST_OBJECTIVE_ITEM) && canComplete)
     {
         SendQuestGiverOfferReward(quest, npcGUID, true);
         return;
@@ -698,9 +590,6 @@ void PlayerMenu::SendQuestGiverRequestItems(Quest const* quest, ObjectGuid npcGU
             ObjectMgr::GetLocaleString(questRequestItemsLocale->CompletionText, locale, packet.CompletionText);
     }
 
-    if (sWorld->getBoolConfig(CONFIG_UI_QUESTLEVELS_IN_DIALOGS))
-        AddQuestLevelToTitle(packet.QuestTitle, quest->GetQuestLevel());
-
     packet.QuestGiverGUID = npcGUID;
 
     // Is there a better way? what about game objects?
@@ -711,17 +600,18 @@ void PlayerMenu::SendQuestGiverRequestItems(Quest const* quest, ObjectGuid npcGU
 
     if (canComplete)
     {
-        packet.CompEmoteDelay = quest->EmoteOnCompleteDelay;
-        packet.CompEmoteType = quest->EmoteOnComplete;
+        packet.CompEmoteDelay = quest->GetCompleteEmoteDelay();
+        packet.CompEmoteType = quest->GetCompleteEmote();
     }
     else
     {
-        packet.CompEmoteDelay = quest->EmoteOnIncompleteDelay;
-        packet.CompEmoteType = quest->EmoteOnIncomplete;
+        packet.CompEmoteDelay = quest->GetIncompleteEmoteDelay();
+        packet.CompEmoteType = quest->GetIncompleteEmote();
     }
 
     packet.QuestFlags[0] = quest->GetFlags();
     packet.QuestFlags[1] = quest->GetFlagsEx();
+    packet.QuestFlags[2] = quest->GetFlagsEx2();
     packet.SuggestPartyMembers = quest->GetSuggestedPlayers();
 
     // incomplete: FD
@@ -750,15 +640,5 @@ void PlayerMenu::SendQuestGiverRequestItems(Quest const* quest, ObjectGuid npcGU
     packet.AutoLaunched = autoLaunched;
 
     _session->SendPacket(packet.Write());
-    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_REQUEST_ITEMS NPC=%s, questid=%u", npcGUID.ToString().c_str(), quest->GetQuestId());
-}
-
-void PlayerMenu::AddQuestLevelToTitle(std::string &title, int32 level)
-{
-    // Adds the quest level to the front of the quest title
-    // example: [13] Westfall Stew
-
-    std::stringstream questTitlePretty;
-    questTitlePretty << "[" << level << "] " << title;
-    title = questTitlePretty.str();
+    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_REQUEST_ITEMS NPC={}, questid={}", npcGUID.ToString(), quest->GetQuestId());
 }
