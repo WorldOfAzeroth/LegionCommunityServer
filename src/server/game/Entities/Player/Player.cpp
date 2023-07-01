@@ -4640,32 +4640,30 @@ void Player::RepopAtGraveyard()
         SpawnCorpseBones();
     }
 
-    WorldSafeLocsEntry const* ClosestGrave;
-
-    // Special handle for battleground maps
+    WorldSafeLocsEntry const* closestGrave = nullptr;
     if (Battleground* bg = GetBattleground())
-        ClosestGrave = bg->GetClosestGraveyard(this);
-    else
-    {
-        if (Battlefield* bf = sBattlefieldMgr->GetBattlefieldToZoneId(GetMap(), GetZoneId()))
-            ClosestGrave = bf->GetClosestGraveyard(this);
-        else
-            ClosestGrave = sObjectMgr->GetClosestGraveyard(*this, GetTeam(), this);
-    }
+        closestGrave = bg->GetClosestGraveyard(this);
+    else if (Battlefield* bf = sBattlefieldMgr->GetBattlefieldToZoneId(GetMap(), GetZoneId()))
+        closestGrave = bf->GetClosestGraveyard(this);
+    else if (InstanceScript* instance = GetInstanceScript())
+        closestGrave = sWorldSafeLocsStore.LookupEntry(instance->GetEntranceLocation());
+
+    if (!closestGrave)
+        closestGrave = sObjectMgr->GetClosestGraveyard(*this, GetTeam(), this);
 
     // stop countdown until repop
     m_deathTimer = 0;
 
     // if no grave found, stay at the current location
     // and don't show spirit healer location
-    if (ClosestGrave)
+    if (closestGrave)
     {
-        WorldLocation position(ClosestGrave->MapID, ClosestGrave->GetPositionX(), ClosestGrave->GetPositionY(), ClosestGrave->GetPositionZ(), ClosestGrave->GetOrientation());
+        WorldLocation position(closestGrave->MapID, closestGrave->GetPositionX(), closestGrave->GetPositionY(), closestGrave->GetPositionZ(), closestGrave->GetOrientation());
         TeleportTo(position, shouldResurrect ? TELE_REVIVE_AT_TELEPORT : 0);
         if (isDead())                                        // not send if alive, because it used in TeleportTo()
         {
             WorldPackets::Misc::DeathReleaseLoc packet;
-            packet.MapID = ClosestGrave->MapID;
+            packet.MapID = closestGrave->MapID;
             packet.Loc = position;
             SendDirectMessage(packet.Write());
         }
