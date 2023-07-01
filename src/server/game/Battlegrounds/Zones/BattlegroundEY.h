@@ -401,11 +401,11 @@ struct BattlegroundEYScore final : public BattlegroundScore
             }
         }
 
-        void BuildPvPLogPlayerDataPacket(WorldPackets::Battleground::PVPMatchStatistics::PVPMatchPlayerStatistics& playerData) const override
+        void BuildPvPLogPlayerDataPacket(WorldPackets::Battleground::PVPLogData::PlayerData& playerData) const override
         {
             BattlegroundScore::BuildPvPLogPlayerDataPacket(playerData);
 
-            playerData.Stats.emplace_back(EY_OBJECTIVE_CAPTURE_FLAG, FlagCaptures);
+            playerData.Stats.push_back(FlagCaptures);
         }
 
         uint32 GetAttr1() const final override { return FlagCaptures; }

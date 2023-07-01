@@ -189,7 +189,7 @@ void BattlegroundMgr::BuildBattlegroundStatusHeader(WorldPackets::Battleground::
     header->Ticket.Id = ticketId;
     header->Ticket.Type = WorldPackets::LFG::RideType::Battlegrounds;
     header->Ticket.Time = joinTime;
-    header->QueueID.push_back(queueId.GetPacked());
+    header->QueueID = bg->GetQueueId();
     header->RangeMin = bg->GetMinLevel();
     header->RangeMax = bg->GetMaxLevel();
     header->TeamSize = bg->isArena() ? arenaType : 0;
@@ -338,7 +338,6 @@ Battleground* BattlegroundMgr::CreateNewBattleground(BattlegroundQueueTypeId que
             bg = new BattlegroundWS(*(BattlegroundWS*)bg_template);
             break;
         case BATTLEGROUND_AB:
-        case BATTLEGROUND_DOM_AB:
             bg = new BattlegroundAB(*(BattlegroundAB*)bg_template);
             break;
         case BATTLEGROUND_NA:
@@ -410,7 +409,6 @@ bool BattlegroundMgr::CreateBattleground(BattlegroundTemplate const* bgTemplate)
                 bg = new BattlegroundWS(bgTemplate);
                 break;
             case BATTLEGROUND_AB:
-            case BATTLEGROUND_DOM_AB:
                 bg = new BattlegroundAB(bgTemplate);
                 break;
             case BATTLEGROUND_NA:

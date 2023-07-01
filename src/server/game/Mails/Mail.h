@@ -92,7 +92,7 @@ class TC_GAME_API MailSender
         }
         MailSender(Object* sender, MailStationery stationery = MAIL_STATIONERY_DEFAULT);
         MailSender(CalendarEvent* sender);
-        MailSender(AuctionHouseObject const* sender);
+        MailSender(AuctionEntry* sender);
         MailSender(BlackMarketEntry* sender);
         MailSender(Player* sender);
         MailSender(uint32 senderEntry);

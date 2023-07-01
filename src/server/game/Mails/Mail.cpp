@@ -64,8 +64,8 @@ MailSender::MailSender(CalendarEvent* sender)
 {
 }
 
-MailSender::MailSender(AuctionHouseObject const* sender)
-    : m_messageType(MAIL_AUCTION), m_senderId(uint64(sender->GetAuctionHouseId())), m_stationery(MAIL_STATIONERY_AUCTION) { }
+MailSender::MailSender(AuctionEntry* sender)
+    : m_messageType(MAIL_AUCTION), m_senderId(uint64(sender->GetHouseId())), m_stationery(MAIL_STATIONERY_AUCTION) { }
 
 MailSender::MailSender(BlackMarketEntry* sender)
     : m_messageType(MAIL_BLACKMARKET), m_senderId(sender->GetTemplate()->SellerNPC), m_stationery(MAIL_STATIONERY_AUCTION) { }

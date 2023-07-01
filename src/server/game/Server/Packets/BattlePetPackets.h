@@ -150,7 +150,7 @@ namespace WorldPackets
 
             ObjectGuid PetGuid;
             std::string Name;
-            Optional<DeclinedName> DeclinedName;
+            std::unique_ptr<DeclinedName> DeclinedNames;
         };
 
         class BattlePetDeletePet final : public ClientPacket

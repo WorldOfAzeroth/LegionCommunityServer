@@ -500,7 +500,7 @@ void Item::SaveToDB(CharacterDatabaseTransaction trans)
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEM_INSTANCE_GEMS);
             stmt->setUInt64(0, GetGUID().GetCounter());
             trans->Append(stmt);
-            auto gems = GetDynamicStructuredValues<UF::SocketedGem>(ITEM_DYNAMIC_FIELD_GEMS);
+            auto gems = GetDynamicStructuredValues<ItemDynamicFieldGems>(ITEM_DYNAMIC_FIELD_GEMS);
             if (gems.size())
             {
                 stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_ITEM_INSTANCE_GEMS);
@@ -607,7 +607,7 @@ void Item::SaveToDB(CharacterDatabaseTransaction trans)
                 stmt->setUInt32(2, GetModifier(ITEM_MODIFIER_ARTIFACT_APPEARANCE_ID));
                 stmt->setUInt32(3, GetModifier(ITEM_MODIFIER_ARTIFACT_TIER));
                 trans->Append(stmt);
-                auto powers = GetDynamicStructuredValues<UF::ArtifactPower>(ITEM_DYNAMIC_FIELD_ARTIFACT_POWERS);
+                auto powers = GetDynamicStructuredValues<ItemDynamicFieldArtifactPowers>(ITEM_DYNAMIC_FIELD_ARTIFACT_POWERS);
                 for (const auto &artifactPower : powers) {
                     stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_ITEM_INSTANCE_ARTIFACT_POWERS);
                     stmt->setUInt64(0, GetGUID().GetCounter());
@@ -1338,10 +1338,15 @@ void Item::ClearEnchantment(EnchantmentSlot slot)
     SetState(ITEM_CHANGED, GetOwner());
 }
 
-UF::SocketedGem const* Item::GetGem(uint16 slot) const
+DynamicFieldStructuredView<ItemDynamicFieldGems> Item::GetGems() const
+{
+    return GetDynamicStructuredValues<ItemDynamicFieldGems>(ITEM_DYNAMIC_FIELD_GEMS);
+}
+
+ItemDynamicFieldGems const* Item::GetGem(uint16 slot) const
 {
     ASSERT(slot < MAX_GEM_SOCKETS);
-    return GetDynamicStructuredValue<UF::SocketedGem>(ITEM_DYNAMIC_FIELD_GEMS, slot);
+    return GetDynamicStructuredValue<ItemDynamicFieldGems>(ITEM_DYNAMIC_FIELD_GEMS, slot);
 }
 
 void Item::SetGem(uint16 slot, ItemDynamicFieldGems const* gem, uint32 gemScalingLevel)
@@ -1395,7 +1400,7 @@ void Item::SetGem(uint16 slot, ItemDynamicFieldGems const* gem, uint32 gemScalin
             }
         }
     }
-    UF::SocketedGem updatedGem{};
+    ItemDynamicFieldGems updatedGem{};
     updatedGem.ItemId = gem->ItemId;
     updatedGem.Context = gem->Context;
     std::copy(std::begin(gem->BonusListIDs), std::end(gem->BonusListIDs), std::begin(updatedGem.BonusListIDs));
@@ -1405,7 +1410,7 @@ void Item::SetGem(uint16 slot, ItemDynamicFieldGems const* gem, uint32 gemScalin
 bool Item::GemsFitSockets() const
 {
     uint32 gemSlot = 0;
-    for (auto &gemData : GetDynamicStructuredValues<UF::SocketedGem>(ITEM_DYNAMIC_FIELD_GEMS))
+    for (auto &gemData : GetDynamicStructuredValues<ItemDynamicFieldGems>(ITEM_DYNAMIC_FIELD_GEMS))
     {
         SocketColor color = GetTemplate()->GetSocketColor(gemSlot);
         if (!color) // no socket slot
@@ -1429,8 +1434,8 @@ bool Item::GemsFitSockets() const
 
 uint8 Item::GetGemCountWithID(uint32 GemID) const
 {
-    auto gems = GetDynamicStructuredValues<UF::SocketedGem>(ITEM_DYNAMIC_FIELD_GEMS);
-    return uint8(std::count_if(gems.begin(), gems.end(), [GemID](UF::SocketedGem const& gemData)
+    auto gems = GetDynamicStructuredValues<ItemDynamicFieldGems>(ITEM_DYNAMIC_FIELD_GEMS);
+    return uint8(std::count_if(gems.begin(), gems.end(), [GemID](ItemDynamicFieldGems const& gemData)
     {
         return gemData.ItemId == int32(GemID);
     }));
@@ -1438,8 +1443,8 @@ uint8 Item::GetGemCountWithID(uint32 GemID) const
 
 uint8 Item::GetGemCountWithLimitCategory(uint32 limitCategory) const
 {
-    auto gems = GetDynamicStructuredValues<UF::SocketedGem>(ITEM_DYNAMIC_FIELD_GEMS);
-    return uint8(std::count_if(gems.begin(), gems.end(), [limitCategory](UF::SocketedGem const& gemData)
+    auto gems = GetDynamicStructuredValues<ItemDynamicFieldGems>(ITEM_DYNAMIC_FIELD_GEMS);
+    return uint8(std::count_if(gems.begin(), gems.end(), [limitCategory](ItemDynamicFieldGems const& gemData)
     {
         ItemTemplate const* gemProto = sObjectMgr->GetItemTemplate(gemData.ItemId);
         if (!gemProto)
@@ -2276,11 +2281,11 @@ bool Item::IsArtifactDisabled() const
     return true;
 }
 
-UF::ArtifactPower const* Item::GetArtifactPower(uint32 artifactPowerId) const
+ItemDynamicFieldArtifactPowers const* Item::GetArtifactPower(uint32 artifactPowerId) const
 {
     auto indexItr = m_artifactPowerIdToIndex.find(artifactPowerId);
     if (indexItr != m_artifactPowerIdToIndex.end())
-        return GetDynamicStructuredValue<UF::ArtifactPower>(ITEM_DYNAMIC_FIELD_ARTIFACT_POWERS, indexItr->second);
+        return GetDynamicStructuredValue<ItemDynamicFieldArtifactPowers>(ITEM_DYNAMIC_FIELD_ARTIFACT_POWERS, indexItr->second);
     return nullptr;
 }
 
@@ -2288,7 +2293,7 @@ void Item::AddArtifactPower(ArtifactPowerData const* artifactPower)
 {
     uint16 index = uint16(m_artifactPowerIdToIndex.size());
     m_artifactPowerIdToIndex[artifactPower->ArtifactPowerId] = index;
-    UF::ArtifactPower power{};
+    ItemDynamicFieldArtifactPowers power{};
     power.ArtifactPowerId = artifactPower->ArtifactPowerId;
     power.PurchasedRank = artifactPower->PurchasedRank;
     power.CurrentRankWithBonus = artifactPower->CurrentRankWithBonus;
@@ -2300,7 +2305,7 @@ void Item::SetArtifactPower(uint16 artifactPowerId, uint8 purchasedRank, uint8 c
     if (indexItr != m_artifactPowerIdToIndex.end())
     {
         auto pPower = GetArtifactPower(indexItr->second);
-        UF::ArtifactPower power{};
+        ItemDynamicFieldArtifactPowers power{};
         power.ArtifactPowerId = pPower->ArtifactPowerId;
         power.PurchasedRank = purchasedRank;
         power.CurrentRankWithBonus = currentRankWithBonus;
@@ -2353,7 +2358,7 @@ uint32 Item::GetTotalUnlockedArtifactPowers() const
 uint32 Item::GetTotalPurchasedArtifactPowers() const
 {
     uint32 purchasedRanks = 0;
-    for (const auto &item : GetDynamicStructuredValues<UF::ArtifactPower>(ITEM_DYNAMIC_FIELD_ARTIFACT_POWERS)) {
+    for (const auto &item : GetDynamicStructuredValues<ItemDynamicFieldArtifactPowers>(ITEM_DYNAMIC_FIELD_ARTIFACT_POWERS)) {
         purchasedRanks += item.PurchasedRank;
     }
     return purchasedRanks;
@@ -2368,7 +2373,7 @@ void Item::ApplyArtifactPowerEnchantmentBonuses(EnchantmentSlot slot, uint32 enc
             switch (enchant->Effect[i])
             {
                 case ITEM_ENCHANTMENT_TYPE_ARTIFACT_POWER_BONUS_RANK_BY_TYPE: {
-                    auto artifactPowers = GetDynamicStructuredValues<UF::ArtifactPower>(ITEM_DYNAMIC_FIELD_ARTIFACT_POWERS);
+                    auto artifactPowers = GetDynamicStructuredValues<ItemDynamicFieldArtifactPowers>(ITEM_DYNAMIC_FIELD_ARTIFACT_POWERS);
                     for (const auto &artifactPower : artifactPowers) {
                         if (uint32(sArtifactPowerStore.AssertEntry(artifactPower.ArtifactPowerId)->Label) == enchant->EffectArg[i]) {
                             uint8 newRank = artifactPower.CurrentRankWithBonus;
@@ -2389,7 +2394,7 @@ void Item::ApplyArtifactPowerEnchantmentBonuses(EnchantmentSlot slot, uint32 enc
                 case ITEM_ENCHANTMENT_TYPE_ARTIFACT_POWER_BONUS_RANK_BY_ID: {
                     if (uint16 const* artifactPowerIndex = Trinity::Containers::MapGetValuePtr(m_artifactPowerIdToIndex, enchant->EffectArg[i]))
                     {
-                        auto pPower = GetDynamicStructuredValue<UF::ArtifactPower>(ITEM_DYNAMIC_FIELD_ARTIFACT_POWERS, *artifactPowerIndex);
+                        auto pPower = GetDynamicStructuredValue<ItemDynamicFieldArtifactPowers>(ITEM_DYNAMIC_FIELD_ARTIFACT_POWERS, *artifactPowerIndex);
                         uint8 newRank = pPower->CurrentRankWithBonus;
                         if (apply)
                             newRank += enchant->EffectPointsMin[i];
@@ -2403,7 +2408,7 @@ void Item::ApplyArtifactPowerEnchantmentBonuses(EnchantmentSlot slot, uint32 enc
                     break;
                 }
                 case ITEM_ENCHANTMENT_TYPE_ARTIFACT_POWER_BONUS_RANK_PICKER:
-                    auto artifactPowers = GetDynamicStructuredValues<UF::ArtifactPower>(ITEM_DYNAMIC_FIELD_ARTIFACT_POWERS);
+                    auto artifactPowers = GetDynamicStructuredValues<ItemDynamicFieldArtifactPowers>(ITEM_DYNAMIC_FIELD_ARTIFACT_POWERS);
                     if (slot >= SOCK_ENCHANTMENT_SLOT && slot <= SOCK_ENCHANTMENT_SLOT_3 && _bonusData.GemRelicType[slot - SOCK_ENCHANTMENT_SLOT] != -1)
                     {
                         if (ArtifactPowerPickerEntry const* artifactPowerPicker = sArtifactPowerPickerStore.LookupEntry(enchant->EffectArg[i]))

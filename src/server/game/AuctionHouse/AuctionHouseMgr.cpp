@@ -25,6 +25,7 @@
 #include "CharacterCache.h"
 #include "Common.h"
 #include "DatabaseEnv.h"
+#include "GameTime.h"
 #include "Language.h"
 #include "Log.h"
 #include "Mail.h"
@@ -37,6 +38,7 @@
 #include "WorldPacket.h"
 #include "WorldSession.h"
 #include <vector>
+#include <sstream>
 
 enum eAuctionHouse
 {
@@ -583,7 +585,7 @@ bool AuctionHouseObject::RemoveAuction(AuctionEntry* auction)
 
 void AuctionHouseObject::Update()
 {
-    time_t curTime = sWorld->GetGameTime();
+    time_t curTime = GameTime::GetGameTime();
     ///- Handle expired auctions
 
     // If storage is empty, no need to update. next == NULL in this case.
@@ -669,7 +671,7 @@ void AuctionHouseObject::BuildListOwnerItems(WorldPackets::AuctionHouse::Auction
 void AuctionHouseObject::BuildListAuctionItems(WorldPackets::AuctionHouse::AuctionListItemsResult& packet, Player* player,
     std::wstring const& searchedname, uint32 listfrom, uint8 levelmin, uint8 levelmax, bool usable, Optional<AuctionSearchFilters> const& filters, uint32 quality)
 {
-    time_t curTime = sWorld->GetGameTime();
+    time_t curTime = GameTime::GetGameTime();
 
     for (AuctionEntryMap::const_iterator itr = AuctionsMap.begin(); itr != AuctionsMap.end(); ++itr)
     {
@@ -736,13 +738,13 @@ void AuctionHouseObject::BuildListAuctionItems(WorldPackets::AuctionHouse::Aucti
                 {
                     const ItemRandomSuffixEntry* itemRandSuffix = sItemRandomSuffixStore.LookupEntry(-propRefID);
                     if (itemRandSuffix)
-                        suffix = itemRandSuffix->Name->Str[player->GetSession()->GetSessionDbcLocale()];
+                        suffix = itemRandSuffix->Name[player->GetSession()->GetSessionDbcLocale()];
                 }
                 else
                 {
                     const ItemRandomPropertiesEntry* itemRandProp = sItemRandomPropertiesStore.LookupEntry(propRefID);
                     if (itemRandProp)
-                        suffix = itemRandProp->Name->Str[player->GetSession()->GetSessionDbcLocale()];
+                        suffix = itemRandProp->Name[player->GetSession()->GetSessionDbcLocale()];
                 }
 
                 // dbc local name
@@ -771,7 +773,7 @@ void AuctionHouseObject::BuildListAuctionItems(WorldPackets::AuctionHouse::Aucti
 void AuctionHouseObject::BuildReplicate(WorldPackets::AuctionHouse::AuctionReplicateResponse& auctionReplicateResult, Player* player,
     uint32 global, uint32 cursor, uint32 tombstone, uint32 count)
 {
-    time_t curTime = sWorld->GetGameTime();
+    time_t curTime = GameTime::GetGameTime();
 
     auto throttleItr = GetAllThrottleMap.find(player->GetGUID());
     if (throttleItr != GetAllThrottleMap.end())

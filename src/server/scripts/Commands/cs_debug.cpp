@@ -174,9 +174,6 @@ public:
             case 3:
                 sWorld->SetForcedWarModeFactionBalanceState(TEAM_NEUTRAL);
                 break;
-            case 4:
-                sWorld->DisableForcedWarModeFactionBalanceState();
-                break;
         }
 
         return true;

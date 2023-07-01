@@ -943,12 +943,12 @@ struct BattlegroundICScore final : public BattlegroundScore
             }
         }
 
-        void BuildPvPLogPlayerDataPacket(WorldPackets::Battleground::PVPMatchStatistics::PVPMatchPlayerStatistics& playerData) const override
+        void BuildPvPLogPlayerDataPacket(WorldPackets::Battleground::PVPLogData::PlayerData& playerData) const override
         {
             BattlegroundScore::BuildPvPLogPlayerDataPacket(playerData);
 
-            playerData.Stats.emplace_back(IC_OBJECTIVE_ASSAULT_BASE, BasesAssaulted);
-            playerData.Stats.emplace_back(IC_OBJECTIVE_DEFEND_BASE, BasesDefended);
+            playerData.Stats.push_back(BasesAssaulted);
+            playerData.Stats.push_back(BasesDefended);
         }
 
         uint32 GetAttr1() const final override { return BasesAssaulted; }

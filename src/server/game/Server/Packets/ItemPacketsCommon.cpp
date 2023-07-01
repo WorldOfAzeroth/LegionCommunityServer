@@ -19,7 +19,7 @@
 #include "Item.h"
 #include "Player.h"
 
-bool WorldPackets::Item::ItemBonusInstanceData::operator==(ItemBonusInstanceData const& r) const
+bool WorldPackets::Item::ItemBonuses::operator==(ItemBonuses const& r) const
 {
     if (Context != r.Context)
         return false;
@@ -28,6 +28,19 @@ bool WorldPackets::Item::ItemBonusInstanceData::operator==(ItemBonusInstanceData
         return false;
 
     return std::is_permutation(BonusListIDs.begin(), BonusListIDs.end(), r.BonusListIDs.begin());
+}
+
+bool WorldPackets::Item::ItemMod::operator==(ItemMod const& r) const
+{
+    return Value == r.Value && Type == r.Type;
+}
+
+bool WorldPackets::Item::ItemModList::operator==(ItemModList const& r) const
+{
+    if (Values.size() != r.Values.size())
+        return false;
+
+    return std::is_permutation(Values.begin(), Values.end(), r.Values.begin());
 }
 
 void WorldPackets::Item::ItemInstance::Initialize(::Item const* item)
@@ -40,7 +53,7 @@ void WorldPackets::Item::ItemInstance::Initialize(::Item const* item)
     {
         ItemBonus.emplace();
         ItemBonus->BonusListIDs.insert(ItemBonus->BonusListIDs.end(), bonusListIds.begin(), bonusListIds.end());
-        ItemBonus->Context = item->GetUInt32Value(ITEM_FIELD_CONTEXT);
+        ItemBonus->Context = item->GetContext();
     }
 
     if (uint32 mask = item->GetUInt32Value(ITEM_FIELD_MODIFIERS_MASK))
@@ -57,54 +70,39 @@ void WorldPackets::Item::ItemInstance::Initialize(::ItemDynamicFieldGems const* 
 {
     ItemID = gem->ItemId;
 
-    ItemBonusInstanceData bonus;
-    bonus.Context = gem->Context;
+    ItemBonuses bonus;
+    bonus.Context = ItemContext(gem->Context);
     for (uint16 bonusListId : gem->BonusListIDs)
         if (bonusListId)
             bonus.BonusListIDs.push_back(bonusListId);
 
-    if (bonus.Context || !bonus.BonusListIDs.empty())
+    if (bonus.Context != ItemContext::NONE || !bonus.BonusListIDs.empty())
         ItemBonus = bonus;
 }
 
 void WorldPackets::Item::ItemInstance::Initialize(::LootItem const& lootItem)
 {
-    ItemID               = lootItem.itemid;
-    RandomPropertiesSeed = lootItem.randomSuffix;
-    if (lootItem.randomPropertyId.Type != ItemRandomEnchantmentType::BonusList)
-        RandomPropertiesID = lootItem.randomPropertyId.Id;
+    ItemID = lootItem.itemid;
 
-    if (!lootItem.BonusListIDs.empty())
+    if (!lootItem.BonusListIDs.empty() || lootItem.randomBonusListId)
     {
         ItemBonus.emplace();
         ItemBonus->BonusListIDs = lootItem.BonusListIDs;
         ItemBonus->Context = lootItem.context;
-    }
-
-    if (lootItem.upgradeId)
-    {
-        Modifications.emplace();
-        Modifications->Insert(ITEM_MODIFIER_UPGRADE_ID, lootItem.upgradeId);
+        if (lootItem.randomBonusListId)
+            ItemBonus->BonusListIDs.push_back(lootItem.randomBonusListId);
     }
 }
 
 void WorldPackets::Item::ItemInstance::Initialize(::VoidStorageItem const* voidItem)
 {
     ItemID = voidItem->ItemEntry;
-    RandomPropertiesSeed = voidItem->ItemSuffixFactor;
-    if (voidItem->ItemRandomPropertyId.Type != ItemRandomEnchantmentType::BonusList)
-        RandomPropertiesID = voidItem->ItemRandomPropertyId.Id;
 
-    if (voidItem->ItemUpgradeId || voidItem->FixedScalingLevel || voidItem->ArtifactKnowledgeLevel)
-    {
-        Modifications.emplace();
-        if (voidItem->ItemUpgradeId)
-            Modifications->Insert(ITEM_MODIFIER_UPGRADE_ID, voidItem->ItemUpgradeId);
-        if (voidItem->FixedScalingLevel)
-            Modifications->Insert(ITEM_MODIFIER_SCALING_STAT_DISTRIBUTION_FIXED_LEVEL, voidItem->FixedScalingLevel);
-        if (voidItem->ArtifactKnowledgeLevel)
-            Modifications->Insert(ITEM_MODIFIER_ARTIFACT_KNOWLEDGE_LEVEL, voidItem->ArtifactKnowledgeLevel);
-    }
+    if (voidItem->FixedScalingLevel)
+        Modifications.Values.emplace_back(voidItem->FixedScalingLevel, ITEM_MODIFIER_TIMEWALKER_LEVEL);
+
+    if (voidItem->ArtifactKnowledgeLevel)
+        Modifications.Values.emplace_back(voidItem->ArtifactKnowledgeLevel, ITEM_MODIFIER_ARTIFACT_KNOWLEDGE_LEVEL);
 
     if (!voidItem->BonusListIDs.empty())
     {
@@ -122,7 +120,7 @@ bool WorldPackets::Item::ItemInstance::operator==(ItemInstance const& r) const
     if (ItemBonus.has_value() != r.ItemBonus.has_value() || Modifications.has_value() != r.Modifications.has_value())
         return false;
 
-    if (Modifications.has_value() && *Modifications != *r.Modifications)
+    if (Modifications != r.Modifications)
         return false;
 
     if (ItemBonus.has_value() && *ItemBonus != *r.ItemBonus)
@@ -131,29 +129,67 @@ bool WorldPackets::Item::ItemInstance::operator==(ItemInstance const& r) const
     return true;
 }
 
-ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Item::ItemBonusInstanceData const& itemBonusInstanceData)
+ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Item::ItemBonuses const& ItemBonuses)
 {
-    data << uint8(itemBonusInstanceData.Context);
-    data << uint32(itemBonusInstanceData.BonusListIDs.size());
-    for (uint32 bonusID : itemBonusInstanceData.BonusListIDs)
+    data << uint8(ItemBonuses.Context);
+    data << uint32(ItemBonuses.BonusListIDs.size());
+    for (uint32 bonusID : ItemBonuses.BonusListIDs)
         data << uint32(bonusID);
 
     return data;
 }
 
-ByteBuffer& operator>>(ByteBuffer& data, WorldPackets::Item::ItemBonusInstanceData& itemBonusInstanceData)
+ByteBuffer& operator>>(ByteBuffer& data, WorldPackets::Item::ItemBonuses& ItemBonuses)
 {
     uint32 bonusListIdSize;
 
-    data >> itemBonusInstanceData.Context;
+    ItemBonuses.Context = data.read<ItemContext>();
     data >> bonusListIdSize;
 
     for (uint32 i = 0u; i < bonusListIdSize; ++i)
     {
         uint32 bonusId;
         data >> bonusId;
-        itemBonusInstanceData.BonusListIDs.push_back(bonusId);
+        ItemBonuses.BonusListIDs.push_back(bonusId);
     }
+
+    return data;
+}
+
+ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Item::ItemMod const& itemMod)
+{
+    data << int32(itemMod.Value);
+    data << uint8(itemMod.Type);
+
+    return data;
+}
+
+ByteBuffer& operator>>(ByteBuffer& data, WorldPackets::Item::ItemMod& itemMod)
+{
+    data >> itemMod.Value;
+    itemMod.Type = data.read<ItemModifier, uint8>();
+
+    return data;
+}
+
+ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Item::ItemModList const& itemModList)
+{
+    data.WriteBits(itemModList.Values.size(), 6);
+    data.FlushBits();
+
+    for (WorldPackets::Item::ItemMod const& itemMod : itemModList.Values)
+        data << itemMod;
+
+    return data;
+}
+
+ByteBuffer& operator>>(ByteBuffer& data, WorldPackets::Item::ItemModList& itemModList)
+{
+    itemModList.Values.resize(data.ReadBits(6));
+    data.ResetBitPos();
+
+    for (WorldPackets::Item::ItemMod& itemMod : itemModList.Values)
+        data >> itemMod;
 
     return data;
 }
@@ -165,14 +201,12 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Item::ItemInstance const&
     data << int32(itemInstance.RandomPropertiesID);
 
     data.WriteBit(itemInstance.ItemBonus.has_value());
-    data.WriteBit(itemInstance.Modifications.has_value());
     data.FlushBits();
 
     if (itemInstance.ItemBonus)
         data << *itemInstance.ItemBonus;
 
-    if (itemInstance.Modifications)
-        data << *itemInstance.Modifications;
+    data << itemInstance.Modifications;
 
     return data;
 }
@@ -193,11 +227,7 @@ ByteBuffer& operator>>(ByteBuffer& data, WorldPackets::Item::ItemInstance& itemI
         data >> *itemInstance.ItemBonus;
     }
 
-    if (hasModifications)
-    {
-        itemInstance.Modifications.emplace();
-        data >> *itemInstance.Modifications;
-    }
+    data >> itemInstance.Modifications;
 
     return data;
 }
@@ -228,10 +258,11 @@ ByteBuffer& operator>>(ByteBuffer& data, WorldPackets::Item::ItemGemData& itemGe
 ByteBuffer& operator>>(ByteBuffer& data, WorldPackets::Item::InvUpdate& invUpdate)
 {
     invUpdate.Items.resize(data.ReadBits(2));
-    for (size_t i = 0; i < invUpdate.Items.size(); ++i)
+    data.ResetBitPos();
+    for (WorldPackets::Item::InvUpdate::InvItem& item : invUpdate.Items)
     {
-        data >> invUpdate.Items[i].ContainerSlot;
-        data >> invUpdate.Items[i].Slot;
+        data >> item.ContainerSlot;
+        data >> item.Slot;
     }
 
     return data;

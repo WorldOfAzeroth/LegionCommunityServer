@@ -551,12 +551,12 @@ struct BattlegroundSAScore final : public BattlegroundScore
             }
         }
 
-        void BuildPvPLogPlayerDataPacket(WorldPackets::Battleground::PVPMatchStatistics::PVPMatchPlayerStatistics& playerData) const override
+        void BuildPvPLogPlayerDataPacket(WorldPackets::Battleground::PVPLogData::PlayerData& playerData) const override
         {
             BattlegroundScore::BuildPvPLogPlayerDataPacket(playerData);
 
-            playerData.Stats.emplace_back(BG_SA_DEMOLISHERS_DESTROYED, DemolishersDestroyed);
-            playerData.Stats.emplace_back(BG_SA_GATES_DESTROYED, GatesDestroyed);
+            playerData.Stats.push_back(DemolishersDestroyed);
+            playerData.Stats.push_back(GatesDestroyed);
         }
 
         uint32 GetAttr1() const final override { return DemolishersDestroyed; }

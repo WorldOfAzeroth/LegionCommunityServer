@@ -951,7 +951,7 @@ public:
             if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellName->ID, DIFFICULTY_NONE))
             {
                 LocaleConstant locale = handler->GetSessionDbcLocale();
-                std::string name = spellInfo->SpellName->Str[locale];
+                std::string name = spellInfo->SpellName[locale];
                 if (name.empty())
                     continue;
 
@@ -963,7 +963,7 @@ public:
                         if (locale == handler->GetSessionDbcLocale())
                             continue;
 
-                        name = spellInfo->SpellName->Str[locale];
+                        name = spellInfo->SpellName[locale];
                         if (name.empty())
                             continue;
 
@@ -1048,7 +1048,7 @@ public:
         if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(id, DIFFICULTY_NONE))
         {
             LocaleConstant locale = handler->GetSessionDbcLocale();
-            std::string name = spellInfo->SpellName->Str[locale];
+            std::string name = spellInfo->SpellName[locale];
             if (name.empty())
             {
                 handler->SendSysMessage(LANG_COMMAND_NOSPELLFOUND);

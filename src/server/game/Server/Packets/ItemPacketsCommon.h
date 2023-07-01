@@ -28,18 +28,39 @@ class Item;
 struct ItemDynamicFieldGems;
 struct LootItem;
 struct VoidStorageItem;
+enum class ItemContext : uint8;
 
 namespace WorldPackets
 {
     namespace Item
     {
-        struct ItemBonusInstanceData
+        struct ItemBonuses
         {
-            uint8 Context = 0;
+            ItemContext Context = ItemContext(0);
             std::vector<int32> BonusListIDs;
 
-            bool operator==(ItemBonusInstanceData const& r) const;
-            bool operator!=(ItemBonusInstanceData const& r) const { return !(*this == r); }
+            bool operator==(ItemBonuses const& r) const;
+            bool operator!=(ItemBonuses const& r) const { return !(*this == r); }
+        };
+
+        struct ItemMod
+        {
+            ItemMod() = default;
+            ItemMod(int32 value, ItemModifier type) : Value(value), Type(type) { }
+
+            int32 Value = 0;
+            ItemModifier Type = MAX_ITEM_MODIFIERS;
+
+            bool operator==(ItemMod const& r) const;
+            bool operator!=(ItemMod const& r) const { return !(*this == r); }
+        };
+
+        struct ItemModList
+        {
+            Array<ItemMod, MAX_ITEM_MODIFIERS> Values;
+
+            bool operator==(ItemModList const& r) const;
+            bool operator!=(ItemModList const& r) const { return !(*this == r); }
         };
 
         struct ItemInstance
@@ -52,11 +73,21 @@ namespace WorldPackets
             uint32 ItemID = 0;
             uint32 RandomPropertiesSeed = 0;
             uint32 RandomPropertiesID = 0;
-            Optional<ItemBonusInstanceData> ItemBonus;
-            Optional<CompactArray<int32>> Modifications;
+            Optional<ItemBonuses> ItemBonus;
+            ItemModList Modifications;
 
             bool operator==(ItemInstance const& r) const;
             bool operator!=(ItemInstance const& r) const { return !(*this == r); }
+        };
+
+        struct ItemBonusKey
+        {
+            int32 ItemID = 0;
+            std::vector<int32> BonusListIDs;
+            std::vector<ItemMod> Modifications;
+
+            bool operator==(ItemBonusKey const& right) const;
+            bool operator!=(ItemBonusKey const& r) const { return !(*this == r); }
         };
 
         struct ItemEnchantData
@@ -87,8 +118,8 @@ namespace WorldPackets
     }
 }
 
-ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Item::ItemBonusInstanceData const& itemBonusInstanceData);
-ByteBuffer& operator>>(ByteBuffer& data, WorldPackets::Item::ItemBonusInstanceData& itemBonusInstanceData);
+ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Item::ItemBonuses const& ItemBonuses);
+ByteBuffer& operator>>(ByteBuffer& data, WorldPackets::Item::ItemBonuses& ItemBonuses);
 
 ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Item::ItemInstance const& itemInstance);
 ByteBuffer& operator>>(ByteBuffer& data, WorldPackets::Item::ItemInstance& itemInstance);

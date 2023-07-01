@@ -25,22 +25,26 @@
 
 #include "Common.h"
 #include "AsyncCallbackProcessor.h"
+#include "AuthDefines.h"
 #include "DatabaseEnvFwd.h"
+#include "Duration.h"
+#include "IteratorPair.h"
 #include "LockedQueue.h"
 #include "ObjectGuid.h"
+#include "Optional.h"
 #include "Packet.h"
+#include "RaceMask.h"
 #include "SharedDefines.h"
-#include <boost/circular_buffer.hpp>
+#include <boost/circular_buffer_fwd.hpp>
 #include <array>
+#include <map>
+#include <memory>
 #include <unordered_map>
-#include <unordered_set>
 
-class BattlePetMgr;
-class BigNumber;
 class BlackMarketEntry;
 class CollectionMgr;
 class Creature;
-class InstanceSave;
+class InstanceLock;
 class Item;
 class LoginQueryHolder;
 class Player;
@@ -52,9 +56,14 @@ struct AuctionEntry;
 struct BlackMarketTemplate;
 struct DeclinedName;
 struct ItemTemplate;
+struct Loot;
 struct MovementInfo;
+struct Petition;
 struct Position;
-
+namespace BattlePets
+{
+    class BattlePetMgr;
+}
 namespace lfg
 {
 struct LfgJoinResultData;
@@ -426,6 +435,7 @@ namespace WorldPackets
     {
         class LootUnit;
         class LootItem;
+        class MasterLootItem;
         class LootRelease;
         class LootMoney;
         class LootRoll;
@@ -768,7 +778,7 @@ namespace WorldPackets
     class Null final : public ClientPacket
     {
     public:
-        Null(WorldPacket&& packet) : ClientPacket(std::move(packet)) { }
+        explicit Null(WorldPacket&& packet) : ClientPacket(std::move(packet)) { }
 
         void Read() override { _worldPacket.rfinish(); }
     };
@@ -954,8 +964,7 @@ class TC_GAME_API WorldSession
         Warden* GetWarden() { return _warden.get(); }
         Warden const* GetWarden() const { return _warden.get(); }
 
-
-        void InitWarden(BigNumber* k);
+        void InitWarden(SessionKey const& k);
 
         /// Session in auth.queue currently
         void SetInQueue(bool state) { m_inQueue = state; }
@@ -976,13 +985,19 @@ class TC_GAME_API WorldSession
         }
 
         void LogoutPlayer(bool save);
-        void KickPlayer();
+        void KickPlayer(std::string const& reason);
+        // Returns true if all contained hyperlinks are valid
+        // May kick player on false depending on world config (handler should abort)
+        bool ValidateHyperlinksAndMaybeKick(std::string const& str);
+        // Returns true if the message contains no hyperlinks
+        // May kick player on false depending on world config (handler should abort)
+        bool DisallowHyperlinksAndMaybeKick(std::string const& str);
 
         void QueuePacket(WorldPacket* new_packet);
         bool Update(uint32 diff, PacketFilter& updater);
 
         /// Handle the authentication waiting queue (to be completed)
-        void SendAuthWaitQue(uint32 position);
+        void SendAuthWaitQueue(uint32 position);
 
         void SendSetTimeZoneInformation();
         void SendFeatureSystemStatus();
@@ -1029,7 +1044,7 @@ class TC_GAME_API WorldSession
             if (_tutorials[index] != value)
             {
                 _tutorials[index] = value;
-                _tutorialsChanged = true;
+                _tutorialsChanged |= TUTORIALS_FLAG_CHANGED;
             }
         }
         // Auction
@@ -1072,10 +1087,11 @@ class TC_GAME_API WorldSession
         void SendNotInArenaTeamPacket(uint8 type);
         void SendPetitionShowList(ObjectGuid guid);
 
-        void DoLootRelease(ObjectGuid lguid);
+        void DoLootRelease(Loot* loot);
         void DoLootReleaseAll();
 
         // Account mute time
+        bool CanSpeak() const;
         time_t m_muteTime;
 
         // Locales
@@ -1107,7 +1123,7 @@ class TC_GAME_API WorldSession
         void SetCalendarEventCreationCooldown(time_t cooldown) { _calendarEventCreationCooldown = cooldown; }
 
         // Battle Pets
-        BattlePetMgr* GetBattlePetMgr() const { return _battlePetMgr.get(); }
+        BattlePets::BattlePetMgr* GetBattlePetMgr() const { return _battlePetMgr.get(); }
 
         CollectionMgr* GetCollectionMgr() const { return _collectionMgr.get(); }
 
@@ -1189,7 +1205,7 @@ class TC_GAME_API WorldSession
         void HandleLootMoneyOpcode(WorldPackets::Loot::LootMoney& packet);
         void HandleLootOpcode(WorldPackets::Loot::LootUnit& packet);
         void HandleLootReleaseOpcode(WorldPackets::Loot::LootRelease& packet);
-        void HandleLootMasterGiveOpcode(WorldPacket& recvPacket);
+        void HandleLootMasterGiveOpcode(WorldPackets::Loot::MasterLootItem& masterLootItem);
         void HandleSetLootSpecialization(WorldPackets::Loot::SetLootSpecialization& packet);
 
         void HandleWhoOpcode(WorldPackets::Who::WhoRequestPkt& whoRequest);
@@ -1643,8 +1659,8 @@ class TC_GAME_API WorldSession
         void HandleCalendarGetNumPending(WorldPackets::Calendar::CalendarGetNumPending& calendarGetNumPending);
         void HandleCalendarEventSignup(WorldPackets::Calendar::CalendarEventSignUp& calendarEventSignUp);
 
-        void SendCalendarRaidLockout(InstanceSave const* save, bool add);
-        void SendCalendarRaidLockoutUpdated(InstanceSave const* save);
+        void SendCalendarRaidLockoutAdded(InstanceLock const* lock);
+        void SendCalendarRaidLockoutRemoved(InstanceLock const* lock);
         void HandleSetSavedInstanceExtend(WorldPackets::Calendar::SetSavedInstanceExtend& setSavedInstanceExtend);
 
         // Void Storage
@@ -1868,7 +1884,7 @@ class TC_GAME_API WorldSession
         bool forceExit;
         ObjectGuid m_currentBankerGUID;
 
-        boost::circular_buffer<std::pair<int64, uint32>> _timeSyncClockDeltaQueue; // first member: clockDelta. Second member: latency of the packet exchange that was used to compute that clockDelta.
+        std::unique_ptr<boost::circular_buffer<std::pair<int64, uint32>>> _timeSyncClockDeltaQueue; // first member: clockDelta. Second member: latency of the packet exchange that was used to compute that clockDelta.
         int64 _timeSyncClockDelta;
         void ComputeNewClockDelta();
 
@@ -1879,8 +1895,7 @@ class TC_GAME_API WorldSession
         // Packets cooldown
         time_t _calendarEventCreationCooldown;
 
-
-        std::unique_ptr<BattlePetMgr> _battlePetMgr;
+        std::unique_ptr<BattlePets::BattlePetMgr> _battlePetMgr;
 
         std::unique_ptr<CollectionMgr> _collectionMgr;
 

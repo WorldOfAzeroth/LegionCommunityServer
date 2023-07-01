@@ -107,7 +107,7 @@ void WorldSession::HandlePartyInviteOpcode(WorldPackets::Party::PartyInviteClien
         return;
     }
 
-    if (!player->GetSocial()->HasFriend(GetPlayer()->GetGUID()) && GetPlayer()->getLevel() < sWorld->getIntConfig(CONFIG_PARTY_LEVEL_REQ))
+    if (!player->GetSocial()->HasFriend(GetPlayer()->GetGUID()) && GetPlayer()->GetLevel() < sWorld->getIntConfig(CONFIG_PARTY_LEVEL_REQ))
     {
         SendPartyResult(PARTY_OP_INVITE, player->GetName(), ERR_INVITE_RESTRICTED);
         return;

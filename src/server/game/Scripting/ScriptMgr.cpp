@@ -1757,36 +1757,36 @@ void ScriptMgr::OnWeatherUpdate(Weather* weather, uint32 diff)
     tmpscript->OnUpdate(weather, diff);
 }
 
-void ScriptMgr::OnAuctionAdd(AuctionHouseObject* ah, AuctionPosting* auction)
+void ScriptMgr::OnAuctionAdd(AuctionHouseObject* ah, AuctionEntry* entry)
 {
     ASSERT(ah);
-    ASSERT(auction);
+    ASSERT(entry);
 
-    FOREACH_SCRIPT(AuctionHouseScript)->OnAuctionAdd(ah, auction);
+    FOREACH_SCRIPT(AuctionHouseScript)->OnAuctionAdd(ah, entry);
 }
 
-void ScriptMgr::OnAuctionRemove(AuctionHouseObject* ah, AuctionPosting* auction)
+void ScriptMgr::OnAuctionRemove(AuctionHouseObject* ah, AuctionEntry* entry)
 {
     ASSERT(ah);
-    ASSERT(auction);
+    ASSERT(entry);
 
-    FOREACH_SCRIPT(AuctionHouseScript)->OnAuctionRemove(ah, auction);
+    FOREACH_SCRIPT(AuctionHouseScript)->OnAuctionRemove(ah, entry);
 }
 
-void ScriptMgr::OnAuctionSuccessful(AuctionHouseObject* ah, AuctionPosting* auction)
+void ScriptMgr::OnAuctionSuccessful(AuctionHouseObject* ah, AuctionEntry* entry)
 {
     ASSERT(ah);
-    ASSERT(auction);
+    ASSERT(entry);
 
-    FOREACH_SCRIPT(AuctionHouseScript)->OnAuctionSuccessful(ah, auction);
+    FOREACH_SCRIPT(AuctionHouseScript)->OnAuctionSuccessful(ah, entry);
 }
 
-void ScriptMgr::OnAuctionExpire(AuctionHouseObject* ah, AuctionPosting* auction)
+void ScriptMgr::OnAuctionExpire(AuctionHouseObject* ah, AuctionEntry* entry)
 {
     ASSERT(ah);
-    ASSERT(auction);
+    ASSERT(entry);
 
-    FOREACH_SCRIPT(AuctionHouseScript)->OnAuctionExpire(ah, auction);
+    FOREACH_SCRIPT(AuctionHouseScript)->OnAuctionExpire(ah, entry);
 }
 
 bool ScriptMgr::OnConditionCheck(Condition const* condition, ConditionSourceInfo& sourceInfo)
@@ -2714,19 +2714,19 @@ AuctionHouseScript::AuctionHouseScript(char const* name)
 
 AuctionHouseScript::~AuctionHouseScript() = default;
 
-void AuctionHouseScript::OnAuctionAdd(AuctionHouseObject* /*ah*/, AuctionPosting* /*auction*/)
+void AuctionHouseScript::OnAuctionAdd(AuctionHouseObject* /*ah*/, AuctionEntry* /*auction*/)
 {
 }
 
-void AuctionHouseScript::OnAuctionRemove(AuctionHouseObject* /*ah*/, AuctionPosting* /*auction*/)
+void AuctionHouseScript::OnAuctionRemove(AuctionHouseObject* /*ah*/, AuctionEntry* /*auction*/)
 {
 }
 
-void AuctionHouseScript::OnAuctionSuccessful(AuctionHouseObject* /*ah*/, AuctionPosting* /*auction*/)
+void AuctionHouseScript::OnAuctionSuccessful(AuctionHouseObject* /*ah*/, AuctionEntry* /*auction*/)
 {
 }
 
-void AuctionHouseScript::OnAuctionExpire(AuctionHouseObject* /*ah*/, AuctionPosting* /*auction*/)
+void AuctionHouseScript::OnAuctionExpire(AuctionHouseObject* /*ah*/, AuctionEntry* /*auction*/)
 {
 }
 

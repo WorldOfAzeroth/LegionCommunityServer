@@ -35,6 +35,8 @@
 #include "Pet.h"
 #include "Player.h"
 #include "UpdateData.h"
+#include "UpdateData.h"
+#include "UpdateFieldFlags.h"
 #include "WorldSession.h"
 
 Group::Group() : m_leaderGuid(), m_leaderFactionGroup(0), m_leaderName(""), m_groupFlags(GROUP_FLAG_NONE), m_groupCategory(GROUP_CATEGORY_HOME),
@@ -516,13 +518,17 @@ bool Group::AddMember(Player* player)
             if (Player* existingMember = itr->GetSource())
             {
                 if (player->HaveAtClient(existingMember))
-                    existingMember->BuildValuesUpdateBlockForPlayerWithFlag(&groupData, UF::UpdateFieldFlag::PartyMember, player);
+                {
+                    existingMember->SetFieldNotifyFlag(UF_FLAG_PARTY_MEMBER);
+                    existingMember->BuildValuesUpdateBlockForPlayer(&groupData, player);
+                    existingMember->RemoveFieldNotifyFlag(UF_FLAG_PARTY_MEMBER);
+                }
 
                 if (existingMember->HaveAtClient(player))
                 {
                     UpdateData newData(player->GetMapId());
                     WorldPacket newDataPacket;
-                    player->BuildValuesUpdateBlockForPlayerWithFlag(&newData, UF::UpdateFieldFlag::PartyMember, existingMember);
+                    player->BuildValuesUpdateBlockForPlayer(&newData, existingMember);
                     if (newData.HasData())
                     {
                         newData.BuildPacket(&newDataPacket);
@@ -590,8 +596,13 @@ bool Group::RemoveMember(ObjectGuid guid, RemoveMethod method /*= GROUP_REMOVEME
 
             player->SetPartyType(m_groupCategory, GROUP_TYPE_NONE);
 
+            WorldPacket data;
+
             if (method == GROUP_REMOVEMETHOD_KICK || method == GROUP_REMOVEMETHOD_KICK_LFG)
-                player->SendDirectMessage(WorldPackets::Party::GroupUninvite().Write());
+            {
+                data.Initialize(SMSG_GROUP_UNINVITE, 0);
+                player->GetSession()->SendPacket(&data);
+            }
 
             _homebindIfInstance(player);
         }
@@ -923,9 +934,8 @@ void Group::UpdatePlayerOutOfRange(Player* player)
     if (!player || !player->IsInWorld())
         return;
 
-    WorldPackets::Party::PartyMemberFullState packet;
+    WorldPackets::Party::PartyMemberState packet;
     packet.Initialize(player);
-    packet.Write();
 
     Player* member;
     for (GroupReference* itr = GetFirstMember(); itr != nullptr; itr = itr->next())

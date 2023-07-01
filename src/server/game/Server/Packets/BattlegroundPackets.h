@@ -124,7 +124,7 @@ namespace WorldPackets
                 Optional<int32> RatingChange;
                 Optional<uint32> PreMatchMMR;
                 Optional<int32> MmrChange;
-                std::vector<int32> Stats;
+                std::vector<uint32> Stats;
                 int32 PrimaryTalentTree = 0;
                 int32 PrimaryTalentTreeNameIndex = 0;  // controls which name field from ChrSpecialization.dbc will be sent to lua
                 int32 Race = 0;

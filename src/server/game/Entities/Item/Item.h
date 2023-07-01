@@ -38,23 +38,6 @@ namespace WorldPackets
     }
 }
 
-namespace UF {
-    struct ArtifactPower {
-        uint32 ArtifactPowerId;
-        uint8 PurchasedRank;
-        uint8 CurrentRankWithBonus;
-        uint16 Padding;
-    };
-
-    struct SocketedGem {
-        uint32 ItemId;
-        uint16 BonusListIDs[16];
-        uint8 Context;
-        uint8 Padding[3];
-    };
-
-}
-
 struct ItemSetEffect
 {
     uint32 ItemSetID;
@@ -135,6 +118,13 @@ private:
     } _state;
 };
 
+struct ItemDynamicFieldArtifactPowers
+{
+    uint32 ArtifactPowerId;
+    uint8 PurchasedRank;
+    uint8 CurrentRankWithBonus;
+    uint16 Padding;
+};
 struct ArtifactPowerData
 {
     uint32 ArtifactPowerId = 0;
@@ -279,6 +269,10 @@ class TC_GAME_API Item : public Object
 
         uint32 GetSkill();
 
+        // RandomPropertyId (signed but stored as unsigned)
+        int32 GetItemRandomPropertyId() const { return GetInt32Value(ITEM_FIELD_RANDOM_PROPERTIES_ID); }
+        uint32 GetItemSuffixFactor() const { return GetUInt32Value(ITEM_FIELD_PROPERTY_SEED); }
+
         ItemRandomBonusListId GetItemRandomBonusListId() const { return m_randomBonusListId; }
         void SetItemRandomBonusList(ItemRandomBonusListId bonusListId);
         void SetEnchantment(EnchantmentSlot slot, uint32 id, uint32 duration, uint32 charges, ObjectGuid caster = ObjectGuid::Empty);
@@ -288,7 +282,8 @@ class TC_GAME_API Item : public Object
         uint32 GetEnchantmentId(EnchantmentSlot slot)       const { return GetUInt32Value(ITEM_FIELD_ENCHANTMENT + slot * MAX_ENCHANTMENT_OFFSET + ENCHANTMENT_ID_OFFSET); }
         uint32 GetEnchantmentDuration(EnchantmentSlot slot) const { return GetUInt32Value(ITEM_FIELD_ENCHANTMENT + slot * MAX_ENCHANTMENT_OFFSET + ENCHANTMENT_DURATION_OFFSET); }
         uint32 GetEnchantmentCharges(EnchantmentSlot slot)  const { return GetUInt32Value(ITEM_FIELD_ENCHANTMENT + slot * MAX_ENCHANTMENT_OFFSET + ENCHANTMENT_CHARGES_OFFSET); }
-        UF::SocketedGem const* GetGem(uint16 slot) const;
+        DynamicFieldStructuredView<ItemDynamicFieldGems> GetGems() const;
+        ItemDynamicFieldGems const* GetGem(uint16 slot) const;
         void SetGem(uint16 slot, ItemDynamicFieldGems const* gem, uint32 gemScalingLevel);
 
         std::string const& GetText() const { return m_text; }
@@ -392,7 +387,7 @@ class TC_GAME_API Item : public Object
 
         bool IsArtifactDisabled() const;
 
-        UF::ArtifactPower const* GetArtifactPower(uint32 artifactPowerId) const;
+        ItemDynamicFieldArtifactPowers const* GetArtifactPower(uint32 artifactPowerId) const;
         void AddArtifactPower(ArtifactPowerData const* artifactPower);
         void SetArtifactPower(uint16 artifactPowerId, uint8 purchasedRank, uint8 currentRankWithBonus);
 

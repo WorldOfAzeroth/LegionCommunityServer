@@ -34,7 +34,6 @@
 #include "UpdateFields.h"
 #include <list>
 #include <unordered_map>
-#include <memory>
 
 class AreaTrigger;
 class Conversation;
@@ -169,6 +168,7 @@ class TC_GAME_API Object
 
         void BuildValuesUpdateBlockForPlayer(UpdateData* data, Player* target) const;
         void BuildOutOfRangeUpdateBlock(UpdateData* data) const;
+        ByteBuffer& PrepareValuesUpdateBuffer(UpdateData* data) const;
 
         virtual void DestroyForPlayer(Player* target) const;
 

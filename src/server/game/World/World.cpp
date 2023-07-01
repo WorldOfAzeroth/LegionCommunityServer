@@ -69,6 +69,7 @@
 #include "M2Stores.h"
 #include "Map.h"
 #include "MapManager.h"
+#include "Memory.h"
 #include "Metric.h"
 #include "MiscPackets.h"
 #include "MMapFactory.h"
@@ -91,7 +92,6 @@
 #include "SupportMgr.h"
 #include "TaxiPathGraph.h"
 #include "TerrainMgr.h"
-#include "TraitMgr.h"
 #include "TransportMgr.h"
 #include "Unit.h"
 #include "UpdateTime.h"
@@ -349,7 +349,7 @@ bool World::RemoveSession(uint32 id)
         if (itr->second->PlayerLoading())
             return false;
 
-        itr->second->KickPlayer();
+        itr->second->KickPlayer("World::RemoveSession");
     }
 
     return true;
@@ -375,7 +375,7 @@ void World::AddSession_(WorldSession* s)
     ///- if player is in loading and want to load again, return
     if (!RemoveSession(s->GetAccountId()))
     {
-        s->KickPlayer();
+        s->KickPlayer("World::AddSession_ Couldn't remove the other session while on loading screen");
         delete s;                                           // session not added yet in session list, so not listed in queue
         return;
     }
@@ -544,7 +544,7 @@ bool World::RemoveQueuedPlayer(WorldSession* sess)
     // update position from iter to end()
     // iter point to first not updated socket, position store new position
     for (; iter != m_QueuedPlayer.end(); ++iter, ++position)
-        (*iter)->SendAuthWaitQue(position);
+        (*iter)->SendAuthWaitQueue(position);
 
     return found;
 }
@@ -856,31 +856,7 @@ void World::LoadConfigSettings(bool reload)
     m_float_configs[CONFIG_GROUP_XP_DISTANCE] = sConfigMgr->GetFloatDefault("MaxGroupXPDistance", 74.0f);
     m_float_configs[CONFIG_MAX_RECRUIT_A_FRIEND_DISTANCE] = sConfigMgr->GetFloatDefault("MaxRecruitAFriendBonusDistance", 100.0f);
 
-    m_int_configs[CONFIG_MIN_QUEST_SCALED_XP_RATIO] = sConfigMgr->GetIntDefault("MinQuestScaledXPRatio", 0);
-    if (m_int_configs[CONFIG_MIN_QUEST_SCALED_XP_RATIO] > 100)
-    {
-        TC_LOG_ERROR("server.loading", "MinQuestScaledXPRatio ({}) must be in range 0..100. Set to 0.", m_int_configs[CONFIG_MIN_QUEST_SCALED_XP_RATIO]);
-        m_int_configs[CONFIG_MIN_QUEST_SCALED_XP_RATIO] = 0;
-    }
-
-    m_int_configs[CONFIG_MIN_CREATURE_SCALED_XP_RATIO] = sConfigMgr->GetIntDefault("MinCreatureScaledXPRatio", 0);
-    if (m_int_configs[CONFIG_MIN_CREATURE_SCALED_XP_RATIO] > 100)
-    {
-        TC_LOG_ERROR("server.loading", "MinCreatureScaledXPRatio ({}) must be in range 0..100. Set to 0.", m_int_configs[CONFIG_MIN_CREATURE_SCALED_XP_RATIO]);
-        m_int_configs[CONFIG_MIN_CREATURE_SCALED_XP_RATIO] = 0;
-    }
-
-    m_int_configs[CONFIG_MIN_DISCOVERED_SCALED_XP_RATIO] = sConfigMgr->GetIntDefault("MinDiscoveredScaledXPRatio", 0);
-    if (m_int_configs[CONFIG_MIN_DISCOVERED_SCALED_XP_RATIO] > 100)
-    {
-        TC_LOG_ERROR("server.loading", "MinDiscoveredScaledXPRatio ({}) must be in range 0..100. Set to 0.", m_int_configs[CONFIG_MIN_DISCOVERED_SCALED_XP_RATIO]);
-        m_int_configs[CONFIG_MIN_DISCOVERED_SCALED_XP_RATIO] = 0;
-    }
-
-    /// @todo Add MonsterSight (with meaning) in worldserver.conf or put them as define
     m_float_configs[CONFIG_SIGHT_MONSTER] = sConfigMgr->GetFloatDefault("MonsterSight", 50.0f);
-
-    m_bool_configs[CONFIG_REGEN_HP_CANNOT_REACH_TARGET_IN_RAID] = sConfigMgr->GetBoolDefault("Creature.RegenHPCannotReachTargetInRaid", true);
 
     if (reload)
     {
@@ -1806,19 +1782,9 @@ void World::SetInitialWorldSettings()
 
     TC_LOG_INFO("server.loading", "Initialize data stores...");
     ///- Load DB2s
-    m_availableDbcLocaleMask = sDB2Manager.LoadStores(m_dataPath, m_defaultDbcLocale);
-    if (!(m_availableDbcLocaleMask & (1 << m_defaultDbcLocale)))
-    {
-        TC_LOG_FATAL("server.loading", "Unable to load db2 files for {} locale specified in DBC.Locale config!", localeNames[m_defaultDbcLocale]);
-        exit(1);
-    }
-
-    TC_LOG_INFO("misc", "Loading hotfix blobs...");
-    sDB2Manager.LoadHotfixBlob(m_availableDbcLocaleMask);
+    sDB2Manager.LoadStores(m_dataPath, m_defaultDbcLocale);
     TC_LOG_INFO("misc", "Loading hotfix info...");
     sDB2Manager.LoadHotfixData();
-    TC_LOG_INFO("misc", "Loading hotfix optional data...");
-    sDB2Manager.LoadHotfixOptionalData(m_availableDbcLocaleMask);
     ///- Close hotfix database - it is only used during DB2 loading
     HotfixDatabase.Close();
     ///- Load M2 fly by cameras
@@ -2114,9 +2080,6 @@ void World::SetInitialWorldSettings()
 
     TC_LOG_INFO("server.loading", "Loading SpellArea Data...");                // must be after quest load
     sSpellMgr->LoadSpellAreas();
-
-    TC_LOG_INFO("server.loading", "Loading World locations...");
-    sObjectMgr->LoadWorldSafeLocs();                            // must be before LoadAreaTriggerTeleports and LoadGraveyardZones
 
     TC_LOG_INFO("server.loading", "Loading AreaTrigger definitions...");
     sObjectMgr->LoadAreaTriggerTeleports();
@@ -2463,7 +2426,6 @@ void World::SetInitialWorldSettings()
     TC_LOG_INFO("server.loading", "Initializing Opcodes...");
     opcodeTable.Initialize();
     WorldPackets::Auth::ConnectTo::InitializeEncryption();
-    WorldPackets::Auth::EnterEncryptedMode::InitializeEncryption();
 
     TC_LOG_INFO("server.loading", "Starting Arena Season...");
     sGameEventMgr->StartArenaSeason();
@@ -2543,10 +2505,7 @@ void World::SetForcedWarModeFactionBalanceState(TeamId team, int32 reward)
     sWorldStateMgr->SetValueAndSaveInDb(WS_WAR_MODE_ALLIANCE_BUFF_VALUE, 10 + (team == TEAM_HORDE ? reward : 0), false, nullptr);
 }
 
-void World::DisableForcedWarModeFactionBalanceState()
-{
-    UpdateWarModeRewardValues();
-}
+
 
 void World::LoadAutobroadcasts()
 {
@@ -3503,7 +3462,12 @@ void World::_UpdateRealmCharCount(PreparedQueryResult resultCharCount)
 
         LoginDatabaseTransaction trans = LoginDatabase.BeginTransaction();
 
-        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_REP_REALM_CHARACTERS);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_REALM_CHARACTERS_BY_REALM);
+        stmt->setUInt32(0, accountId);
+        stmt->setUInt32(1, realm.Id.Realm);
+        trans->Append(stmt);
+
+        stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_REALM_CHARACTERS);
         stmt->setUInt8(0, charCount);
         stmt->setUInt32(1, accountId);
         stmt->setUInt32(2, realm.Id.Realm);
@@ -3579,8 +3543,6 @@ void World::ResetWeeklyQuests()
     // reselect pools
     sQuestPoolMgr->ChangeWeeklyQuests();
 
-    // Update faction balance
-    UpdateWarModeRewardValues();
 
     // store next reset time
     time_t now = GameTime::GetGameTime();
@@ -3909,60 +3871,6 @@ void World::RemoveOldCorpses()
     m_timers[WUPDATE_CORPSES].SetCurrent(m_timers[WUPDATE_CORPSES].GetInterval());
 }
 
-void World::UpdateWarModeRewardValues()
-{
-    std::array<int64, 2> warModeEnabledFaction = { };
-
-    // Search for characters that have war mode enabled and played during the last week
-    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_WAR_MODE_TUNING);
-    stmt->setUInt32(0, PLAYER_FLAGS_WAR_MODE_DESIRED);
-    stmt->setUInt32(1, PLAYER_FLAGS_WAR_MODE_DESIRED);
-    if (PreparedQueryResult result = CharacterDatabase.Query(stmt))
-    {
-        do
-        {
-            Field* fields = result->Fetch();
-            uint8 race = fields[0].GetUInt8();
-            if (ChrRacesEntry const* raceEntry = sChrRacesStore.LookupEntry(race))
-            {
-                if (FactionTemplateEntry const* raceFaction = sFactionTemplateStore.AssertEntry(raceEntry->FactionID))
-                {
-                    if (raceFaction->FactionGroup & FACTION_MASK_ALLIANCE)
-                        warModeEnabledFaction[TEAM_ALLIANCE] += fields[1].GetInt64();
-                    else if (raceFaction->FactionGroup & FACTION_MASK_HORDE)
-                        warModeEnabledFaction[TEAM_HORDE] += fields[1].GetInt64();
-                }
-            }
-
-        } while (result->NextRow());
-    }
-
-    TeamId dominantFaction = TEAM_ALLIANCE;
-    int32 outnumberedFactionReward = 0;
-
-    if (std::any_of(warModeEnabledFaction.begin(), warModeEnabledFaction.end(), [](int64 val) { return val != 0; }))
-    {
-        int64 dominantFactionCount = warModeEnabledFaction[TEAM_ALLIANCE];
-        if (warModeEnabledFaction[TEAM_ALLIANCE] < warModeEnabledFaction[TEAM_HORDE])
-        {
-            dominantFactionCount = warModeEnabledFaction[TEAM_HORDE];
-            dominantFaction = TEAM_HORDE;
-        }
-
-        double total = warModeEnabledFaction[TEAM_ALLIANCE] + warModeEnabledFaction[TEAM_HORDE];
-        double pct = dominantFactionCount / total;
-
-        if (pct >= getFloatConfig(CONFIG_CALL_TO_ARMS_20_PCT))
-            outnumberedFactionReward = 20;
-        else if (pct >= getFloatConfig(CONFIG_CALL_TO_ARMS_10_PCT))
-            outnumberedFactionReward = 10;
-        else if (pct >= getFloatConfig(CONFIG_CALL_TO_ARMS_5_PCT))
-            outnumberedFactionReward = 5;
-    }
-
-    sWorldStateMgr->SetValueAndSaveInDb(WS_WAR_MODE_HORDE_BUFF_VALUE, 10 + (dominantFaction == TEAM_ALLIANCE ? outnumberedFactionReward : 0), false, nullptr);
-    sWorldStateMgr->SetValueAndSaveInDb(WS_WAR_MODE_ALLIANCE_BUFF_VALUE, 10 + (dominantFaction == TEAM_HORDE ? outnumberedFactionReward : 0), false, nullptr);
-}
 
 Realm realm;
 

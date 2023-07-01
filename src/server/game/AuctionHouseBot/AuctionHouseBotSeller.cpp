@@ -63,9 +63,9 @@ bool AuctionBotSeller::Initialize()
     TC_LOG_DEBUG("ahbot", "Forced Exclusion " SZFMTD " items", excludeItems.size());
 
     TC_LOG_DEBUG("ahbot", "Loading npc vendor items for filter..");
-    CreatureTemplateContainer const* creatures = sObjectMgr->GetCreatureTemplates();
-    for (auto it = creatures->begin(); it != creatures->end(); ++it)
-        if (VendorItemData const* data = sObjectMgr->GetNpcVendorItemList(it->first))
+    CreatureTemplateContainer const& creatures = sObjectMgr->GetCreatureTemplates();
+    for (auto const& creatureTemplatePair : creatures)
+        if (VendorItemData const* data = sObjectMgr->GetNpcVendorItemList(creatureTemplatePair.first))
             for (VendorItem const& vendorItem : data->m_items)
                 npcItems.insert(vendorItem.item);
 
@@ -284,7 +284,7 @@ bool AuctionBotSeller::Initialize()
                             continue;
                 }
 
-                if (prototype->GetFlags() & ITEM_FIELD_FLAG_UNLOCKED)
+                if (prototype->HasFlag(ITEM_FLAG_HAS_LOOT))
                 {
                     // skip any not locked lootable items (mostly quest specific or reward cases)
                     if (!prototype->GetLockID())
@@ -948,7 +948,7 @@ void AuctionBotSeller::AddNewAuctions(SellerConfiguration& config)
 
         uint32 stackCount = GetStackSizeForItem(prototype, config);
 
-        Item* item = Item::CreateItem(itemId, stackCount);
+        Item* item = Item::CreateItem(itemId, stackCount, ItemContext::NONE);
         if (!item)
         {
             TC_LOG_ERROR("ahbot", "AHBot: Item::CreateItem() returned NULL for item %u (stack: %u)", itemId, stackCount);
@@ -957,7 +957,7 @@ void AuctionBotSeller::AddNewAuctions(SellerConfiguration& config)
 
         // Update the just created item so that if it needs random properties it has them.
         // Ex:  Notched Shortsword of Stamina will only generate as a Notched Shortsword without this.
-        item->SetItemRandomProperties(GenerateItemRandomPropertyId(itemId));
+        item->SetItemRandomBonusList(GenerateItemRandomBonusListId(itemId));
 
         uint32 buyoutPrice;
         uint32 bidPrice = 0;

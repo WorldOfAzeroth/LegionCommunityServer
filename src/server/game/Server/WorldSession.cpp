@@ -29,12 +29,15 @@
 #include "BattlenetPackets.h"
 #include "CharacterPackets.h"
 #include "ChatPackets.h"
+#include "ClientConfigPackets.h"
 #include "DatabaseEnv.h"
 #include "GameTime.h"
 #include "Group.h"
 #include "Guild.h"
 #include "GuildMgr.h"
+#include "Hyperlinks.h"
 #include "IpAddress.h"
+#include "Log.h"
 #include "Map.h"
 #include "Metric.h"
 #include "MiscPackets.h"
@@ -42,6 +45,7 @@
 #include "OutdoorPvPMgr.h"
 #include "PacketUtilities.h"
 #include "Player.h"
+#include "QueryHolder.h"
 #include "Random.h"
 #include "RBAC.h"
 #include "Realm.h"
@@ -50,6 +54,7 @@
 #include "WardenWin.h"
 #include "World.h"
 #include "WorldSocket.h"
+#include <boost/circular_buffer.hpp>
 
 namespace {
 
@@ -133,7 +138,7 @@ WorldSession::WorldSession(uint32 id, std::string&& name, uint32 battlenetAccoun
     expireTime(60000), // 1 min after socket loss, session is deleted
     forceExit(false),
     m_currentBankerGUID(),
-    _battlePetMgr(std::make_unique<BattlePetMgr>(this)),
+    _battlePetMgr(std::make_unique<BattlePets::BattlePetMgr>(this)),
     _collectionMgr(std::make_unique<CollectionMgr>(this))
 {
     memset(_tutorials, 0, sizeof(_tutorials));
@@ -173,7 +178,7 @@ WorldSession::~WorldSession()
     while (_recvQueue.next(packet))
         delete packet;
 
-    LoginDatabase.PExecute("UPDATE account SET online = 0 WHERE id = %u;", GetAccountId());     // One-time query
+    LoginDatabase.PExecute("UPDATE account SET online = 0 WHERE id = {};", GetAccountId());     // One-time query
 }
 
 bool WorldSession::PlayerDisconnected() const
@@ -207,12 +212,12 @@ void WorldSession::SendPacket(WorldPacket const* packet, bool forced /*= false*/
 {
     if (packet->GetOpcode() == NULL_OPCODE)
     {
-        TC_LOG_ERROR("network.opcode", "Prevented sending of NULL_OPCODE to %s", GetPlayerInfo().c_str());
+        TC_LOG_ERROR("network.opcode", "Prevented sending of NULL_OPCODE to {}", GetPlayerInfo());
         return;
     }
     else if (packet->GetOpcode() == UNKNOWN_OPCODE)
     {
-        TC_LOG_ERROR("network.opcode", "Prevented sending of UNKNOWN_OPCODE to %s", GetPlayerInfo().c_str());
+        TC_LOG_ERROR("network.opcode", "Prevented sending of UNKNOWN_OPCODE to {}", GetPlayerInfo());
         return;
     }
 
@@ -220,7 +225,7 @@ void WorldSession::SendPacket(WorldPacket const* packet, bool forced /*= false*/
 
     if (!handler)
     {
-        TC_LOG_ERROR("network.opcode", "Prevented sending of opcode %u with non existing handler to %s", packet->GetOpcode(), GetPlayerInfo().c_str());
+        TC_LOG_ERROR("network.opcode", "Prevented sending of opcode {} with non existing handler to {}", packet->GetOpcode(), GetPlayerInfo());
         return;
     }
 
@@ -232,7 +237,7 @@ void WorldSession::SendPacket(WorldPacket const* packet, bool forced /*= false*/
     {
         if (packet->GetConnection() != CONNECTION_TYPE_INSTANCE && IsInstanceOnlyOpcode(packet->GetOpcode()))
         {
-            TC_LOG_ERROR("network.opcode", "Prevented sending of instance only opcode %u with connection type %u to %s", packet->GetOpcode(), packet->GetConnection(), GetPlayerInfo().c_str());
+            TC_LOG_ERROR("network.opcode", "Prevented sending of instance only opcode {} with connection type {} to {}", packet->GetOpcode(), uint32(packet->GetConnection()), GetPlayerInfo());
             return;
         }
 
@@ -241,7 +246,7 @@ void WorldSession::SendPacket(WorldPacket const* packet, bool forced /*= false*/
 
     if (!m_Socket[conIdx])
     {
-        TC_LOG_ERROR("network.opcode", "Prevented sending of %s to non existent socket %u to %s", GetOpcodeNameForLogging(static_cast<OpcodeServer>(packet->GetOpcode())).c_str(), conIdx, GetPlayerInfo().c_str());
+        TC_LOG_ERROR("network.opcode", "Prevented sending of {} to non existent socket {} to {}", GetOpcodeNameForLogging(static_cast<OpcodeServer>(packet->GetOpcode())), uint32(conIdx), GetPlayerInfo());
         return;
     }
 
@@ -249,7 +254,7 @@ void WorldSession::SendPacket(WorldPacket const* packet, bool forced /*= false*/
     {
         if (handler->Status == STATUS_UNHANDLED)
         {
-            TC_LOG_ERROR("network.opcode", "Prevented sending disabled opcode %s to %s", GetOpcodeNameForLogging(static_cast<OpcodeServer>(packet->GetOpcode())).c_str(), GetPlayerInfo().c_str());
+            TC_LOG_ERROR("network.opcode", "Prevented sending disabled opcode {} to {}", GetOpcodeNameForLogging(static_cast<OpcodeServer>(packet->GetOpcode())), GetPlayerInfo());
             return;
         }
     }
@@ -279,8 +284,8 @@ void WorldSession::SendPacket(WorldPacket const* packet, bool forced /*= false*/
     {
         uint64 minTime = uint64(cur_time - lastTime);
         uint64 fullTime = uint64(lastTime - firstTime);
-        TC_LOG_DEBUG("misc", "Send all time packets count: " UI64FMTD " bytes: " UI64FMTD " avr.count/sec: %f avr.bytes/sec: %f time: %u", sendPacketCount, sendPacketBytes, float(sendPacketCount)/fullTime, float(sendPacketBytes)/fullTime, uint32(fullTime));
-        TC_LOG_DEBUG("misc", "Send last min packets count: " UI64FMTD " bytes: " UI64FMTD " avr.count/sec: %f avr.bytes/sec: %f", sendLastPacketCount, sendLastPacketBytes, float(sendLastPacketCount)/minTime, float(sendLastPacketBytes)/minTime);
+        TC_LOG_DEBUG("misc", "Send all time packets count: {} bytes: {} avr.count/sec: {} avr.bytes/sec: {} time: {}", sendPacketCount, sendPacketBytes, float(sendPacketCount)/fullTime, float(sendPacketBytes)/fullTime, uint32(fullTime));
+        TC_LOG_DEBUG("misc", "Send last min packets count: {} bytes: {} avr.count/sec: {} avr.bytes/sec: {}", sendLastPacketCount, sendLastPacketBytes, float(sendLastPacketCount)/minTime, float(sendLastPacketBytes)/minTime);
 
         lastTime = cur_time;
         sendLastPacketCount = 1;
@@ -290,7 +295,7 @@ void WorldSession::SendPacket(WorldPacket const* packet, bool forced /*= false*/
 
     sScriptMgr->OnPacketSend(this, *packet);
 
-    TC_LOG_TRACE("network.opcode", "S->C: %s %s", GetPlayerInfo().c_str(), GetOpcodeNameForLogging(static_cast<OpcodeServer>(packet->GetOpcode())).c_str());
+    TC_LOG_TRACE("network.opcode", "S->C: {} {}", GetPlayerInfo(), GetOpcodeNameForLogging(static_cast<OpcodeServer>(packet->GetOpcode())));
     m_Socket[conIdx]->SendPacket(*packet);
 }
 
@@ -303,8 +308,8 @@ void WorldSession::QueuePacket(WorldPacket* new_packet)
 /// Logging helper for unexpected opcodes
 void WorldSession::LogUnexpectedOpcode(WorldPacket* packet, const char* status, const char *reason)
 {
-    TC_LOG_ERROR("network.opcode", "Received unexpected opcode %s Status: %s Reason: %s from %s",
-        GetOpcodeNameForLogging(static_cast<OpcodeClient>(packet->GetOpcode())).c_str(), status, reason, GetPlayerInfo().c_str());
+    TC_LOG_ERROR("network.opcode", "Received unexpected opcode {} Status: {} Reason: {} from {}",
+        GetOpcodeNameForLogging(static_cast<OpcodeClient>(packet->GetOpcode())), status, reason, GetPlayerInfo());
 }
 
 /// Logging helper for unexpected opcodes
@@ -313,8 +318,8 @@ void WorldSession::LogUnprocessedTail(WorldPacket const* packet)
     if (!sLog->ShouldLog("network.opcode", LOG_LEVEL_TRACE) || packet->rpos() >= packet->wpos())
         return;
 
-    TC_LOG_TRACE("network.opcode", "Unprocessed tail data (read stop at %u from %u) Opcode %s from %s",
-        uint32(packet->rpos()), uint32(packet->wpos()), GetOpcodeNameForLogging(static_cast<OpcodeClient>(packet->GetOpcode())).c_str(), GetPlayerInfo().c_str());
+    TC_LOG_TRACE("network.opcode", "Unprocessed tail data (read stop at {} from {}) Opcode {} from {}",
+        uint32(packet->rpos()), uint32(packet->wpos()), GetOpcodeNameForLogging(static_cast<OpcodeClient>(packet->GetOpcode())), GetPlayerInfo());
     packet->print_storage();
 }
 
@@ -324,12 +329,12 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
     ///- Before we process anything:
     /// If necessary, kick the player because the client didn't send anything for too long
     /// (or they've been idling in character select)
-    if (IsConnectionIdle())
+    if (IsConnectionIdle() && !HasPermission(rbac::RBAC_PERM_IGNORE_IDLE_CONNECTION))
         m_Socket[CONNECTION_TYPE_REALM]->CloseSocket();
 
     ///- Retrieve packets from the receive queue and call the appropriate handlers
     /// not process packets if socket already closed
-    WorldPacket* packet = NULL;
+    WorldPacket* packet = nullptr;
     //! Delete packet after processing by default
     bool deletePacket = true;
     std::vector<WorldPacket*> requeuePackets;
@@ -358,8 +363,8 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                         {
                             requeuePackets.push_back(packet);
                             deletePacket = false;
-                            TC_LOG_DEBUG("network", "Re-enqueueing packet with opcode %s with with status STATUS_LOGGEDIN. "
-                                "Player is currently not in world yet.", GetOpcodeNameForLogging(static_cast<OpcodeClient>(packet->GetOpcode())).c_str());
+                            TC_LOG_DEBUG("network", "Re-enqueueing packet with opcode {} with with status STATUS_LOGGEDIN. "
+                                "Player is currently not in world yet.", GetOpcodeNameForLogging(static_cast<OpcodeClient>(packet->GetOpcode())));
                         }
                     }
                     else if (_player->IsInWorld())
@@ -422,24 +427,40 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                         processedPackets = MAX_PROCESSED_PACKETS_IN_SAME_WORLDSESSION_UPDATE;   // break out of packet processing loop
                     break;
                 case STATUS_NEVER:
-                    TC_LOG_ERROR("network.opcode", "Received not allowed opcode %s from %s", GetOpcodeNameForLogging(static_cast<OpcodeClient>(packet->GetOpcode())).c_str()
-                        , GetPlayerInfo().c_str());
+                    TC_LOG_ERROR("network.opcode", "Received not allowed opcode {} from {}", GetOpcodeNameForLogging(static_cast<OpcodeClient>(packet->GetOpcode()))
+                        , GetPlayerInfo());
                     break;
                 case STATUS_UNHANDLED:
-                    TC_LOG_ERROR("network.opcode", "Received not handled opcode %s from %s", GetOpcodeNameForLogging(static_cast<OpcodeClient>(packet->GetOpcode())).c_str()
-                        , GetPlayerInfo().c_str());
+                    TC_LOG_ERROR("network.opcode", "Received not handled opcode {} from {}", GetOpcodeNameForLogging(static_cast<OpcodeClient>(packet->GetOpcode()))
+                        , GetPlayerInfo());
                     break;
             }
         }
+        catch (WorldPackets::InvalidHyperlinkException const& ihe)
+        {
+            TC_LOG_ERROR("network", "{} sent {} with an invalid link:\n{}", GetPlayerInfo(),
+                GetOpcodeNameForLogging(static_cast<OpcodeClient>(packet->GetOpcode())), ihe.GetInvalidValue());
+
+            if (sWorld->getIntConfig(CONFIG_CHAT_STRICT_LINK_CHECKING_KICK))
+                KickPlayer("WorldSession::Update Invalid chat link");
+        }
+        catch (WorldPackets::IllegalHyperlinkException const& ihe)
+        {
+            TC_LOG_ERROR("network", "{} sent {} which illegally contained a hyperlink:\n{}", GetPlayerInfo(),
+                GetOpcodeNameForLogging(static_cast<OpcodeClient>(packet->GetOpcode())), ihe.GetInvalidValue());
+
+            if (sWorld->getIntConfig(CONFIG_CHAT_STRICT_LINK_CHECKING_KICK))
+                KickPlayer("WorldSession::Update Illegal chat link");
+        }
         catch (WorldPackets::PacketArrayMaxCapacityException const& pamce)
         {
-            TC_LOG_ERROR("network", "PacketArrayMaxCapacityException: %s while parsing %s from %s.",
-                pamce.what(), GetOpcodeNameForLogging(static_cast<OpcodeClient>(packet->GetOpcode())).c_str(), GetPlayerInfo().c_str());
+            TC_LOG_ERROR("network", "PacketArrayMaxCapacityException: {} while parsing {} from {}.",
+                pamce.what(), GetOpcodeNameForLogging(static_cast<OpcodeClient>(packet->GetOpcode())), GetPlayerInfo());
         }
         catch (ByteBufferException const&)
         {
-            TC_LOG_ERROR("network", "WorldSession::Update ByteBufferException occured while parsing a packet (opcode: %u) from client %s, accountid=%i. Skipped packet.",
-                    packet->GetOpcode(), GetRemoteAddress().c_str(), GetAccountId());
+            TC_LOG_ERROR("network", "WorldSession::Update ByteBufferException occured while parsing a packet (opcode: {}) from client {}, accountid={}. Skipped packet.",
+                    packet->GetOpcode(), GetRemoteAddress(), GetAccountId());
             packet->hexlike();
         }
 
@@ -448,7 +469,6 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
 
         deletePacket = true;
 
-#define MAX_PROCESSED_PACKETS_IN_SAME_WORLDSESSION_UPDATE 100
         processedPackets++;
 
         //process only a max amout of packets in 1 Update() call.
@@ -479,18 +499,20 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
     //logout procedure should happen only in World::UpdateSessions() method!!!
     if (updater.ProcessUnsafe())
     {
-        time_t currTime = time(NULL);
-        ///- If necessary, log the player out
-        if (ShouldLogOut(currTime) && m_playerLoading.IsEmpty())
-            LogoutPlayer(true);
+        if (m_Socket[CONNECTION_TYPE_REALM] && m_Socket[CONNECTION_TYPE_REALM]->IsOpen() && _warden)
+            _warden->Update(diff);
 
-        if (m_Socket[CONNECTION_TYPE_REALM] && GetPlayer() && _warden)
-            _warden->Update();
+        ///- If necessary, log the player out
+        if (ShouldLogOut(currentTime) && m_playerLoading.IsEmpty())
+            LogoutPlayer(true);
 
         ///- Cleanup socket pointer if need
         if ((m_Socket[CONNECTION_TYPE_REALM] && !m_Socket[CONNECTION_TYPE_REALM]->IsOpen()) ||
             (m_Socket[CONNECTION_TYPE_INSTANCE] && !m_Socket[CONNECTION_TYPE_INSTANCE]->IsOpen()))
         {
+            if (GetPlayer() && _warden)
+                _warden->Update(diff);
+
             expireTime -= expireTime > diff ? diff : expireTime;
             if (expireTime < diff || forceExit || !GetPlayer())
             {
@@ -617,10 +639,11 @@ void WorldSession::LogoutPlayer(bool save)
             _player->RemoveFromGroup();
 
         //! Send update to group and reset stored max enchanting level
-        if (_player->GetGroup())
+        if (Group* group = _player->GetGroup())
         {
-            _player->GetGroup()->SendUpdate();
-            _player->GetGroup()->ResetMaxEnchantingLevel();
+            group->SendUpdate();
+            if (group->GetLeaderGUID() == _player->GetGUID())
+                group->StartLeaderOfflineTimer();
         }
 
         //! Broadcast a logout message to the player's friends
@@ -636,14 +659,16 @@ void WorldSession::LogoutPlayer(bool save)
         // the player may not be in the world when logging out
         // e.g if he got disconnected during a transfer to another map
         // calls to GetMap in this case may cause crashes
+        _player->SetDestroyedObject(true);
         _player->CleanupsBeforeDelete();
-        TC_LOG_INFO("entities.player.character", "Account: %u (IP: %s) Logout Character:[%s] (%s) Level: %d",
-            GetAccountId(), GetRemoteAddress().c_str(), _player->GetName().c_str(), _player->GetGUID().ToString().c_str(), _player->getLevel());
+        TC_LOG_INFO("entities.player.character", "Account: {} (IP: {}) Logout Character:[{}] {} Level: {}, XP: {}/{} ({} left)",
+            GetAccountId(), GetRemoteAddress(), _player->GetName(), _player->GetGUID().ToString(), _player->GetLevel(),
+            _player->GetXP(), _player->GetXPForNextLevel(), std::max(0, (int32)_player->GetXPForNextLevel() - (int32)_player->GetXP()));
 
         if (Map* _map = _player->FindMap())
             _map->RemovePlayerFromMap(_player, true);
 
-        SetPlayer(NULL); //! Pointer already deleted during RemovePlayerFromMap
+        SetPlayer(nullptr); //! Pointer already deleted during RemovePlayerFromMap
 
         //! Send the 'logout complete' packet to the client
         //! Client will respond by sending 3x CMSG_CANCEL_TRADE, which we currently dont handle
@@ -669,8 +694,11 @@ void WorldSession::LogoutPlayer(bool save)
 }
 
 /// Kick a player out of the World
-void WorldSession::KickPlayer()
+void WorldSession::KickPlayer(std::string const& reason)
 {
+    TC_LOG_INFO("network.kick", "Account: {} Character: '{}' {} kicked with reason: {}", GetAccountId(), _player ? _player->GetName() : "<none>",
+        _player ? _player->GetGUID().ToString() : "", reason);
+
     for (uint8 i = 0; i < 2; ++i)
     {
         if (m_Socket[i])
@@ -679,6 +707,34 @@ void WorldSession::KickPlayer()
             forceExit = true;
         }
     }
+}
+
+bool WorldSession::ValidateHyperlinksAndMaybeKick(std::string const& str)
+{
+    if (Trinity::Hyperlinks::CheckAllLinks(str))
+        return true;
+
+    TC_LOG_ERROR("network", "Player {}{} sent a message with an invalid link:\n{}", GetPlayer()->GetName(),
+        GetPlayer()->GetGUID().ToString(), str);
+
+    if (sWorld->getIntConfig(CONFIG_CHAT_STRICT_LINK_CHECKING_KICK))
+        KickPlayer("WorldSession::ValidateHyperlinksAndMaybeKick Invalid chat link");
+
+    return false;
+}
+
+bool WorldSession::DisallowHyperlinksAndMaybeKick(std::string const& str)
+{
+    if (str.find('|') == std::string::npos)
+        return true;
+
+    TC_LOG_ERROR("network", "Player {} {} sent a message which illegally contained a hyperlink:\n{}", GetPlayer()->GetName(),
+                 GetPlayer()->GetGUID().ToString(), str);
+
+    if (sWorld->getIntConfig(CONFIG_CHAT_STRICT_LINK_CHECKING_KICK))
+        KickPlayer("WorldSession::DisallowHyperlinksAndMaybeKick Illegal chat link");
+
+    return false;
 }
 
 void WorldSession::SendNotification(char const* format, ...)
@@ -929,8 +985,7 @@ bool WorldSession::CanAccessAlliedRaces() const
     return GetAccountExpansion() >= EXPANSION_BATTLE_FOR_AZEROTH;
 }
 
-
-void WorldSession::InitWarden(BigNumber* k)
+void WorldSession::InitWarden(SessionKey const& k)
 {
     if (_os == "Win")
     {
@@ -952,8 +1007,8 @@ void WorldSession::LoadPermissions()
     uint32 id = GetAccountId();
     uint8 secLevel = GetSecurity();
 
-    TC_LOG_DEBUG("rbac", "WorldSession::LoadPermissions [AccountId: %u, Name: %s, realmId: %d, secLevel: %u]",
-        id, _accountName.c_str(), realm.Id.Realm, secLevel);
+    TC_LOG_DEBUG("rbac", "WorldSession::LoadPermissions [AccountId: {}, Name: {}, realmId: {}, secLevel: {}]",
+        id, _accountName, realm.Id.Realm, secLevel);
 
     _RBACData = new rbac::RBACData(id, _accountName, realm.Id.Realm, secLevel);
     _RBACData->LoadFromDB();
@@ -964,8 +1019,8 @@ QueryCallback WorldSession::LoadPermissionsAsync()
     uint32 id = GetAccountId();
     uint8 secLevel = GetSecurity();
 
-    TC_LOG_DEBUG("rbac", "WorldSession::LoadPermissions [AccountId: %u, Name: %s, realmId: %d, secLevel: %u]",
-        id, _accountName.c_str(), realm.Id.Realm, secLevel);
+    TC_LOG_DEBUG("rbac", "WorldSession::LoadPermissions [AccountId: {}, Name: {}, realmId: {}, secLevel: {}]",
+        id, _accountName, realm.Id.Realm, secLevel);
 
     _RBACData = new rbac::RBACData(id, _accountName, realm.Id.Realm, secLevel);
     return _RBACData->LoadFromDBAsync();
@@ -1110,7 +1165,7 @@ void WorldSession::InitializeSessionCallback(LoginDatabaseQueryHolder const& hol
     if (!m_inQueue)
         SendAuthResponse(ERROR_OK, false);
     else
-        SendAuthWaitQue(0);
+        SendAuthWaitQueue(0);
 
     SetInQueue(false);
     ResetTimeOutTime(false);
@@ -1194,7 +1249,7 @@ bool WorldSession::DosProtection::EvaluateOpcode(WorldPacket& p, time_t time) co
         case POLICY_KICK:
         {
             TC_LOG_WARN("network", "AntiDOS: Player kicked!");
-            Session->KickPlayer();
+            Session->KickPlayer("WorldSession::DosProtection::EvaluateOpcode AntiDOS");
             return false;
         }
         case POLICY_BAN:
@@ -1209,8 +1264,8 @@ bool WorldSession::DosProtection::EvaluateOpcode(WorldPacket& p, time_t time) co
                 case BAN_IP: nameOrIp = Session->GetRemoteAddress(); break;
             }
             sWorld->BanAccount(bm, nameOrIp, duration, "DOS (Packet Flooding/Spoofing", "Server: AutoDOS");
-            TC_LOG_WARN("network", "AntiDOS: Player automatically banned for %u seconds.", duration);
-            Session->KickPlayer();
+            TC_LOG_WARN("network", "AntiDOS: Player automatically banned for {} seconds.", duration);
+            Session->KickPlayer("WorldSession::DosProtection::EvaluateOpcode AntiDOS");
             return false;
         }
         default: // invalid policy

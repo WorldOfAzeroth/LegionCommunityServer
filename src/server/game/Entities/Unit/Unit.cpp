@@ -9912,9 +9912,10 @@ void Unit::SendPetActionFeedback(PetActionFeedback msg, uint32 spellId)
     if (!owner || owner->GetTypeId() != TYPEID_PLAYER)
         return;
 
-    WorldPacket data(SMSG_PET_ACTION_FEEDBACK, 1);
-    data << uint8(msg);
-    owner->ToPlayer()->GetSession()->SendPacket(&data);
+    WorldPackets::Pet::PetActionFeedback petActionFeedback;
+    petActionFeedback.SpellID = spellId;
+    petActionFeedback.Response = msg;
+    owner->ToPlayer()->SendDirectMessage(petActionFeedback.Write());
 }
 
 void Unit::SendPetTalk(uint32 pettalk)
@@ -9923,10 +9924,10 @@ void Unit::SendPetTalk(uint32 pettalk)
     if (!owner || owner->GetTypeId() != TYPEID_PLAYER)
         return;
 
-    WorldPacket data(SMSG_PET_ACTION_SOUND, 8 + 4);
-    data << GetGUID();
-    data << uint32(pettalk);
-    owner->ToPlayer()->GetSession()->SendPacket(&data);
+    WorldPackets::Pet::PetActionSound petActionSound;
+    petActionSound.UnitGUID = GetGUID();
+    petActionSound.Action = pettalk;
+    owner->ToPlayer()->SendDirectMessage(petActionSound.Write());
 }
 
 void Unit::SendPetAIReaction(ObjectGuid guid)

@@ -5744,6 +5744,7 @@ enum BattlegroundTypeId : uint32
     // 809 = "New Nagrand Arena (Legion)"
     BATTLEGROUND_AF             = 816, // Ashamane's Fall
     // 844 = "New Blade's Edge Arena (Legion)"
+    BATTLEGROUND_RANDOM_EPIC    = 901
 };
 
 #define MAX_BATTLEGROUND_TYPE_ID 845
@@ -7300,19 +7301,5 @@ enum WorldState : uint32
     WS_WAR_MODE_ALLIANCE_BUFF_VALUE = 17043,
 };
 
-enum class MountResult : uint32
-{
-    InvalidMountee = 0,
-    TooFarAway     = 1,
-    AlreadyMounted = 2,
-    NotMountable   = 3,
-    NotYourPet     = 4,
-    Other          = 5,
-    Looting        = 6,
-    RaceCantMount  = 7,
-    Shapeshifted   = 8,
-    ForcedDismount = 9,
-    Ok             = 10 // never sent
-};
 
 #endif

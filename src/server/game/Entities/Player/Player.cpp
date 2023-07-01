@@ -6917,8 +6917,7 @@ void Player::ResetCurrencyWeekCap()
         itr->second.state = PLAYERCURRENCY_CHANGED;
     }
 
-    WorldPacket data(SMSG_RESET_WEEKLY_CURRENCY, 0);
-    SendDirectMessage(&data);
+    SendDirectMessage(WorldPackets::Misc::ResetWeeklyCurrency().Write());
 }
 
 uint32 Player::GetCurrencyWeekCap(CurrencyTypesEntry const* currency) const
@@ -7907,7 +7906,7 @@ void Player::ApplyArtifactPowers(Item* item, bool apply)
     if (item->IsArtifactDisabled())
         return;
 
-    for (UF::ArtifactPower const& artifactPower : item->GetDynamicStructuredValues<UF::ArtifactPower>(ITEM_DYNAMIC_FIELD_ARTIFACT_POWERS))
+    for (ItemDynamicFieldArtifactPowers const& artifactPower : item->GetDynamicStructuredValues<ItemDynamicFieldArtifactPowers>(ITEM_DYNAMIC_FIELD_ARTIFACT_POWERS))
     {
         uint8 rank = artifactPower.CurrentRankWithBonus;
         if (!rank)
@@ -12841,7 +12840,7 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
         }
 
         // Cogwheel gems dont have requirement data set in SpellItemEnchantment.dbc, but they do have it in Item-sparse.db2
-        if (UF::SocketedGem const* gem = item->GetGem(uint16(slot - SOCK_ENCHANTMENT_SLOT)))
+        if (ItemDynamicFieldGems const* gem = item->GetGem(uint16(slot - SOCK_ENCHANTMENT_SLOT)))
             if (ItemTemplate const* gemTemplate = sObjectMgr->GetItemTemplate(gem->ItemId))
                 if (gemTemplate->GetRequiredSkill() && GetSkillValue(gemTemplate->GetRequiredSkill()) < gemTemplate->GetRequiredSkillRank())
                     return;
@@ -21976,7 +21975,7 @@ bool Player::EnchantmentFitsRequirements(uint32 enchantmentcondition, int8 slot)
         Item* pItem2 = GetItemByPos(INVENTORY_SLOT_BAG_0, i);
         if (pItem2 && !pItem2->IsBroken())
         {
-            for (auto &gemData : pItem2->GetDynamicStructuredValues<UF::SocketedGem>(ITEM_DYNAMIC_FIELD_GEMS))
+            for (auto &gemData : pItem2->GetDynamicStructuredValues<ItemDynamicFieldGems>(ITEM_DYNAMIC_FIELD_GEMS))
             {
                 ItemTemplate const* gemProto = sObjectMgr->GetItemTemplate(gemData.ItemId);
                 if (!gemProto)
@@ -24947,7 +24946,7 @@ InventoryResult Player::CanEquipUniqueItem(Item* pItem, uint8 eslot, uint32 limi
 
     // check unique-equipped on gems
 
-    for (auto &gemData : pItem->GetDynamicStructuredValues<UF::SocketedGem>(ITEM_DYNAMIC_FIELD_GEMS))
+    for (auto &gemData : pItem->GetDynamicStructuredValues<ItemDynamicFieldGems>(ITEM_DYNAMIC_FIELD_GEMS))
     {
         ItemTemplate const* pGem = sObjectMgr->GetItemTemplate(gemData.ItemId);
         if (!pGem)

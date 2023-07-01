@@ -67,7 +67,7 @@ class WorldSession;
 
 struct AchievementEntry;
 struct AreaTriggerEntry;
-struct AuctionPosting;
+struct AuctionEntry;
 struct ConditionSourceInfo;
 struct Condition;
 struct CreatureTemplate;
@@ -569,16 +569,16 @@ class TC_GAME_API AuctionHouseScript : public ScriptObject
         ~AuctionHouseScript();
 
         // Called when an auction is added to an auction house.
-        virtual void OnAuctionAdd(AuctionHouseObject* ah, AuctionPosting* auction);
+        virtual void OnAuctionAdd(AuctionHouseObject* ah, AuctionEntry* auction);
 
         // Called when an auction is removed from an auction house.
-        virtual void OnAuctionRemove(AuctionHouseObject* ah, AuctionPosting* auction);
+        virtual void OnAuctionRemove(AuctionHouseObject* ah, AuctionEntry* auction);
 
         // Called when an auction was succesfully completed.
-        virtual void OnAuctionSuccessful(AuctionHouseObject* ah, AuctionPosting* auction);
+        virtual void OnAuctionSuccessful(AuctionHouseObject* ah, AuctionEntry* auction);
 
         // Called when an auction expires.
-        virtual void OnAuctionExpire(AuctionHouseObject* ah, AuctionPosting* auction);
+        virtual void OnAuctionExpire(AuctionHouseObject* ah, AuctionEntry* auction);
 };
 
 class TC_GAME_API ConditionScript : public ScriptObject
@@ -1147,10 +1147,10 @@ class TC_GAME_API ScriptMgr
 
     public: /* AuctionHouseScript */
 
-        void OnAuctionAdd(AuctionHouseObject* ah, AuctionPosting* auction);
-        void OnAuctionRemove(AuctionHouseObject* ah, AuctionPosting* auction);
-        void OnAuctionSuccessful(AuctionHouseObject* ah, AuctionPosting* auction);
-        void OnAuctionExpire(AuctionHouseObject* ah, AuctionPosting* auction);
+        void OnAuctionAdd(AuctionHouseObject* ah, AuctionEntry* entry);
+        void OnAuctionRemove(AuctionHouseObject* ah, AuctionEntry* entry);
+        void OnAuctionSuccessful(AuctionHouseObject* ah, AuctionEntry* entry);
+        void OnAuctionExpire(AuctionHouseObject* ah, AuctionEntry* entry);
 
     public: /* ConditionScript */
 

@@ -1331,7 +1331,6 @@ void Guild::HandleRoster(WorldSession* session)
         memberData.Level = member.GetLevel();
         memberData.ClassID = member.GetClass();
         memberData.Gender = member.GetGender();
-        memberData.RaceID = member.GetRace();
 
         memberData.Authenticated = false;
         memberData.SorEligible = false;
@@ -1365,8 +1364,12 @@ void Guild::SendQueryResponse(WorldSession* session)
     response.Info->BorderColor = m_emblemInfo.GetBorderColor();
     response.Info->BackgroundColor = m_emblemInfo.GetBackgroundColor();
 
-    for (RankInfo const& rankInfo : m_ranks)
-        response.Info->Ranks.emplace_back(AsUnderlyingType(rankInfo.GetId()), AsUnderlyingType(rankInfo.GetOrder()), rankInfo.GetName());
+    for (uint8 i = 0; i < _GetRanksSize(); ++i)
+    {
+        WorldPackets::Guild::QueryGuildInfoResponse::GuildInfo::GuildInfoRank info
+            (m_ranks[i].GetId(), i, m_ranks[i].GetName());
+        response.Info->Ranks.insert(info);
+    }
 
     response.Info->GuildName = m_name;
 
@@ -1972,46 +1975,6 @@ void Guild::HandleRemoveRank(WorldSession* session, GuildRankOrder rankOrder)
     BroadcastPacket(eventPacket.Write());
 }
 
-void Guild::HandleShiftRank(WorldSession* session, GuildRankOrder rankOrder, bool shiftUp)
-{
-    // Only leader can modify ranks
-    if (!_IsLeader(session->GetPlayer()))
-        return;
-
-    GuildRankOrder otherRankOrder = GuildRankOrder(AsUnderlyingType(rankOrder) + (shiftUp ? -1 : 1));
-
-    RankInfo* rankInfo = GetRankInfo(rankOrder);
-    RankInfo* otherRankInfo = GetRankInfo(otherRankOrder);
-    if (!rankInfo || !otherRankInfo)
-        return;
-
-    // can't shift guild master rank (rank id = 0) - there's already a client-side limitation for it so that's just a safe-guard
-    if (rankInfo->GetId() == GuildRankId::GuildMaster || otherRankInfo->GetId() == GuildRankId::GuildMaster)
-        return;
-
-    rankInfo->SetOrder(otherRankOrder);
-    otherRankInfo->SetOrder(rankOrder);
-
-    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
-
-    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_GUILD_RANK_ORDER);
-    stmt->setUInt8(0, AsUnderlyingType(rankInfo->GetOrder()));
-    stmt->setUInt8(1, AsUnderlyingType(rankInfo->GetId()));
-    stmt->setUInt64(2, m_id);
-    trans->Append(stmt);
-
-    stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_GUILD_RANK_ORDER);
-    stmt->setUInt8(0, AsUnderlyingType(otherRankInfo->GetOrder()));
-    stmt->setUInt8(1, AsUnderlyingType(otherRankInfo->GetId()));
-    stmt->setUInt64(2, m_id);
-    trans->Append(stmt);
-
-    CharacterDatabase.CommitTransaction(trans);
-
-    // force client to re-request SMSG_GUILD_RANKS
-    BroadcastPacket(WorldPackets::Guild::GuildEventRanksUpdated().Write());
-}
-
 void Guild::HandleMemberDepositMoney(WorldSession* session, uint64 amount, bool cashFlow /*=false*/)
 {
     // guild bank cannot have more than MAX_MONEY_AMOUNT
@@ -2302,29 +2265,6 @@ void Guild::SendLoginInfo(WorldSession* session)
 
     member->SetStats(player);
     member->AddFlag(GUILDMEMBER_STATUS_ONLINE);
-}
-
-void Guild::SendEventAwayChanged(ObjectGuid const& memberGuid, bool afk, bool dnd)
-{
-    Member* member = GetMember(memberGuid);
-    if (!member)
-        return;
-
-    if (afk)
-        member->AddFlag(GUILDMEMBER_STATUS_AFK);
-    else
-        member->RemFlag(GUILDMEMBER_STATUS_AFK);
-
-    if (dnd)
-        member->AddFlag(GUILDMEMBER_STATUS_DND);
-    else
-        member->RemFlag(GUILDMEMBER_STATUS_DND);
-
-    WorldPackets::Guild::GuildEventStatusChange statusChange;
-    statusChange.Guid = memberGuid;
-    statusChange.AFK = afk;
-    statusChange.DND = dnd;
-    BroadcastPacket(statusChange.Write());
 }
 
 void Guild::SendEventBankMoneyChanged() const
@@ -2699,7 +2639,7 @@ void Guild::BroadcastPacketIfTrackingAchievement(WorldPacket const* packet, uint
 
 void Guild::MassInviteToEvent(WorldSession* session, uint32 minLevel, uint32 maxLevel, GuildRankOrder minRank)
 {
-    WorldPackets::Calendar::CalendarCommunityInvite packet;
+    WorldPackets::Calendar::CalendarEventInitialInvites packet;
 
     for (auto const& [guid, member] : m_members)
     {
@@ -2787,9 +2727,8 @@ bool Guild::AddMember(CharacterDatabaseTransaction trans, ObjectGuid guid, Optio
                 fields[1].GetUInt8(),
                 fields[2].GetUInt8(),
                 fields[3].GetUInt8(),
-                fields[4].GetUInt8(),
-                fields[5].GetUInt16(),
-                fields[6].GetUInt32(),
+                fields[4].GetUInt16(),
+                fields[5].GetUInt32(),
                 0);
 
             ok = member.CheckStats();
@@ -3455,9 +3394,9 @@ void Guild::_SendBankContentUpdate(uint8 tabId, SlotIds slots) const
             if (tabItem)
             {
                 uint8 i = 0;
-                for (UF::SocketedGem const& gemData : tabItem->m_itemData->Gems)
+                for (ItemDynamicFieldGems const& gemData : tabItem->GetGems())
                 {
-                    if (gemData.ItemID)
+                    if (gemData.ItemId)
                     {
                         WorldPackets::Item::ItemGemData gem;
                         gem.Slot = i;
@@ -3541,9 +3480,9 @@ void Guild::SendBankList(WorldSession* session, uint8 tabId, bool fullUpdate) co
                     itemInfo.Flags = tabItem->m_itemData->DynamicFlags;
 
                     uint8 i = 0;
-                    for (UF::SocketedGem const& gemData : tabItem->m_itemData->Gems)
+                    for (ItemDynamicFieldGems const& gemData : tabItem->GetGems())
                     {
-                        if (gemData.ItemID)
+                        if (gemData.ItemId)
                         {
                             WorldPackets::Item::ItemGemData gem;
                             gem.Slot = i;
@@ -3554,6 +3493,8 @@ void Guild::SendBankList(WorldSession* session, uint8 tabId, bool fullUpdate) co
                     }
 
                     itemInfo.Locked = false;
+
+                    packet.ItemInfo.push_back(itemInfo);
                 }
             }
         }

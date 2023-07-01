@@ -48,12 +48,12 @@ class BattlegroundTPScore final : public BattlegroundScore
             }
         }
 
-        void BuildPvPLogPlayerDataPacket(WorldPackets::Battleground::PVPMatchStatistics::PVPMatchPlayerStatistics& playerData) const override
+        void BuildPvPLogPlayerDataPacket(WorldPackets::Battleground::PVPLogData::PlayerData& playerData) const override
         {
             BattlegroundScore::BuildPvPLogPlayerDataPacket(playerData);
 
-            playerData.Stats.emplace_back(BG_TP_FLAG_CAPTURES, FlagCaptures);
-            playerData.Stats.emplace_back(BG_TP_FLAG_RETURNS, FlagReturns);
+            playerData.Stats.push_back(FlagCaptures);
+            playerData.Stats.push_back(FlagReturns);
         }
 
         uint32 GetAttr1() const final override { return FlagCaptures; }

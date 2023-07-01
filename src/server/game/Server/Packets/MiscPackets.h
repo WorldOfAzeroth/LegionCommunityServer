@@ -96,6 +96,14 @@ namespace WorldPackets
             int32 GameTimeHolidayOffset = 0;
         };
 
+        class ResetWeeklyCurrency final : public ServerPacket
+        {
+        public:
+            ResetWeeklyCurrency() : ServerPacket(SMSG_RESET_WEEKLY_CURRENCY, 0) { }
+
+            WorldPacket const* Write() override { return &_worldPacket; }
+        };
+
         class SetCurrency final : public ServerPacket
         {
         public:
@@ -905,6 +913,25 @@ namespace WorldPackets
             void Read() override;
 
             ObjectGuid SourceGuid;
+        };
+
+        class StartTimer final : public ServerPacket
+        {
+        public:
+            enum TimerType : int32
+            {
+                Pvp             = 0,
+                ChallengeMode   = 1,
+                PlayerCountdown = 2
+            };
+
+            StartTimer() : ServerPacket(SMSG_START_TIMER, 12) { }
+
+            WorldPacket const* Write() override;
+
+            int32 Type = 0;
+            uint32 TimeLeft = 0;
+            uint32 TotalTime = 0;
         };
     }
 }

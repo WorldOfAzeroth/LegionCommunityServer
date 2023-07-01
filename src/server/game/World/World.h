@@ -354,6 +354,7 @@ enum WorldIntConfigs
     CONFIG_LOGDB_CLEARINTERVAL,
     CONFIG_LOGDB_CLEARTIME,
     CONFIG_CLIENTCACHE_VERSION,
+    CONFIG_HOTFIX_CACHE_VERSION,
     CONFIG_GUILD_NEWS_LOG_COUNT,
     CONFIG_GUILD_EVENT_LOG_COUNT,
     CONFIG_GUILD_BANK_EVENT_LOG_COUNT,
@@ -822,7 +823,6 @@ class TC_GAME_API World
 
         // War mode balancing
         void SetForcedWarModeFactionBalanceState(TeamId team, int32 reward = 0);
-        void DisableForcedWarModeFactionBalanceState();
 
     protected:
         void _UpdateGameTime();
@@ -947,9 +947,6 @@ class TC_GAME_API World
         bool _guidAlert;
         uint32 _warnDiff;
         time_t _warnShutdownTime;
-
-        // War mode balancing
-        void UpdateWarModeRewardValues();
 
     friend class debug_commandscript;
 };
