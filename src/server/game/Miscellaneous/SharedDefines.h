@@ -7300,4 +7300,19 @@ enum WorldState : uint32
     WS_WAR_MODE_ALLIANCE_BUFF_VALUE = 17043,
 };
 
+enum class MountResult : uint32
+{
+    InvalidMountee = 0,
+    TooFarAway     = 1,
+    AlreadyMounted = 2,
+    NotMountable   = 3,
+    NotYourPet     = 4,
+    Other          = 5,
+    Looting        = 6,
+    RaceCantMount  = 7,
+    Shapeshifted   = 8,
+    ForcedDismount = 9,
+    Ok             = 10 // never sent
+};
+
 #endif

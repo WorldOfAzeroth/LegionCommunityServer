@@ -126,13 +126,13 @@ bool DispelableAura::RollDispel() const
 }
 
 DamageInfo::DamageInfo(Unit* attacker, Unit* victim, uint32 damage, SpellInfo const* spellInfo, SpellSchoolMask schoolMask, DamageEffectType damageType, WeaponAttackType attackType)
-    : m_attacker(attacker), m_victim(victim), m_damage(damage), m_originalDamage(damage), m_spellInfo(spellInfo), m_schoolMask(schoolMask), m_damageType(damageType), m_attackType(attackType),
+    : m_attacker(attacker), m_victim(victim), m_damage(damage), m_spellInfo(spellInfo), m_schoolMask(schoolMask), m_damageType(damageType), m_attackType(attackType),
     m_absorb(0), m_resist(0), m_block(0), m_hitMask(PROC_HIT_NONE)
 {
 }
 
 DamageInfo::DamageInfo(CalcDamageInfo const& dmgInfo)
-    : m_attacker(dmgInfo.Attacker), m_victim(dmgInfo.Target), m_damage(dmgInfo.Damage), m_originalDamage(dmgInfo.Damage), m_spellInfo(nullptr), m_schoolMask(SpellSchoolMask(dmgInfo.DamageSchoolMask)),
+    : m_attacker(dmgInfo.Attacker), m_victim(dmgInfo.Target), m_damage(dmgInfo.Damage), m_spellInfo(nullptr), m_schoolMask(SpellSchoolMask(dmgInfo.DamageSchoolMask)),
     m_damageType(DIRECT_DAMAGE), m_attackType(dmgInfo.AttackType), m_absorb(dmgInfo.Absorb), m_resist(dmgInfo.Resist), m_block(dmgInfo.Blocked), m_hitMask(PROC_HIT_NONE)
 {
     switch (dmgInfo.TargetState)
@@ -185,7 +185,7 @@ DamageInfo::DamageInfo(CalcDamageInfo const& dmgInfo)
 }
 
 DamageInfo::DamageInfo(SpellNonMeleeDamage const& spellNonMeleeDamage, DamageEffectType damageType, WeaponAttackType attackType, ProcFlagsHit hitMask)
-    : m_attacker(spellNonMeleeDamage.attacker), m_victim(spellNonMeleeDamage.target), m_damage(spellNonMeleeDamage.damage), m_originalDamage(spellNonMeleeDamage.originalDamage),
+    : m_attacker(spellNonMeleeDamage.attacker), m_victim(spellNonMeleeDamage.target), m_damage(spellNonMeleeDamage.damage),
     m_spellInfo(spellNonMeleeDamage.Spell), m_schoolMask(SpellSchoolMask(spellNonMeleeDamage.schoolMask)), m_damageType(damageType),
     m_attackType(attackType), m_absorb(spellNonMeleeDamage.absorb), m_resist(spellNonMeleeDamage.resist), m_block(spellNonMeleeDamage.blocked), m_hitMask(hitMask)
 {
@@ -240,7 +240,7 @@ ProcFlagsHit DamageInfo::GetHitMask() const
 }
 
 HealInfo::HealInfo(Unit* healer, Unit* target, uint32 heal, SpellInfo const* spellInfo, SpellSchoolMask schoolMask)
-    : _healer(healer), _target(target), _heal(heal), _originalHeal(heal), _effectiveHeal(0), _absorb(0), _spellInfo(spellInfo), _schoolMask(schoolMask), _hitMask(0)
+    : _healer(healer), _target(target), _heal(heal), _effectiveHeal(0), _absorb(0), _spellInfo(spellInfo), _schoolMask(schoolMask), _hitMask(0)
 {
 }
 
@@ -293,7 +293,7 @@ SpellSchoolMask ProcEventInfo::GetSchoolMask() const
 }
 
 SpellNonMeleeDamage::SpellNonMeleeDamage(Unit* _attacker, Unit* _target, SpellInfo const* _spellInfo, SpellCastVisual spellVisual, uint32 _schoolMask, ObjectGuid _castId)
-    : target(_target), attacker(_attacker), castId(_castId), Spell(_spellInfo), SpellVisual(spellVisual), damage(0), originalDamage(0),
+    : target(_target), attacker(_attacker), castId(_castId), Spell(_spellInfo), SpellVisual(spellVisual), damage(0),
     schoolMask(_schoolMask), absorb(0), resist(0), periodicLog(false), blocked(0), HitInfo(0), cleanDamage(0), fullBlock(false), preHitHealth(_target->GetHealth())
 {
 }
@@ -944,7 +944,6 @@ bool Unit::HasBreakableByDamageCrowdControlAura(Unit* excludeCasterChannel) cons
                     absorbLog.AbsorbedSpellID = spellProto ? spellProto->Id : 0;
                     absorbLog.AbsorbSpellID = base->GetId();
                     absorbLog.Absorbed = currentAbsorb;
-                    absorbLog.OriginalDamage = damageInfo.GetOriginalDamage();
                     absorbLog.LogData.Initialize(victim);
                     victim->SendCombatLogMessage(&absorbLog);
                 }
@@ -1173,7 +1172,6 @@ void Unit::CalculateSpellDamageTaken(SpellNonMeleeDamage* damageInfo, int32 dama
         damage = 0;
 
     damageInfo->damage = damage;
-    damageInfo->originalDamage = damage;
     DamageInfo dmgInfo(*damageInfo, SPELL_DIRECT_DAMAGE, BASE_ATTACK, PROC_HIT_NONE);
     Unit::CalcAbsorbResist(dmgInfo, spell);
     damageInfo->absorb = dmgInfo.GetAbsorb();
@@ -1219,7 +1217,6 @@ void Unit::CalculateMeleeDamage(Unit* victim, CalcDamageInfo* damageInfo, Weapon
 
     damageInfo->DamageSchoolMask = GetMeleeDamageSchoolMask(attackType);
     damageInfo->Damage           = 0;
-    damageInfo->OriginalDamage   = 0;
     damageInfo->Absorb           = 0;
     damageInfo->Resist           = 0;
 
@@ -1291,7 +1288,6 @@ void Unit::CalculateMeleeDamage(Unit* victim, CalcDamageInfo* damageInfo, Weapon
         case MELEE_HIT_EVADE:
             damageInfo->HitInfo        |= HITINFO_MISS | HITINFO_SWINGNOHITSOUND;
             damageInfo->TargetState     = VICTIMSTATE_EVADES;
-            damageInfo->OriginalDamage = damageInfo->Damage;
 
             damageInfo->Damage = 0;
             damageInfo->CleanDamage = 0;
@@ -1299,14 +1295,12 @@ void Unit::CalculateMeleeDamage(Unit* victim, CalcDamageInfo* damageInfo, Weapon
         case MELEE_HIT_MISS:
             damageInfo->HitInfo        |= HITINFO_MISS;
             damageInfo->TargetState     = VICTIMSTATE_INTACT;
-            damageInfo->OriginalDamage = damageInfo->Damage;
 
             damageInfo->Damage          = 0;
             damageInfo->CleanDamage     = 0;
             break;
         case MELEE_HIT_NORMAL:
             damageInfo->TargetState     = VICTIMSTATE_HIT;
-            damageInfo->OriginalDamage = damageInfo->Damage;
             break;
         case MELEE_HIT_CRIT:
         {
@@ -1322,21 +1316,18 @@ void Unit::CalculateMeleeDamage(Unit* victim, CalcDamageInfo* damageInfo, Weapon
             if (mod != 0)
                 AddPct(damageInfo->Damage, mod);
 
-            damageInfo->OriginalDamage = damageInfo->Damage;
             break;
         }
         case MELEE_HIT_PARRY:
             damageInfo->TargetState  = VICTIMSTATE_PARRY;
             damageInfo->CleanDamage += damageInfo->Damage;
 
-            damageInfo->OriginalDamage = damageInfo->Damage;
             damageInfo->Damage = 0;
             break;
         case MELEE_HIT_DODGE:
             damageInfo->TargetState  = VICTIMSTATE_DODGE;
             damageInfo->CleanDamage += damageInfo->Damage;
 
-            damageInfo->OriginalDamage = damageInfo->Damage;
             damageInfo->Damage = 0;
             break;
         case MELEE_HIT_BLOCK:
@@ -1347,7 +1338,6 @@ void Unit::CalculateMeleeDamage(Unit* victim, CalcDamageInfo* damageInfo, Weapon
             if (damageInfo->Target->IsBlockCritical())
                 damageInfo->Blocked *= 2;
 
-            damageInfo->OriginalDamage = damageInfo->Damage;
             damageInfo->Damage      -= damageInfo->Blocked;
             damageInfo->CleanDamage += damageInfo->Blocked;
             break;
@@ -1359,7 +1349,6 @@ void Unit::CalculateMeleeDamage(Unit* victim, CalcDamageInfo* damageInfo, Weapon
             if (leveldif > 3)
                 leveldif = 3;
 
-            damageInfo->OriginalDamage = damageInfo->Damage;
             float reducePercent = 1.f - leveldif * 0.1f;
             damageInfo->CleanDamage += damageInfo->Damage - uint32(reducePercent * damageInfo->Damage);
             damageInfo->Damage = uint32(reducePercent * damageInfo->Damage);
@@ -1370,7 +1359,6 @@ void Unit::CalculateMeleeDamage(Unit* victim, CalcDamageInfo* damageInfo, Weapon
             damageInfo->TargetState  = VICTIMSTATE_HIT;
             // 150% normal damage
             damageInfo->Damage += (damageInfo->Damage / 2);
-            damageInfo->OriginalDamage = damageInfo->Damage;
             break;
         default:
             break;
@@ -1386,7 +1374,6 @@ void Unit::CalculateMeleeDamage(Unit* victim, CalcDamageInfo* damageInfo, Weapon
     resilienceReduction = damageInfo->Damage - resilienceReduction;
     damageInfo->Damage      -= resilienceReduction;
     damageInfo->CleanDamage += resilienceReduction;
-    damageInfo->OriginalDamage -= resilienceReduction;
 
     // Calculate absorb resist
     if (int32(damageInfo->Damage) > 0)
@@ -1525,7 +1512,6 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
             damageShield.Defender = GetGUID();
             damageShield.SpellID = spellInfo->Id;
             damageShield.TotalDamage = damage;
-            damageShield.OriginalDamage = damageInfo.GetOriginalDamage();
             damageShield.OverKill = std::max(int32(damage) - int32(GetHealth()), 0);
             damageShield.SchoolMask = spellInfo->SchoolMask;
             damageShield.LogAbsorbed = damageInfo.GetAbsorb();
@@ -1543,17 +1529,7 @@ void Unit::HandleEmoteCommand(Emote emoteId, Player* target /*=nullptr*/, Trinit
     WorldPackets::Chat::Emote packet;
     packet.Guid = GetGUID();
     packet.EmoteID = emoteId;
-
-    if (EmotesEntry const* emotesEntry = sEmotesStore.LookupEntry(emoteId))
-        if (emotesEntry->AnimID == ANIM_MOUNT_SPECIAL || emotesEntry->AnimID == ANIM_MOUNT_SELF_SPECIAL)
-            std::copy(spellVisualKitIds.begin(), spellVisualKitIds.end(), std::back_inserter(packet.SpellVisualKitIDs));
-
-    packet.SequenceVariation = sequenceVariation;
-
-    if (target)
-        target->SendDirectMessage(packet.Write());
-    else
-        SendMessageToSet(packet.Write(), true);
+    SendMessageToSet(packet.Write(), true);
 }
 
 /*static*/ bool Unit::IsDamageReducedByArmor(SpellSchoolMask schoolMask, SpellInfo const* spellInfo /*= nullptr*/)
@@ -1823,7 +1799,6 @@ void Unit::HandleEmoteCommand(Emote emoteId, Player* target /*=nullptr*/, Trinit
             absorbLog.AbsorbedSpellID = damageInfo.GetSpellInfo() ? damageInfo.GetSpellInfo()->Id : 0;
             absorbLog.AbsorbSpellID = absorbAurEff->GetId();
             absorbLog.Absorbed = currentAbsorb;
-            absorbLog.OriginalDamage = damageInfo.GetOriginalDamage();
             absorbLog.LogData.Initialize(damageInfo.GetVictim());
             damageInfo.GetVictim()->SendCombatLogMessage(&absorbLog);
         }
@@ -1900,7 +1875,6 @@ void Unit::HandleEmoteCommand(Emote emoteId, Player* target /*=nullptr*/, Trinit
             absorbLog.AbsorbedSpellID = damageInfo.GetSpellInfo() ? damageInfo.GetSpellInfo()->Id : 0;
             absorbLog.AbsorbSpellID = absorbAurEff->GetId();
             absorbLog.Absorbed = currentAbsorb;
-            absorbLog.OriginalDamage = damageInfo.GetOriginalDamage();
             absorbLog.LogData.Initialize(damageInfo.GetVictim());
             damageInfo.GetVictim()->SendCombatLogMessage(&absorbLog);
         }
@@ -1951,7 +1925,6 @@ void Unit::HandleEmoteCommand(Emote emoteId, Player* target /*=nullptr*/, Trinit
             CleanDamage cleanDamage = CleanDamage(splitDamage, 0, BASE_ATTACK, MELEE_HIT_NORMAL);
             Unit::DealDamage(damageInfo.GetAttacker(), caster, splitDamage, &cleanDamage, DIRECT_DAMAGE, damageInfo.GetSchoolMask(), (*itr)->GetSpellInfo(), false);
             log.damage = splitDamage;
-            log.originalDamage = splitDamage;
             log.absorb = split_absorb;
             caster->SendSpellNonMeleeDamageLog(&log);
 
@@ -2024,7 +1997,6 @@ void Unit::HandleEmoteCommand(Emote emoteId, Player* target /*=nullptr*/, Trinit
             absorbLog.AbsorbedSpellID = healInfo.GetSpellInfo() ? healInfo.GetSpellInfo()->Id : 0;
             absorbLog.AbsorbSpellID = absorbAurEff->GetId();
             absorbLog.Absorbed = currentAbsorb;
-            absorbLog.OriginalHeal = healInfo.GetOriginalHeal();
             healInfo.GetTarget()->SendMessageToSet(absorbLog.Write(), true);
         }
     }
@@ -5229,7 +5201,6 @@ void Unit::SendSpellNonMeleeDamageLog(SpellNonMeleeDamage const* log)
     packet.SpellID = log->Spell ? log->Spell->Id : 0;
     packet.SpellXSpellVisualID = log->SpellVisual.SpellXSpellVisualID;
     packet.Damage = log->damage;
-    //packet.OriginalDamage = log->originalDamage;
     if (log->damage > log->preHitHealth)
         packet.Overkill = log->damage - log->preHitHealth;
     else
@@ -5242,9 +5213,9 @@ void Unit::SendSpellNonMeleeDamageLog(SpellNonMeleeDamage const* log)
     packet.Periodic = log->periodicLog;
     packet.Flags = log->HitInfo;
 
-    WorldPackets::Spells::ContentTuningParams contentTuningParams;
-    if (contentTuningParams.GenerateDataForUnits(log->attacker, log->target))
-        packet.ContentTuning = contentTuningParams;
+    WorldPackets::Spells::SandboxScalingData sandboxScalingData;
+    if (sandboxScalingData.GenerateDataForUnits(log->attacker, log->target))
+        packet.SandboxScaling = sandboxScalingData;
 
     SendCombatLogMessage(&packet);
 }
@@ -5276,7 +5247,6 @@ void Unit::SendPeriodicAuraLog(SpellPeriodicAuraLogInfo* info)
     WorldPackets::CombatLog::SpellPeriodicAuraLog::SpellLogEffect spellLogEffect;
     spellLogEffect.Effect = aura->GetAuraType();
     spellLogEffect.Amount = info->damage;
-    spellLogEffect.OriginalDamage = info->originalDamage;
     spellLogEffect.OverHealOrKill = info->overDamage;
     spellLogEffect.SchoolMaskOrPower = aura->GetSpellInfo()->GetSchoolMask();
     spellLogEffect.AbsorbedOrAmplitude = info->absorb;
@@ -5284,10 +5254,10 @@ void Unit::SendPeriodicAuraLog(SpellPeriodicAuraLogInfo* info)
     spellLogEffect.Crit = info->critical;
     /// @todo: implement debug info
 
-    WorldPackets::Spells::ContentTuningParams contentTuningParams;
+    WorldPackets::Spells::SandboxScalingData sandboxScalingData;
     if (Unit* caster = ObjectAccessor::GetUnit(*this, aura->GetCasterGUID()))
-        if (contentTuningParams.GenerateDataForUnits(caster, this))
-            spellLogEffect.ContentTuning = contentTuningParams;
+        if (sandboxScalingData.GenerateDataForUnits(caster, this))
+            spellLogEffect.SandboxScaling = sandboxScalingData;
 
     data.Effects.push_back(spellLogEffect);
 
@@ -5320,7 +5290,6 @@ void Unit::SendAttackStateUpdate(CalcDamageInfo* damageInfo)
     packet.AttackerGUID = damageInfo->Attacker->GetGUID();
     packet.VictimGUID = damageInfo->Target->GetGUID();
     packet.Damage = damageInfo->Damage;
-    packet.OriginalDamage = damageInfo->OriginalDamage;
     int32 overkill = damageInfo->Damage - damageInfo->Target->GetHealth();
     packet.OverDamage = (overkill < 0 ? -1 : overkill);
 
@@ -5336,9 +5305,9 @@ void Unit::SendAttackStateUpdate(CalcDamageInfo* damageInfo)
 
     packet.LogData.Initialize(damageInfo->Attacker);
 
-    WorldPackets::Spells::ContentTuningParams contentTuningParams;
-    if (contentTuningParams.GenerateDataForUnits(damageInfo->Attacker, damageInfo->Target))
-        packet.ContentTuning = contentTuningParams;
+    WorldPackets::Spells::SandboxScalingData sandboxScalingData;
+    if (sandboxScalingData.GenerateDataForUnits(damageInfo->Attacker, damageInfo->Target))
+        packet.SandboxScaling = sandboxScalingData;
 
     SendCombatLogMessage(&packet);
 }
@@ -5350,7 +5319,6 @@ void Unit::SendAttackStateUpdate(uint32 HitInfo, Unit* target, uint8 /*SwingType
     dmgInfo.Attacker = this;
     dmgInfo.Target = target;
     dmgInfo.Damage = Damage - AbsorbDamage - Resist - BlockedAmount;
-    dmgInfo.OriginalDamage = Damage;
     dmgInfo.DamageSchoolMask = damageSchoolMask;
     dmgInfo.Absorb = AbsorbDamage;
     dmgInfo.Resist = Resist;
@@ -9944,10 +9912,9 @@ void Unit::SendPetActionFeedback(PetActionFeedback msg, uint32 spellId)
     if (!owner || owner->GetTypeId() != TYPEID_PLAYER)
         return;
 
-    WorldPackets::Pet::PetActionFeedback petActionFeedback;
-    petActionFeedback.SpellID = spellId;
-    petActionFeedback.Response = msg;
-    owner->ToPlayer()->SendDirectMessage(petActionFeedback.Write());
+    WorldPacket data(SMSG_PET_ACTION_FEEDBACK, 1);
+    data << uint8(msg);
+    owner->ToPlayer()->GetSession()->SendPacket(&data);
 }
 
 void Unit::SendPetTalk(uint32 pettalk)
@@ -9956,10 +9923,10 @@ void Unit::SendPetTalk(uint32 pettalk)
     if (!owner || owner->GetTypeId() != TYPEID_PLAYER)
         return;
 
-    WorldPackets::Pet::PetActionSound petActionSound;
-    petActionSound.UnitGUID = GetGUID();
-    petActionSound.Action = pettalk;
-    owner->ToPlayer()->SendDirectMessage(petActionSound.Write());
+    WorldPacket data(SMSG_PET_ACTION_SOUND, 8 + 4);
+    data << GetGUID();
+    data << uint32(pettalk);
+    owner->ToPlayer()->GetSession()->SendPacket(&data);
 }
 
 void Unit::SendPetAIReaction(ObjectGuid guid)
@@ -11635,7 +11602,7 @@ bool Unit::CanApplyResilience() const
     return !IsVehicle() && GetOwnerGUID().IsPlayer();
 }
 
-/*static*/ void Unit::ApplyResilience(Unit const* victim, int32* damage)
+void Unit::ApplyResilience(Unit const* victim, int32* damage)
 {
     // player mounted on multi-passenger mount is also classified as vehicle
     if (victim->IsVehicle() && victim->GetTypeId() != TYPEID_PLAYER)

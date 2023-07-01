@@ -398,11 +398,27 @@ WorldPacket const* WorldPackets::CombatLog::SpellAbsorbLog::Write()
     *this << int32(AbsorbSpellID);
     *this << Caster;
     *this << int32(Absorbed);
-    *this << int32(OriginalDamage);
     WriteBit(Unk);
     WriteLogDataBit();
     FlushBits();
     WriteLogData();
+
+    return &_worldPacket;
+}
+
+WorldPacket const* WorldPackets::CombatLog::SpellHealAbsorbLog::Write()
+{
+    _worldPacket << Target;
+    _worldPacket << AbsorbCaster;
+    _worldPacket << Healer;
+    _worldPacket << int32(AbsorbSpellID);
+    _worldPacket << int32(AbsorbedSpellID);
+    _worldPacket << int32(Absorbed);
+    _worldPacket.WriteBit(SandboxScaling.has_value());
+    _worldPacket.FlushBits();
+
+    if (SandboxScaling)
+        _worldPacket << *SandboxScaling;
 
     return &_worldPacket;
 }

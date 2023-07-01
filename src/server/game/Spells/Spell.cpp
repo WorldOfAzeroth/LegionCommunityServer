@@ -989,7 +989,7 @@ void Spell::SelectImplicitChannelTargets(SpellEffectInfo const& spellEffectInfo,
     {
         case TARGET_UNIT_CHANNEL_TARGET:
         {
-            for (ObjectGuid const& channelTarget : m_originalCaster->m_unitData->ChannelObjects)
+            for (ObjectGuid const& channelTarget : m_originalCaster->GetChannelObjects())
             {
                 WorldObject* target = ObjectAccessor::GetUnit(*m_caster, channelTarget);
                 CallScriptObjectTargetSelectHandlers(target, spellEffectInfo.EffectIndex, targetType);
@@ -1007,8 +1007,8 @@ void Spell::SelectImplicitChannelTargets(SpellEffectInfo const& spellEffectInfo,
                 m_targets.SetDst(channeledSpell->m_targets);
             else
             {
-                auto const& channelObjects = m_originalCaster->m_unitData->ChannelObjects;
-                WorldObject* target = !channelObjects.empty() ? ObjectAccessor::GetWorldObject(*m_caster, *channelObjects.begin()) : nullptr;
+                DynamicFieldStructuredView<ObjectGuid> channelObjects = m_originalCaster->GetChannelObjects();
+                WorldObject* target = channelObjects.size() > 0 ? ObjectAccessor::GetWorldObject(*m_caster, *channelObjects.begin()) : nullptr;
                 if (target)
                 {
                     CallScriptObjectTargetSelectHandlers(target, spellEffectInfo.EffectIndex, targetType);
@@ -3138,7 +3138,7 @@ void Spell::DoSpellEffectHit(Unit* unit, SpellEffectInfo const& spellEffectInfo,
 
                                 // if there is no periodic effect
                                 if (!hitInfo.AuraDuration)
-                                    hitInfo.AuraDuration = int32(origDuration * m_originalCaster->m_unitData->ModCastingSpeed);
+                                    hitInfo.AuraDuration = int32(origDuration * m_originalCaster->GetFloatValue(UNIT_MOD_CAST_SPEED));
                             }
                         }
                     }
@@ -4212,7 +4212,7 @@ void Spell::finish(bool ok)
         if (Unit* charm = unitCaster->GetCharmed())
             if (charm->GetTypeId() == TYPEID_UNIT
                 && charm->ToCreature()->HasUnitTypeMask(UNIT_MASK_PUPPET)
-                && charm->m_unitData->CreatedBySpell == int32(m_spellInfo->Id))
+                && charm->GetUInt32Value(UNIT_CREATED_BY_SPELL) == m_spellInfo->Id)
                 ((Puppet*)charm)->UnSummon();
     }
 
@@ -4223,19 +4223,12 @@ void Spell::finish(bool ok)
         Unit::ProcSkillsAndAuras(unitCaster, nullptr, PROC_FLAG_CAST_ENDED, PROC_FLAG_NONE, PROC_SPELL_TYPE_MASK_ALL, PROC_SPELL_PHASE_NONE, PROC_HIT_NONE, this, nullptr, nullptr);
 
     if (!ok)
-    {
-        // on failure (or manual cancel) send TraitConfigCommitFailed to revert talent UI saved config selection
-        if (m_caster->IsPlayer() && m_spellInfo->HasEffect(SPELL_EFFECT_CHANGE_ACTIVE_COMBAT_TRAIT_CONFIG))
-            if (WorldPackets::Traits::TraitConfig const* traitConfig = std::any_cast<WorldPackets::Traits::TraitConfig>(&m_customArg))
-                m_caster->ToPlayer()->SendDirectMessage(WorldPackets::Traits::TraitConfigCommitFailed(traitConfig->ID).Write());
-
         return;
-    }
 
     if (unitCaster->GetTypeId() == TYPEID_UNIT && unitCaster->IsSummon())
     {
         // Unsummon statue
-        uint32 spell = unitCaster->m_unitData->CreatedBySpell;
+        uint32 spell = m_caster->GetUInt32Value(UNIT_CREATED_BY_SPELL);
         SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spell, GetCastDifficulty());
         if (spellInfo && spellInfo->IconFileDataId == 134230)
         {
@@ -4500,7 +4493,7 @@ void Spell::SendCastResult(SpellCastResult result, int32* param1 /*= nullptr*/, 
         result = SPELL_FAILED_DONT_REPORT;
 
     WorldPackets::Spells::CastFailed castFailed;
-    castFailed.Visual = m_SpellVisual;
+    castFailed.SpellXSpellVisualID = m_SpellVisual;
     FillSpellCastFailedArgs(castFailed, m_castId, m_spellInfo, result, m_customError, param1, param2, m_caster->ToPlayer());
     m_caster->ToPlayer()->SendDirectMessage(castFailed.Write());
 }
@@ -4522,14 +4515,31 @@ void Spell::SendPetCastResult(SpellCastResult result, int32* param1 /*= nullptr*
     owner->ToPlayer()->SendDirectMessage(petCastFailed.Write());
 }
 
-void Spell::SendCastResult(Player* caster, SpellInfo const* spellInfo, SpellCastVisual spellVisual, ObjectGuid cast_count, SpellCastResult result, SpellCustomErrors customError /*= SPELL_CUSTOM_ERROR_NONE*/, int32* param1 /*= nullptr*/, int32* param2 /*= nullptr*/)
+void Spell::SendCastResult(Player* caster, SpellInfo const* spellInfo, uint32 spellVisual, ObjectGuid cast_count, SpellCastResult result, SpellCustomErrors customError /*= SPELL_CUSTOM_ERROR_NONE*/, int32* param1 /*= nullptr*/, int32* param2 /*= nullptr*/)
 {
     if (result == SPELL_CAST_OK)
         return;
 
     WorldPackets::Spells::CastFailed packet;
-    packet.Visual = spellVisual;
+    packet.SpellXSpellVisualID = spellVisual;
     FillSpellCastFailedArgs(packet, cast_count, spellInfo, result, customError, param1, param2, caster);
+    caster->SendDirectMessage(packet.Write());
+}
+
+void Spell::SendMountResult(MountResult result)
+{
+    if (result == MountResult::Ok)
+        return;
+
+    if (!m_caster->IsPlayer())
+        return;
+
+    Player* caster = m_caster->ToPlayer();
+    if (caster->IsLoading())  // don't send mount results at loading time
+        return;
+
+    WorldPackets::Spells::MountResult packet;
+    packet.Result = AsUnderlyingType(result);
     caster->SendDirectMessage(packet.Write());
 }
 
@@ -5087,7 +5097,7 @@ void Spell::SendChannelStart(uint32 duration)
                 creatureCaster->SetSpellFocus(this, ObjectAccessor::GetWorldObject(*creatureCaster, unitCaster->m_unitData->ChannelObjects[0]));
 
     unitCaster->SetChannelSpellId(m_spellInfo->Id);
-    unitCaster->SetChannelVisual(m_SpellVisual);
+    unitCaster->SetChannelSpellXSpellVisualId(m_SpellVisual);
 }
 
 void Spell::SendResurrectRequest(Player* target)
@@ -6505,11 +6515,17 @@ SpellCastResult Spell::CheckCast(bool strict, int32* param1 /*= nullptr*/, int32
                 if (unitCaster->IsInWater() && m_spellInfo->HasAura(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED))
                     return SPELL_FAILED_ONLY_ABOVEWATER;
 
-                if (unitCaster->IsInDisallowedMountForm())
-                {
-                    SendMountResult(MountResult::Shapeshifted); // mount result gets sent before the cast result
-                    return SPELL_FAILED_DONT_REPORT;
-                }
+                // Ignore map check if spell have AreaId. AreaId already checked and this prevent special mount spells
+                bool allowMount = !m_caster->GetMap()->IsDungeon() || m_caster->GetMap()->IsBattlegroundOrArena();
+                InstanceTemplate const* it = sObjectMgr->GetInstanceTemplate(m_caster->GetMapId());
+                if (it)
+                    allowMount = it->AllowMount;
+                if (m_caster->GetTypeId() == TYPEID_PLAYER && !allowMount && !m_spellInfo->RequiredAreasID)
+                    return SPELL_FAILED_NO_MOUNTS_ALLOWED;
+
+                if (m_caster->IsInDisallowedMountForm())
+                    return SPELL_FAILED_NOT_SHAPESHIFT;
+
                 break;
             }
             case SPELL_AURA_RANGED_ATTACK_POWER_ATTACKER_BONUS:
@@ -6657,7 +6673,7 @@ SpellCastResult Spell::CheckCasterAuras(int32* param1) const
     SpellCastResult result = SPELL_CAST_OK;
 
     // Get unit state
-    uint32 const unitflag = unitCaster->m_unitData->Flags;
+    uint32 const unitflag = m_caster->GetUInt32Value(UNIT_FIELD_FLAGS);
 
     // this check should only be done when player does cast directly
     // (ie not when it's called from a script) Breaks for example PlayerAI when charmed
@@ -8752,13 +8768,13 @@ void Spell::TriggerGlobalCooldown()
         // Apply haste rating
         if (gcd > MinGCD && ((m_spellInfo->StartRecoveryCategory == 133 && !isMeleeOrRangedSpell)))
         {
-            gcd = Milliseconds(int64(gcd.count() * m_caster->ToUnit()->m_unitData->ModSpellHaste));
+            gcd = Milliseconds(int64(gcd.count() * m_caster->ToUnit()->GetFloatValue(UNIT_MOD_CAST_HASTE)));
             RoundToInterval(gcd, MinGCD, MaxGCD);
         }
 
         if (gcd > MinGCD && m_caster->ToUnit()->HasAuraTypeWithAffectMask(SPELL_AURA_MOD_GLOBAL_COOLDOWN_BY_HASTE_REGEN, m_spellInfo))
         {
-            gcd = Milliseconds(int64(gcd.count() * m_caster->ToUnit()->m_unitData->ModHasteRegen));
+            gcd = Milliseconds(int64(gcd.count() * m_caster->ToUnit()->GetFloatValue(UNIT_FIELD_MOD_HASTE_REGEN)));
             RoundToInterval(gcd, MinGCD, MaxGCD);
         }
     }

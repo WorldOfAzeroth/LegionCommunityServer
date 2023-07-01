@@ -16,7 +16,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "WorldPacket.h"
+#include "WorldSession.h"
 #include "BattlePetMgr.h"
 #include "Common.h"
 #include "Creature.h"
@@ -27,9 +27,8 @@
 #include "Log.h"
 #include "NPCPackets.h"
 #include "ObjectMgr.h"
-#include "Opcodes.h"
 #include "Player.h"
-#include "WorldSession.h"
+#include "World.h"
 
 void WorldSession::HandleSplitItemOpcode(WorldPackets::Item::SplitItem& splitItem)
 {
@@ -336,9 +335,9 @@ void WorldSession::HandleDestroyItemOpcode(WorldPackets::Item::DestroyItem& dest
         return;
     }
 
-    if (item->GetTemplate()->GetFlags() & ITEM_FLAG_NO_USER_DESTROY)
+    if (item->GetTemplate()->HasFlag(ITEM_FLAG_NO_USER_DESTROY))
     {
-        _player->SendEquipError(EQUIP_ERR_DROP_BOUND_ITEM, NULL, NULL);
+        _player->SendEquipError(EQUIP_ERR_DROP_BOUND_ITEM, nullptr, nullptr);
         return;
     }
 
@@ -458,8 +457,7 @@ void WorldSession::HandleSellItemOpcode(WorldPackets::Item::SellItem& packet)
                     return;
                 }
 
-                _player->UpdateCriteria(CRITERIA_TYPE_MONEY_FROM_VENDORS, money);
-
+                _player->UpdateCriteria(CriteriaType::MoneyEarnedFromSales, money);
                 if (packet.Amount < pItem->GetCount())               // need split items
                 {
                     Item* pNewItem = pItem->CloneItem(packet.Amount, _player);
@@ -638,8 +636,8 @@ void WorldSession::SendListInventory(ObjectGuid vendorGuid)
                     continue;
 
                 // Only display items in vendor lists for the team the player is on
-                if ((itemTemplate->GetFlags2() & ITEM_FLAG2_FACTION_HORDE && _player->GetTeam() == ALLIANCE) ||
-                    (itemTemplate->GetFlags2() & ITEM_FLAG2_FACTION_ALLIANCE && _player->GetTeam() == HORDE))
+                if ((itemTemplate->HasFlag(ITEM_FLAG2_FACTION_HORDE) && _player->GetTeam() == ALLIANCE) ||
+                    (itemTemplate->HasFlag(ITEM_FLAG2_FACTION_ALLIANCE) && _player->GetTeam() == HORDE))
                     continue;
 
                 // Items sold out are not displayed in list
@@ -802,7 +800,7 @@ void WorldSession::HandleWrapItem(WorldPackets::Item::WrapItem& packet)
         return;
     }
 
-    if (!(gift->GetTemplate()->GetFlags() & ITEM_FLAG_IS_WRAPPER)) // cheating: non-wrapper wrapper
+    if (!gift->GetTemplate()->HasFlag(ITEM_FLAG_IS_WRAPPER)) // cheating: non-wrapper wrapper
     {
         _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, gift, NULL);
         return;
@@ -992,7 +990,7 @@ void WorldSession::HandleSocketGems(WorldPackets::Item::SocketGems& socketGems)
         ItemTemplate const* iGemProto = gems[i]->GetTemplate();
 
         // unique item (for new and already placed bit removed enchantments
-        if (iGemProto->GetFlags() & ITEM_FLAG_UNIQUE_EQUIPPABLE)
+        if (iGemProto->HasFlag(ITEM_FLAG_UNIQUE_EQUIPPABLE))
         {
             for (uint32 j = 0; j < MAX_GEM_SOCKETS; ++j)
             {
@@ -1074,8 +1072,8 @@ void WorldSession::HandleSocketGems(WorldPackets::Item::SocketGems& socketGems)
     {
         if (gems[i])
         {
-            uint32 gemScalingLevel = _player->getLevel();
-            if (uint32 fixedLevel = gems[i]->GetModifier(ITEM_MODIFIER_SCALING_STAT_DISTRIBUTION_FIXED_LEVEL))
+            uint32 gemScalingLevel = _player->GetLevel();
+            if (uint32 fixedLevel = gems[i]->GetModifier(ITEM_MODIFIER_TIMEWALKER_LEVEL))
                 gemScalingLevel = fixedLevel;
 
             itemTarget->SetGem(i, &gemData[i], gemScalingLevel);
@@ -1195,12 +1193,8 @@ void WorldSession::HandleUseCritterItem(WorldPackets::Item::UseCritterItem& useC
     int32 spellToLearn = item->GetTemplate()->Effects[1]->SpellID;
     for (BattlePetSpeciesEntry const* entry : sBattlePetSpeciesStore)
     {
-        if (entry->SummonSpellID == spellToLearn)
-        {
-            GetBattlePetMgr()->AddPet(entry->ID, entry->CreatureID, BattlePetMgr::RollPetBreed(entry->ID), BattlePetMgr::GetDefaultPetQuality(entry->ID));
-            _player->UpdateCriteria(CRITERIA_TYPE_OWN_BATTLE_PET_COUNT);
-            break;
-        }
+        GetBattlePetMgr()->AddPet(entry->ID, BattlePetMgr::SelectPetDisplay(entry), BattlePetMgr::RollPetBreed(entry->ID), BattlePetMgr::GetDefaultPetQuality(entry->ID));
+        _player->UpdateCriteria(CriteriaType::UniquePetsOwned);
     }
 
     _player->DestroyItem(item->GetBagSlot(), item->GetSlot(), true);
