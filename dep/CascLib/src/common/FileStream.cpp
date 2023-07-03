@@ -18,16 +18,12 @@
 #include "../CascCommon.h"
 
 #ifdef _MSC_VER
+#pragma comment(lib, "wininet.lib")             // Internet functions for HTTP stream
 #pragma warning(disable: 4800)                  // 'BOOL' : forcing value to bool 'true' or 'false' (performance warning)
 #endif
 
 //-----------------------------------------------------------------------------
 // Local functions - platform-specific functions
-
-static ULONGLONG GetByteOffset(ULONGLONG * ByteOffset1, ULONGLONG ByteOffset2)
-{
-    return (ByteOffset1 != NULL) ? ByteOffset1[0] : ByteOffset2;
-}
 
 static DWORD StringToInt(const char * szString)
 {
@@ -55,7 +51,7 @@ static void BaseNone_Init(TFileStream *)
 
 static bool BaseFile_Create(TFileStream * pStream)
 {
-#ifdef CASCLIB_PLATFORM_WINDOWS
+#ifdef PLATFORM_WINDOWS
     {
         DWORD dwWriteShare = (pStream->dwFlags & STREAM_FLAG_WRITE_SHARE) ? FILE_SHARE_WRITE : 0;
 
@@ -71,7 +67,7 @@ static bool BaseFile_Create(TFileStream * pStream)
     }
 #endif
 
-#if defined(CASCLIB_PLATFORM_MAC) || defined(CASCLIB_PLATFORM_LINUX)
+#if defined(PLATFORM_MAC) || defined(PLATFORM_LINUX)
     {
         intptr_t handle;
 
@@ -79,7 +75,7 @@ static bool BaseFile_Create(TFileStream * pStream)
         if(handle == -1)
         {
             pStream->Base.File.hFile = INVALID_HANDLE_VALUE;
-            SetCascError(errno);
+            SetLastError(errno);
             return false;
         }
 
@@ -93,9 +89,9 @@ static bool BaseFile_Create(TFileStream * pStream)
     return true;
 }
 
-static bool BaseFile_Open(TFileStream * pStream, LPCTSTR szFileName, DWORD dwStreamFlags)
+static bool BaseFile_Open(TFileStream * pStream, const TCHAR * szFileName, DWORD dwStreamFlags)
 {
-#ifdef CASCLIB_PLATFORM_WINDOWS
+#ifdef PLATFORM_WINDOWS
     {
         ULARGE_INTEGER FileSize;
         DWORD dwWriteAccess = (dwStreamFlags & STREAM_FLAG_READ_ONLY) ? 0 : FILE_WRITE_DATA | FILE_APPEND_DATA | FILE_WRITE_ATTRIBUTES;
@@ -121,7 +117,7 @@ static bool BaseFile_Open(TFileStream * pStream, LPCTSTR szFileName, DWORD dwStr
     }
 #endif
 
-#if defined(CASCLIB_PLATFORM_MAC) || defined(CASCLIB_PLATFORM_LINUX)
+#if defined(PLATFORM_MAC) || defined(PLATFORM_LINUX)
     {
         struct stat64 fileinfo;
         int oflag = (dwStreamFlags & STREAM_FLAG_READ_ONLY) ? O_RDONLY : O_RDWR;
@@ -132,14 +128,14 @@ static bool BaseFile_Open(TFileStream * pStream, LPCTSTR szFileName, DWORD dwStr
         handle = open(szFileName, oflag | O_LARGEFILE);
         if(handle == -1)
         {
-            SetCascError(errno);
+            SetLastError(errno);
             return false;
         }
 
         // Get the file size
         if(fstat64(handle, &fileinfo) == -1)
         {
-            SetCascError(errno);
+            SetLastError(errno);
             close(handle);
             return false;
         }
@@ -164,94 +160,69 @@ static bool BaseFile_Read(
     void * pvBuffer,                        // Pointer to data to be read
     DWORD dwBytesToRead)                    // Number of bytes to read from the file
 {
+    ULONGLONG ByteOffset = (pByteOffset != NULL) ? *pByteOffset : pStream->Base.File.FilePos;
     DWORD dwBytesRead = 0;                  // Must be set by platform-specific code
 
-    // Synchronize the access to the TFileStream structure
-    CascLock(pStream->Lock);
+#ifdef PLATFORM_WINDOWS
     {
-        ULONGLONG ByteOffset = GetByteOffset(pByteOffset, pStream->Base.File.FilePos);
+        // Note: We no longer support Windows 9x.
+        // Thus, we can use the OVERLAPPED structure to specify
+        // file offset to read from file. This allows us to skip
+        // one system call to SetFilePointer
 
-#ifdef CASCLIB_PLATFORM_WINDOWS
+        // Update the byte offset
+        pStream->Base.File.FilePos = ByteOffset;
+
+        // Read the data
+        if(dwBytesToRead != 0)
         {
-            // Note: We no longer support Windows 9x.
-            // Thus, we can use the OVERLAPPED structure to specify
-            // file offset to read from file. This allows us to skip
-            // one system call to SetFilePointer
+            OVERLAPPED Overlapped;
 
-            // Update the byte offset
+            Overlapped.OffsetHigh = (DWORD)(ByteOffset >> 32);
+            Overlapped.Offset = (DWORD)ByteOffset;
+            Overlapped.hEvent = NULL;
+            if(!ReadFile(pStream->Base.File.hFile, pvBuffer, dwBytesToRead, &dwBytesRead, &Overlapped))
+                return false;
+        }
+    }
+#endif
+
+#if defined(PLATFORM_MAC) || defined(PLATFORM_LINUX)
+    {
+        ssize_t bytes_read;
+
+        // If the byte offset is different from the current file position,
+        // we have to update the file position
+        if(ByteOffset != pStream->Base.File.FilePos)
+        {
+            if(lseek64((intptr_t)pStream->Base.File.hFile, (off64_t)(ByteOffset), SEEK_SET) == (off64_t)-1)
+            {
+                SetLastError(errno);
+                return false;
+            }
             pStream->Base.File.FilePos = ByteOffset;
-
-            // Read the data
-            if(dwBytesToRead != 0)
-            {
-                OVERLAPPED Overlapped;
-
-                Overlapped.OffsetHigh = (DWORD)(ByteOffset >> 32);
-                Overlapped.Offset = (DWORD)ByteOffset;
-                Overlapped.hEvent = NULL;
-                if(!ReadFile(pStream->Base.File.hFile, pvBuffer, dwBytesToRead, &dwBytesRead, &Overlapped))
-                {
-                    CascUnlock(pStream->Lock);
-                    return false;
-                }
-            }
         }
-#endif
 
-#if defined(CASCLIB_PLATFORM_MAC) || defined(CASCLIB_PLATFORM_LINUX)
+        // Perform the read operation
+        if(dwBytesToRead != 0)
         {
-            ssize_t bytes_read;
-
-            // If the byte offset is different from the current file position,
-            // we have to update the file position
-            if(ByteOffset != pStream->Base.File.FilePos)
+            bytes_read = read((intptr_t)pStream->Base.File.hFile, pvBuffer, (size_t)dwBytesToRead);
+            if(bytes_read == -1)
             {
-                if(lseek64((intptr_t)pStream->Base.File.hFile, (off64_t)(ByteOffset), SEEK_SET) == (off64_t)-1)
-                {
-                    CascUnlock(pStream->Lock);
-                    SetCascError(errno);
-                    return false;
-                }
-                pStream->Base.File.FilePos = ByteOffset;
+                SetLastError(errno);
+                return false;
             }
 
-            // Perform the read operation
-            if(dwBytesToRead != 0)
-            {
-                bytes_read = read((intptr_t)pStream->Base.File.hFile, pvBuffer, (size_t)dwBytesToRead);
-                if(bytes_read == -1)
-                {
-                    CascUnlock(pStream->Lock);
-                    SetCascError(errno);
-                    return false;
-                }
-
-                dwBytesRead = (DWORD)(size_t)bytes_read;
-            }
+            dwBytesRead = (DWORD)(size_t)bytes_read;
         }
+    }
 #endif
 
-        // Increment the current file position by number of bytes read
-        pStream->Base.File.FilePos = ByteOffset + dwBytesRead;
-    }
-    CascUnlock(pStream->Lock);
-
+    // Increment the current file position by number of bytes read
     // If the number of bytes read doesn't match to required amount, return false
-    // However, Blizzard's CASC handlers read encoded data so that if less than expected
-    // was read, then they fill the rest with zeros
-    if(dwBytesRead < dwBytesToRead)
-    {
-        if(pStream->dwFlags & STREAM_FLAG_FILL_MISSING)
-        {
-            memset((LPBYTE)pvBuffer + dwBytesRead, 0, (dwBytesToRead - dwBytesRead));
-            dwBytesRead = dwBytesToRead;
-        }
-        else
-        {
-            SetCascError(ERROR_HANDLE_EOF);
-        }
-    }
-        
+    pStream->Base.File.FilePos = ByteOffset + dwBytesRead;
+    if(dwBytesRead != dwBytesToRead)
+        SetLastError(ERROR_HANDLE_EOF);
     return (dwBytesRead == dwBytesToRead);
 }
 
@@ -264,81 +235,70 @@ static bool BaseFile_Read(
 
 static bool BaseFile_Write(TFileStream * pStream, ULONGLONG * pByteOffset, const void * pvBuffer, DWORD dwBytesToWrite)
 {
+    ULONGLONG ByteOffset = (pByteOffset != NULL) ? *pByteOffset : pStream->Base.File.FilePos;
     DWORD dwBytesWritten = 0;               // Must be set by platform-specific code
 
-    // Synchronize the access to the TFileStream structure
-    CascLock(pStream->Lock);
+#ifdef PLATFORM_WINDOWS
     {
-        ULONGLONG ByteOffset = GetByteOffset(pByteOffset, pStream->Base.File.FilePos);
+        // Note: We no longer support Windows 9x.
+        // Thus, we can use the OVERLAPPED structure to specify
+        // file offset to read from file. This allows us to skip
+        // one system call to SetFilePointer
 
-#ifdef CASCLIB_PLATFORM_WINDOWS
+        // Update the byte offset
+        pStream->Base.File.FilePos = ByteOffset;
+
+        // Read the data
+        if(dwBytesToWrite != 0)
         {
-            // Note: We no longer support Windows 9x.
-            // Thus, we can use the OVERLAPPED structure to specify
-            // file offset to read from file. This allows us to skip
-            // one system call to SetFilePointer
+            OVERLAPPED Overlapped;
 
-            // Update the byte offset
-            pStream->Base.File.FilePos = ByteOffset;
-
-            // Read the data
-            if(dwBytesToWrite != 0)
-            {
-                OVERLAPPED Overlapped;
-
-                Overlapped.OffsetHigh = (DWORD)(ByteOffset >> 32);
-                Overlapped.Offset = (DWORD)ByteOffset;
-                Overlapped.hEvent = NULL;
-                if(!WriteFile(pStream->Base.File.hFile, pvBuffer, dwBytesToWrite, &dwBytesWritten, &Overlapped))
-                {
-                    CascUnlock(pStream->Lock);
-                    return false;
-                }
-            }
+            Overlapped.OffsetHigh = (DWORD)(ByteOffset >> 32);
+            Overlapped.Offset = (DWORD)ByteOffset;
+            Overlapped.hEvent = NULL;
+            if(!WriteFile(pStream->Base.File.hFile, pvBuffer, dwBytesToWrite, &dwBytesWritten, &Overlapped))
+                return false;
         }
+    }
 #endif
 
-#if defined(CASCLIB_PLATFORM_MAC) || defined(CASCLIB_PLATFORM_LINUX)
+#if defined(PLATFORM_MAC) || defined(PLATFORM_LINUX)
+    {
+        ssize_t bytes_written;
+
+        // If the byte offset is different from the current file position,
+        // we have to update the file position
+        if(ByteOffset != pStream->Base.File.FilePos)
         {
-            ssize_t bytes_written;
-
-            // If the byte offset is different from the current file position,
-            // we have to update the file position
-            if(ByteOffset != pStream->Base.File.FilePos)
+            if(lseek64((intptr_t)pStream->Base.File.hFile, (off64_t)(ByteOffset), SEEK_SET) == (off64_t)-1)
             {
-                if(lseek64((intptr_t)pStream->Base.File.hFile, (off64_t)(ByteOffset), SEEK_SET) == (off64_t)-1)
-                {
-                    CascUnlock(pStream->Lock);
-                    SetCascError(errno);
-                    return false;
-                }
-                pStream->Base.File.FilePos = ByteOffset;
-            }
-
-            // Perform the read operation
-            bytes_written = write((intptr_t)pStream->Base.File.hFile, pvBuffer, (size_t)dwBytesToWrite);
-            if(bytes_written == -1)
-            {
-                CascUnlock(pStream->Lock);
-                SetCascError(errno);
+                SetLastError(errno);
                 return false;
             }
-
-            dwBytesWritten = (DWORD)(size_t)bytes_written;
+            pStream->Base.File.FilePos = ByteOffset;
         }
+
+        // Perform the read operation
+        bytes_written = write((intptr_t)pStream->Base.File.hFile, pvBuffer, (size_t)dwBytesToWrite);
+        if(bytes_written == -1)
+        {
+            SetLastError(errno);
+            return false;
+        }
+
+        dwBytesWritten = (DWORD)(size_t)bytes_written;
+    }
 #endif
 
-        // Increment the current file position by number of bytes read
-        pStream->Base.File.FilePos = ByteOffset + dwBytesWritten;
+    // Increment the current file position by number of bytes read
+    pStream->Base.File.FilePos = ByteOffset + dwBytesWritten;
 
-        // Also modify the file size, if needed
-        if(pStream->Base.File.FilePos > pStream->Base.File.FileSize)
-            pStream->Base.File.FileSize = pStream->Base.File.FilePos;
-    }
-    CascUnlock(pStream->Lock);
+    // Also modify the file size, if needed
+    if(pStream->Base.File.FilePos > pStream->Base.File.FileSize)
+        pStream->Base.File.FileSize = pStream->Base.File.FilePos;
 
     if(dwBytesWritten != dwBytesToWrite)
-        SetCascError(ERROR_DISK_FULL);
+        SetLastError(ERROR_DISK_FULL);
     return (dwBytesWritten == dwBytesToWrite);
 }
 
@@ -348,7 +308,7 @@ static bool BaseFile_Write(TFileStream * pStream, ULONGLONG * pByteOffset, const
  */
 static bool BaseFile_Resize(TFileStream * pStream, ULONGLONG NewFileSize)
 {
-#ifdef CASCLIB_PLATFORM_WINDOWS
+#ifdef PLATFORM_WINDOWS
     {
         LONG FileSizeHi = (LONG)(NewFileSize >> 32);
         LONG FileSizeLo;
@@ -357,7 +317,7 @@ static bool BaseFile_Resize(TFileStream * pStream, ULONGLONG NewFileSize)
 
         // Set the position at the new file size
         dwNewPos = SetFilePointer(pStream->Base.File.hFile, (LONG)NewFileSize, &FileSizeHi, FILE_BEGIN);
-        if(dwNewPos == INVALID_SET_FILE_POINTER && GetCascError() != ERROR_SUCCESS)
+        if(dwNewPos == INVALID_SET_FILE_POINTER && GetLastError() != ERROR_SUCCESS)
             return false;
 
         // Set the current file pointer as the end of the file
@@ -373,11 +333,11 @@ static bool BaseFile_Resize(TFileStream * pStream, ULONGLONG NewFileSize)
     }
 #endif
 
-#if defined(CASCLIB_PLATFORM_MAC) || defined(CASCLIB_PLATFORM_LINUX)
+#if defined(PLATFORM_MAC) || defined(PLATFORM_LINUX)
     {
         if(ftruncate64((intptr_t)pStream->Base.File.hFile, (off64_t)NewFileSize) == -1)
         {
-            SetCascError(errno);
+            SetLastError(errno);
             return false;
         }
 
@@ -408,16 +368,20 @@ static bool BaseFile_GetPos(TFileStream * pStream, ULONGLONG * pByteOffset)
 // Renames the file pointed by pStream so that it contains data from pNewStream
 static bool BaseFile_Replace(TFileStream * pStream, TFileStream * pNewStream)
 {
-#ifdef CASCLIB_PLATFORM_WINDOWS
+#ifdef PLATFORM_WINDOWS
+    // Delete the original stream file. Don't check the result value,
+    // because if the file doesn't exist, it would fail
+    DeleteFile(pStream->szFileName);
+
     // Rename the new file to the old stream's file
-    return (bool)MoveFileEx(pNewStream->szFileName, pStream->szFileName, MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING);
+    return (bool)MoveFile(pNewStream->szFileName, pStream->szFileName);
 #endif
 
-#if defined(CASCLIB_PLATFORM_MAC) || defined(CASCLIB_PLATFORM_LINUX)
+#if defined(PLATFORM_MAC) || defined(PLATFORM_LINUX)
     // "rename" on Linux also works if the target file exists
     if(rename(pNewStream->szFileName, pStream->szFileName) == -1)
     {
-        SetCascError(errno);
+        SetLastError(errno);
         return false;
     }
 
@@ -427,24 +391,19 @@ static bool BaseFile_Replace(TFileStream * pStream, TFileStream * pNewStream)
 
 static void BaseFile_Close(TFileStream * pStream)
 {
-    // Synchronize the access to multiple threads
-    CascLock(pStream->Lock);
+    if(pStream->Base.File.hFile != INVALID_HANDLE_VALUE)
     {
-        if(pStream->Base.File.hFile != INVALID_HANDLE_VALUE)
-        {
-#ifdef CASCLIB_PLATFORM_WINDOWS
-            CloseHandle(pStream->Base.File.hFile);
+#ifdef PLATFORM_WINDOWS
+        CloseHandle(pStream->Base.File.hFile);
 #endif
 
-#if defined(CASCLIB_PLATFORM_MAC) || defined(CASCLIB_PLATFORM_LINUX)
-            close((intptr_t)pStream->Base.File.hFile);
+#if defined(PLATFORM_MAC) || defined(PLATFORM_LINUX)
+        close((intptr_t)pStream->Base.File.hFile);
 #endif
-        }
-
-        // Also invalidate the handle
-        pStream->Base.File.hFile = INVALID_HANDLE_VALUE;
     }
-    CascUnlock(pStream->Lock);
+
+    // Also invalidate the handle
+    pStream->Base.File.hFile = INVALID_HANDLE_VALUE;
 }
 
 // Initializes base functions for the disk file
@@ -463,9 +422,9 @@ static void BaseFile_Init(TFileStream * pStream)
 //-----------------------------------------------------------------------------
 // Local functions - base memory-mapped file support
 
-static bool BaseMap_Open(TFileStream * pStream, LPCTSTR szFileName, DWORD dwStreamFlags)
+static bool BaseMap_Open(TFileStream * pStream, const TCHAR * szFileName, DWORD dwStreamFlags)
 {
-#ifdef CASCLIB_PLATFORM_WINDOWS
+#ifdef PLATFORM_WINDOWS
 
     ULARGE_INTEGER FileSize;
     HANDLE hFile;
@@ -517,7 +476,7 @@ static bool BaseMap_Open(TFileStream * pStream, LPCTSTR szFileName, DWORD dwStre
         return false;
 #endif
 
-#if defined(CASCLIB_PLATFORM_MAC) || defined(CASCLIB_PLATFORM_LINUX)
+#if defined(PLATFORM_MAC) || defined(PLATFORM_LINUX)
     struct stat64 fileinfo;
     intptr_t handle;
     bool bResult = false;
@@ -547,7 +506,7 @@ static bool BaseMap_Open(TFileStream * pStream, LPCTSTR szFileName, DWORD dwStre
     // Did the mapping fail?
     if(bResult == false)
     {
-        SetCascError(errno);
+        SetLastError(errno);
         return false;
     }
 #endif
@@ -561,7 +520,7 @@ static bool BaseMap_Read(
     void * pvBuffer,                        // Pointer to data to be read
     DWORD dwBytesToRead)                    // Number of bytes to read from the file
 {
-    ULONGLONG ByteOffset = GetByteOffset(pByteOffset, pStream->Base.Map.FilePos);
+    ULONGLONG ByteOffset = (pByteOffset != NULL) ? *pByteOffset : pStream->Base.Map.FilePos;
 
     // Do we have to read anything at all?
     if(dwBytesToRead != 0)
@@ -581,12 +540,12 @@ static bool BaseMap_Read(
 
 static void BaseMap_Close(TFileStream * pStream)
 {
-#ifdef CASCLIB_PLATFORM_WINDOWS
+#ifdef PLATFORM_WINDOWS
     if(pStream->Base.Map.pbFile != NULL)
         UnmapViewOfFile(pStream->Base.Map.pbFile);
 #endif
 
-#if defined(CASCLIB_PLATFORM_MAC) || defined(CASCLIB_PLATFORM_LINUX)
+#if defined(PLATFORM_MAC) || defined(PLATFORM_LINUX)
     if(pStream->Base.Map.pbFile != NULL)
         munmap(pStream->Base.Map.pbFile, (size_t )pStream->Base.Map.FileSize);
 #endif
@@ -611,140 +570,130 @@ static void BaseMap_Init(TFileStream * pStream)
 //-----------------------------------------------------------------------------
 // Local functions - base HTTP file support
 
-static DWORD BaseHttp_ParseURL(TFileStream * pStream, LPCTSTR szFileName, int * pPortNum)
+static const TCHAR * BaseHttp_ExtractServerName(const TCHAR * szFileName, TCHAR * szServerName)
 {
-    LPCTSTR szHostNamePtr = szFileName;
-    LPCTSTR szHostNameEnd = szFileName;
-    LPCTSTR szPortPtr = NULL;
-    LPCTSTR szPortEnd = NULL;
-    LPCTSTR szFilePtr;
-    size_t nLength;
-    LPSTR hostName = NULL;
-    LPSTR fileName = NULL;
-    char szPort[20];
+    // Check for HTTP
+    if(!_tcsnicmp(szFileName, _T("http://"), 7))
+        szFileName += 7;
 
-    // Find the end of the host name
-    while(szHostNameEnd[0] != 0 && szHostNameEnd[0] != ':' && szHostNameEnd[0] != '/')
-        szHostNameEnd++;
-    szFilePtr = szHostNameEnd;
-
-    // Is there port number?
-    if(szHostNameEnd[0] == ':')
+    // Cut off the server name
+    if(szServerName != NULL)
     {
-        // Set the range of the port
-        szPortPtr = szPortEnd = szHostNameEnd + 1;
-        while(szPortEnd[0] != 0 && szPortEnd[0] != '/')
-            szPortEnd++;
-        szFilePtr = szPortEnd;
+        while(szFileName[0] != 0 && szFileName[0] != _T('/'))
+            *szServerName++ = *szFileName++;
+        *szServerName = 0;
+    }
+    else
+    {
+        while(szFileName[0] != 0 && szFileName[0] != _T('/'))
+            szFileName++;
     }
 
-    // Allocate the host name
-    nLength = szHostNameEnd - szHostNamePtr + 1;
-    if((hostName = CASC_ALLOC<char>(nLength)) != NULL)
-    {
-        // Copy the host name
-        CascStrCopy(hostName, nLength, szHostNamePtr, (szHostNameEnd - szHostNamePtr));
-
-        // Parse port, if present
-        if(szPortPtr != NULL && szPortEnd > szPortPtr)
-        {
-            CascStrCopy(szPort, _countof(szPort), szPortPtr, (szPortEnd - szPortPtr));
-            pPortNum[0] = atoi(szPort);
-        }
-
-        // Allocate file name
-        if((fileName = CascNewStrT2A(szFilePtr)) != NULL)
-        {
-            pStream->Base.Socket.hostName = hostName;
-            pStream->Base.Socket.fileName = fileName;
-            return ERROR_SUCCESS;
-        }
-
-        // Free the host name
-        CASC_FREE(hostName);
-    }
-
-    return ERROR_NOT_ENOUGH_MEMORY;
+    // Return the remainder
+    return szFileName;
 }
 
-//-----------------------------------------------------------------------------
-// Local functions - base HTTP file support
-
-static bool BaseHttp_Download(TFileStream * pStream)
+static bool BaseHttp_Open(TFileStream * pStream, const TCHAR * szFileName, DWORD dwStreamFlags)
 {
-    CASC_MIME Mime;
-    const char * request_mask = "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: Keep-Alive\r\n\r\n";
-    char * server_response;
-    char * fileName = pStream->Base.Socket.fileName;
-    char request[0x100];
-    size_t response_length = 0;
-    size_t request_length = 0;
-    DWORD dwErrCode;
+#ifdef PLATFORM_WINDOWS
 
-    // If we already have the data, it's success
-    if(pStream->Base.Socket.fileData == NULL)
+    HINTERNET hRequest;
+    DWORD dwTemp = 0;
+    bool bFileAvailable = false;
+    int nError = ERROR_SUCCESS;
+
+    // Keep compiler happy
+    dwStreamFlags = dwStreamFlags;
+
+    // Don't connect to the internet
+    if(!InternetGetConnectedState(&dwTemp, 0))
+        nError = GetLastError();
+
+    // Initiate the connection to the internet
+    if(nError == ERROR_SUCCESS)
     {
-        // Reset the file data length as well
-        pStream->Base.Socket.fileDataLength = 0;
+        pStream->Base.Http.hInternet = InternetOpen(_T("CascLib HTTP archive reader"),
+                                                    INTERNET_OPEN_TYPE_PRECONFIG,
+                                                    NULL,
+                                                    NULL,
+                                                    0);
+        if(pStream->Base.Http.hInternet == NULL)
+            nError = GetLastError();
+    }
 
-        // Construct the request, either HTTP or Ribbit (https://wowdev.wiki/Ribbit).
-        // Note that Ribbit requests don't start with slash
-        if((pStream->dwFlags & BASE_PROVIDER_MASK) == BASE_PROVIDER_RIBBIT)
-        {
-            if(fileName[0] == '/')
-                fileName++;
-            request_mask = "%s\r\n";
-        }
+    // Connect to the server
+    if(nError == ERROR_SUCCESS)
+    {
+        TCHAR szServerName[MAX_PATH];
+        DWORD dwFlags = INTERNET_FLAG_KEEP_CONNECTION | INTERNET_FLAG_NO_UI | INTERNET_FLAG_NO_CACHE_WRITE;
 
-        // Send the request and receive decoded response
-        request_length = CascStrPrintf(request, _countof(request), request_mask, fileName, pStream->Base.Socket.hostName);
-        server_response = pStream->Base.Socket.pSocket->ReadResponse(request, request_length, &response_length);
-        if(server_response != NULL)
+        // Initiate connection with the server
+        szFileName = BaseHttp_ExtractServerName(szFileName, szServerName);
+        pStream->Base.Http.hConnect = InternetConnect(pStream->Base.Http.hInternet,
+                                                      szServerName,
+                                                      INTERNET_DEFAULT_HTTP_PORT,
+                                                      NULL,
+                                                      NULL,
+                                                      INTERNET_SERVICE_HTTP,
+                                                      dwFlags,
+                                                      0);
+        if(pStream->Base.Http.hConnect == NULL)
+            nError = GetLastError();
+    }
+
+    // Now try to query the file size
+    if(nError == ERROR_SUCCESS)
+    {
+        // Open HTTP request to the file
+        hRequest = HttpOpenRequest(pStream->Base.Http.hConnect, _T("GET"), szFileName, NULL, NULL, NULL, INTERNET_FLAG_NO_CACHE_WRITE, 0);
+        if(hRequest != NULL)
         {
-            // Check for non-zero data
-            if(response_length != 0)
+            if(HttpSendRequest(hRequest, NULL, 0, NULL, 0))
             {
-                // Decode the MIME document
-                if((dwErrCode = Mime.Load(server_response, response_length)) == ERROR_SUCCESS)
+                ULONGLONG FileTime = 0;
+                DWORD dwFileSize = 0;
+                DWORD dwDataSize;
+                DWORD dwIndex = 0;
+
+                // Check if the archive has Last Modified field
+                dwDataSize = sizeof(ULONGLONG);
+                if(HttpQueryInfo(hRequest, HTTP_QUERY_LAST_MODIFIED | HTTP_QUERY_FLAG_SYSTEMTIME, &FileTime, &dwDataSize, &dwIndex))
+                    pStream->Base.Http.FileTime = FileTime;
+
+                // Verify if the server supports random access
+                dwDataSize = sizeof(DWORD);
+                if(HttpQueryInfo(hRequest, HTTP_QUERY_CONTENT_LENGTH | HTTP_QUERY_FLAG_NUMBER, &dwFileSize, &dwDataSize, &dwIndex))
                 {
-                    // Move the data from MIME to HTTP stream
-                    pStream->Base.Socket.fileData = Mime.GiveAway(&pStream->Base.Socket.fileDataLength);
+                    if(dwFileSize != 0)
+                    {
+                        pStream->Base.Http.FileSize = dwFileSize;
+                        pStream->Base.Http.FilePos = 0;
+                        bFileAvailable = true;
+                    }
                 }
             }
-            else
-            {
-                SetCascError(ERROR_BAD_FORMAT);
-            }
-
-            // Free the buffer
-            CASC_FREE(server_response);
+            InternetCloseHandle(hRequest);
         }
     }
 
-    // If we have data loaded, return true
-    return (pStream->Base.Socket.fileData != NULL);
-}
-
-static bool BaseHttp_Open(TFileStream * pStream, LPCTSTR szFileName, DWORD dwStreamFlags)
-{
-    PCASC_SOCKET pSocket;
-    DWORD dwErrCode;
-    int portNum = ((dwStreamFlags & BASE_PROVIDER_MASK) == BASE_PROVIDER_RIBBIT) ? CASC_PORT_RIBBIT : CASC_PORT_HTTP;
-
-    // Extract the server part
-    if((dwErrCode = BaseHttp_ParseURL(pStream, szFileName, &portNum)) == ERROR_SUCCESS)
+    // If the file is not there and is not available for random access,
+    // report error
+    if(bFileAvailable == false)
     {
-        // Initiate the remote connection
-        if((pSocket = sockets_connect(pStream->Base.Socket.hostName, portNum)) != NULL)
-        {
-            pStream->Base.Socket.pSocket = pSocket;
-            return true;
-        }
+        pStream->BaseClose(pStream);
+        return false;
     }
 
-    // Failure: set the last error and return false
-    SetCascError(dwErrCode);
+    return true;
+
+#else
+
+    // Not supported
+    SetLastError(ERROR_NOT_SUPPORTED);
+    pStream = pStream;
     return false;
+
+#endif
 }
 
 static bool BaseHttp_Read(
@@ -753,93 +702,90 @@ static bool BaseHttp_Read(
     void * pvBuffer,                        // Pointer to data to be read
     DWORD dwBytesToRead)                    // Number of bytes to read from the file
 {
-    ULONGLONG ByteOffset = GetByteOffset(pByteOffset, pStream->Base.Socket.fileDataPos);
-    bool bCanReadTheWholeRange = true;
+#ifdef PLATFORM_WINDOWS
+    ULONGLONG ByteOffset = (pByteOffset != NULL) ? *pByteOffset : pStream->Base.Http.FilePos;
+    DWORD dwTotalBytesRead = 0;
 
-    // Synchronize the access to the TFileStream structure
-    CascLock(pStream->Lock);
+    // Do we have to read anything at all?
+    if(dwBytesToRead != 0)
     {
-        // Do we have to read anything at all?
-        if(dwBytesToRead != 0)
-        {
-            // Make sure that we have the file downloaded
-            if(!BaseHttp_Download(pStream))
-            {
-                CascUnlock(pStream->Lock);
-                return false;
-            }
+        HINTERNET hRequest;
+        LPCTSTR szFileName;
+        LPBYTE pbBuffer = (LPBYTE)pvBuffer;
+        TCHAR szRangeRequest[0x80];
+        DWORD dwStartOffset = (DWORD)ByteOffset;
+        DWORD dwEndOffset = dwStartOffset + dwBytesToRead;
 
-            // Are we trying to read more than available?
-            if(ByteOffset <= pStream->Base.Socket.fileDataLength)
+        // Open HTTP request to the file
+        szFileName = BaseHttp_ExtractServerName(pStream->szFileName, NULL);
+        hRequest = HttpOpenRequest(pStream->Base.Http.hConnect, _T("GET"), szFileName, NULL, NULL, NULL, INTERNET_FLAG_NO_CACHE_WRITE, 0);
+        if(hRequest != NULL)
+        {
+            // Add range request to the HTTP headers
+            // http://www.clevercomponents.com/articles/article015/resuming.asp
+            _stprintf(szRangeRequest, _T("Range: bytes=%u-%u"), (unsigned int)dwStartOffset, (unsigned int)dwEndOffset);
+            HttpAddRequestHeaders(hRequest, szRangeRequest, 0xFFFFFFFF, HTTP_ADDREQ_FLAG_ADD_IF_NEW);
+
+            // Send the request to the server
+            if(HttpSendRequest(hRequest, NULL, 0, NULL, 0))
             {
-                if((ByteOffset + dwBytesToRead) > pStream->Base.Socket.fileDataLength)
+                while(dwTotalBytesRead < dwBytesToRead)
                 {
-                    bCanReadTheWholeRange = false;
-                    dwBytesToRead = (DWORD)(pStream->Base.Socket.fileDataLength - ByteOffset);
+                    DWORD dwBlockBytesToRead = dwBytesToRead - dwTotalBytesRead;
+                    DWORD dwBlockBytesRead = 0;
+
+                    // Read the block from the file
+                    if(dwBlockBytesToRead > 0x200)
+                        dwBlockBytesToRead = 0x200;
+                    InternetReadFile(hRequest, pbBuffer, dwBlockBytesToRead, &dwBlockBytesRead);
+
+                    // Check for end
+                    if(dwBlockBytesRead == 0)
+                        break;
+
+                    // Move buffers
+                    dwTotalBytesRead += dwBlockBytesRead;
+                    pbBuffer += dwBlockBytesRead;
                 }
             }
-            else
-            {
-                bCanReadTheWholeRange = false;
-                dwBytesToRead = 0;
-            }
-
-            // Copy the data
-            if(dwBytesToRead != 0)
-            {
-                memcpy(pvBuffer, pStream->Base.Socket.fileData + ByteOffset, dwBytesToRead);
-            }
+            InternetCloseHandle(hRequest);
         }
-
-        // Increment the current file position by number of bytes read
-        pStream->Base.Socket.fileDataPos = (size_t)(ByteOffset + dwBytesToRead);
     }
-    CascUnlock(pStream->Lock);
+
+    // Increment the current file position by number of bytes read
+    pStream->Base.Http.FilePos = ByteOffset + dwTotalBytesRead;
 
     // If the number of bytes read doesn't match the required amount, return false
-    if(bCanReadTheWholeRange == false)
-        SetCascError(ERROR_HANDLE_EOF);
-    return bCanReadTheWholeRange;
-}
+    if(dwTotalBytesRead != dwBytesToRead)
+        SetLastError(ERROR_HANDLE_EOF);
+    return (dwTotalBytesRead == dwBytesToRead);
 
-// Gives the current file size
-static bool BaseHttp_GetSize(TFileStream * pStream, ULONGLONG * pFileSize)
-{
-    bool bResult;
+#else
 
-    // Synchronize the access to the TFileStream structure
-    CascLock(pStream->Lock);
-    {
-        // Make sure that we have the file data
-        if((bResult = BaseHttp_Download(pStream)) != false)
-        {
-            *pFileSize = pStream->Base.Socket.fileDataLength;
-        }
-    }
-    CascUnlock(pStream->Lock);
+    // Not supported
+    pStream = pStream;
+    pByteOffset = pByteOffset;
+    pvBuffer = pvBuffer;
+    dwBytesToRead = dwBytesToRead;
+    SetLastError(ERROR_NOT_SUPPORTED);
+    return false;
 
-    // Give the result
-    return bResult;
-}
-
-static bool BaseHttp_GetPos(TFileStream * pStream, ULONGLONG * pByteOffset)
-{
-    // Give the current position
-    *pByteOffset = pStream->Base.Socket.fileDataPos;
-    return true;
+#endif
 }
 
 static void BaseHttp_Close(TFileStream * pStream)
 {
-    if(pStream->Base.Socket.fileData != NULL)
-        CASC_FREE(pStream->Base.Socket.fileData);
-    if(pStream->Base.Socket.hostName != NULL)
-        CASC_FREE(pStream->Base.Socket.hostName);
-    if(pStream->Base.Socket.fileName != NULL)
-        CASC_FREE(pStream->Base.Socket.fileName);
-    if(pStream->Base.Socket.pSocket != NULL)
-        pStream->Base.Socket.pSocket->Release();
-    memset(&pStream->Base.Socket, 0, sizeof(pStream->Base.Socket));
+#ifdef PLATFORM_WINDOWS
+    if(pStream->Base.Http.hConnect != NULL)
+        InternetCloseHandle(pStream->Base.Http.hConnect);
+    pStream->Base.Http.hConnect = NULL;
+
+    if(pStream->Base.Http.hInternet != NULL)
+        InternetCloseHandle(pStream->Base.Http.hInternet);
+    pStream->Base.Http.hInternet = NULL;
+#else
+    pStream = pStream;
+#endif
 }
 
 // Initializes base functions for the mapped file
@@ -848,8 +794,8 @@ static void BaseHttp_Init(TFileStream * pStream)
     // Supply the stream functions
     pStream->BaseOpen    = BaseHttp_Open;
     pStream->BaseRead    = BaseHttp_Read;
-    pStream->BaseGetSize = BaseHttp_GetSize;
-    pStream->BaseGetPos  = BaseHttp_GetPos;
+    pStream->BaseGetSize = BaseFile_GetSize;    // Reuse BaseFile function
+    pStream->BaseGetPos  = BaseFile_GetPos;     // Reuse BaseFile function
     pStream->BaseClose   = BaseHttp_Close;
 
     // HTTP files are read-only
@@ -891,11 +837,11 @@ static bool BlockStream_Read(
         return true;
 
     // Get the current position in the stream
-    ByteOffset = GetByteOffset(pByteOffset, pStream->StreamPos);
+    ByteOffset = (pByteOffset != NULL) ? pByteOffset[0] : pStream->StreamPos;
     EndOffset = ByteOffset + dwBytesToRead;
     if(EndOffset > pStream->StreamSize)
     {
-        SetCascError(ERROR_HANDLE_EOF);
+        SetLastError(ERROR_HANDLE_EOF);
         return false;
     }
 
@@ -909,10 +855,10 @@ static bool BlockStream_Read(
     BlockBufferOffset = (DWORD)(ByteOffset & (BlockSize - 1));
 
     // Allocate buffer for reading blocks
-    TransferBuffer = BlockBuffer = CASC_ALLOC<BYTE>(BlockCount * BlockSize);
+    TransferBuffer = BlockBuffer = CASC_ALLOC(BYTE, (BlockCount * BlockSize));
     if(TransferBuffer == NULL)
     {
-        SetCascError(ERROR_NOT_ENOUGH_MEMORY);
+        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
         return false;
     }
 
@@ -990,7 +936,7 @@ static bool BlockStream_Read(
     else
     {
         // If the block read failed, set the last error
-        SetCascError(ERROR_FILE_INCOMPLETE);
+        SetLastError(ERROR_FILE_INCOMPLETE);
     }
 
     // Call the callback to indicate we are done
@@ -1017,7 +963,9 @@ static bool BlockStream_GetPos(TFileStream * pStream, ULONGLONG * pByteOffset)
 static void BlockStream_Close(TBlockStream * pStream)
 {
     // Free the data map, if any
-    CASC_FREE(pStream->FileBitmap);
+    if(pStream->FileBitmap != NULL)
+        CASC_FREE(pStream->FileBitmap);
+    pStream->FileBitmap = NULL;
 
     // Call the base class for closing the stream
     pStream->BaseClose(pStream);
@@ -1026,12 +974,11 @@ static void BlockStream_Close(TBlockStream * pStream)
 //-----------------------------------------------------------------------------
 // File stream allocation function
 
-static STREAM_INIT StreamBaseInit[5] =
+static STREAM_INIT StreamBaseInit[4] =
 {
     BaseFile_Init,
     BaseMap_Init,
     BaseHttp_Init,
-    BaseHttp_Init,      // Ribbit provider shares code with HTTP provider
     BaseNone_Init
 };
 
@@ -1039,13 +986,13 @@ static STREAM_INIT StreamBaseInit[5] =
 // The stream structure is created as flat block, variable length
 // The file name is placed after the end of the stream structure data
 static TFileStream * AllocateFileStream(
-    LPCTSTR szFileName,
+    const TCHAR * szFileName,
     size_t StreamSize,
     DWORD dwStreamFlags)
 {
     TFileStream * pMaster = NULL;
     TFileStream * pStream;
-    LPCTSTR szNextFile = szFileName;
+    const TCHAR * szNextFile = szFileName;
     size_t FileNameSize;
 
     // Sanity check
@@ -1066,7 +1013,7 @@ static TFileStream * AllocateFileStream(
         // Don't allow another master file in the string
         if(_tcschr(szNextFile + 1, _T('*')) != NULL)
         {
-            SetCascError(ERROR_INVALID_PARAMETER);
+            SetLastError(ERROR_INVALID_PARAMETER);
             return NULL;
         }
 
@@ -1075,21 +1022,18 @@ static TFileStream * AllocateFileStream(
     }
 
     // Allocate the stream structure for the given stream type
-    pStream = (TFileStream *)CASC_ALLOC<BYTE>(StreamSize + FileNameSize + sizeof(TCHAR));
+    pStream = (TFileStream *)CASC_ALLOC(BYTE, StreamSize + FileNameSize + sizeof(TCHAR));
     if(pStream != NULL)
     {
         // Zero the entire structure
-        memset(pStream, 0, StreamSize + FileNameSize + sizeof(TCHAR));
+        memset(pStream, 0, StreamSize);
         pStream->pMaster = pMaster;
         pStream->dwFlags = dwStreamFlags;
 
         // Initialize the file name
-        pStream->szFileName = (LPTSTR)((BYTE *)pStream + StreamSize);
+        pStream->szFileName = (TCHAR *)((BYTE *)pStream + StreamSize);
         memcpy(pStream->szFileName, szFileName, FileNameSize);
         pStream->szFileName[FileNameSize / sizeof(TCHAR)] = 0;
-
-        // Initialize the stream lock
-        CascInitLock(pStream->Lock);
 
         // Initialize the stream functions
         StreamBaseInit[dwStreamFlags & 0x03](pStream);
@@ -1161,7 +1105,7 @@ static bool FlatStream_LoadBitmap(TBlockStream * pStream)
                 if(ByteOffset + BitmapSize + sizeof(FILE_BITMAP_FOOTER) == pStream->Base.File.FileSize)
                 {
                     // Allocate space for the bitmap
-                    FileBitmap = CASC_ALLOC<BYTE>(BitmapSize);
+                    FileBitmap = CASC_ALLOC(BYTE, BitmapSize);
                     if(FileBitmap != NULL)
                     {
                         // Load the bitmap bits
@@ -1373,11 +1317,12 @@ static bool FlatStream_CreateMirror(TBlockStream * pStream)
     }
 
     // Allocate the bitmap array
-    FileBitmap = CASC_ALLOC_ZERO<BYTE>(dwBitmapSize);
+    FileBitmap = CASC_ALLOC(BYTE, dwBitmapSize);
     if(FileBitmap == NULL)
         return false;
 
     // Initialize the bitmap
+    memset(FileBitmap, 0, dwBitmapSize);
     pStream->FileBitmap = FileBitmap;
     pStream->BitmapSize = dwBitmapSize;
     pStream->BlockSize  = DEFAULT_BLOCK_SIZE;
@@ -1391,7 +1336,7 @@ static bool FlatStream_CreateMirror(TBlockStream * pStream)
     return true;
 }
 
-static TFileStream * FlatStream_Open(LPCTSTR szFileName, DWORD dwStreamFlags)
+static TFileStream * FlatStream_Open(const TCHAR * szFileName, DWORD dwStreamFlags)
 {
     TBlockStream * pStream;
     ULONGLONG ByteOffset = 0;
@@ -1399,10 +1344,7 @@ static TFileStream * FlatStream_Open(LPCTSTR szFileName, DWORD dwStreamFlags)
     // Create new empty stream
     pStream = (TBlockStream *)AllocateFileStream(szFileName, sizeof(TBlockStream), dwStreamFlags);
     if(pStream == NULL)
-    {
-        SetCascError(ERROR_NOT_ENOUGH_MEMORY);
         return NULL;
-    }
 
     // Do we have a master stream?
     if(pStream->pMaster != NULL)
@@ -1410,7 +1352,7 @@ static TFileStream * FlatStream_Open(LPCTSTR szFileName, DWORD dwStreamFlags)
         if(!FlatStream_CreateMirror(pStream))
         {
             FileStream_Close(pStream);
-            SetCascError(ERROR_FILE_NOT_FOUND);
+            SetLastError(ERROR_FILE_NOT_FOUND);
             return NULL;
         }
     }
@@ -1544,7 +1486,7 @@ static bool PartStream_LoadBitmap(TBlockStream * pStream)
                 if((ByteOffset + BitmapSize) < pStream->Base.File.FileSize)
                 {
                     // Allocate space for the array of PART_FILE_MAP_ENTRY
-                    FileBitmap = CASC_ALLOC<PART_FILE_MAP_ENTRY>(BlockCount);
+                    FileBitmap = CASC_ALLOC(PART_FILE_MAP_ENTRY, BlockCount);
                     if(FileBitmap != NULL)
                     {
                         // Load the block map
@@ -1719,7 +1661,7 @@ static void PartStream_Close(TBlockStream * pStream)
 
         // Make sure that the header is properly BSWAPed
         BSWAP_ARRAY32_UNSIGNED(&PartHeader, sizeof(PART_FILE_HEADER));
-        CascStrPrintf(PartHeader.GameBuildNumber, _countof(PartHeader.GameBuildNumber), "%u", (unsigned int)pStream->BuildNumber);
+        sprintf(PartHeader.GameBuildNumber, "%u", (unsigned int)pStream->BuildNumber);
 
         // Write the part header
         pStream->BaseWrite(pStream, &ByteOffset, &PartHeader, sizeof(PART_FILE_HEADER));
@@ -1794,11 +1736,12 @@ static bool PartStream_CreateMirror(TBlockStream * pStream)
     }
 
     // Allocate the bitmap array
-    FileBitmap = CASC_ALLOC_ZERO<BYTE>(dwBitmapSize);
+    FileBitmap = CASC_ALLOC(BYTE, dwBitmapSize);
     if(FileBitmap == NULL)
         return false;
 
     // Initialize the bitmap
+    memset(FileBitmap, 0, dwBitmapSize);
     pStream->FileBitmap = FileBitmap;
     pStream->BitmapSize = dwBitmapSize;
     pStream->BlockSize  = DEFAULT_BLOCK_SIZE;
@@ -1812,7 +1755,8 @@ static bool PartStream_CreateMirror(TBlockStream * pStream)
     return true;
 }
 
-static TFileStream * PartStream_Open(LPCTSTR szFileName, DWORD dwStreamFlags)
+
+static TFileStream * PartStream_Open(const TCHAR * szFileName, DWORD dwStreamFlags)
 {
     TBlockStream * pStream;
 
@@ -1827,7 +1771,7 @@ static TFileStream * PartStream_Open(LPCTSTR szFileName, DWORD dwStreamFlags)
         if(!PartStream_CreateMirror(pStream))
         {
             FileStream_Close(pStream);
-            SetCascError(ERROR_FILE_NOT_FOUND);
+            SetLastError(ERROR_FILE_NOT_FOUND);
             return NULL;
         }
     }
@@ -1844,7 +1788,7 @@ static TFileStream * PartStream_Open(LPCTSTR szFileName, DWORD dwStreamFlags)
         if(!PartStream_LoadBitmap(pStream))
         {
             FileStream_Close(pStream);
-            SetCascError(ERROR_BAD_FORMAT);
+            SetLastError(ERROR_BAD_FORMAT);
             return NULL;
         }
     }
@@ -1921,6 +1865,13 @@ static const char * AuthCodeArray[] =
 
     NULL
 };
+
+static DWORD Rol32(DWORD dwValue, DWORD dwRolCount)
+{
+    DWORD dwShiftRight = 32 - dwRolCount;
+
+    return (dwValue << dwRolCount) | (dwValue >> dwShiftRight);
+}
 
 static void CreateKeyFromAuthCode(
     LPBYTE pbKeyBuffer,
@@ -2122,7 +2073,7 @@ static bool EncrStream_BlockRead(
     return true;
 }
 
-static TFileStream * EncrStream_Open(LPCTSTR szFileName, DWORD dwStreamFlags)
+static TFileStream * EncrStream_Open(const TCHAR * szFileName, DWORD dwStreamFlags)
 {
     TEncryptedStream * pStream;
 
@@ -2157,7 +2108,7 @@ static TFileStream * EncrStream_Open(LPCTSTR szFileName, DWORD dwStreamFlags)
 
     // Cleanup the stream and return
     FileStream_Close(pStream);
-    SetCascError(ERROR_FILE_ENCRYPTED);
+    SetLastError(ERROR_FILE_ENCRYPTED);
     return NULL;
 }
 
@@ -2242,21 +2193,23 @@ static void Block4Stream_Close(TBlockStream * pStream)
     }
 
     // Free the data map, if any
-    CASC_FREE(pStream->FileBitmap);
+    if(pStream->FileBitmap != NULL)
+        CASC_FREE(pStream->FileBitmap);
+    pStream->FileBitmap = NULL;
 
     // Do not call the BaseClose function,
     // we closed all handles already
     return;
 }
 
-static TFileStream * Block4Stream_Open(LPCTSTR szFileName, DWORD dwStreamFlags)
+static TFileStream * Block4Stream_Open(const TCHAR * szFileName, DWORD dwStreamFlags)
 {
     TBaseProviderData * NewBaseArray = NULL;
     ULONGLONG RemainderBlock;
     ULONGLONG BlockCount;
     ULONGLONG FileSize;
     TBlockStream * pStream;
-    LPTSTR szNameBuff;
+    TCHAR * szNameBuff;
     size_t nNameLength;
     DWORD dwBaseFiles = 0;
     DWORD dwBaseFlags;
@@ -2283,7 +2236,7 @@ static TFileStream * Block4Stream_Open(LPCTSTR szFileName, DWORD dwStreamFlags)
     pStream->BlockRead     = (BLOCK_READ)Block4Stream_BlockRead;
 
     // Allocate work space for numeric names
-    szNameBuff = CASC_ALLOC<TCHAR>(nNameLength + 4);
+    szNameBuff = CASC_ALLOC(TCHAR, nNameLength + 4);
     if(szNameBuff != NULL)
     {
         // Set the base flags
@@ -2293,15 +2246,15 @@ static TFileStream * Block4Stream_Open(LPCTSTR szFileName, DWORD dwStreamFlags)
         for(int nSuffix = 0; nSuffix < 30; nSuffix++)
         {
             // Open the n-th file
-            CascStrPrintf(szNameBuff, (nNameLength + 4), _T("%s.%u"), pStream->szFileName, nSuffix);
+            _stprintf(szNameBuff, _T("%s.%u"), pStream->szFileName, nSuffix);
             if(!pStream->BaseOpen(pStream, szNameBuff, dwBaseFlags))
                 break;
 
             // If the open succeeded, we re-allocate the base provider array
-            NewBaseArray = CASC_ALLOC<TBaseProviderData>(dwBaseFiles + 1);
+            NewBaseArray = CASC_ALLOC(TBaseProviderData, dwBaseFiles + 1);
             if(NewBaseArray == NULL)
             {
-                SetCascError(ERROR_NOT_ENOUGH_MEMORY);
+                SetLastError(ERROR_NOT_ENOUGH_MEMORY);
                 return NULL;
             }
 
@@ -2356,7 +2309,7 @@ static TFileStream * Block4Stream_Open(LPCTSTR szFileName, DWORD dwStreamFlags)
     if(dwBaseFiles == 0)
     {
         FileStream_Close(pStream);
-        SetCascError(ERROR_FILE_NOT_FOUND);
+        SetLastError(ERROR_FILE_NOT_FOUND);
         pStream = NULL;
     }
 
@@ -2384,7 +2337,7 @@ static TFileStream * Block4Stream_Open(LPCTSTR szFileName, DWORD dwStreamFlags)
  */
 
 TFileStream * FileStream_CreateFile(
-    LPCTSTR szFileName,
+    const TCHAR * szFileName,
     DWORD dwStreamFlags)
 {
     TFileStream * pStream;
@@ -2392,7 +2345,7 @@ TFileStream * FileStream_CreateFile(
     // We only support creation of flat, local file
     if((dwStreamFlags & (STREAM_PROVIDERS_MASK)) != (STREAM_PROVIDER_FLAT | BASE_PROVIDER_FILE))
     {
-        SetCascError(ERROR_NOT_SUPPORTED);
+        SetLastError(ERROR_NOT_SUPPORTED);
         return NULL;
     }
 
@@ -2415,6 +2368,7 @@ TFileStream * FileStream_CreateFile(
 
         // File create failed, delete the stream
         CASC_FREE(pStream);
+        pStream = NULL;
     }
 
     // Return the stream
@@ -2439,7 +2393,7 @@ TFileStream * FileStream_CreateFile(
  */
 
 TFileStream * FileStream_OpenFile(
-    LPCTSTR szFileName,
+    const TCHAR * szFileName,
     DWORD dwStreamFlags)
 {
     DWORD dwProvider = dwStreamFlags & STREAM_PROVIDERS_MASK;
@@ -2465,7 +2419,7 @@ TFileStream * FileStream_OpenFile(
             return Block4Stream_Open(szFileName, dwStreamFlags);
 
         default:
-            SetCascError(ERROR_INVALID_PARAMETER);
+            SetLastError(ERROR_INVALID_PARAMETER);
             return NULL;
     }
 }
@@ -2475,7 +2429,7 @@ TFileStream * FileStream_OpenFile(
  *
  * \a pStream Pointer to an open stream
  */
-LPCTSTR FileStream_GetFileName(TFileStream * pStream)
+const TCHAR * FileStream_GetFileName(TFileStream * pStream)
 {
     assert(pStream != NULL);
     return pStream->szFileName;
@@ -2488,7 +2442,7 @@ LPCTSTR FileStream_GetFileName(TFileStream * pStream)
  * \a pdwStreamProvider Pointer to a DWORD variable that receives stream provider (STREAM_PROVIDER_XXX)
  */
 
-size_t FileStream_Prefix(LPCTSTR szFileName, DWORD * pdwProvider)
+size_t FileStream_Prefix(const TCHAR * szFileName, DWORD * pdwProvider)
 {
     size_t nPrefixLength1 = 0;
     size_t nPrefixLength2 = 0;
@@ -2524,50 +2478,42 @@ size_t FileStream_Prefix(LPCTSTR szFileName, DWORD * pdwProvider)
             nPrefixLength1 = 5;
         }
 
-        // Cut out the stream provider
-        szFileName += nPrefixLength1;
-
         //
         // Determine the base provider
         //
 
-        if(!_tcsnicmp(szFileName, _T("file:"), 5))
+        if(!_tcsnicmp(szFileName+nPrefixLength1, _T("file:"), 5))
         {
             dwProvider |= BASE_PROVIDER_FILE;
             nPrefixLength2 = 5;
         }
 
-        else if(!_tcsnicmp(szFileName, _T("map:"), 4))
+        else if(!_tcsnicmp(szFileName+nPrefixLength1, _T("map:"), 4))
         {
             dwProvider |= BASE_PROVIDER_MAP;
             nPrefixLength2 = 4;
         }
 
-        else if(!_tcsnicmp(szFileName, _T("http:"), 5))
+        else if(!_tcsnicmp(szFileName+nPrefixLength1, _T("http:"), 5))
         {
             dwProvider |= BASE_PROVIDER_HTTP;
             nPrefixLength2 = 5;
-        }
-
-        else if(!_tcsnicmp(szFileName, _T("ribbit:"), 7))
-        {
-            dwProvider |= BASE_PROVIDER_RIBBIT;
-            nPrefixLength2 = 7;
         }
 
         // Only accept stream provider if we recognized the base provider
         if(nPrefixLength2 != 0)
         {
             // It is also allowed to put "//" after the base provider, e.g. "file://", "http://"
-            if(szFileName[nPrefixLength2] == '/' && szFileName[nPrefixLength2+1] == '/')
+            if(szFileName[nPrefixLength1+nPrefixLength2] == '/' && szFileName[nPrefixLength1+nPrefixLength2+1] == '/')
                 nPrefixLength2 += 2;
 
             if(pdwProvider != NULL)
                 *pdwProvider = dwProvider;
+            return nPrefixLength1 + nPrefixLength2;
         }
     }
 
-    return nPrefixLength1 + nPrefixLength2;
+    return 0;
 }
 
 /**
@@ -2585,7 +2531,7 @@ bool FileStream_SetCallback(TFileStream * pStream, STREAM_DOWNLOAD_CALLBACK pfnC
 
     if(pStream->BlockRead == NULL)
     {
-        SetCascError(ERROR_NOT_SUPPORTED);
+        SetLastError(ERROR_NOT_SUPPORTED);
         return false;
     }
 
@@ -2610,11 +2556,19 @@ bool FileStream_SetCallback(TFileStream * pStream, STREAM_DOWNLOAD_CALLBACK pfnC
  *
  * \returns
  * - If the function reads the required amount of bytes, it returns true.
- * - If the function reads less than required bytes, it returns false and GetCascError() returns ERROR_HANDLE_EOF
- * - If the function fails, it reads false and GetCascError() returns an error code different from ERROR_HANDLE_EOF
+ * - If the function reads less than required bytes, it returns false and GetLastError() returns ERROR_HANDLE_EOF
+ * - If the function fails, it reads false and GetLastError() returns an error code different from ERROR_HANDLE_EOF
  */
 bool FileStream_Read(TFileStream * pStream, ULONGLONG * pByteOffset, void * pvBuffer, DWORD dwBytesToRead)
 {
+    //FILE * fp = fopen("E:\\Loading.txt", "at");
+    //if(fp != NULL)
+    //{
+    //    ULONGLONG ByteOffset = (pByteOffset != NULL) ? pByteOffset[0] : 0;
+    //    fprintf(fp, "%-32ws\t%08X\t%08X\n", GetPlainFileName(pStream->szFileName), (ULONG)ByteOffset, dwBytesToRead);
+    //    fclose(fp);
+    //}
+
     assert(pStream->StreamRead != NULL);
     return pStream->StreamRead(pStream, pByteOffset, pvBuffer, dwBytesToRead);
 }
@@ -2635,7 +2589,7 @@ bool FileStream_Write(TFileStream * pStream, ULONGLONG * pByteOffset, const void
 {
     if(pStream->dwFlags & STREAM_FLAG_READ_ONLY)
     {
-        SetCascError(ERROR_ACCESS_DENIED);
+        SetLastError(ERROR_ACCESS_DENIED);
         return false;
     }
 
@@ -2665,7 +2619,7 @@ bool FileStream_SetSize(TFileStream * pStream, ULONGLONG NewFileSize)
 {
     if(pStream->dwFlags & STREAM_FLAG_READ_ONLY)
     {
-        SetCascError(ERROR_ACCESS_DENIED);
+        SetLastError(ERROR_ACCESS_DENIED);
         return false;
     }
 
@@ -2725,14 +2679,14 @@ bool FileStream_Replace(TFileStream * pStream, TFileStream * pNewStream)
     // Only supported on flat files
     if((pStream->dwFlags & STREAM_PROVIDERS_MASK) != (STREAM_PROVIDER_FLAT | BASE_PROVIDER_FILE))
     {
-        SetCascError(ERROR_NOT_SUPPORTED);
+        SetLastError(ERROR_NOT_SUPPORTED);
         return false;
     }
 
     // Not supported on read-only streams
     if(pStream->dwFlags & STREAM_FLAG_READ_ONLY)
     {
-        SetCascError(ERROR_ACCESS_DENIED);
+        SetLastError(ERROR_ACCESS_DENIED);
         return false;
     }
 
@@ -2778,9 +2732,6 @@ void FileStream_Close(TFileStream * pStream)
         // Also close base stream, if any
         else if(pStream->BaseClose != NULL)
             pStream->BaseClose(pStream);
-
-        // Free the stream lock
-        CascFreeLock(pStream->Lock);
 
         // Free the stream itself
         CASC_FREE(pStream);

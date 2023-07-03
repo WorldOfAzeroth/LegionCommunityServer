@@ -16,8 +16,7 @@
 
 #define BASE_PROVIDER_FILE          0x00000000  // Base data source is a file
 #define BASE_PROVIDER_MAP           0x00000001  // Base data source is memory-mapped file
-#define BASE_PROVIDER_HTTP          0x00000002  // Base data source is a file on web server via the HTTP protocol
-#define BASE_PROVIDER_RIBBIT        0x00000003  // Base data source is a file on web server via the Ribbit protocol
+#define BASE_PROVIDER_HTTP          0x00000002  // Base data source is a file on web server
 #define BASE_PROVIDER_MASK          0x0000000F  // Mask for base provider value
 
 #define STREAM_PROVIDER_FLAT        0x00000000  // Stream is linear with no offset mapping
@@ -29,7 +28,6 @@
 #define STREAM_FLAG_READ_ONLY       0x00000100  // Stream is read only
 #define STREAM_FLAG_WRITE_SHARE     0x00000200  // Allow write sharing when open for write
 #define STREAM_FLAG_USE_BITMAP      0x00000400  // If the file has a file bitmap, load it and use it
-#define STREAM_FLAG_FILL_MISSING    0x00000800  // If less than expected was read from the file, fill the missing part with zeros
 #define STREAM_OPTIONS_MASK         0x0000FF00  // Mask for stream options
 
 #define STREAM_PROVIDERS_MASK       0x000000FF  // Mask to get stream providers
@@ -48,7 +46,7 @@ typedef bool (*STREAM_CREATE)(
 
 typedef bool (*STREAM_OPEN)(
     struct TFileStream * pStream,       // Pointer to an unopened stream
-    LPCTSTR szFileName,           // Pointer to file name to be open
+    const TCHAR * szFileName,           // Pointer to file name to be open
     DWORD dwStreamFlags                 // Stream flags
     );
 
@@ -101,12 +99,6 @@ typedef bool (*BLOCK_CHECK)(
 
 typedef void (*BLOCK_SAVEMAP)(
     struct TFileStream * pStream        // Pointer to a block-oriented stream
-    );
-
-typedef void (WINAPI * STREAM_DOWNLOAD_CALLBACK)(
-    void * pvUserData,
-    ULONGLONG ByteOffset,
-    DWORD dwTotalBytes
     );
 
 //-----------------------------------------------------------------------------
@@ -172,13 +164,12 @@ union TBaseProviderData
 
     struct
     {
-        class CASC_SOCKET * pSocket;        // An open socket
-        unsigned char * fileData;           // Raw response converted to file data
-        char * hostName;                    // Name of the remote host
-        char * fileName;                    // Name of the remote resource
-        size_t fileDataLength;              // Length of the file data, in bytes
-        size_t fileDataPos;                 // Current position in the data
-    } Socket;
+        ULONGLONG FileSize;                 // Size of the file
+        ULONGLONG FilePos;                  // Current file position
+        ULONGLONG FileTime;                 // Last write time
+        HANDLE hInternet;                   // Internet handle
+        HANDLE hConnect;                    // Connection to the internet server
+    } Http;
 };
 
 struct TFileStream
@@ -206,12 +197,11 @@ struct TFileStream
     STREAM_CLOSE   BaseClose;               // Pointer to function closing the stream
 
     // Base provider data (file size, file position)
-    TBaseProviderData Base;                 // Stream information, like size or current position
-    CASC_LOCK Lock;                         // For multi-threaded synchronization
+    TBaseProviderData Base;
 
     // Stream provider data
     TFileStream * pMaster;                  // Master stream (e.g. MPQ on a web server)
-    LPTSTR szFileName;                      // File name (self-relative pointer)
+    TCHAR * szFileName;                     // File name (self-relative pointer)
 
     ULONGLONG StreamSize;                   // Stream size (can be less than file size)
     ULONGLONG StreamPos;                    // Stream position
@@ -249,10 +239,10 @@ struct TEncryptedStream : public TBlockStream
 //-----------------------------------------------------------------------------
 // Public functions for file stream
 
-TFileStream * FileStream_CreateFile(LPCTSTR szFileName, DWORD dwStreamFlags);
-TFileStream * FileStream_OpenFile(LPCTSTR szFileName, DWORD dwStreamFlags = 0);
-LPCTSTR FileStream_GetFileName(TFileStream * pStream);
-size_t FileStream_Prefix(LPCTSTR szFileName, DWORD * pdwProvider);
+TFileStream * FileStream_CreateFile(const TCHAR * szFileName, DWORD dwStreamFlags);
+TFileStream * FileStream_OpenFile(const TCHAR * szFileName, DWORD dwStreamFlags);
+const TCHAR * FileStream_GetFileName(TFileStream * pStream);
+size_t FileStream_Prefix(const TCHAR * szFileName, DWORD * pdwProvider);
 
 bool FileStream_SetCallback(TFileStream * pStream, STREAM_DOWNLOAD_CALLBACK pfnCallback, void * pvUserData);
 

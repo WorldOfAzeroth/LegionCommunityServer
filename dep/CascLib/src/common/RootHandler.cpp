@@ -13,138 +13,76 @@
 #include "../CascCommon.h"
 
 //-----------------------------------------------------------------------------
-// Constructor and destructor - TFileTreeRoot
+// Common support
 
-TFileTreeRoot::TFileTreeRoot(DWORD FileTreeFlags) : TRootHandler()
+int RootHandler_Insert(TRootHandler * pRootHandler, const char * szFileName, LPBYTE pbEncodingKey)
 {
-    // Initialize the file tree
-    FileTree.Create(FileTreeFlags);
+    if(pRootHandler == NULL || pRootHandler->Insert == NULL || pbEncodingKey == NULL)
+        return ERROR_NOT_SUPPORTED;
+
+    return pRootHandler->Insert(pRootHandler, szFileName, pbEncodingKey);
 }
 
-TFileTreeRoot::~TFileTreeRoot()
+LPBYTE RootHandler_Search(TRootHandler * pRootHandler, struct _TCascSearch * pSearch, PDWORD PtrFileSize, PDWORD PtrLocaleFlags, PDWORD PtrFileDataId)
 {
-    // Free the file tree
-    FileTree.Free();
-    dwFeatures = 0;
+    // Check if the root structure is valid at all
+    if(pRootHandler == NULL)
+        return NULL;
+
+    return pRootHandler->Search(pRootHandler, pSearch, PtrFileSize, PtrLocaleFlags, PtrFileDataId);
 }
 
-//-----------------------------------------------------------------------------
-// Virtual functions - TFileTreeRoot
-
-int TFileTreeRoot::Insert(
-    const char * szFileName,
-    PCASC_CKEY_ENTRY pCKeyEntry)
+void RootHandler_EndSearch(TRootHandler * pRootHandler, struct _TCascSearch * pSearch)
 {
-    PCASC_FILE_NODE pFileNode;
-
-    pFileNode = FileTree.InsertByName(pCKeyEntry, szFileName, FileTree.GetNextFileDataId());
-    return (pFileNode != NULL) ? ERROR_SUCCESS : ERROR_CAN_NOT_COMPLETE;
-}
-
-PCASC_CKEY_ENTRY TFileTreeRoot::GetFile(TCascStorage * /* hs */, const char * szFileName)
-{
-    PCASC_FILE_NODE pFileNode;
-    ULONGLONG FileNameHash = CalcFileNameHash(szFileName);
-    
-    pFileNode = FileTree.Find(FileNameHash);
-    return (pFileNode != NULL) ? pFileNode->pCKeyEntry : NULL;
-}
-
-PCASC_CKEY_ENTRY TFileTreeRoot::GetFile(TCascStorage * /* hs */, DWORD FileDataId)
-{
-    PCASC_FILE_NODE pFileNode;
-
-    pFileNode = FileTree.FindById(FileDataId);
-    return (pFileNode != NULL) ? pFileNode->pCKeyEntry : NULL;
-}
-
-PCASC_CKEY_ENTRY TFileTreeRoot::GetFile(size_t nFileIndex, char * szFileName, size_t ccFileName)
-{
-    PCASC_CKEY_ENTRY pCKeyEntry = NULL;
-    PCASC_FILE_NODE pFileNode;
-
-    // Perform the search in the underlying file tree
-    if((pFileNode = FileTree.PathAt(szFileName, ccFileName, nFileIndex)) != NULL)
-        pCKeyEntry = pFileNode->pCKeyEntry;
-    return pCKeyEntry;
-}
-
-PCASC_CKEY_ENTRY TFileTreeRoot::Search(TCascSearch * pSearch, PCASC_FIND_DATA pFindData)
-{
-    PCASC_FILE_NODE pFileNode;
-    size_t nMaxFileIndex = GetMaxFileIndex();
-
-    // Are we still inside the root directory range?
-    while(pSearch->nFileIndex < nMaxFileIndex)
+    // Check if the root structure is valid at all
+    if(pRootHandler != NULL)
     {
-        //BREAKIF(pSearch->nFileIndex >= 2823765);
+        pRootHandler->EndSearch(pRootHandler, pSearch);
+    }
+}
 
-        // Retrieve the file item
-        pFileNode = FileTree.PathAt(pFindData->szFileName, MAX_PATH, pSearch->nFileIndex++);
-        if(pFileNode != NULL)
+LPBYTE RootHandler_GetKey(TRootHandler * pRootHandler, const char * szFileName)
+{
+    // Check if the root structure is valid at all
+    if(pRootHandler == NULL)
+        return NULL;
+
+    return pRootHandler->GetKey(pRootHandler, szFileName);
+}
+
+void RootHandler_Dump(TCascStorage * hs, LPBYTE pbRootHandler, DWORD cbRootHandler, const TCHAR * szNameFormat, const TCHAR * szListFile, int nDumpLevel)
+{
+    TDumpContext * dc;
+
+    // Only if the ROOT provider suports the dump option
+    if(hs->pRootHandler != NULL && hs->pRootHandler->Dump != NULL)
+    {
+        // Create the dump file
+        dc = CreateDumpContext(hs, szNameFormat);
+        if(dc != NULL)
         {
-            // Ignore folders and mount points
-            if(!(pFileNode->Flags & CFN_FLAG_FOLDER))
-            {
-                // Check the wildcard
-                if (CascCheckWildCard(pFindData->szFileName, pSearch->szMask))
-                {
-                    // Retrieve the extra values (FileDataId, file size and locale flags)
-                    FileTree.GetExtras(pFileNode, &pFindData->dwFileDataId, &pFindData->dwLocaleFlags, &pFindData->dwContentFlags);
-
-                    // Return the found CKey entry
-                    return pFileNode->pCKeyEntry;
-                }
-            }
+            // Dump the content and close the file
+            hs->pRootHandler->Dump(hs, dc, pbRootHandler, cbRootHandler, szListFile, nDumpLevel);
+            dump_close(dc);
         }
     }
-
-    // No more entries
-    return NULL;
 }
 
-bool TFileTreeRoot::GetInfo(PCASC_CKEY_ENTRY pCKeyEntry, PCASC_FILE_FULL_INFO pFileInfo)
+void RootHandler_Close(TRootHandler * pRootHandler)
 {
-    PCASC_FILE_NODE pFileNode;
-
-    // Can't do much if the root key is NULL
-    if(pCKeyEntry != NULL)
+    // Check if the root structure is allocated at all
+    if(pRootHandler != NULL)
     {
-        pFileNode = FileTree.Find(pCKeyEntry);
-        if(pFileNode != NULL)
-        {
-            FileTree.GetExtras(pFileNode, &pFileInfo->FileDataId, &pFileInfo->LocaleFlags, &pFileInfo->ContentFlags);
-            pFileInfo->FileNameHash = pFileNode->FileNameHash;
-            return true;
-        }
+        pRootHandler->Close(pRootHandler);
     }
-
-    return false;
 }
 
-size_t TFileTreeRoot::Copy(TRootHandler * pRoot)
+DWORD RootHandler_GetFileId(TRootHandler * pRootHandler, const char * szFileName)
 {
-    PCASC_CKEY_ENTRY pCKeyEntry;
-    size_t nMaxFileIndex = GetMaxFileIndex();
-    size_t nItemsCopied = 0;
-    char szFileName[0x200];
+    // Check if the root structure is valid at all
+    if(pRootHandler == NULL)
+        return 0;
 
-    for(size_t nFileIndex = 0; nFileIndex < nMaxFileIndex; nFileIndex++)
-    {
-        if((pCKeyEntry = pRoot->GetFile(nFileIndex, szFileName, _countof(szFileName))) != NULL)
-        {
-            if(szFileName[0] != 0)
-            {
-                Insert(szFileName, pCKeyEntry);
-                nItemsCopied++;
-            }
-        }
-    }
-
-    return nItemsCopied;
+    return pRootHandler->GetFileId(pRootHandler, szFileName);
 }
 
-size_t TFileTreeRoot::GetMaxFileIndex()
-{
-    return FileTree.GetMaxFileIndex();
-}
