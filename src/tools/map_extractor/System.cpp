@@ -23,6 +23,7 @@
 #include "DB2Meta.h"
 #include "DBFilesClientList.h"
 #include "ExtractorDB2LoadInfo.h"
+#include "MapDefines.h"
 #include "StringFormat.h"
 #include "adt.h"
 #include "wdt.h"
@@ -354,7 +355,7 @@ bool ReadCinematicCameraDBC()
 
     // get camera file list from DB2
     for (size_t i = 0; i < db2.GetRecordCount(); ++i)
-        CameraFileNames.insert(Trinity::StringFormat("FILE%08X.xxx", db2.GetRecord(i).GetUInt32("FileDataID")));
+        CameraFileNames.insert(Trinity::StringFormat("FILE{:08X}.xxx", db2.GetRecord(i).GetUInt32("FileDataID")));
 
     printf("Done! (" SZFMTD " CinematicCameras loaded)\n", CameraFileNames.size());
     return true;
@@ -363,74 +364,6 @@ bool ReadCinematicCameraDBC()
 //
 // Adt file convertor function and data
 //
-
-// Map file format data
-static char const* MAP_MAGIC         = "MAPS";
-static char const* MAP_VERSION_MAGIC = "v1.9";
-static char const* MAP_AREA_MAGIC    = "AREA";
-static char const* MAP_HEIGHT_MAGIC  = "MHGT";
-static char const* MAP_LIQUID_MAGIC  = "MLIQ";
-
-struct map_fileheader
-{
-    uint32 mapMagic;
-    uint32 versionMagic;
-    uint32 buildMagic;
-    uint32 areaMapOffset;
-    uint32 areaMapSize;
-    uint32 heightMapOffset;
-    uint32 heightMapSize;
-    uint32 liquidMapOffset;
-    uint32 liquidMapSize;
-    uint32 holesOffset;
-    uint32 holesSize;
-};
-
-#define MAP_AREA_NO_AREA      0x0001
-
-struct map_areaHeader
-{
-    uint32 fourcc;
-    uint16 flags;
-    uint16 gridArea;
-};
-
-#define MAP_HEIGHT_NO_HEIGHT            0x0001
-#define MAP_HEIGHT_AS_INT16             0x0002
-#define MAP_HEIGHT_AS_INT8              0x0004
-#define MAP_HEIGHT_HAS_FLIGHT_BOUNDS    0x0008
-
-struct map_heightHeader
-{
-    uint32 fourcc;
-    uint32 flags;
-    float  gridHeight;
-    float  gridMaxHeight;
-};
-
-#define MAP_LIQUID_TYPE_NO_WATER    0x00
-#define MAP_LIQUID_TYPE_WATER       0x01
-#define MAP_LIQUID_TYPE_OCEAN       0x02
-#define MAP_LIQUID_TYPE_MAGMA       0x04
-#define MAP_LIQUID_TYPE_SLIME       0x08
-
-#define MAP_LIQUID_TYPE_DARK_WATER  0x10
-
-#define MAP_LIQUID_NO_TYPE    0x0001
-#define MAP_LIQUID_NO_HEIGHT  0x0002
-
-struct map_liquidHeader
-{
-    uint32 fourcc;
-    uint8 flags;
-    uint8 liquidFlags;
-    uint16 liquidType;
-    uint8  offsetX;
-    uint8  offsetY;
-    uint8  width;
-    uint8  height;
-    float  liquidLevel;
-};
 
 float selectUInt8StepStore(float maxDiff)
 {
@@ -452,7 +385,7 @@ uint8  uint8_V8[ADT_GRID_SIZE][ADT_GRID_SIZE];
 uint8  uint8_V9[ADT_GRID_SIZE+1][ADT_GRID_SIZE+1];
 
 uint16 liquid_entry[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID];
-uint8 liquid_flags[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID];
+map_liquidHeaderTypeFlags liquid_flags[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID];
 bool  liquid_show[ADT_GRID_SIZE][ADT_GRID_SIZE];
 float liquid_height[ADT_GRID_SIZE+1][ADT_GRID_SIZE+1];
 uint8 holes[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID][8];
@@ -502,9 +435,9 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
         return false;
 
     // Prepare map header
-    map_fileheader map;
-    map.mapMagic = *reinterpret_cast<uint32 const*>(MAP_MAGIC);
-    map.versionMagic = *reinterpret_cast<uint32 const*>(MAP_VERSION_MAGIC);
+    map_fileheader map{};
+    map.mapMagic = MapMagic;
+    map.versionMagic = MapVersionMagic;
     map.buildMagic = build;
 
     // Get area flags data
@@ -609,7 +542,7 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
                         {
                             liquid_show[cy][cx] = true;
                             if (!ignoreDeepWater && liquid->flags[y][x] & (1 << 7))
-                                liquid_flags[mcnk->iy][mcnk->ix] |= MAP_LIQUID_TYPE_DARK_WATER;
+                                liquid_flags[mcnk->iy][mcnk->ix] |= map_liquidHeaderTypeFlags::DarkWater;
                             ++count;
                         }
                     }
@@ -619,20 +552,20 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
                 if (c_flag & (1 << 2))
                 {
                     liquid_entry[mcnk->iy][mcnk->ix] = 1;
-                    liquid_flags[mcnk->iy][mcnk->ix] |= MAP_LIQUID_TYPE_WATER;            // water
+                    liquid_flags[mcnk->iy][mcnk->ix] |= map_liquidHeaderTypeFlags::Water; // water
                 }
                 if (c_flag & (1 << 3))
                 {
                     liquid_entry[mcnk->iy][mcnk->ix] = 2;
-                    liquid_flags[mcnk->iy][mcnk->ix] |= MAP_LIQUID_TYPE_OCEAN;            // ocean
+                    liquid_flags[mcnk->iy][mcnk->ix] |= map_liquidHeaderTypeFlags::Ocean; // ocean
                 }
                 if (c_flag & (1 << 4))
                 {
                     liquid_entry[mcnk->iy][mcnk->ix] = 3;
-                    liquid_flags[mcnk->iy][mcnk->ix] |= MAP_LIQUID_TYPE_MAGMA;            // magma/slime
+                    liquid_flags[mcnk->iy][mcnk->ix] |= map_liquidHeaderTypeFlags::Magma; // magma/slime
                 }
 
-                if (!count && liquid_flags[mcnk->iy][mcnk->ix])
+                if (!count && liquid_flags[mcnk->iy][mcnk->ix] != map_liquidHeaderTypeFlags::NoWater)
                     fprintf(stderr, "Wrong liquid detect in MCLQ chunk");
 
                 for (int y = 0; y <= ADT_CELL_SIZE; ++y)
@@ -696,16 +629,16 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
                 liquid_entry[i][j] = h2o->GetLiquidType(h);
                 switch (LiquidTypes.at(liquid_entry[i][j]).SoundBank)
                 {
-                    case LIQUID_TYPE_WATER: liquid_flags[i][j] |= MAP_LIQUID_TYPE_WATER; break;
-                    case LIQUID_TYPE_OCEAN: liquid_flags[i][j] |= MAP_LIQUID_TYPE_OCEAN; if (!ignoreDeepWater && attrs.Deep) liquid_flags[i][j] |= MAP_LIQUID_TYPE_DARK_WATER; break;
-                    case LIQUID_TYPE_MAGMA: liquid_flags[i][j] |= MAP_LIQUID_TYPE_MAGMA; break;
-                    case LIQUID_TYPE_SLIME: liquid_flags[i][j] |= MAP_LIQUID_TYPE_SLIME; break;
+                    case LIQUID_TYPE_WATER: liquid_flags[i][j] |= map_liquidHeaderTypeFlags::Water; break;
+                    case LIQUID_TYPE_OCEAN: liquid_flags[i][j] |= map_liquidHeaderTypeFlags::Ocean; if (!ignoreDeepWater && attrs.Deep) liquid_flags[i][j] |= map_liquidHeaderTypeFlags::DarkWater; break;
+                    case LIQUID_TYPE_MAGMA: liquid_flags[i][j] |= map_liquidHeaderTypeFlags::Magma; break;
+                    case LIQUID_TYPE_SLIME: liquid_flags[i][j] |= map_liquidHeaderTypeFlags::Slime; break;
                     default:
                         printf("\nCan't find Liquid type %u for map %s\nchunk %d,%d\n", h->LiquidType, inputPath.c_str(), i, j);
                         break;
                 }
 
-                if (!count && liquid_flags[i][j])
+                if (!count && liquid_flags[i][j] != map_liquidHeaderTypeFlags::NoWater)
                     printf("Wrong liquid detect in MH2O chunk");
 
                 int32 pos = 0;
@@ -752,8 +685,8 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
     map.areaMapSize   = sizeof(map_areaHeader);
 
     map_areaHeader areaHeader;
-    areaHeader.fourcc = *reinterpret_cast<uint32 const*>(MAP_AREA_MAGIC);
-    areaHeader.flags = 0;
+    areaHeader.areaMagic = MapAreaMagic;
+    areaHeader.flags = map_areaHeaderFlags::None;
     if (fullAreaData)
     {
         areaHeader.gridArea = 0;
@@ -761,7 +694,7 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
     }
     else
     {
-        areaHeader.flags |= MAP_AREA_NO_AREA;
+        areaHeader.flags |= map_areaHeaderFlags::NoArea;
         areaHeader.gridArea = static_cast<uint16>(areaId);
     }
 
@@ -810,26 +743,26 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
     map.heightMapSize = sizeof(map_heightHeader);
 
     map_heightHeader heightHeader;
-    heightHeader.fourcc = *reinterpret_cast<uint32 const*>(MAP_HEIGHT_MAGIC);
-    heightHeader.flags = 0;
+    heightHeader.heightMagic = MapHeightMagic;
+    heightHeader.flags = map_heightHeaderFlags::None;
     heightHeader.gridHeight    = minHeight;
     heightHeader.gridMaxHeight = maxHeight;
 
     if (maxHeight == minHeight)
-        heightHeader.flags |= MAP_HEIGHT_NO_HEIGHT;
+        heightHeader.flags |= map_heightHeaderFlags::NoHeight;
 
     // Not need store if flat surface
     if (CONF_allow_float_to_int && (maxHeight - minHeight) < CONF_flat_height_delta_limit)
-        heightHeader.flags |= MAP_HEIGHT_NO_HEIGHT;
+        heightHeader.flags |= map_heightHeaderFlags::NoHeight;
 
     if (hasFlightBox)
     {
-        heightHeader.flags |= MAP_HEIGHT_HAS_FLIGHT_BOUNDS;
+        heightHeader.flags |= map_heightHeaderFlags::HasFlightBounds;
         map.heightMapSize += sizeof(flight_box_max) + sizeof(flight_box_min);
     }
 
     // Try store as packed in uint16 or uint8 values
-    if (!(heightHeader.flags & MAP_HEIGHT_NO_HEIGHT))
+    if (!heightHeader.flags.HasFlag(map_heightHeaderFlags::NoHeight))
     {
         float step = 0;
         // Try Store as uint values
@@ -838,18 +771,18 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
             float diff = maxHeight - minHeight;
             if (diff < CONF_float_to_int8_limit)      // As uint8 (max accuracy = CONF_float_to_int8_limit/256)
             {
-                heightHeader.flags|=MAP_HEIGHT_AS_INT8;
+                heightHeader.flags |= map_heightHeaderFlags::HeightAsInt8;
                 step = selectUInt8StepStore(diff);
             }
-            else if (diff<CONF_float_to_int16_limit)  // As uint16 (max accuracy = CONF_float_to_int16_limit/65536)
+            else if (diff < CONF_float_to_int16_limit)  // As uint16 (max accuracy = CONF_float_to_int16_limit/65536)
             {
-                heightHeader.flags|=MAP_HEIGHT_AS_INT16;
+                heightHeader.flags |= map_heightHeaderFlags::HeightAsInt16;
                 step = selectUInt16StepStore(diff);
             }
         }
 
         // Pack it to int values if need
-        if (heightHeader.flags&MAP_HEIGHT_AS_INT8)
+        if (heightHeader.flags.HasFlag(map_heightHeaderFlags::HeightAsInt8))
         {
             for (int y=0; y<ADT_GRID_SIZE; y++)
                 for(int x=0;x<ADT_GRID_SIZE;x++)
@@ -859,7 +792,7 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
                     uint8_V9[y][x] = uint8((V9[y][x] - minHeight) * step + 0.5f);
             map.heightMapSize+= sizeof(uint8_V9) + sizeof(uint8_V8);
         }
-        else if (heightHeader.flags&MAP_HEIGHT_AS_INT16)
+        else if (heightHeader.flags.HasFlag(map_heightHeaderFlags::HeightAsInt16))
         {
             for (int y=0; y<ADT_GRID_SIZE; y++)
                 for(int x=0;x<ADT_GRID_SIZE;x++)
@@ -877,7 +810,7 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
     // Pack liquid data
     //============================================
     uint16 firstLiquidType = liquid_entry[0][0];
-    uint8 firstLiquidFlag = liquid_flags[0][0];
+    map_liquidHeaderTypeFlags firstLiquidFlag = liquid_flags[0][0];
     bool fullType = false;
     for (int y = 0; y < ADT_CELLS_PER_GRID; y++)
     {
@@ -895,7 +828,7 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
     map_liquidHeader liquidHeader;
 
     // no water data (if all grid have 0 liquid type)
-    if (firstLiquidFlag == 0 && !fullType)
+    if (firstLiquidFlag == map_liquidHeaderTypeFlags::NoWater && !fullType)
     {
         // No liquid data
         map.liquidMapOffset = 0;
@@ -922,13 +855,16 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
                     if (minHeight > h) minHeight = h;
                 }
                 else
+                {
                     liquid_height[y][x] = CONF_use_minHeight;
+                    if (minHeight > CONF_use_minHeight) minHeight = CONF_use_minHeight;
+                }
             }
         }
         map.liquidMapOffset = map.heightMapOffset + map.heightMapSize;
         map.liquidMapSize = sizeof(map_liquidHeader);
-        liquidHeader.fourcc = *reinterpret_cast<uint32 const*>(MAP_LIQUID_MAGIC);
-        liquidHeader.flags = 0;
+        liquidHeader.liquidMagic = MapLiquidMagic;
+        liquidHeader.flags = map_liquidHeaderFlags::None;
         liquidHeader.liquidType = 0;
         liquidHeader.offsetX = minX;
         liquidHeader.offsetY = minY;
@@ -937,16 +873,16 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
         liquidHeader.liquidLevel = minHeight;
 
         if (maxHeight == minHeight)
-            liquidHeader.flags |= MAP_LIQUID_NO_HEIGHT;
+            liquidHeader.flags |= map_liquidHeaderFlags::NoHeight;
 
         // Not need store if flat surface
         if (CONF_allow_float_to_int && (maxHeight - minHeight) < CONF_flat_liquid_delta_limit)
-            liquidHeader.flags |= MAP_LIQUID_NO_HEIGHT;
+            liquidHeader.flags |= map_liquidHeaderFlags::NoHeight;
 
         if (!fullType)
-            liquidHeader.flags |= MAP_LIQUID_NO_TYPE;
+            liquidHeader.flags |= map_liquidHeaderFlags::NoType;
 
-        if (liquidHeader.flags & MAP_LIQUID_NO_TYPE)
+        if (liquidHeader.flags.HasFlag(map_liquidHeaderFlags::NoType))
         {
             liquidHeader.liquidFlags = firstLiquidFlag;
             liquidHeader.liquidType = firstLiquidType;
@@ -954,7 +890,7 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
         else
             map.liquidMapSize += sizeof(liquid_entry) + sizeof(liquid_flags);
 
-        if (!(liquidHeader.flags & MAP_LIQUID_NO_HEIGHT))
+        if (!liquidHeader.flags.HasFlag(map_liquidHeaderFlags::NoHeight))
             map.liquidMapSize += sizeof(float)*liquidHeader.width*liquidHeader.height;
     }
 
@@ -981,34 +917,34 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
         return false;
     }
 
-    outFile.write(reinterpret_cast<const char*>(&map), sizeof(map));
+    outFile.write(reinterpret_cast<char const*>(&map), sizeof(map));
     // Store area data
-    outFile.write(reinterpret_cast<const char*>(&areaHeader), sizeof(areaHeader));
-    if (!(areaHeader.flags & MAP_AREA_NO_AREA))
-        outFile.write(reinterpret_cast<const char*>(area_ids), sizeof(area_ids));
+    outFile.write(reinterpret_cast<char const*>(&areaHeader), sizeof(areaHeader));
+    if (!areaHeader.flags.HasFlag(map_areaHeaderFlags::NoArea))
+        outFile.write(reinterpret_cast<char const*>(area_ids), sizeof(area_ids));
 
     // Store height data
-    outFile.write(reinterpret_cast<const char*>(&heightHeader), sizeof(heightHeader));
-    if (!(heightHeader.flags & MAP_HEIGHT_NO_HEIGHT))
+    outFile.write(reinterpret_cast<char const*>(&heightHeader), sizeof(heightHeader));
+    if (!heightHeader.flags.HasFlag(map_heightHeaderFlags::NoHeight))
     {
-        if (heightHeader.flags & MAP_HEIGHT_AS_INT16)
+        if (heightHeader.flags.HasFlag(map_heightHeaderFlags::HeightAsInt16))
         {
-            outFile.write(reinterpret_cast<const char*>(uint16_V9), sizeof(uint16_V9));
-            outFile.write(reinterpret_cast<const char*>(uint16_V8), sizeof(uint16_V8));
+            outFile.write(reinterpret_cast<char const*>(uint16_V9), sizeof(uint16_V9));
+            outFile.write(reinterpret_cast<char const*>(uint16_V8), sizeof(uint16_V8));
         }
-        else if (heightHeader.flags & MAP_HEIGHT_AS_INT8)
+        else if (heightHeader.flags.HasFlag(map_heightHeaderFlags::HeightAsInt8))
         {
-            outFile.write(reinterpret_cast<const char*>(uint8_V9), sizeof(uint8_V9));
-            outFile.write(reinterpret_cast<const char*>(uint8_V8), sizeof(uint8_V8));
+            outFile.write(reinterpret_cast<char const*>(uint8_V9), sizeof(uint8_V9));
+            outFile.write(reinterpret_cast<char const*>(uint8_V8), sizeof(uint8_V8));
         }
         else
         {
-            outFile.write(reinterpret_cast<const char*>(V9), sizeof(V9));
-            outFile.write(reinterpret_cast<const char*>(V8), sizeof(V8));
+            outFile.write(reinterpret_cast<char const*>(V9), sizeof(V9));
+            outFile.write(reinterpret_cast<char const*>(V8), sizeof(V8));
         }
     }
 
-    if (heightHeader.flags & MAP_HEIGHT_HAS_FLIGHT_BOUNDS)
+    if (heightHeader.flags.HasFlag(map_heightHeaderFlags::HasFlightBounds))
     {
         outFile.write(reinterpret_cast<char*>(flight_box_max), sizeof(flight_box_max));
         outFile.write(reinterpret_cast<char*>(flight_box_min), sizeof(flight_box_min));
@@ -1017,23 +953,23 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
     // Store liquid data if need
     if (map.liquidMapOffset)
     {
-        outFile.write(reinterpret_cast<const char*>(&liquidHeader), sizeof(liquidHeader));
-        if (!(liquidHeader.flags & MAP_LIQUID_NO_TYPE))
+        outFile.write(reinterpret_cast<char const*>(&liquidHeader), sizeof(liquidHeader));
+        if (!liquidHeader.flags.HasFlag(map_liquidHeaderFlags::NoType))
         {
-            outFile.write(reinterpret_cast<const char*>(liquid_entry), sizeof(liquid_entry));
-            outFile.write(reinterpret_cast<const char*>(liquid_flags), sizeof(liquid_flags));
+            outFile.write(reinterpret_cast<char const*>(liquid_entry), sizeof(liquid_entry));
+            outFile.write(reinterpret_cast<char const*>(liquid_flags), sizeof(liquid_flags));
         }
 
-        if (!(liquidHeader.flags & MAP_LIQUID_NO_HEIGHT))
+        if (!liquidHeader.flags.HasFlag(map_liquidHeaderFlags::NoHeight))
         {
             for (int y = 0; y < liquidHeader.height; y++)
-                outFile.write(reinterpret_cast<const char*>(&liquid_height[y + liquidHeader.offsetY][liquidHeader.offsetX]), sizeof(float) * liquidHeader.width);
+                outFile.write(reinterpret_cast<char const*>(&liquid_height[y + liquidHeader.offsetY][liquidHeader.offsetX]), sizeof(float) * liquidHeader.width);
         }
     }
 
     // store hole data
     if (hasHoles)
-        outFile.write(reinterpret_cast<const char*>(holes), map.holesSize);
+        outFile.write(reinterpret_cast<char const*>(holes), map.holesSize);
 
     outFile.close();
 
@@ -1087,7 +1023,7 @@ void ExtractMaps(uint32 build)
     {
         printf("Extract %s (" SZFMTD "/" SZFMTD ")                  \n", map_ids[z].name, z+1, map_ids.size());
         // Loadup map grid data
-        storagePath = Trinity::StringFormat("World\\Maps\\%s\\%s.wdt", map_ids[z].name, map_ids[z].name);
+        storagePath = Trinity::StringFormat("World\\Maps\\{}\\{}.wdt", map_ids[z].name, map_ids[z].name);
         ChunkedFile wdt;
         if (!wdt.loadFile(CascStorage, storagePath, false))
             continue;
@@ -1100,8 +1036,8 @@ void ExtractMaps(uint32 build)
                 if (!(chunk->As<wdt_MAIN>()->adt_list[y][x].flag & 0x1))
                     continue;
 
-                storagePath = Trinity::StringFormat("World\\Maps\\%s\\%s_%u_%u.adt", map_ids[z].name, map_ids[z].name, x, y);
-                outputFileName =  Trinity::StringFormat("%s/maps/%04u_%02u_%02u.map", output_path.string().c_str(), map_ids[z].id, y, x);
+                storagePath = Trinity::StringFormat("World\\Maps\\{}\\{}_{}_{}.adt", map_ids[z].name, map_ids[z].name, x, y);
+                outputFileName =  Trinity::StringFormat("{}/maps/{:04}_{:02}_{:02}.map", output_path.string().c_str(), map_ids[z].id, y, x);
                 bool ignoreDeepWater = IsDeepWaterIgnored(map_ids[z].id, y, x);
                 ConvertADT(storagePath, outputFileName, y, x, build, ignoreDeepWater);
             }
