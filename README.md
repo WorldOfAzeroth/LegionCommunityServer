@@ -1,4 +1,4 @@
-# ![logo](https://community.trinitycore.org/public/style_images/1_trinitycore.png) TrinityCore (master)
+LegionCommunityServer (master)
 
 [![Average time to resolve an issue](https://isitmaintained.com/badge/resolution/TrinityCore/TrinityCore.svg)](https://isitmaintained.com/project/TrinityCore/TrinityCore "Average time to resolve an issue") [![Percentage of issues still open](https://isitmaintained.com/badge/open/TrinityCore/TrinityCore.svg)](https://isitmaintained.com/project/TrinityCore/TrinityCore "Percentage of issues still open")
 
@@ -19,8 +19,7 @@
 
 ## Build Status
 
-master 
-:------------:
+
 [![master Build Status](https://circleci.com/gh/TrinityCore/TrinityCore/tree/master.svg?style=shield)](https://circleci.com/gh/TrinityCore/TrinityCore/tree/master) 
 [![master Build status](https://ci.appveyor.com/api/projects/status/54d0u1fxe50ad80o/branch/master?svg=true)](https://ci.appveyor.com/project/DDuarte/trinitycore/branch/master)
 [![master GCC Build status](https://github.com/TrinityCore/TrinityCore/actions/workflows/gcc-build.yml/badge.svg?branch=master&event=push)](https://github.com/TrinityCore/TrinityCore/actions?query=workflow%3AGCC+branch%3Amaster+event%3Apush) 
@@ -28,7 +27,7 @@ master
 
 ## Introduction
 
-TrinityCore is a *MMORPG* Framework based mostly in C++.
+LegionCommunityServer is a *MMORPG* Framework based mostly in C++.
 
 It is derived from *MaNGOS*, the *Massive Network Game Object Server*, and is
 based on the code of that project with extensive changes over time to optimize,

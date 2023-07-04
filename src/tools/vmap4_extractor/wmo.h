@@ -85,7 +85,6 @@ public:
     float bbcorn2[3];
     uint16 flags, numLod;
 
-    std::vector<char> GroupNames;
     WMODoodadData DoodadData;
     std::unordered_set<uint32> ValidDoodadNames;
     std::vector<uint32> groupFileDataIDs;
@@ -123,8 +122,10 @@ private:
 public:
     // MOGP
 
-    std::unique_ptr<uint16[]> MPY2;
-    std::unique_ptr<uint32[]> MOVX;
+
+    char* MOPY;
+    uint16* MOVI;
+    uint16* MoviEx;
     float* MOVT;
     uint16* MOBA;
     int* MobaEx;
@@ -141,7 +142,7 @@ public:
     uint16 nBatchB;
     uint32 nBatchC, fogIdx, groupLiquid, groupWMOID;
 
-    int moba_size;
+    int mopy_size, moba_size;
     int LiquEx_size;
     unsigned int nVertices; // number when loaded
     int nTriangles; // number when loaded
@@ -155,7 +156,6 @@ public:
     bool open(WMORoot* rootWMO);
     int ConvertToVMAPGroupWmo(FILE* output, bool preciseVectorData);
     uint32 GetLiquidTypeId(uint32 liquidTypeId);
-    bool ShouldSkip(WMORoot const* root) const;
 };
 
 namespace MapObject
