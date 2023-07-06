@@ -357,7 +357,7 @@ public:
     std::vector<TransmogSetItemEntry const*> const* GetTransmogSetItems(uint32 transmogSetId) const;
     WMOAreaTableEntry const* GetWMOAreaTable(int32 rootId, int32 adtId, int32 groupId) const;
     uint32 GetVirtualMapForMapAndZone(uint32 mapId, uint32 zoneId) const;
-    void Zone2MapCoordinates(uint32 areaId, float& x, float& y) const;
+    bool Zone2MapCoordinates(uint32 areaId, float& x, float& y) const;
     void Map2ZoneCoordinates(uint32 areaId, float& x, float& y) const;
     WorldSafeLocsEntry const* GetWorldSafeLoc(uint32 id) const;
     static void DeterminaAlternateMapPosition(uint32 mapId, float x, float y, float z, uint32* newMapId = nullptr, DBCPosition2D* newPos = nullptr);
