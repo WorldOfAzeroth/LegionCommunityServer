@@ -659,7 +659,7 @@ WorldSafeLocsEntry const* BattlegroundSA::GetClosestGraveyard(Player* player)
         safeloc = BG_SA_GYEntries[BG_SA_DEFENDER_LAST_GY];
 
     closest = sDB2Manager.GetWorldSafeLoc(safeloc);
-    nearest = player->GetExactDistSq(closest->Loc);
+    nearest = player->GetExactDistSq(closest->GetPositionX(), closest->GetPositionY(), closest->GetPositionZ());
 
     for (uint8 i = BG_SA_RIGHT_CAPTURABLE_GY; i < BG_SA_MAX_GY; i++)
     {
@@ -667,7 +667,7 @@ WorldSafeLocsEntry const* BattlegroundSA::GetClosestGraveyard(Player* player)
             continue;
 
         ret = sDB2Manager.GetWorldSafeLoc(BG_SA_GYEntries[i]);
-        dist = player->GetExactDistSq(ret->Loc);
+        dist = player->GetExactDistSq(ret->GetPositionX(), ret->GetPositionY(), ret->GetPositionZ());
         if (dist < nearest)
         {
             closest = ret;

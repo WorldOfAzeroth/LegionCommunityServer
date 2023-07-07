@@ -1623,11 +1623,11 @@ struct BattlegroundAVScore final : public BattlegroundScore
         {
             BattlegroundScore::BuildPvPLogPlayerDataPacket(playerData);
 
-            playerData.Stats.emplace_back(AV_OBJECTIVE_ASSAULT_GRAVEYARD, GraveyardsAssaulted);
-            playerData.Stats.emplace_back(AV_OBJECTIVE_DEFEND_GRAVEYARD, GraveyardsDefended);
-            playerData.Stats.emplace_back(AV_OBJECTIVE_ASSAULT_TOWER, TowersAssaulted);
-            playerData.Stats.emplace_back(AV_OBJECTIVE_DEFEND_TOWER, TowersDefended);
-            playerData.Stats.emplace_back(AV_OBJECTIVE_SECONDARY_OBJECTIVE, MinesCaptured);
+            playerData.Stats.push_back(GraveyardsAssaulted);
+            playerData.Stats.push_back(GraveyardsDefended);
+            playerData.Stats.push_back(TowersAssaulted);
+            playerData.Stats.push_back(TowersDefended);
+            playerData.Stats.push_back(MinesCaptured);
         }
 
         uint32 GetAttr1() const final override { return GraveyardsAssaulted; }

@@ -26,25 +26,20 @@
 
 struct AchievementEntry;
 struct ArtifactPowerRankEntry;
-struct AzeriteEssenceEntry;
 struct BattlePetSpeciesEntry;
 struct CurrencyContainerEntry;
 struct CurrencyTypesEntry;
 struct GarrAbilityEntry;
 struct GarrFollowerEntry;
-struct GarrMissionEntry;
 struct GlyphPropertiesEntry;
 struct ItemModifiedAppearanceEntry;
 struct ItemNameDescriptionEntry;
 struct ItemTemplate;
 struct LocalizedString;
 struct MapEntry;
-struct MapChallengeModeEntry;
-struct MawPowerEntry;
 struct PvpTalentEntry;
 class Quest;
 struct SkillLineEntry;
-struct SoulbindConduitRankEntry;
 class SpellInfo;
 struct SpellItemEnchantmentEntry;
 struct TalentEntry;
@@ -72,11 +67,6 @@ namespace Trinity::Hyperlinks
         uint8 CurrentRankWithBonus = 0;
     };
 
-    struct AzeriteEssenceLinkData
-    {
-        AzeriteEssenceEntry const* Essence = nullptr;
-        uint8 Rank = 0;
-    };
 
     struct BattlePetLinkData
     {
@@ -109,11 +99,6 @@ namespace Trinity::Hyperlinks
         uint32 Specialization = 0;
     };
 
-    struct GarrisonMissionLinkData
-    {
-        GarrMissionEntry const* Mission = nullptr;
-        uint64 DbID = 0;
-    };
 
     struct InstanceLockLinkData
     {
@@ -163,13 +148,7 @@ namespace Trinity::Hyperlinks
         uint32 Difficulty = 0;
     };
 
-    struct KeystoneLinkData
-    {
-        uint32 ItemId = 0;
-        MapChallengeModeEntry const* Map = nullptr;
-        uint32 Level = 0;
-        std::array<uint32, 4> Affix = { };
-    };
+
 
     struct QuestLinkData
     {
@@ -285,25 +264,12 @@ namespace Trinity::Hyperlinks
             static bool StoreTo(ArtifactPowerLinkData& val, std::string_view text);
         };
 
-        struct TC_GAME_API azessence
-        {
-            using value_type = AzeriteEssenceLinkData const&;
-            static constexpr std::string_view tag() { return "azessence"; }
-            static bool StoreTo(AzeriteEssenceLinkData& val, std::string_view text);
-        };
 
         struct TC_GAME_API battlepet
         {
             using value_type = BattlePetLinkData const&;
             static constexpr std::string_view tag() { return "battlepet"; }
             static bool StoreTo(BattlePetLinkData& val, std::string_view text);
-        };
-
-        struct TC_GAME_API conduit
-        {
-            using value_type = SoulbindConduitRankEntry const*;
-            static constexpr std::string_view tag() { return "conduit"; }
-            static bool StoreTo(SoulbindConduitRankEntry const*& val, std::string_view text);
         };
 
         struct TC_GAME_API currency
@@ -334,12 +300,6 @@ namespace Trinity::Hyperlinks
             static bool StoreTo(GarrAbilityEntry const*& val, std::string_view text);
         };
 
-        struct TC_GAME_API garrmission
-        {
-            using value_type = GarrisonMissionLinkData const&;
-            static constexpr std::string_view tag() { return "garrmission"; }
-            static bool StoreTo(GarrisonMissionLinkData& val, std::string_view text);
-        };
 
         struct TC_GAME_API instancelock
         {
@@ -362,19 +322,6 @@ namespace Trinity::Hyperlinks
             static bool StoreTo(JournalLinkData& val, std::string_view text);
         };
 
-        struct TC_GAME_API keystone
-        {
-            using value_type = KeystoneLinkData const&;
-            static constexpr std::string_view tag() { return "keystone"; }
-            static bool StoreTo(KeystoneLinkData& val, std::string_view text);
-        };
-
-        struct TC_GAME_API mawpower
-        {
-            using value_type = MawPowerEntry const*;
-            static constexpr std::string_view tag() { return "mawpower"; }
-            static bool StoreTo(MawPowerEntry const*& val, std::string_view text);
-        };
 
         struct TC_GAME_API pvptal
         {
@@ -418,12 +365,6 @@ namespace Trinity::Hyperlinks
             static bool StoreTo(ItemModifiedAppearanceEntry const*& val, std::string_view text);
         };
 
-        struct TC_GAME_API transmogillusion
-        {
-            using value_type = SpellItemEnchantmentEntry const*;
-            static constexpr std::string_view tag() { return "transmogillusion"; }
-            static bool StoreTo(SpellItemEnchantmentEntry const*& val, std::string_view text);
-        };
 
         struct TC_GAME_API transmogset
         {

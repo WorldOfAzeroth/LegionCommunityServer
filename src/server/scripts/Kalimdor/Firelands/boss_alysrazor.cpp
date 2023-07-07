@@ -182,7 +182,7 @@ class npc_harbinger_of_flame : public CreatureScript
 
             void JustEngagedWith(Unit* /*target*/) override
             {
-                for (ObjectGuid const& birdGuid : me->m_unitData->ChannelObjects)
+                for (ObjectGuid const& birdGuid : me->GetChannelObjects())
                     if (Creature* bird = ObjectAccessor::GetCreature(*me, birdGuid))
                         DoZoneInCombat(bird);
 

@@ -222,7 +222,6 @@ void Channel::JoinChannel(Player* player, std::string const& pass)
         //notify->Data.InstanceID = 0;
         notify->Data._ChannelFlags = _channelFlags;
         notify->Data._Channel = GetName(localeIdx);
-        notify->Data.ChannelGUID = _channelGuid;
         notify->Data.Write();
         return notify;
     };
@@ -703,7 +702,6 @@ void Channel::Say(ObjectGuid const& guid, std::string const& what, uint32 lang) 
         LocaleConstant localeIdx = sWorld->GetAvailableDbcLocale(locale);
 
         Trinity::PacketSenderOwning<WorldPackets::Chat::Chat>* packet = new Trinity::PacketSenderOwning<WorldPackets::Chat::Chat>();
-        packet->Data.ChannelGUID = _channelGuid;
         if (player)
             packet->Data.Initialize(CHAT_MSG_CHANNEL, Language(lang), player, player, what, 0, GetName(localeIdx));
         else
@@ -751,7 +749,6 @@ void Channel::AddonSay(ObjectGuid const& guid, std::string const& prefix, std::s
         LocaleConstant localeIdx = sWorld->GetAvailableDbcLocale(locale);
 
         Trinity::PacketSenderOwning<WorldPackets::Chat::Chat>* packet = new Trinity::PacketSenderOwning<WorldPackets::Chat::Chat>();
-        packet->Data.ChannelGUID = _channelGuid;
         if (player)
             packet->Data.Initialize(CHAT_MSG_CHANNEL, isLogged ? LANG_ADDON_LOGGED : LANG_ADDON, player, player, what, 0, GetName(localeIdx), DEFAULT_LOCALE, prefix);
         else

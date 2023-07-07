@@ -38,62 +38,53 @@ GossipMenu::GossipMenu()
     _locale = DEFAULT_LOCALE;
 }
 
-GossipMenu::~GossipMenu() = default;
+GossipMenu::~GossipMenu()
+{
+    ClearMenu();
+}
 
-uint32 GossipMenu::AddMenuItem(int32 gossipOptionId, int32 orderIndex, GossipOptionNpc optionNpc, std::string optionText, uint32 actionMenuId, uint32 actionPoiId,
-                               bool boxCoded, uint32 boxMoney, std::string boxText, uint32 sender, uint32 action)
+uint32 GossipMenu::AddMenuItem(int32 menuItemId, GossipOptionNpc optionNpc, std::string const& message, uint32 sender, uint32 action, std::string const& boxMessage, uint32 boxMoney, bool coded /*= false*/)
 {
     ASSERT(_menuItems.size() <= GOSSIP_MAX_MENU_ITEMS);
 
     // Find a free new id - script case
-    if (orderIndex == -1)
+    if (menuItemId == -1)
     {
-        orderIndex = 0;
+        menuItemId = 0;
         if (_menuId)
         {
-            // set baseline orderIndex as higher than whatever exists in db
+            // set baseline menuItemId as higher than whatever exists in db
             Trinity::IteratorPair bounds = sObjectMgr->GetGossipMenuItemsMapBounds(_menuId);
             auto itr = std::max_element(bounds.begin(), bounds.end(), [](GossipMenuItemsContainer::value_type const& a, GossipMenuItemsContainer::value_type const& b)
             {
-                return a.second.OrderIndex < b.second.OrderIndex;
+                return a.second.OptionID < b.second.OptionID;
             });
             if (itr != bounds.end())
-                orderIndex = itr->second.OrderIndex + 1;
+                menuItemId = itr->second.OptionID + 1;
         }
 
         if (!_menuItems.empty())
         {
             for (GossipMenuItemContainer::const_iterator itr = _menuItems.begin(); itr != _menuItems.end(); ++itr)
             {
-                if (int32(itr->OrderIndex) > orderIndex)
+                if (int32(itr->first) > menuItemId)
                     break;
 
-                orderIndex = itr->OrderIndex + 1;
+                menuItemId = itr->first + 1;
             }
         }
     }
 
-    if (!gossipOptionId)
-        gossipOptionId = -(int32(_menuId) * 100 + orderIndex);
+    GossipMenuItem& menuItem = _menuItems[menuItemId];
 
-    auto where = std::lower_bound(_menuItems.begin(), _menuItems.end(), orderIndex, [](GossipMenuItem const& item, int32 index)
-    {
-        return int32(item.OrderIndex) < index;
-    });
-
-    GossipMenuItem& menuItem = *_menuItems.emplace(where);
-    menuItem.GossipOptionID = gossipOptionId;
-    menuItem.OrderIndex = orderIndex;
-    menuItem.OptionNpc = optionNpc;
-    menuItem.OptionText = std::move(optionText);
-    menuItem.BoxCoded = boxCoded;
-    menuItem.BoxMoney = boxMoney;
-    menuItem.BoxText = std::move(boxText);
-    menuItem.ActionMenuID = actionMenuId;
-    menuItem.ActionPoiID = actionPoiId;
-    menuItem.Sender = sender;
-    menuItem.Action = action;
-    return orderIndex;
+    menuItem.OptionNpc       = optionNpc;
+    menuItem.Message         = message;
+    menuItem.IsCoded         = coded;
+    menuItem.Sender          = sender;
+    menuItem.Action          = action;
+    menuItem.BoxMessage      = boxMessage;
+    menuItem.BoxMoney        = boxMoney;
+    return menuItemId;
 }
 
 /**
@@ -112,108 +103,80 @@ void GossipMenu::AddMenuItem(uint32 menuId, uint32 menuItemId, uint32 sender, ui
     /// Find the one with the given menu item id.
     auto itr = std::find_if(bounds.begin(), bounds.end(), [menuItemId](std::pair<uint32 const, GossipMenuItems> const& itemPair)
     {
-        return itemPair.second.OrderIndex == menuItemId;
+        return itemPair.second.OptionID == menuItemId;
     });
 
     if (itr == bounds.end())
         return;
 
-    AddMenuItem(itr->second, sender, action);
-}
-
-void GossipMenu::AddMenuItem(GossipMenuItems const& menuItem, uint32 sender, uint32 action)
-{
     /// Store texts for localization.
     std::string strOptionText, strBoxText;
-    BroadcastTextEntry const* optionBroadcastText = sBroadcastTextStore.LookupEntry(menuItem.OptionBroadcastTextID);
-    BroadcastTextEntry const* boxBroadcastText = sBroadcastTextStore.LookupEntry(menuItem.BoxBroadcastTextID);
+    BroadcastTextEntry const* optionBroadcastText = sBroadcastTextStore.LookupEntry(itr->second.OptionBroadcastTextID);
+    BroadcastTextEntry const* boxBroadcastText = sBroadcastTextStore.LookupEntry(itr->second.BoxBroadcastTextID);
 
     /// OptionText
     if (optionBroadcastText)
         strOptionText = DB2Manager::GetBroadcastTextValue(optionBroadcastText, GetLocale());
     else
-    {
-        strOptionText = menuItem.OptionText;
-
-        /// Find localizations from database.
-        if (GetLocale() != LOCALE_enUS)
-            if (GossipMenuItemsLocale const* gossipMenuLocale = sObjectMgr->GetGossipMenuItemsLocale(menuItem.MenuID, menuItem.OrderIndex))
-                ObjectMgr::GetLocaleString(gossipMenuLocale->OptionText, GetLocale(), strBoxText);
-    }
+        strOptionText = itr->second.OptionText;
 
     /// BoxText
     if (boxBroadcastText)
         strBoxText = DB2Manager::GetBroadcastTextValue(boxBroadcastText, GetLocale());
     else
-    {
-        strBoxText = menuItem.BoxText;
+        strBoxText = itr->second.BoxText;
 
+    if (!boxBroadcastText)
+    {
         /// Find localizations from database.
-        if (GetLocale() != LOCALE_enUS)
-            if (GossipMenuItemsLocale const* gossipMenuLocale = sObjectMgr->GetGossipMenuItemsLocale(menuItem.MenuID, menuItem.OrderIndex))
-                ObjectMgr::GetLocaleString(gossipMenuLocale->BoxText, GetLocale(), strBoxText);
+        if (GossipMenuItemsLocale const* gossipMenuLocale = sObjectMgr->GetGossipMenuItemsLocale(menuId, menuItemId))
+            ObjectMgr::GetLocaleString(gossipMenuLocale->BoxText, GetLocale(), strBoxText);
     }
 
-    AddMenuItem(menuItem.GossipOptionID, menuItem.OrderIndex, menuItem.OptionNpc, std::move(strOptionText),
-        menuItem.ActionMenuID, menuItem.ActionPoiID, menuItem.BoxCoded, menuItem.BoxMoney, std::move(strBoxText), sender, action);
+    /// Add menu item with existing method. Menu item id -1 is also used in ADD_GOSSIP_ITEM macro.
+    AddMenuItem(itr->second.OptionID, itr->second.OptionNpc, strOptionText, sender, action, strBoxText, itr->second.BoxMoney, itr->second.BoxCoded);
+    AddGossipMenuItemData(itr->second.OptionID, itr->second.ActionMenuID, itr->second.ActionPoiID);
 }
 
-GossipMenuItem const* GossipMenu::GetItem(int32 gossipOptionId) const
+void GossipMenu::AddGossipMenuItemData(uint32 menuItemId, uint32 gossipActionMenuId, uint32 gossipActionPoi)
 {
-    auto itr = std::find_if(_menuItems.begin(), _menuItems.end(), [gossipOptionId](GossipMenuItem const& item)
-    {
-        return item.GossipOptionID == gossipOptionId;
-    });
+    GossipMenuItemData& itemData = _menuItemData[menuItemId];
 
-    if (itr != _menuItems.end())
-        return &*itr;
-
-    return nullptr;
+    itemData.GossipActionMenuId  = gossipActionMenuId;
+    itemData.GossipActionPoi     = gossipActionPoi;
 }
 
-GossipMenuItem const* GossipMenu::GetItemByIndex(uint32 orderIndex) const
+uint32 GossipMenu::GetMenuItemSender(uint32 menuItemId) const
 {
-    auto itr = std::find_if(_menuItems.begin(), _menuItems.end(), [orderIndex](GossipMenuItem const& item)
-    {
-        return item.OrderIndex == orderIndex;
-    });
+    GossipMenuItemContainer::const_iterator itr = _menuItems.find(menuItemId);
+    if (itr == _menuItems.end())
+        return 0;
 
-    if (itr != _menuItems.end())
-        return &*itr;
-
-    return nullptr;
+    return itr->second.Sender;
 }
 
-uint32 GossipMenu::GetMenuItemSender(uint32 orderIndex) const
+uint32 GossipMenu::GetMenuItemAction(uint32 menuItemId) const
 {
-    GossipMenuItem const* item = GetItemByIndex(orderIndex);
-    if (item)
-        return item->Sender;
+    GossipMenuItemContainer::const_iterator itr = _menuItems.find(menuItemId);
+    if (itr == _menuItems.end())
+        return 0;
 
-    return 0;
+    return itr->second.Action;
 }
 
-uint32 GossipMenu::GetMenuItemAction(uint32 orderIndex) const
+bool GossipMenu::IsMenuItemCoded(uint32 menuItemId) const
 {
-    GossipMenuItem const* item = GetItemByIndex(orderIndex);
-    if (item)
-        return item->Action;
+    GossipMenuItemContainer::const_iterator itr = _menuItems.find(menuItemId);
+    if (itr == _menuItems.end())
+        return false;
 
-    return 0;
-}
-
-bool GossipMenu::IsMenuItemCoded(uint32 orderIndex) const
-{
-    GossipMenuItem const* item = GetItemByIndex(orderIndex);
-    if (item)
-        return item->BoxCoded;
-
-    return 0;
+    return itr->second.IsCoded;
 }
 
 void GossipMenu::ClearMenu()
 {
     _menuItems.clear();
+    _menuItemData.clear();
 }
 
 PlayerMenu::PlayerMenu(WorldSession* session) : _session(session)
@@ -222,7 +185,10 @@ PlayerMenu::PlayerMenu(WorldSession* session) : _session(session)
         _gossipMenu.SetLocale(_session->GetSessionDbLocaleIndex());
 }
 
-PlayerMenu::~PlayerMenu() = default;
+PlayerMenu::~PlayerMenu()
+{
+    ClearMenus();
+}
 
 void PlayerMenu::ClearMenus()
 {
@@ -244,20 +210,23 @@ void PlayerMenu::SendGossipMenu(uint32 titleTextId, ObjectGuid objectGUID)
     if (NpcText const* text = sObjectMgr->GetNpcText(titleTextId))
         packet.TextID = Trinity::Containers::SelectRandomWeightedContainerElement(text->Data, [](NpcTextData const& data) { return data.Probability; })->BroadcastTextID;
 
-    packet.GossipOptions.reserve(_gossipMenu.GetMenuItems().size());
-    for (GossipMenuItem const& item : _gossipMenu.GetMenuItems())
+    packet.GossipOptions.resize(_gossipMenu.GetMenuItems().size());
+    uint32 count = 0;
+    for (GossipMenuItemContainer::const_iterator itr = _gossipMenu.GetMenuItems().begin(); itr != _gossipMenu.GetMenuItems().end(); ++itr)
     {
-        WorldPackets::NPC::ClientGossipOptions& opt = packet.GossipOptions.emplace_back();
-        opt.GossipOptionID = item.GossipOptionID;
+        WorldPackets::NPC::ClientGossipOptions& opt = packet.GossipOptions[count];
+        GossipMenuItem const& item = itr->second;
+        opt.ClientOption = itr->first;
         opt.OptionNPC = item.OptionNpc;
-        opt.OptionFlags = item.BoxCoded;    // makes pop up box password
+        opt.OptionFlags = item.IsCoded;     // makes pop up box password
         opt.OptionCost = item.BoxMoney;     // money required to open menu, 2.0.3
-        opt.Text = item.OptionText;         // text for gossip item
-        opt.Confirm = item.BoxText;         // accept text (related to money) pop up box, 2.0.3
+        opt.Text = item.Message;            // text for gossip item
+        opt.Confirm = item.BoxMessage;      // accept text (related to money) pop up box, 2.0.3
+        ++count;
     }
 
     packet.GossipText.resize(_questMenu.GetMenuItemCount());
-    uint32 count = 0;
+    count = 0;
     for (uint8 i = 0; i < _questMenu.GetMenuItemCount(); ++i)
     {
         QuestMenuItem const& item = _questMenu.GetItem(i);
@@ -266,7 +235,7 @@ void PlayerMenu::SendGossipMenu(uint32 titleTextId, ObjectGuid objectGUID)
         {
             WorldPackets::NPC::ClientGossipText& text = packet.GossipText[count];
             text.QuestID = questID;
-            text.ContentTuningID = quest->GetContentTuningId();
+            text.QuestMaxScalingLevel = quest->GetQuestMaxScalingLevel();
             text.QuestType = item.QuestIcon;
             text.QuestFlags[0] = quest->GetFlags();
             text.QuestFlags[1] = quest->GetFlagsEx();
@@ -391,7 +360,7 @@ void PlayerMenu::SendQuestGiverQuestListMessage(Object* questgiver)
             questList.QuestDataText.emplace_back();
             WorldPackets::NPC::ClientGossipText& text = questList.QuestDataText.back();
             text.QuestID = questID;
-            text.ContentTuningID = quest->GetContentTuningId();
+            text.QuestMaxScalingLevel = quest->GetQuestMaxScalingLevel();
             text.QuestType = questMenuItem.QuestIcon;
             text.QuestFlags[0] = quest->GetFlags();
             text.QuestFlags[1] = quest->GetFlagsEx();
@@ -451,10 +420,7 @@ void PlayerMenu::SendQuestGiverQuestDetails(Quest const* quest, ObjectGuid npcGU
     packet.QuestID = quest->GetQuestId();
     packet.QuestPackageID = quest->GetQuestPackageID();
     packet.PortraitGiver = quest->GetQuestGiverPortrait();
-    packet.PortraitGiverMount = quest->GetQuestGiverPortraitMount();
-    packet.PortraitGiverModelSceneID = quest->GetQuestGiverPortraitModelSceneId();
     packet.PortraitTurnIn = quest->GetQuestTurnInPortrait();
-    packet.QuestSessionBonus = 0; //quest->GetQuestSessionBonus(); // this is only sent while quest session is active
     packet.AutoLaunched = autoLaunched;
     packet.DisplayPopup = displayPopup;
     packet.QuestFlags[0] = quest->GetFlags() & (sWorld->getBoolConfig(CONFIG_QUEST_IGNORE_AUTO_ACCEPT) ? ~QUEST_FLAGS_AUTO_ACCEPT : ~0);
@@ -556,8 +522,6 @@ void PlayerMenu::SendQuestGiverOfferReward(Quest const* quest, ObjectGuid npcGUI
 
     packet.PortraitTurnIn = quest->GetQuestTurnInPortrait();
     packet.PortraitGiver = quest->GetQuestGiverPortrait();
-    packet.PortraitGiverMount = quest->GetQuestGiverPortraitMount();
-    packet.PortraitGiverModelSceneID = quest->GetQuestGiverPortraitModelSceneId();
     packet.QuestPackageID = quest->GetQuestPackageID();
 
     _session->SendPacket(packet.Write());

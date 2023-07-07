@@ -434,10 +434,10 @@ void AuctionHouseBot::SetItemsRatioForHouse(AuctionHouseType house, uint32 val)
         _seller->SetItemsRatioForHouse(house, val);
 }
 
-void AuctionHouseBot::SetItemsAmount(uint32(&vals)[MAX_AUCTION_QUALITY])
+void AuctionHouseBot::SetItemsAmount(std::array<uint32, MAX_AUCTION_QUALITY> const& amounts)
 {
     if (_seller)
-        _seller->SetItemsAmount(vals);
+        _seller->SetItemsAmount(amounts);
 }
 
 void AuctionHouseBot::SetItemsAmountForQuality(AuctionQuality quality, uint32 val)

@@ -111,15 +111,7 @@ bool Trinity::Hyperlinks::LinkTags::apower::StoreTo(ArtifactPowerLinkData& val, 
     return true;
 }
 
-bool Trinity::Hyperlinks::LinkTags::azessence::StoreTo(AzeriteEssenceLinkData& val, std::string_view text)
-{
-    HyperlinkDataTokenizer t(text);
-    uint32 azeriteEssenceId;
-    if (!t.TryConsumeTo(azeriteEssenceId))
-        return false;
-    return (val.Essence = sAzeriteEssenceStore.LookupEntry(azeriteEssenceId)) && t.TryConsumeTo(val.Rank)
-        && sDB2Manager.GetAzeriteEssencePower(azeriteEssenceId, val.Rank) && t.IsEmpty();
-}
+
 
 bool Trinity::Hyperlinks::LinkTags::battlepet::StoreTo(BattlePetLinkData& val, std::string_view text)
 {
@@ -134,14 +126,7 @@ bool Trinity::Hyperlinks::LinkTags::battlepet::StoreTo(BattlePetLinkData& val, s
         && t.IsEmpty();
 }
 
-bool Trinity::Hyperlinks::LinkTags::conduit::StoreTo(SoulbindConduitRankEntry const*& val, std::string_view text)
-{
-    HyperlinkDataTokenizer t(text);
-    uint32 soulbindConduitId, rank;
-    if (!(t.TryConsumeTo(soulbindConduitId) && t.TryConsumeTo(rank) && t.IsEmpty()))
-        return false;
-    return !!(val = sDB2Manager.GetSoulbindConduitRank(soulbindConduitId, rank));
-}
+
 
 bool Trinity::Hyperlinks::LinkTags::currency::StoreTo(CurrencyLinkData& val, std::string_view text)
 {
@@ -152,7 +137,6 @@ bool Trinity::Hyperlinks::LinkTags::currency::StoreTo(CurrencyLinkData& val, std
     val.Currency = sCurrencyTypesStore.LookupEntry(currencyId);
     if (!val.Currency || !t.TryConsumeTo(val.Quantity) || !t.IsEmpty())
         return false;
-    val.Container = sDB2Manager.GetCurrencyContainerForCurrencyQuantity(currencyId, val.Quantity);
     return true;
 }
 
@@ -200,15 +184,6 @@ bool Trinity::Hyperlinks::LinkTags::garrfollowerability::StoreTo(GarrAbilityEntr
     if (!t.TryConsumeTo(garrAbilityId))
         return false;
     return !!(val = sGarrAbilityStore.LookupEntry(garrAbilityId)) && t.IsEmpty();
-}
-
-bool Trinity::Hyperlinks::LinkTags::garrmission::StoreTo(GarrisonMissionLinkData& val, std::string_view text)
-{
-    HyperlinkDataTokenizer t(text);
-    uint32 garrMissionId;
-    if (!t.TryConsumeTo(garrMissionId))
-        return false;
-    return !!(val.Mission = sGarrMissionStore.LookupEntry(garrMissionId)) && t.TryConsumeTo(val.DbID) && t.IsEmpty();
 }
 
 bool Trinity::Hyperlinks::LinkTags::instancelock::StoreTo(InstanceLockLinkData& val, std::string_view text)
@@ -284,81 +259,6 @@ bool Trinity::Hyperlinks::LinkTags::item::StoreTo(ItemLinkData& val, std::string
     return t.TryConsumeTo(val.Creator) && t.TryConsumeTo(val.UseEnchantId) && t.IsEmpty();
 }
 
-bool Trinity::Hyperlinks::LinkTags::journal::StoreTo(JournalLinkData& val, std::string_view text)
-{
-    HyperlinkDataTokenizer t(text);
-    uint32 id;
-    if (!t.TryConsumeTo(val.Type) || !t.TryConsumeTo(id) || !t.TryConsumeTo(val.Difficulty) || !t.IsEmpty())
-        return false;
-    switch (JournalLinkData::Types(val.Type))
-    {
-        case JournalLinkData::Types::Instance:
-        {
-            JournalInstanceEntry const* instance = sJournalInstanceStore.LookupEntry(id);
-            if (!instance)
-                return false;
-            val.ExpectedText = &instance->Name;
-            break;
-        }
-        case JournalLinkData::Types::Encounter:
-        {
-            JournalEncounterEntry const* encounter = sJournalEncounterStore.LookupEntry(id);
-            if (!encounter)
-                return false;
-            val.ExpectedText = &encounter->Name;
-            break;
-        }
-        case JournalLinkData::Types::EncounterSection:
-        {
-            JournalEncounterSectionEntry const* encounterSection = sJournalEncounterSectionStore.LookupEntry(id);
-            if (!encounterSection)
-                return false;
-            val.ExpectedText = &encounterSection->Title;
-            break;
-        }
-        case JournalLinkData::Types::Tier:
-        {
-            JournalTierEntry const* tier = sDB2Manager.GetJournalTier(id);
-            if (!tier)
-                return false;
-            val.ExpectedText = &tier->Name;
-            break;
-        }
-        default:
-            return false;
-    }
-    return true;
-}
-
-bool Trinity::Hyperlinks::LinkTags::keystone::StoreTo(KeystoneLinkData& val, std::string_view text)
-{
-    HyperlinkDataTokenizer t(text);
-    uint32 mapChallengeModeId;
-    if (!t.TryConsumeTo(val.ItemId) || !t.TryConsumeTo(mapChallengeModeId) || !t.TryConsumeTo(val.Level)
-        || !t.TryConsumeTo(val.Affix[0]) || !t.TryConsumeTo(val.Affix[1]) || !t.TryConsumeTo(val.Affix[2]) || !t.TryConsumeTo(val.Affix[3])
-        || !t.IsEmpty())
-        return false;
-    val.Map = sMapChallengeModeStore.LookupEntry(mapChallengeModeId);
-    if (!val.Map)
-        return false;
-    ItemTemplate const* item = sObjectMgr->GetItemTemplate(val.ItemId);
-    if (!item || item->GetClass() != ITEM_CLASS_REAGENT || item->GetSubClass() != ITEM_SUBCLASS_KEYSTONE)
-        return false;
-    for (uint32 keystoneAffix : val.Affix)
-        if (keystoneAffix && !sKeystoneAffixStore.LookupEntry(keystoneAffix))
-            return false;
-    return true;
-}
-
-bool Trinity::Hyperlinks::LinkTags::mawpower::StoreTo(MawPowerEntry const*& val, std::string_view text)
-{
-    HyperlinkDataTokenizer t(text);
-    uint32 mawPowerId;
-    if (!t.TryConsumeTo(mawPowerId))
-        return false;
-    return !!(val = sMawPowerStore.LookupEntry(mawPowerId)) && t.IsEmpty();
-}
-
 bool Trinity::Hyperlinks::LinkTags::pvptal::StoreTo(PvpTalentEntry const*& val, std::string_view text)
 {
     HyperlinkDataTokenizer t(text);
@@ -422,15 +322,6 @@ bool Trinity::Hyperlinks::LinkTags::transmogappearance::StoreTo(ItemModifiedAppe
     return !!(val = sItemModifiedAppearanceStore.LookupEntry(itemModifiedAppearanceId)) && t.IsEmpty();
 }
 
-bool Trinity::Hyperlinks::LinkTags::transmogillusion::StoreTo(SpellItemEnchantmentEntry const*& val, std::string_view text)
-{
-    HyperlinkDataTokenizer t(text);
-    uint32 spellItemEnchantmentId;
-    if (!t.TryConsumeTo(spellItemEnchantmentId))
-        return false;
-    return !!(val = sSpellItemEnchantmentStore.LookupEntry(spellItemEnchantmentId))
-        && sDB2Manager.GetTransmogIllusionForEnchantment(spellItemEnchantmentId) && t.IsEmpty();
-}
 
 bool Trinity::Hyperlinks::LinkTags::transmogset::StoreTo(TransmogSetEntry const*& val, std::string_view text)
 {
@@ -447,7 +338,6 @@ bool Trinity::Hyperlinks::LinkTags::worldmap::StoreTo(WorldMapLinkData& val, std
     uint32 uiMapId;
     if (!t.TryConsumeTo(uiMapId))
         return false;
-    val.UiMap = sUiMapStore.LookupEntry(uiMapId);
     if (!val.UiMap || !t.TryConsumeTo(val.X) || !t.TryConsumeTo(val.Y))
         return false;
     if (t.IsEmpty())

@@ -22,6 +22,7 @@
 #include "ItemPacketsCommon.h"
 #include "Guild.h"
 #include "ObjectGuid.h"
+#include "PacketUtilities.h"
 
 namespace WorldPackets
 {

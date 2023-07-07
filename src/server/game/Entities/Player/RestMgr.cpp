@@ -41,15 +41,15 @@ void RestMgr::SetRestBonus(RestTypes restType, float restBonus)
             if (_player->GetLevel() >= sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
                 restBonus = 0;
 
-            next_level_xp = _player->m_activePlayerData->NextLevelXP;
+            next_level_xp = _player->GetXPForNextLevel();
             affectedByRaF = true;
             break;
         case REST_TYPE_HONOR:
             // Reset restBonus (Honor only) for players with max honor level.
-            if (_player->IsMaxHonorLevel())
+            if (_player->IsMaxHonorLevelAndPrestige())
                 restBonus = 0;
 
-            next_level_xp = _player->m_activePlayerData->HonorNextLevel;
+            next_level_xp = _player->GetXPForNextLevel();
             break;
         default:
             return;
@@ -165,9 +165,9 @@ float RestMgr::CalcExtraPerSec(RestTypes restType, float bubble) const
     switch (restType)
     {
         case REST_TYPE_HONOR:
-            return float(_player->m_activePlayerData->HonorNextLevel) / 72000.0f * bubble;
+            return float(_player->GetUInt32Value(PLAYER_FIELD_HONOR_NEXT_LEVEL)) / 72000.0f * bubble;
         case REST_TYPE_XP:
-            return float(_player->m_activePlayerData->NextLevelXP) / 72000.0f * bubble;
+            return float(_player->GetXPForNextLevel()) / 72000.0f * bubble;
         default:
             return 0.0f;
     }

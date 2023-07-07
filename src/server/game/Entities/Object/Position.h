@@ -201,8 +201,8 @@ TC_GAME_API ByteBuffer& operator<<(ByteBuffer& buf, Position::ConstStreamer<Posi
 template<class Tag>
 struct TaggedPosition
 {
-    explicit TaggedPosition(float x = 0.0f, float y = 0.0f, float z = 0.0f, float o = 0.0f) : Pos(x, y, z, o) { }
-    explicit TaggedPosition(Position const& pos) : Pos(pos) { }
+    TaggedPosition(float x = 0.0f, float y = 0.0f, float z = 0.0f, float o = 0.0f) : Pos(x, y, z, o) { }
+    TaggedPosition(Position const& pos) : Pos(pos) { }
 
     TaggedPosition& operator=(Position const& pos)
     {
@@ -210,7 +210,7 @@ struct TaggedPosition
         return *this;
     }
 
-    explicit operator Position() const { return Pos; }
+    operator Position() const { return Pos; }
 
     friend bool operator==(TaggedPosition const& left, TaggedPosition const& right) { return left.Pos == right.Pos; }
     friend bool operator!=(TaggedPosition const& left, TaggedPosition const& right) { return left.Pos != right.Pos; }

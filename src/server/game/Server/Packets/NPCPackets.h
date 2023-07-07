@@ -24,6 +24,7 @@
 #include "Position.h"
 #include <array>
 
+enum class GossipOptionNpc : uint8;
 namespace WorldPackets
 {
     namespace NPC
@@ -48,7 +49,7 @@ namespace WorldPackets
         struct ClientGossipOptions
         {
             int32 ClientOption  = 0;
-            uint8 OptionNPC     = 0;
+            GossipOptionNpc OptionNPC = GossipOptionNpc(0);
             uint8 OptionFlags   = 0;
             int32 OptionCost    = 0;
             std::string Text;
@@ -131,9 +132,9 @@ namespace WorldPackets
         struct TrainerListSpell
         {
             int32 SpellID       = 0;
-            int32 MoneyCost     = 0;
-            int32 ReqSkillLine  = 0;
-            int32 ReqSkillRank  = 0;
+            uint32 MoneyCost    = 0;
+            uint32 ReqSkillLine = 0;
+            uint32 ReqSkillRank = 0;
             std::array<int32, 3> ReqAbility = { };
             uint8 Usable        = 0;
             uint8 ReqLevel      = 0;
@@ -242,5 +243,6 @@ namespace WorldPackets
         };
     }
 }
+ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::NPC::ClientGossipText const& gossipText);
 
 #endif // NPCPackets_h__

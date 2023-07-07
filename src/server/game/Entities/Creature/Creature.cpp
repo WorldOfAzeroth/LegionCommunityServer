@@ -209,12 +209,6 @@ WorldPacket CreatureTemplate::BuildQueryData(LocaleConstant loc) const
     for (uint32 i = 0; i < MAX_KILL_CREDIT; ++i)
         stats.ProxyCreatureID[i] = KillCredit[i];
 
-    std::transform(Models.begin(), Models.end(), std::back_inserter(stats.Display.CreatureDisplay),
-        [&stats](CreatureModel const& model) -> WorldPackets::Query::CreatureXDisplay
-    {
-        stats.Display.TotalProbability += model.Probability;
-        return { model.CreatureDisplayID, model.DisplayScale, model.Probability };
-    });
 
     stats.HpMulti = ModHealth;
     stats.EnergyMulti = ModMana;
@@ -223,10 +217,6 @@ WorldPacket CreatureTemplate::BuildQueryData(LocaleConstant loc) const
     stats.RequiredExpansion = RequiredExpansion;
     stats.HealthScalingExpansion = HealthScalingExpansion;
     stats.VignetteID = VignetteID;
-    stats.Class = unit_class;
-    stats.CreatureDifficultyID = CreatureDifficultyID;
-    stats.WidgetSetID = WidgetSetID;
-    stats.WidgetSetUnitConditionID = WidgetSetUnitConditionID;
 
     stats.Title = SubName;
     stats.TitleAlt = TitleAlt;
@@ -261,7 +251,6 @@ CreatureLevelScaling const* CreatureTemplate::GetLevelScaling(Difficulty difficu
         {
             DeltaLevelMin = 0;
             DeltaLevelMax = 0;
-            ContentTuningID = 0;
         }
     };
     static const DefaultCreatureLevelScaling defScaling;
@@ -538,6 +527,7 @@ bool Creature::InitEntry(uint32 entry, CreatureData const* data /*= nullptr*/)
 
     SetDisplayId(model.CreatureDisplayID);
     SetNativeDisplayId(model.CreatureDisplayID);
+    SetByteValue(UNIT_FIELD_BYTES_0, UNIT_BYTES_0_OFFSET_GENDER, minfo->gender);
 
     // Load creature equipment
     if (!data)
@@ -2863,8 +2853,7 @@ void Creature::AllLootRemovedFromCorpse()
 
 bool Creature::HasScalableLevels() const
 {
-    CreatureLevelScaling const* scaling = GetCreatureTemplate()->GetLevelScaling(GetMap()->GetDifficultyID());
-    return scaling->ContentTuningID != 0;
+    return GetCreatureTemplate()->GetLevelScaling(GetMap()->GetDifficultyID());
 }
 
 void Creature::ApplyLevelScaling()
@@ -2874,6 +2863,8 @@ void Creature::ApplyLevelScaling()
     int32 maxdelta = std::max(scaling->DeltaLevelMax, scaling->DeltaLevelMin);
     int32 delta = mindelta == maxdelta ? mindelta : irand(mindelta, maxdelta);
     SetInt32Value(UNIT_FIELD_SCALING_LEVEL_DELTA, delta);
+    SetUInt32Value(UNIT_FIELD_SCALING_LEVEL_MIN, scaling->MinLevel);
+    SetUInt32Value(UNIT_FIELD_SCALING_LEVEL_MAX, scaling->MaxLevel);
 }
 
 uint64 Creature::GetMaxHealthByLevel(uint8 level) const
@@ -3208,8 +3199,8 @@ void Creature::SetDisplayId(uint32 modelId, float displayScale /*= 1.f*/)
 
     if (CreatureModelInfo const* minfo = sObjectMgr->GetCreatureModelInfo(modelId))
     {
-        SetBoundingRadius((IsPet() ? 1.0f : minfo->bounding_radius) * GetObjectScale());
-        SetCombatReach((IsPet() ? UNIT_FIELD_COMBATREACH : minfo->combat_reach) * GetObjectScale());
+        SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, (IsPet() ? 1.0f : minfo->bounding_radius) * GetObjectScale());
+        SetFloatValue(UNIT_FIELD_COMBATREACH, (IsPet() ? DEFAULT_PLAYER_COMBAT_REACH : minfo->combat_reach) * GetObjectScale());
     }
 }
 

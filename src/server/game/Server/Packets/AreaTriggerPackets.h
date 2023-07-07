@@ -84,7 +84,7 @@ namespace WorldPackets
             WorldPacket const* Write() override;
 
             Optional<AreaTriggerSplineInfo> AreaTriggerSpline;
-            Optional<AreaTriggerOrbitInfo> AreaTriggerCircularMovement;
+            Optional<AreaTriggerOrbitInfo> AreaTriggerOrbit;
             ObjectGuid TriggerGUID;
         };
     }

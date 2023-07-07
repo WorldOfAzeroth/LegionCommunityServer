@@ -490,9 +490,6 @@ void ObjectMgr::LoadCreatureTemplate(Field* fields)
     creatureTemplate.ModExperience          = fields[60].GetFloat();
     creatureTemplate.RacialLeader           = fields[61].GetBool();
     creatureTemplate.movementId             = fields[62].GetUInt32();
-    creatureTemplate.CreatureDifficultyID   = fields[63].GetInt32();
-    creatureTemplate.WidgetSetID            = fields[64].GetInt32();
-    creatureTemplate.WidgetSetUnitConditionID = fields[65].GetInt32();
     creatureTemplate.RegenHealth            = fields[66].GetBool();
     creatureTemplate.MechanicImmuneMask     = fields[67].GetUInt64();
     creatureTemplate.SpellSchoolImmuneMask  = fields[68].GetUInt32();
@@ -850,8 +847,8 @@ void ObjectMgr::LoadCreatureScalingData()
 {
     uint32 oldMSTime = getMSTime();
 
-    //                                                 0          1                 2                     3                  4
-    QueryResult result = WorldDatabase.Query("SELECT Entry, DifficultyID, LevelScalingDeltaMin, LevelScalingDeltaMax, ContentTuningID FROM creature_template_scaling ORDER BY Entry");
+    //                                                 0            1                2                  3                    4
+    QueryResult result = WorldDatabase.Query("SELECT Entry, LevelScalingMin, LevelScalingMax, LevelScalingDeltaMin, LevelScalingDeltaMax FROM creature_template_scaling");
 
     if (!result)
     {
@@ -865,7 +862,6 @@ void ObjectMgr::LoadCreatureScalingData()
         Field* fields = result->Fetch();
 
         uint32 entry = fields[0].GetUInt32();
-        Difficulty difficulty = Difficulty(fields[1].GetUInt8());
 
         auto itr = _creatureTemplateStore.find(entry);
         if (itr == _creatureTemplateStore.end())
@@ -875,11 +871,11 @@ void ObjectMgr::LoadCreatureScalingData()
         }
 
         CreatureLevelScaling creatureLevelScaling;
-        creatureLevelScaling.DeltaLevelMin         = fields[2].GetInt16();
-        creatureLevelScaling.DeltaLevelMax         = fields[3].GetInt16();
-        creatureLevelScaling.ContentTuningID       = fields[4].GetInt32();
-
-        itr->second.scalingStore[difficulty] = creatureLevelScaling;
+        creatureLevelScaling.MinLevel              = fields[1].GetUInt16();
+        creatureLevelScaling.MaxLevel              = fields[2].GetUInt16();
+        creatureLevelScaling.DeltaLevelMin         = fields[3].GetInt16();
+        creatureLevelScaling.DeltaLevelMax         = fields[4].GetInt16();
+        itr->second.scalingStore                   = creatureLevelScaling;
 
         ++count;
     } while (result->NextRow());
@@ -9632,21 +9628,19 @@ void ObjectMgr::LoadGossipMenuItems()
         GossipMenuItems gMenuItem;
 
         gMenuItem.MenuID                = fields[0].GetUInt32();
-        gMenuItem.GossipOptionID        = fields[1].GetInt32();
-        gMenuItem.OrderIndex            = fields[2].GetUInt32();
-        gMenuItem.OptionNpc             = GossipOptionNpc(fields[3].GetUInt8());
-        gMenuItem.OptionText            = fields[4].GetString();
-        gMenuItem.OptionBroadcastTextID = fields[5].GetUInt32();
+        gMenuItem.OptionID              = fields[1].GetUInt32();
+        gMenuItem.OptionNpc             = GossipOptionNpc(fields[2].GetUInt8());
+        gMenuItem.OptionText            = fields[3].GetString();
+        gMenuItem.OptionBroadcastTextID = fields[4].GetUInt32();
         gMenuItem.ActionMenuID          = fields[6].GetUInt32();
         gMenuItem.ActionPoiID           = fields[7].GetUInt32();
-
         gMenuItem.BoxCoded              = fields[8].GetBool();
         gMenuItem.BoxMoney              = fields[9].GetUInt32();
         gMenuItem.BoxText               = fields[10].GetString();
         gMenuItem.BoxBroadcastTextID    = fields[11].GetUInt32();
         if (gMenuItem.OptionNpc >= GossipOptionNpc::Count)
         {
-            TC_LOG_ERROR("sql.sql", "Table `gossip_menu_option` for menu {}, id {} has unknown NPC option id {}. Replacing with GossipOptionNpc::None", gMenuItem.MenuID, gMenuItem.OrderIndex, AsUnderlyingType(gMenuItem.OptionNpc));
+            TC_LOG_ERROR("sql.sql", "Table `gossip_menu_option` for menu {}, id {} has unknown NPC option id {}. Replacing with GossipOptionNpc::None", gMenuItem.MenuID, gMenuItem.OptionID, AsUnderlyingType(gMenuItem.OptionNpc));
             gMenuItem.OptionNpc = GossipOptionNpc::None;
         }
 
@@ -9654,14 +9648,14 @@ void ObjectMgr::LoadGossipMenuItems()
         {
             if (!sBroadcastTextStore.LookupEntry(gMenuItem.OptionBroadcastTextID))
             {
-                TC_LOG_ERROR("sql.sql", "Table `gossip_menu_option` for menu {}, id {} has non-existing or incompatible OptionBroadcastTextID {}, ignoring.", gMenuItem.MenuID, gMenuItem.OrderIndex, gMenuItem.OptionBroadcastTextID);
+                TC_LOG_ERROR("sql.sql", "Table `gossip_menu_option` for menu {}, id {} has non-existing or incompatible OptionBroadcastTextID {}, ignoring.", gMenuItem.MenuID, gMenuItem.OptionID, gMenuItem.OptionBroadcastTextID);
                 gMenuItem.OptionBroadcastTextID = 0;
             }
         }
 
         if (gMenuItem.ActionMenuID && gMenuItem.OptionNpc != GossipOptionNpc::None)
         {
-            TC_LOG_ERROR("sql.sql", "Table `gossip_menu_option` for menu {}, id {} can not use ActionMenuID for GossipOptionNpc different from GossipOptionNpc::None, ignoring", gMenuItem.MenuID, gMenuItem.OrderIndex);
+            TC_LOG_ERROR("sql.sql", "Table `gossip_menu_option` for menu {}, id {} can not use ActionMenuID for GossipOptionNpc different from GossipOptionNpc::None, ignoring", gMenuItem.MenuID, gMenuItem.OptionID);
             gMenuItem.ActionMenuID = 0;
         }
 
@@ -9669,12 +9663,12 @@ void ObjectMgr::LoadGossipMenuItems()
         {
             if (gMenuItem.OptionNpc != GossipOptionNpc::None)
             {
-                TC_LOG_ERROR("sql.sql", "Table `gossip_menu_option` for menu {}, id {} can not use ActionPoiID for GossipOptionNpc different from GossipOptionNpc::None, ignoring", gMenuItem.MenuID, gMenuItem.OrderIndex);
+                TC_LOG_ERROR("sql.sql", "Table `gossip_menu_option` for menu {}, id {} can not use ActionPoiID for GossipOptionNpc different from GossipOptionNpc::None, ignoring", gMenuItem.MenuID, gMenuItem.OptionID);
                 gMenuItem.ActionPoiID = 0;
             }
             else if (!GetPointOfInterest(gMenuItem.ActionPoiID))
             {
-                TC_LOG_ERROR("sql.sql", "Table `gossip_menu_option` for menu {}, id {} use non-existing ActionPoiID {}, ignoring", gMenuItem.MenuID, gMenuItem.OrderIndex, gMenuItem.ActionPoiID);
+                TC_LOG_ERROR("sql.sql", "Table `gossip_menu_option` for menu {}, id {} use non-existing ActionPoiID {}, ignoring", gMenuItem.MenuID, gMenuItem.OptionID, gMenuItem.ActionPoiID);
                 gMenuItem.ActionPoiID = 0;
             }
         }
@@ -9683,7 +9677,7 @@ void ObjectMgr::LoadGossipMenuItems()
         {
             if (!sBroadcastTextStore.LookupEntry(gMenuItem.BoxBroadcastTextID))
             {
-                TC_LOG_ERROR("sql.sql", "Table `gossip_menu_option` for menu {}, id {} has non-existing or incompatible BoxBroadcastTextID {}, ignoring.", gMenuItem.MenuID, gMenuItem.OrderIndex, gMenuItem.BoxBroadcastTextID);
+                TC_LOG_ERROR("sql.sql", "Table `gossip_menu_option` for menu {}, id {} has non-existing or incompatible BoxBroadcastTextID {}, ignoring.", gMenuItem.MenuID, gMenuItem.OptionID, gMenuItem.BoxBroadcastTextID);
                 gMenuItem.BoxBroadcastTextID = 0;
             }
         }

@@ -160,7 +160,7 @@ void WorldSession::HandleGossipHelloOpcode(WorldPackets::NPC::Hello& packet)
     }
 
     // set faction visible if needed
-    if (FactionTemplateEntry const* factionTemplateEntry = sFactionTemplateStore.LookupEntry(unit->getFaction()))
+    if (FactionTemplateEntry const* factionTemplateEntry = sFactionTemplateStore.LookupEntry(unit->GetFaction()))
         _player->GetReputationMgr().SetVisible(factionTemplateEntry);
 
     GetPlayer()->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_TALK);
@@ -404,7 +404,7 @@ void WorldSession::SendStablePetCallback(ObjectGuid guid, PreparedQueryResult re
         stableEntry.PetNumber = pet->GetCharmInfo()->GetPetNumber();
         stableEntry.CreatureID = pet->GetEntry();
         stableEntry.DisplayID = pet->GetDisplayId();
-        stableEntry.ExperienceLevel = pet->getLevel();
+        stableEntry.ExperienceLevel = pet->GetLevel();
         stableEntry.PetFlags = PET_STABLE_ACTIVE;
         stableEntry.PetName = pet->GetName();
         ++petSlot;

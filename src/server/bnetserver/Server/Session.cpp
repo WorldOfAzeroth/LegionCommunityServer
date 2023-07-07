@@ -18,6 +18,7 @@
 #include "Session.h"
 #include "BattlenetRpcErrorCodes.h"
 #include "ByteConverter.h"
+#include "CryptoRandom.h"
 #include "DatabaseEnv.h"
 #include "Errors.h"
 #include "IPLocation.h"
@@ -91,10 +92,10 @@ void Battlenet::Session::Start()
     // Verify that this IP is not in the ip_banned table
     LoginDatabase.Execute(LoginDatabase.GetPreparedStatement(LOGIN_DEL_EXPIRED_IP_BANS));
 
-    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_IP_INFO);
+    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_IP_INFO);
     stmt->setString(0, ip_address);
 
-    _queryProcessor.AddQuery(LoginDatabase.AsyncQuery(stmt).WithPreparedCallback(std::bind(&Battlenet::Session::CheckIpCallback, this, std::placeholders::_1)));
+    _queryProcessor.AddCallback(LoginDatabase.AsyncQuery(stmt).WithPreparedCallback(std::bind(&Battlenet::Session::CheckIpCallback, this, std::placeholders::_1)));
 }
 
 void Battlenet::Session::CheckIpCallback(PreparedQueryResult result)
@@ -126,7 +127,7 @@ bool Battlenet::Session::Update()
     if (!BattlenetSocket::Update())
         return false;
 
-    _queryProcessor.ProcessReadyQueries();
+    _queryProcessor.ProcessReadyCallbacks();
 
     return true;
 }
@@ -235,7 +236,7 @@ uint32 Battlenet::Session::HandleLogon(authentication::v1::LogonRequest const* l
 
     challenge::v1::ChallengeExternalRequest externalChallenge;
     externalChallenge.set_payload_type("web_auth_url");
-    externalChallenge.set_payload(Trinity::StringFormat("https://%s:%u/bnetserver/login/", endpoint.address().to_string().c_str(), endpoint.port()));
+    externalChallenge.set_payload(Trinity::StringFormat("https://{}:{}/bnetserver/login/", endpoint.address().to_string(), endpoint.port()));
     Service<challenge::v1::ChallengeListener>(this).OnExternalChallenge(&externalChallenge);
     return ERROR_OK;
 }
@@ -253,12 +254,12 @@ uint32 Battlenet::Session::VerifyWebCredentials(std::string const& webCredential
     if (webCredentials.empty())
         return ERROR_DENIED;
 
-    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_ACCOUNT_INFO);
+    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_ACCOUNT_INFO);
     stmt->setString(0, webCredentials);
 
     std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)> asyncContinuation = std::move(continuation);
     std::shared_ptr<AccountInfo> accountInfo = std::make_shared<AccountInfo>();
-    _queryProcessor.AddQuery(LoginDatabase.AsyncQuery(stmt).WithChainingPreparedCallback([this, accountInfo, asyncContinuation](QueryCallback& callback, PreparedQueryResult result)
+    _queryProcessor.AddCallback(LoginDatabase.AsyncQuery(stmt).WithChainingPreparedCallback([this, accountInfo, asyncContinuation](QueryCallback& callback, PreparedQueryResult result)
     {
         Battlenet::Services::Authentication asyncContinuationService(this);
         NoData response;
@@ -276,7 +277,7 @@ uint32 Battlenet::Session::VerifyWebCredentials(std::string const& webCredential
             return;
         }
 
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_CHARACTER_COUNTS_BY_BNET_ID);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_CHARACTER_COUNTS_BY_BNET_ID);
         stmt->setUInt32(0, accountInfo->Id);
         callback.SetNextQuery(LoginDatabase.AsyncQuery(stmt));
     })
@@ -293,7 +294,7 @@ uint32 Battlenet::Session::VerifyWebCredentials(std::string const& webCredential
             } while (characterCountsResult->NextRow());
         }
 
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_LAST_PLAYER_CHARACTERS);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_LAST_PLAYER_CHARACTERS);
         stmt->setUInt32(0, accountInfo->Id);
         callback.SetNextQuery(LoginDatabase.AsyncQuery(stmt));
     })
@@ -386,9 +387,8 @@ uint32 Battlenet::Session::VerifyWebCredentials(std::string const& webCredential
         if (!_ipCountry.empty())
             logonResult.set_geoip_country(_ipCountry);
 
-        BigNumber k;
-        k.SetRand(8 * 64);
-        logonResult.set_session_key(k.AsByteArray(64).get(), 64);
+        std::array<uint8, 64> k = Trinity::Crypto::GetRandomBytes<64>();
+        logonResult.set_session_key(k.data(), 64);
 
         _authed = true;
 
@@ -536,7 +536,7 @@ uint32 Battlenet::Session::GetRealmListTicket(std::unordered_map<std::string, Va
     if (!clientInfoOk)
         return ERROR_WOW_SERVICES_DENIED_REALM_LIST_TICKET;
 
-    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BNET_LAST_LOGIN_INFO);
+    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BNET_LAST_LOGIN_INFO);
     stmt->setString(0, GetRemoteIpAddress().to_string());
     stmt->setUInt8(1, GetLocaleByName(_locale));
     stmt->setString(2, _os);

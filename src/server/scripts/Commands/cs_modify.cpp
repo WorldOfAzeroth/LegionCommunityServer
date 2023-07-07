@@ -225,10 +225,9 @@ public:
         if (!pfactionid)
         {
             uint32 factionid = target->GetFaction();
-            uint32 flag      = target->m_unitData->Flags;
-            uint64 npcflag;
-            memcpy(&npcflag, target->m_unitData->NpcFlags.begin(), sizeof(uint64));
-            uint32 dyflag    = target->m_objectData->DynamicFlags;
+            uint32 flag      = target->GetUInt32Value(UNIT_FIELD_FLAGS);
+            uint64 npcflag   = target->GetUInt64Value(UNIT_NPC_FLAGS);
+            uint32 dyflag    = target->GetUInt32Value(OBJECT_DYNAMIC_FLAGS);
             handler->PSendSysMessage(LANG_CURRENT_FACTION, target->GetGUID().ToString().c_str(), factionid, flag, std::to_string(npcflag).c_str(), dyflag);
             return true;
         }
@@ -238,7 +237,7 @@ public:
 
         char *pflag = strtok(nullptr, " ");
         if (!pflag)
-            flag = target->m_unitData->Flags;
+            flag = target->GetUInt32Value(UNIT_FIELD_FLAGS);
         else
             flag = atoul(pflag);
 
@@ -246,7 +245,7 @@ public:
 
         uint64 npcflag;
         if (!pnpcflag)
-            memcpy(&npcflag, target->m_unitData->NpcFlags.begin(), sizeof(uint64));
+            npcflag = target->GetUInt64Value(UNIT_NPC_FLAGS);
         else
             npcflag = atoull(pnpcflag);
 
@@ -254,7 +253,7 @@ public:
 
         uint32  dyflag;
         if (!pdyflag)
-            dyflag = target->m_objectData->DynamicFlags;
+            dyflag = target->GetUInt32Value(OBJECT_DYNAMIC_FLAGS);
         else
             dyflag = atoul(pdyflag);
 
@@ -913,40 +912,6 @@ public:
 
         // Change display ID
         target->InitDisplayIds();
-
-        target->RestoreDisplayId(false);
-        sCharacterCache->UpdateCharacterGender(target->GetGUID(), gender);
-
-        // Generate random customizations
-        std::vector<UF::ChrCustomizationChoice> customizations;
-
-        Classes playerClass = Classes(target->GetClass());
-        std::vector<ChrCustomizationOptionEntry const*> const* options = sDB2Manager.GetCustomiztionOptions(target->GetRace(), gender);
-        WorldSession const* worldSession = target->GetSession();
-        for (ChrCustomizationOptionEntry const* option : *options)
-        {
-            ChrCustomizationReqEntry const* optionReq = sChrCustomizationReqStore.LookupEntry(option->ChrCustomizationReqID);
-            if (optionReq && !worldSession->MeetsChrCustomizationReq(optionReq, playerClass, false, MakeChrCustomizationChoiceRange(customizations)))
-                continue;
-
-            // Loop over the options until the first one fits
-            std::vector<ChrCustomizationChoiceEntry const*> const* choicesForOption = sDB2Manager.GetCustomiztionChoices(option->ID);
-            for (ChrCustomizationChoiceEntry const* choiceForOption : *choicesForOption)
-            {
-                ChrCustomizationReqEntry const* choiceReq = sChrCustomizationReqStore.LookupEntry(choiceForOption->ChrCustomizationReqID);
-                if (choiceReq && !worldSession->MeetsChrCustomizationReq(choiceReq, playerClass, false, MakeChrCustomizationChoiceRange(customizations)))
-                    continue;
-
-                ChrCustomizationChoiceEntry const* choiceEntry = choicesForOption->at(0);
-                UF::ChrCustomizationChoice choice;
-                choice.ChrCustomizationOptionID = option->ID;
-                choice.ChrCustomizationChoiceID = choiceEntry->ID;
-                customizations.push_back(choice);
-                break;
-            }
-        }
-
-        target->SetCustomizations(Trinity::Containers::MakeIteratorPair(customizations.begin(), customizations.end()));
 
         char const* gender_full = gender ? "female" : "male";
 

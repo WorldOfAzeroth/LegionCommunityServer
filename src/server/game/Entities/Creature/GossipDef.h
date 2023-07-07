@@ -94,25 +94,26 @@ enum class GossipOptionNpc : uint8
 
 struct GossipMenuItem
 {
-    int32               GossipOptionID;
-    uint32              OrderIndex;
-    GossipOptionNpc     OptionNpc;
-    std::string         OptionText;
-    bool                BoxCoded;
-    uint32              BoxMoney;
-    std::string         BoxText;
-
-    // action data
-    uint32              ActionMenuID;
-    uint32              ActionPoiID;
-
-    // additional scripting identifiers
-    uint32              Sender;
-    uint32              Action;
+    GossipOptionNpc  OptionNpc;
+    bool             IsCoded;
+    std::string      Message;
+    uint32           Sender;
+    uint32           Action;
+    std::string      BoxMessage;
+    uint32           BoxMoney;
 };
 
 // need an ordered container
-typedef std::vector<GossipMenuItem> GossipMenuItemContainer;
+typedef std::map<uint32, GossipMenuItem> GossipMenuItemContainer;
+
+struct GossipMenuItemData
+{
+    uint32 GossipActionMenuId;  // MenuId of the gossip triggered by this action
+    uint32 GossipActionPoi;
+};
+
+// need an ordered container
+typedef std::map<uint32, GossipMenuItemData> GossipMenuItemDataContainer;
 
 struct QuestMenuItem
 {
@@ -126,21 +127,17 @@ class TC_GAME_API GossipMenu
 {
     public:
         GossipMenu();
-        GossipMenu(GossipMenu const&) = delete;
-        GossipMenu(GossipMenu&&) = delete;
-        GossipMenu& operator=(GossipMenu const&) = delete;
-        GossipMenu& operator=(GossipMenu&&) = delete;
         ~GossipMenu();
 
-        uint32 AddMenuItem(int32 gossipOptionId, int32 orderIndex, GossipOptionNpc optionNpc, std::string optionText, uint32 actionMenuId, uint32 actionPoiId,
-                               bool boxCoded, uint32 boxMoney, std::string boxText, uint32 sender, uint32 action);
+        uint32 AddMenuItem(int32 menuItemId, GossipOptionNpc optionNpc, std::string const& message, uint32 sender, uint32 action, std::string const& boxMessage, uint32 boxMoney, bool coded = false);
         void AddMenuItem(uint32 menuId, uint32 menuItemId, uint32 sender, uint32 action);
-        void AddMenuItem(GossipMenuItems const& menuItem, uint32 sender, uint32 action);
 
         void SetMenuId(uint32 menu_id) { _menuId = menu_id; }
         uint32 GetMenuId() const { return _menuId; }
         void SetLocale(LocaleConstant locale) { _locale = locale; }
         LocaleConstant GetLocale() const { return _locale; }
+
+        void AddGossipMenuItemData(uint32 menuItemId, uint32 gossipActionMenuId, uint32 gossipActionPoi);
 
         uint32 GetMenuItemCount() const
         {
@@ -152,12 +149,27 @@ class TC_GAME_API GossipMenu
             return _menuItems.empty();
         }
 
-        GossipMenuItem const* GetItem(int32 gossipOptionId) const;
-        GossipMenuItem const* GetItemByIndex(uint32 orderIndex) const;
+        GossipMenuItem const* GetItem(uint32 id) const
+        {
+            GossipMenuItemContainer::const_iterator itr = _menuItems.find(id);
+            if (itr != _menuItems.end())
+                return &itr->second;
 
-        uint32 GetMenuItemSender(uint32 orderIndex) const;
-        uint32 GetMenuItemAction(uint32 orderIndex) const;
-        bool IsMenuItemCoded(uint32 orderIndex) const;
+            return nullptr;
+        }
+
+        GossipMenuItemData const* GetItemData(uint32 indexId) const
+        {
+            GossipMenuItemDataContainer::const_iterator itr = _menuItemData.find(indexId);
+            if (itr != _menuItemData.end())
+                return &itr->second;
+
+            return nullptr;
+        }
+
+        uint32 GetMenuItemSender(uint32 menuItemId) const;
+        uint32 GetMenuItemAction(uint32 menuItemId) const;
+        bool IsMenuItemCoded(uint32 menuItemId) const;
 
         void ClearMenu();
 
@@ -168,6 +180,7 @@ class TC_GAME_API GossipMenu
 
     private:
         GossipMenuItemContainer _menuItems;
+        GossipMenuItemDataContainer _menuItemData;
         uint32 _menuId;
         LocaleConstant _locale;
 };
@@ -176,10 +189,6 @@ class TC_GAME_API QuestMenu
 {
     public:
         QuestMenu();
-        QuestMenu(QuestMenu const&) = delete;
-        QuestMenu(QuestMenu&&) = delete;
-        QuestMenu& operator=(QuestMenu const&) = delete;
-        QuestMenu& operator=(QuestMenu&&) = delete;
         ~QuestMenu();
 
         void AddMenuItem(uint32 QuestId, uint8 Icon);
@@ -196,6 +205,8 @@ class TC_GAME_API QuestMenu
 class InteractionData
 {
     public:
+        InteractionData() { Reset(); }
+
         void Reset()
         {
             SourceGuid.Clear();
@@ -212,10 +223,6 @@ class TC_GAME_API PlayerMenu
 {
     public:
         explicit PlayerMenu(WorldSession* session);
-        PlayerMenu(PlayerMenu const&) = delete;
-        PlayerMenu(PlayerMenu&&) = delete;
-        PlayerMenu& operator=(PlayerMenu const&) = delete;
-        PlayerMenu& operator=(PlayerMenu&&) = delete;
         ~PlayerMenu();
 
         GossipMenu& GetGossipMenu() { return _gossipMenu; }

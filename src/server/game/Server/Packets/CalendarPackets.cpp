@@ -210,7 +210,7 @@ void WorldPackets::Calendar::CalendarEventModeratorStatus::Read()
     _worldPacket >> Status;
 }
 
-WorldPacket const* WorldPackets::Calendar::SCalendarEventInvite::Write()
+WorldPacket const* WorldPackets::Calendar::CalendarEventInvite::Write()
 {
     _worldPacket << InviteGuid;
     _worldPacket << uint64(EventID);

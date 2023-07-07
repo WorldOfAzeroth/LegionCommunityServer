@@ -1463,7 +1463,7 @@ bool Item::IsLimitedToAnotherMapOrZone(uint32 cur_mapId, uint32 cur_zoneId) cons
 
 void Item::SendUpdateSockets()
 {
-    WorldPackets::Item::SocketGemsSuccess socketGems;
+    WorldPackets::Item::SocketGemsResult socketGems;
     socketGems.Item = GetGUID();
     GetOwner()->GetSession()->SendPacket(socketGems.Write());
 }

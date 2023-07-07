@@ -37,8 +37,10 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
-#include <vector>
+#include <boost/dynamic_bitset.hpp>
+#include <numeric>
 #include <sstream>
+#include <vector>
 
 enum eAuctionHouse
 {
@@ -79,7 +81,6 @@ AuctionHouseObject* AuctionHouseMgr::GetAuctionsMap(uint32 factionTemplateId)
 uint64 AuctionHouseMgr::GetAuctionDeposit(AuctionHouseEntry const* entry, uint32 time, Item* pItem, uint32 count)
 {
     uint32 MSV = pItem->GetTemplate()->GetSellPrice();
-
     if (MSV <= 0)
         return AH_MINIMUM_DEPOSIT * sWorld->getRate(RATE_AUCTION_DEPOSIT);
 
@@ -165,7 +166,7 @@ void AuctionHouseMgr::SendAuctionWonMail(AuctionEntry* auction, CharacterDatabas
         {
             bidder->GetSession()->SendAuctionWonNotification(auction, item);
             // FIXME: for offline player need also
-            bidder->UpdateCriteria(CRITERIA_TYPE_WON_AUCTIONS, 1);
+            bidder->UpdateCriteria(CriteriaType::AuctionsWon, 1);
         }
 
         MailDraft(auction->BuildAuctionMailSubject(AUCTION_WON), AuctionEntry::BuildAuctionMailBody(auction->owner, auction->bid, auction->buyout, 0, 0))
@@ -206,8 +207,8 @@ void AuctionHouseMgr::SendAuctionSuccessfulMail(AuctionEntry* auction, Character
         //FIXME: what do if owner offline
         if (owner && item)
         {
-            owner->UpdateCriteria(CRITERIA_TYPE_GOLD_EARNED_BY_AUCTIONS, profit);
-            owner->UpdateCriteria(CRITERIA_TYPE_HIGHEST_AUCTION_SOLD, auction->bid);
+            owner->UpdateCriteria(CriteriaType::MoneyEarnedFromAuctions, profit);
+            owner->UpdateCriteria(CriteriaType::HighestAuctionSale, auction->bid);
             //send auction owner notification, bidder must be current!
             owner->GetSession()->SendAuctionClosedNotification(auction, (float)sWorld->getIntConfig(CONFIG_MAIL_DELIVERY_DELAY), true, item);
         }
@@ -787,7 +788,7 @@ void AuctionHouseObject::BuildReplicate(WorldPackets::AuctionHouse::AuctionRepli
     else
     {
         throttleItr = GetAllThrottleMap.insert({ player->GetGUID(), PlayerGetAllThrottleData{} }).first;
-        throttleItr->second.NextAllowedReplication = curTime + sWorld->getIntConfig(CONFIG_AUCTION_GETALL_DELAY);
+        throttleItr->second.NextAllowedReplication = curTime + sWorld->getIntConfig(CONFIG_AUCTION_REPLICATE_DELAY);
         throttleItr->second.Global = uint32(curTime);
     }
 
@@ -958,14 +959,11 @@ std::string AuctionEntry::BuildAuctionMailSubject(MailAuctionAnswers response) c
     std::ostringstream strm;
     strm << itemEntry << ":0:" << response << ':' << Id << ':' << itemCount;
     return strm.str();
+
 }
 
 std::string AuctionEntry::BuildAuctionMailBody(uint64 lowGuid, uint64 bid, uint64 buyout, uint64 deposit, uint64 cut)
 {
-    std::ostringstream strm;
-    strm.width(16);
-    strm << std::right << std::hex << ObjectGuid::Create<HighGuid::Player>(lowGuid);   // HIGHGUID_PLAYER always present, even for empty guids
-    strm << std::dec << ':' << bid << ':' << buyout;
-    strm << ':' << deposit << ':' << cut;
-    return strm.str();
+    return Trinity::StringFormat("{}:{}:{}:{}:{}", ObjectGuid::Create<HighGuid::Player>(lowGuid).ToString(), bid, buyout, deposit, cut);
+
 }

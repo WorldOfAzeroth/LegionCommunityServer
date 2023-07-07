@@ -36,6 +36,11 @@ void HotfixDatabaseConnection::DoPrepareStatements()
         "Faction, Points, MinimumCriteria, ID, IconFileID, CriteriaTree FROM achievement ORDER BY ID DESC", CONNECTION_SYNCH);
     PREPARE_LOCALE_STMT(HOTFIX_SEL_ACHIEVEMENT, "SELECT ID, Title_lang, Description_lang, Reward_lang FROM achievement_locale WHERE locale = ?", CONNECTION_SYNCH);
 
+    // AchievementCategory.db2
+    PrepareStatement(HOTFIX_SEL_ACHIEVEMENT_CATEGORY, "SELECT Name, ID, Parent, UiOrder FROM achievement_category WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+    PREPARE_LOCALE_STMT(HOTFIX_SEL_ACHIEVEMENT_CATEGORY, "SELECT ID, Name_lang FROM achievement_category_locale WHERE (`VerifiedBuild` > 0) = ?"
+        " AND locale = ?", CONNECTION_SYNCH);
+
     // AdventureJournal.db2
     PrepareStatement(HOTFIX_SEL_ADVENTURE_JOURNAL, "SELECT ID, Name_Lang, Description_Lang, ButtonText_Lang, RewardDescription_Lang, ContinueDescription_Lang, "
         "TextureFileDataID, ItemID, LfgDungeonID, QuestID, BattleMasterListID, BonusPlayerConditionID1, BonusPlayerConditionID2, CurrencyType, "
@@ -322,6 +327,22 @@ void HotfixDatabaseConnection::DoPrepareStatements()
     PrepareStatement(HOTFIX_SEL_FACTION_TEMPLATE, "SELECT ID, Faction, Flags, Enemies1, Enemies2, Enemies3, Enemies4, Friend1, Friend2, Friend3, "
         "Friend4, FactionGroup, FriendGroup, EnemyGroup FROM faction_template ORDER BY ID DESC", CONNECTION_SYNCH);
 
+    // GameobjectArtKit.db2
+    PrepareStatement(HOTFIX_SEL_GAMEOBJECT_ART_KIT, "SELECT ID, AttachModelFileID, TextureVariationFileID1, TextureVariationFileID2, "
+        "TextureVariationFileID3 FROM gameobject_art_kit WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+
+    // FriendshipRepReaction.db2
+    PrepareStatement(HOTFIX_SEL_FRIENDSHIP_REP_REACTION, "SELECT ID, Reaction, FriendshipRepID, ReactionThreshold FROM friendship_rep_reaction"
+        " WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+    PREPARE_LOCALE_STMT(HOTFIX_SEL_FRIENDSHIP_REP_REACTION, "SELECT ID, Reaction_lang FROM friendship_rep_reaction_locale"
+        " WHERE (`VerifiedBuild` > 0) = ? AND locale = ?", CONNECTION_SYNCH);
+
+    // FriendshipReputation.db2
+    PrepareStatement(HOTFIX_SEL_FRIENDSHIP_REPUTATION, "SELECT Description, StandingModified, StandingChanged, ID, FactionID, TextureFileID, Flags"
+        " FROM friendship_reputation WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+    PREPARE_LOCALE_STMT(HOTFIX_SEL_FRIENDSHIP_REPUTATION, "SELECT ID, Description_lang, StandingModified_lang, StandingChanged_lang"
+        " FROM friendship_reputation_locale WHERE (`VerifiedBuild` > 0) = ? AND locale = ?", CONNECTION_SYNCH);
+
     // GameobjectDisplayInfo.db2
     PrepareStatement(HOTFIX_SEL_GAMEOBJECT_DISPLAY_INFO, "SELECT ID, FileDataID, GeoBoxMinX, GeoBoxMinY, GeoBoxMinZ, GeoBoxMaxX, GeoBoxMaxY, "
         "GeoBoxMaxZ, OverrideLootEffectScale, OverrideNameScale, ObjectEffectPackageID FROM gameobject_display_info ORDER BY ID DESC", CONNECTION_SYNCH);
@@ -540,6 +561,10 @@ void HotfixDatabaseConnection::DoPrepareStatements()
     PrepareStatement(HOTFIX_SEL_ITEM_MODIFIED_APPEARANCE, "SELECT ItemID, ID, ItemAppearanceModifierID, ItemAppearanceID, OrderIndex, "
         "TransmogSourceTypeEnum FROM item_modified_appearance ORDER BY ID DESC", CONNECTION_SYNCH);
 
+    // ItemNameDescription.db2
+    PrepareStatement(HOTFIX_SEL_ITEM_NAME_DESCRIPTION, "SELECT ID, Description, Color FROM item_name_description ORDER BY ID DESC", CONNECTION_SYNCH);
+    PREPARE_LOCALE_STMT(HOTFIX_SEL_ITEM_NAME_DESCRIPTION, "SELECT ID, Description_lang FROM item_name_description_locale WHERE locale = ?", CONNECTION_SYNCH);
+
     // ItemPriceBase.db2
     PrepareStatement(HOTFIX_SEL_ITEM_PRICE_BASE, "SELECT ID, Armor, Weapon, ItemLevel FROM item_price_base ORDER BY ID DESC", CONNECTION_SYNCH);
 
@@ -604,6 +629,13 @@ void HotfixDatabaseConnection::DoPrepareStatements()
     PrepareStatement(HOTFIX_SEL_KEYCHAIN, "SELECT ID, Key1, Key2, Key3, Key4, Key5, Key6, Key7, Key8, Key9, Key10, Key11, Key12, Key13, Key14, Key15, "
         "Key16, Key17, Key18, Key19, Key20, Key21, Key22, Key23, Key24, Key25, Key26, Key27, Key28, Key29, Key30, Key31, Key32 FROM keychain"
         " ORDER BY ID DESC", CONNECTION_SYNCH);
+
+    // LanguageWords.db2
+    PrepareStatement(HOTFIX_SEL_LANGUAGE_WORDS, "SELECT ID, Word, LanguageID FROM language_words WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+
+    // Languages.db2
+    PrepareStatement(HOTFIX_SEL_LANGUAGES, "SELECT Name, ID FROM languages WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+    PREPARE_LOCALE_STMT(HOTFIX_SEL_LANGUAGES, "SELECT ID, Name_lang FROM languages_locale WHERE (`VerifiedBuild` > 0) = ? AND locale = ?", CONNECTION_SYNCH);
 
     // LfgDungeons.db2
     PrepareStatement(HOTFIX_SEL_LFG_DUNGEONS, "SELECT ID, Name, Description, Flags, MinGear, MaxLevel, TargetLevelMax, MapID, RandomID, ScenarioID, "
@@ -683,6 +715,10 @@ void HotfixDatabaseConnection::DoPrepareStatements()
     // OverrideSpellData.db2
     PrepareStatement(HOTFIX_SEL_OVERRIDE_SPELL_DATA, "SELECT ID, Spells1, Spells2, Spells3, Spells4, Spells5, Spells6, Spells7, Spells8, Spells9, "
         "Spells10, PlayerActionBarFileDataID, Flags FROM override_spell_data ORDER BY ID DESC", CONNECTION_SYNCH);
+
+    // ParagonReputation.db2
+    PrepareStatement(HOTFIX_SEL_PARAGON_REPUTATION, "SELECT ID, FactionID, LevelThreshold, QuestID FROM paragon_reputation"
+        " WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
 
     // Phase.db2
     PrepareStatement(HOTFIX_SEL_PHASE, "SELECT ID, Flags FROM phase ORDER BY ID DESC", CONNECTION_SYNCH);
@@ -906,6 +942,9 @@ void HotfixDatabaseConnection::DoPrepareStatements()
         "RtOperandType1, RtOperandType2, RtOperandType3, RtOperandType4, RtOperandType5, RtOperand1, RtOperand2, RtOperand3, RtOperand4, RtOperand5, "
         "Logic1, Logic2, Logic3, Logic4, Logic5 FROM spell_item_enchantment_condition ORDER BY ID DESC", CONNECTION_SYNCH);
 
+    // SpellLabel.db2
+    PrepareStatement(HOTFIX_SEL_SPELL_LABEL, "SELECT ID, LabelID, SpellID FROM spell_label WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+
     // SpellLearnSpell.db2
     PrepareStatement(HOTFIX_SEL_SPELL_LEARN_SPELL, "SELECT ID, SpellID, LearnSpellID, OverridesSpellID FROM spell_learn_spell ORDER BY ID DESC", CONNECTION_SYNCH);
 
@@ -967,6 +1006,27 @@ void HotfixDatabaseConnection::DoPrepareStatements()
     // SpellTotems.db2
     PrepareStatement(HOTFIX_SEL_SPELL_TOTEMS, "SELECT ID, SpellID, Totem1, Totem2, RequiredTotemCategoryID1, RequiredTotemCategoryID2"
         " FROM spell_totems ORDER BY ID DESC", CONNECTION_SYNCH);
+    // SpellVisual.db2
+    PrepareStatement(HOTFIX_SEL_SPELL_VISUAL, "SELECT ID, MissileCastOffset1, MissileCastOffset2, MissileCastOffset3, MissileImpactOffset1, "
+        "MissileImpactOffset2, MissileImpactOffset3, AnimEventSoundID, Flags, MissileAttachment, MissileDestinationAttachment, "
+        "MissileCastPositionerID, MissileImpactPositionerID, MissileTargetingKit, HostileSpellVisualID, CasterSpellVisualID, SpellVisualMissileSetID, "
+        "DamageNumberDelay, LowViolenceSpellVisualID, RaidSpellVisualMissileSetID, ReducedUnexpectedCameraMovementSpellVisualID FROM spell_visual"
+        " WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+
+    // SpellVisualEffectName.db2
+    PrepareStatement(HOTFIX_SEL_SPELL_VISUAL_EFFECT_NAME, "SELECT ID, ModelFileDataID, BaseMissileSpeed, Scale, MinAllowedScale, MaxAllowedScale, "
+        "Alpha, Flags, TextureFileDataID, EffectRadius, Type, GenericID, RibbonQualityID, DissolveEffectID, ModelPosition, Unknown901"
+        " FROM spell_visual_effect_name WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+
+    // SpellVisualMissile.db2
+    PrepareStatement(HOTFIX_SEL_SPELL_VISUAL_MISSILE, "SELECT CastOffset1, CastOffset2, CastOffset3, ImpactOffset1, ImpactOffset2, ImpactOffset3, ID, "
+        "SpellVisualEffectNameID, SoundEntriesID, Attachment, DestinationAttachment, CastPositionerID, ImpactPositionerID, FollowGroundHeight, "
+        "FollowGroundDropSpeed, FollowGroundApproach, Flags, SpellMissileMotionID, AnimKitID, ClutterLevel, DecayTimeAfterImpact, "
+        "SpellVisualMissileSetID FROM spell_visual_missile WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+
+    // SpellVisualKit.db2
+    PrepareStatement(HOTFIX_SEL_SPELL_VISUAL_KIT, "SELECT ID, FallbackPriority, FallbackSpellVisualKitId, DelayMin, DelayMax, Flags1, Flags2"
+        " FROM spell_visual_kit WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
 
     // SpellXSpellVisual.db2
     PrepareStatement(HOTFIX_SEL_SPELL_X_SPELL_VISUAL, "SELECT SpellVisualID, ID, Probability, CasterPlayerConditionID, CasterUnitConditionID, "
@@ -1081,6 +1141,9 @@ void HotfixDatabaseConnection::DoPrepareStatements()
     // WorldSafeLocs.db2
     PrepareStatement(HOTFIX_SEL_WORLD_SAFE_LOCS, "SELECT ID, AreaName, LocX, LocY, LocZ, Facing, MapID FROM world_safe_locs ORDER BY ID DESC", CONNECTION_SYNCH);
     PREPARE_LOCALE_STMT(HOTFIX_SEL_WORLD_SAFE_LOCS, "SELECT ID, AreaName_lang FROM world_safe_locs_locale WHERE locale = ?", CONNECTION_SYNCH);
+
+    // WorldStateExpression.db2
+    PrepareStatement(HOTFIX_SEL_WORLD_STATE_EXPRESSION, "SELECT ID, Expression FROM world_state_expression ORDER BY ID DESC", CONNECTION_SYNCH);
 }
 
 HotfixDatabaseConnection::HotfixDatabaseConnection(MySQLConnectionInfo& connInfo) : MySQLConnection(connInfo)

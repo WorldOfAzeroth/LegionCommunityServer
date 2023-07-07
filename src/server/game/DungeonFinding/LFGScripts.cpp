@@ -93,11 +93,9 @@ void LFGPlayerScript::OnMapChanged(Player* player)
             return;
         }
 
-        WorldPackets::Query::QueryPlayerNamesResponse response;
-        for (Group::MemberSlot const& memberSlot : group->GetMemberSlots())
-            player->GetSession()->BuildNameQueryData(memberSlot.guid, response.Players.emplace_back());
-
-        player->SendDirectMessage(response.Write());
+        for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
+            if (Player* member = itr->GetSource())
+                player->GetSession()->SendNameQueryOpcode(member->GetGUID());
 
         if (sLFGMgr->selectedRandomLfgDungeon(player->GetGUID()))
             player->CastSpell(player, LFG_SPELL_LUCK_OF_THE_DRAW, true);

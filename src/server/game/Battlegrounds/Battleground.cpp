@@ -1065,11 +1065,10 @@ void Battleground::AddPlayer(Player* player)
     SendPacketToTeam(team, playerJoined.Write(), player);
 
     // BG Status packet
-    BattlegroundQueueTypeId bgQueueTypeId = sBattlegroundMgr->BGQueueTypeId(m_queueId, GetArenaType());
-    uint32 queueSlot = player->GetBattlegroundQueueIndex(bgQueueTypeId);
+    uint32 queueSlot = player->GetBattlegroundQueueIndex(m_queueId);
 
     WorldPackets::Battleground::BattlefieldStatusActive battlefieldStatus;
-    sBattlegroundMgr->BuildBattlegroundStatusActive(&battlefieldStatus, this, player, queueSlot, player->GetBattlegroundQueueJoinTime(bgQueueTypeId), GetArenaType());
+    sBattlegroundMgr->BuildBattlegroundStatusActive(&battlefieldStatus, this, player, queueSlot, player->GetBattlegroundQueueJoinTime(m_queueId), GetArenaType());
     player->SendDirectMessage(battlefieldStatus.Write());
 
     player->RemoveAurasByType(SPELL_AURA_MOUNTED);
@@ -1860,7 +1859,6 @@ void Battleground::PlayerAddedToBGCheckIfBGIsRunning(Player* player)
         return;
 
     WorldPackets::Battleground::PVPLogData pvpLogData;
-    BattlegroundQueueTypeId bgQueueTypeId = BattlegroundMgr::BGQueueTypeId(GetTypeID(), GetArenaType());
 
     BlockMovement(player);
 
@@ -1868,7 +1866,7 @@ void Battleground::PlayerAddedToBGCheckIfBGIsRunning(Player* player)
     player->SendDirectMessage(pvpLogData.Write());
 
     WorldPackets::Battleground::BattlefieldStatusActive battlefieldStatus;
-    sBattlegroundMgr->BuildBattlegroundStatusActive(&battlefieldStatus, this, player, player->GetBattlegroundQueueIndex(bgQueueTypeId), player->GetBattlegroundQueueJoinTime(bgQueueTypeId), GetArenaType());
+    sBattlegroundMgr->BuildBattlegroundStatusActive(&battlefieldStatus, this, player, player->GetBattlegroundQueueIndex(m_queueId), player->GetBattlegroundQueueJoinTime(m_queueId), GetArenaType());
     player->SendDirectMessage(battlefieldStatus.Write());
 }
 

@@ -28,11 +28,11 @@
 
 void WorldSession::HandleArtifactAddPower(WorldPackets::Artifact::ArtifactAddPower& artifactAddPower)
 {
-    if (!_player->GetGameObjectIfCanInteractWith(artifactAddPower.ForgeGUID, GAMEOBJECT_TYPE_ARTIFACT_FORGE))
+    if (!_player->GetGameObjectIfCanInteractWith(artifactAddPower.ForgeGUID, GAMEOBJECT_TYPE_ITEM_FORGE))
         return;
 
     Item* artifact = _player->GetItemByGuid(artifactAddPower.ArtifactGUID);
-    if (!artifact)
+    if (!artifact || artifact->IsArtifactDisabled())
         return;
 
     uint32 currentArtifactTier = artifact->GetModifier(ITEM_MODIFIER_ARTIFACT_TIER);
@@ -102,10 +102,7 @@ void WorldSession::HandleArtifactAddPower(WorldPackets::Artifact::ArtifactAddPow
     if (!artifactPowerRank)
         return;
 
-    ItemDynamicFieldArtifactPowers newPower = *artifactPower;
-    ++newPower.PurchasedRank;
-    ++newPower.CurrentRankWithBonus;
-    artifact->SetArtifactPower(&newPower);
+    artifact->SetArtifactPower(artifactPower->ArtifactPowerId, artifactPower->PurchasedRank + 1, artifactPower->CurrentRankWithBonus + 1);
 
     if (artifact->IsEquipped())
     {
@@ -121,9 +118,7 @@ void WorldSession::HandleArtifactAddPower(WorldPackets::Artifact::ArtifactAddPow
             if (!scaledArtifactPowerRank)
                 continue;
 
-            ItemDynamicFieldArtifactPowers newScaledPower = power;
-            ++newScaledPower.CurrentRankWithBonus;
-            artifact->SetArtifactPower(&newScaledPower);
+            artifact->SetArtifactPower(power.ArtifactPowerId, power.PurchasedRank, power.CurrentRankWithBonus + 1);
 
             _player->ApplyArtifactPowerRank(artifact, scaledArtifactPowerRank, false);
             _player->ApplyArtifactPowerRank(artifact, scaledArtifactPowerRank, true);
@@ -161,7 +156,7 @@ void WorldSession::HandleArtifactAddPower(WorldPackets::Artifact::ArtifactAddPow
 
 void WorldSession::HandleArtifactSetAppearance(WorldPackets::Artifact::ArtifactSetAppearance& artifactSetAppearance)
 {
-    if (!_player->GetGameObjectIfCanInteractWith(artifactSetAppearance.ForgeGUID, GAMEOBJECT_TYPE_ARTIFACT_FORGE))
+    if (!_player->GetGameObjectIfCanInteractWith(artifactSetAppearance.ForgeGUID, GAMEOBJECT_TYPE_ITEM_FORGE))
         return;
 
     ArtifactAppearanceEntry const* artifactAppearance = sArtifactAppearanceStore.LookupEntry(artifactSetAppearance.ArtifactAppearanceID);
@@ -205,11 +200,11 @@ void WorldSession::HandleArtifactSetAppearance(WorldPackets::Artifact::ArtifactS
 
 void WorldSession::HandleConfirmArtifactRespec(WorldPackets::Artifact::ConfirmArtifactRespec& confirmArtifactRespec)
 {
-    if (!_player->GetNPCIfCanInteractWith(confirmArtifactRespec.NpcGUID, UNIT_NPC_FLAG_ARTIFACT_POWER_RESPEC))
+    if (!_player->GetNPCIfCanInteractWith(confirmArtifactRespec.NpcGUID, UNIT_NPC_FLAG_ARTIFACT_POWER_RESPEC, UNIT_NPC_FLAG_2_NONE))
         return;
 
     Item* artifact = _player->GetItemByGuid(confirmArtifactRespec.ArtifactGUID);
-    if (!artifact)
+    if (!artifact || artifact->IsArtifactDisabled())
         return;
 
     uint64 xpCost = 0;
@@ -230,11 +225,7 @@ void WorldSession::HandleConfirmArtifactRespec(WorldPackets::Artifact::ConfirmAr
         if (!oldPurchasedRank)
             continue;
 
-        ItemDynamicFieldArtifactPowers newPower = artifactPower;
-        newPower.PurchasedRank -= oldPurchasedRank;
-        newPower.CurrentRankWithBonus -= oldPurchasedRank;
-        artifact->SetArtifactPower(&newPower);
-
+        artifact->SetArtifactPower(artifactPower.ArtifactPowerId, artifactPower.PurchasedRank - oldPurchasedRank, artifactPower.CurrentRankWithBonus - oldPurchasedRank);
         if (artifact->IsEquipped())
             if (ArtifactPowerRankEntry const* artifactPowerRank = sDB2Manager.GetArtifactPowerRank(artifactPower.ArtifactPowerId, 0))
                 _player->ApplyArtifactPowerRank(artifact, artifactPowerRank, false);
@@ -250,9 +241,7 @@ void WorldSession::HandleConfirmArtifactRespec(WorldPackets::Artifact::ConfirmAr
         if (!scaledArtifactPowerRank)
             continue;
 
-        ItemDynamicFieldArtifactPowers newScaledPower = power;
-        newScaledPower.CurrentRankWithBonus = 0;
-        artifact->SetArtifactPower(&newScaledPower);
+        artifact->SetArtifactPower(power.ArtifactPowerId, power.PurchasedRank, 0);
 
         _player->ApplyArtifactPowerRank(artifact, scaledArtifactPowerRank, false);
     }

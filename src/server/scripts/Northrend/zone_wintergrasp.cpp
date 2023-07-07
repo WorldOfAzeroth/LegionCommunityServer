@@ -227,8 +227,11 @@ struct npc_wg_spirit_guide : public ScriptedAI
             GraveyardVect gy = wintergrasp->GetGraveyardVector();
             for (uint8 i = 0; i < gy.size(); i++)
                 if (action - GOSSIP_ACTION_INFO_DEF == i && gy[i]->GetControlTeamId() == player->GetTeamId())
-                    if (WorldSafeLocsEntry const* safeLoc = sDB2Manager.GetWorldSafeLoc(gy[i]->GetGraveyardId()))
-                        player->TeleportTo(safeLoc);
+                    if (WorldSafeLocsEntry const* safeLoc = sDB2Manager.GetWorldSafeLoc(gy[i]->GetGraveyardId())) {
+                        WorldLocation loc(safeLoc->MapID, safeLoc->GetPositionX(), safeLoc->GetPositionY(), safeLoc->GetPositionZ(), safeLoc->GetOrientation());
+                        player->TeleportTo(loc);
+                    }
+
         }
         return true;
     }

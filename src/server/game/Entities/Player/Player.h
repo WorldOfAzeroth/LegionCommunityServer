@@ -889,11 +889,10 @@ enum PlayedTimeIndex
 enum PlayerLoginQueryIndex
 {
     PLAYER_LOGIN_QUERY_LOAD_FROM,
-    PLAYER_LOGIN_QUERY_LOAD_CUSTOMIZATIONS,
     PLAYER_LOGIN_QUERY_LOAD_GROUP,
+    PLAYER_LOGIN_QUERY_LOAD_BOUND_INSTANCES,
     PLAYER_LOGIN_QUERY_LOAD_AURAS,
     PLAYER_LOGIN_QUERY_LOAD_AURA_EFFECTS,
-    PLAYER_LOGIN_QUERY_LOAD_AURA_STORED_LOCATIONS,
     PLAYER_LOGIN_QUERY_LOAD_SPELLS,
     PLAYER_LOGIN_QUERY_LOAD_QUEST_STATUS,
     PLAYER_LOGIN_QUERY_LOAD_QUEST_STATUS_OBJECTIVES,
@@ -903,18 +902,9 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOAD_REPUTATION,
     PLAYER_LOGIN_QUERY_LOAD_INVENTORY,
     PLAYER_LOGIN_QUERY_LOAD_ARTIFACTS,
-    PLAYER_LOGIN_QUERY_LOAD_AZERITE,
-    PLAYER_LOGIN_QUERY_LOAD_AZERITE_MILESTONE_POWERS,
-    PLAYER_LOGIN_QUERY_LOAD_AZERITE_UNLOCKED_ESSENCES,
-    PLAYER_LOGIN_QUERY_LOAD_AZERITE_EMPOWERED,
     PLAYER_LOGIN_QUERY_LOAD_ACTIONS,
-    PLAYER_LOGIN_QUERY_LOAD_MAILS,
-    PLAYER_LOGIN_QUERY_LOAD_MAIL_ITEMS,
-    PLAYER_LOGIN_QUERY_LOAD_MAIL_ITEMS_ARTIFACT,
-    PLAYER_LOGIN_QUERY_LOAD_MAIL_ITEMS_AZERITE,
-    PLAYER_LOGIN_QUERY_LOAD_MAIL_ITEMS_AZERITE_MILESTONE_POWER,
-    PLAYER_LOGIN_QUERY_LOAD_MAIL_ITEMS_AZERITE_UNLOCKED_ESSENCE,
-    PLAYER_LOGIN_QUERY_LOAD_MAIL_ITEMS_AZERITE_EMPOWERED,
+    PLAYER_LOGIN_QUERY_LOAD_MAIL_COUNT,
+    PLAYER_LOGIN_QUERY_LOAD_MAIL_DATE,
     PLAYER_LOGIN_QUERY_LOAD_SOCIAL_LIST,
     PLAYER_LOGIN_QUERY_LOAD_HOME_BIND,
     PLAYER_LOGIN_QUERY_LOAD_SPELL_COOLDOWNS,
@@ -943,7 +933,6 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOAD_CURRENCY,
     PLAYER_LOGIN_QUERY_LOAD_CUF_PROFILES,
     PLAYER_LOGIN_QUERY_LOAD_CORPSE_LOCATION,
-    PLAYER_LOGIN_QUERY_LOAD_PET_SLOTS,
     PLAYER_LOGIN_QUERY_LOAD_GARRISON,
     PLAYER_LOGIN_QUERY_LOAD_GARRISON_BLUEPRINTS,
     PLAYER_LOGIN_QUERY_LOAD_GARRISON_BUILDINGS,
@@ -2840,12 +2829,9 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void _LoadActions(PreparedQueryResult result);
         void _LoadAuras(PreparedQueryResult auraResult, PreparedQueryResult effectResult, uint32 timediff);
         void _LoadGlyphAuras();
-        void _LoadInventory(PreparedQueryResult result, PreparedQueryResult artifactsResult, PreparedQueryResult azeriteResult,
-            PreparedQueryResult azeriteItemMilestonePowersResult, PreparedQueryResult azeriteItemUnlockedEssencesResult,
-            PreparedQueryResult azeriteEmpoweredItemResult, uint32 timeDiff);
+        void _LoadInventory(PreparedQueryResult result, PreparedQueryResult artifactsResult, uint32 timeDiff);
         void _LoadVoidStorage(PreparedQueryResult result);
-        void _LoadMail(PreparedQueryResult mailsResult, PreparedQueryResult mailItemsResult, PreparedQueryResult artifactResult, PreparedQueryResult azeriteItemResult,
-            PreparedQueryResult azeriteItemMilestonePowersResult, PreparedQueryResult azeriteItemUnlockedEssencesResult, PreparedQueryResult azeriteEmpoweredItemResult);
+        void _LoadMail(PreparedQueryResult mailsResult, PreparedQueryResult mailItemsResult, PreparedQueryResult artifactResult);
         static Item* _LoadMailedItem(ObjectGuid const& playerGuid, Player* player, uint32 mailId, Mail* mail, Field* fields, ItemAdditionalLoadInfo* addionalData);
         void _LoadQuestStatus(PreparedQueryResult result);
         void _LoadQuestStatusObjectives(PreparedQueryResult result);

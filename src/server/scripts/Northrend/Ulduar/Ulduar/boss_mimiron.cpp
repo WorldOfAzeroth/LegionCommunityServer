@@ -1054,7 +1054,7 @@ class boss_vx_001 : public CreatureScript
                 // Handle rotation during SPELL_SPINNING_UP, SPELL_P3WX2_LASER_BARRAGE, SPELL_RAPID_BURST, and SPELL_HAND_PULSE_LEFT/RIGHT
                 if (me->HasUnitState(UNIT_STATE_CASTING))
                 {
-                    auto const& channelObjects = me->m_unitData->ChannelObjects;
+                    auto const& channelObjects = me->GetChannelObjects();
                     if (Unit* channelTarget = (channelObjects.size() == 1 ? ObjectAccessor::GetUnit(*me, *channelObjects.begin()) : nullptr))
                         me->SetFacingToObject(channelTarget);
                     return;

@@ -515,7 +515,6 @@ void CalendarMgr::SendCalendarEventUpdateAlert(CalendarEvent const& calendarEven
     packet.ClearPending = true; // FIXME
     packet.Date = calendarEvent.GetDate();
     packet.Description = calendarEvent.GetDescription();
-    packet.EventClubID = calendarEvent.GetGuildId();
     packet.EventID = calendarEvent.GetEventId();
     packet.EventName = calendarEvent.GetTitle();
     packet.EventType = calendarEvent.GetType();
@@ -587,7 +586,6 @@ void CalendarMgr::SendCalendarEventInviteAlert(CalendarEvent const& calendarEven
     packet.OwnerGuid = calendarEvent.GetOwnerGUID();
     packet.Status = invite.GetStatus();
     packet.TextureID = calendarEvent.GetTextureId();
-    packet.EventClubID = calendarEvent.GetGuildId();
 
     if (calendarEvent.IsGuildEvent() || calendarEvent.IsGuildAnnouncement())
     {
@@ -617,7 +615,6 @@ void CalendarMgr::SendCalendarEvent(ObjectGuid guid, CalendarEvent const& calend
     packet.LockDate = calendarEvent.GetLockDate(); // Always 0 ?
     packet.OwnerGuid = calendarEvent.GetOwnerGUID();
     packet.TextureID = calendarEvent.GetTextureId();
-    packet.EventClubID = calendarEvent.GetGuildId();
 
     for (auto const& calendarInvite : eventInviteeList)
     {

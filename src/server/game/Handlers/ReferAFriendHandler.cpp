@@ -37,7 +37,7 @@ void WorldSession::HandleGrantLevel(WorldPackets::RaF::GrantLevel& grantLevel)
         error = ERR_REFER_A_FRIEND_NOT_REFERRED_BY;
     else if (target->GetTeamId() != _player->GetTeamId())
         error = ERR_REFER_A_FRIEND_DIFFERENT_FACTION;
-    else if (target->GetLevel() >= _player->getLevel())
+    else if (target->GetLevel() >= _player->GetLevel())
         error = ERR_REFER_A_FRIEND_TARGET_TOO_HIGH;
     else if (target->GetLevel() >= sWorld->getIntConfig(CONFIG_MAX_RECRUIT_A_FRIEND_BONUS_PLAYER_LEVEL))
         error = ERR_REFER_A_FRIEND_GRANT_LEVEL_MAX_I;

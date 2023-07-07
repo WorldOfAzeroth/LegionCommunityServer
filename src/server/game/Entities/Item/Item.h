@@ -403,8 +403,8 @@ class TC_GAME_API Item : public Object
         ItemContext GetContext() const { return ItemContext(uint8(GetUInt32Value(ITEM_FIELD_CONTEXT))); }
         void SetContext(ItemContext context) { SetInt32Value(ITEM_FIELD_CONTEXT, int32(context)); }
 
-        void SetPetitionId(uint32 petitionId) { SetUInt32Value(ITEM_FIELD_ENCHANTMENT + ENCHANTMENT_ID_OFFSET, petitionId); }
-        void SetPetitionNumSignatures(uint32 signatures) { SetUInt32Value(ITEM_FIELD_ENCHANTMENT + ENCHANTMENT_DURATION_OFFSET, signatures); }
+        void SetPetitionId(uint32 petitionId) { SetUInt32Value(uint16(ITEM_FIELD_ENCHANTMENT) + uint16(ENCHANTMENT_ID_OFFSET), petitionId); }
+        void SetPetitionNumSignatures(uint32 signatures) { SetUInt32Value(uint16(ITEM_FIELD_ENCHANTMENT) + uint16(ENCHANTMENT_DURATION_OFFSET), signatures); }
 
         std::string GetDebugInfo() const override;
 

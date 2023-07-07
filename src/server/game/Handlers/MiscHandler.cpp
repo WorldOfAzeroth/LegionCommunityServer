@@ -163,16 +163,16 @@ void WorldSession::HandleWhoOpcode(WorldPackets::Who::WhoRequestPkt& whoRequest)
             continue;
 
         // check if target's level is in level range
-        uint8 lvl = target->getLevel();
+        uint8 lvl = target->GetLevel();
         if (lvl < request.MinLevel || lvl > request.MaxLevel)
             continue;
 
         // check if class matches classmask
-        if (request.ClassFilter >= 0 && !(request.ClassFilter & (1 << target->getClass())))
+        if (request.ClassFilter >= 0 && !(request.ClassFilter & (1 << target->GetClass())))
             continue;
 
         // check if race matches racemask
-        if (request.RaceFilter >= 0 && !(request.RaceFilter & (SI64LIT(1) << target->getRace())))
+        if (request.RaceFilter >= 0 && !(request.RaceFilter & (SI64LIT(1) << target->GetRace())))
             continue;
 
         if (!whoRequest.Areas.empty())

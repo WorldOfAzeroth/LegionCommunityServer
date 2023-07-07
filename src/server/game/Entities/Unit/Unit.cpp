@@ -292,8 +292,8 @@ SpellSchoolMask ProcEventInfo::GetSchoolMask() const
     return SPELL_SCHOOL_MASK_NONE;
 }
 
-SpellNonMeleeDamage::SpellNonMeleeDamage(Unit* _attacker, Unit* _target, SpellInfo const* _spellInfo, SpellCastVisual spellVisual, uint32 _schoolMask, ObjectGuid _castId)
-    : target(_target), attacker(_attacker), castId(_castId), Spell(_spellInfo), SpellVisual(spellVisual), damage(0),
+SpellNonMeleeDamage::SpellNonMeleeDamage(Unit* _attacker, Unit* _target, SpellInfo const* _spellInfo, uint32 spellVisual, uint32 _schoolMask, ObjectGuid _castId)
+    : target(_target), attacker(_attacker), castId(_castId), Spell(_spellInfo), spellXSpellVisualID(spellVisual), damage(0),
     schoolMask(_schoolMask), absorb(0), resist(0), periodicLog(false), blocked(0), HitInfo(0), cleanDamage(0), fullBlock(false), preHitHealth(_target->GetHealth())
 {
 }
@@ -5199,7 +5199,7 @@ void Unit::SendSpellNonMeleeDamageLog(SpellNonMeleeDamage const* log)
     packet.CasterGUID = log->attacker->GetGUID();
     packet.CastID = log->castId;
     packet.SpellID = log->Spell ? log->Spell->Id : 0;
-    packet.SpellXSpellVisualID = log->SpellVisual.SpellXSpellVisualID;
+    packet.SpellXSpellVisualID = log->spellXSpellVisualID;
     packet.Damage = log->damage;
     if (log->damage > log->preHitHealth)
         packet.Overkill = log->damage - log->preHitHealth;
@@ -10648,7 +10648,7 @@ void Unit::SetMeleeAnimKitId(uint16 animKitId)
 
         for (Player* tapper : tappers)
             if (tapper->IsAtGroupRewardDistance(victim))
-                Unit::ProcSkillsAndAuras(tapper, victim, { PROC_FLAG_NONE, PROC_FLAG_2_TARGET_DIES }, PROC_FLAG_NONE, PROC_SPELL_TYPE_MASK_ALL, PROC_SPELL_PHASE_NONE, PROC_HIT_NONE, nullptr, nullptr, nullptr);
+                Unit::ProcSkillsAndAuras(tapper, victim, PROC_FLAG_NONE, PROC_FLAG_NONE, PROC_SPELL_TYPE_MASK_ALL, PROC_SPELL_PHASE_NONE, PROC_HIT_NONE, nullptr, nullptr, nullptr);
     }
 
     // Proc auras on death - must be before aura/combat remove

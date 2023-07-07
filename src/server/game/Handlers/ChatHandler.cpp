@@ -474,6 +474,7 @@ void WorldSession::HandleChatAddonMessageOpcode(WorldPackets::Chat::ChatAddonMes
     }
 
     HandleChatAddonMessage(type, chatAddonMessage.Prefix, chatAddonMessage.Text);
+    HandleChatAddonMessage(chatAddonMessage.Params.Type, chatAddonMessage.Params.Prefix, chatAddonMessage.Params.Text, chatAddonMessage.Params.IsLogged);
 }
 
 void WorldSession::HandleChatAddonMessageWhisperOpcode(WorldPackets::Chat::ChatAddonMessageWhisper& chatAddonMessageWhisper)
@@ -537,7 +538,7 @@ void WorldSession::HandleChatAddonMessage(ChatMsg type, std::string prefix, std:
             if (!receiver)
                 break;
 
-            sender->WhisperAddon(text, prefix, isLogged receiver);
+            sender->WhisperAddon(text, prefix, isLogged, receiver);
             break;
         }
         // Messages sent to "RAID" while in a party will get delivered to "PARTY"
@@ -567,13 +568,16 @@ void WorldSession::HandleChatAddonMessage(ChatMsg type, std::string prefix, std:
         }
         case CHAT_MSG_CHANNEL:
         {
-            if (Channel* chn = ChannelMgr::GetChannelForPlayerByNamePart(target, sender))
-                chn->AddonSay(sender->GetGUID(), prefix, text.c_str());
+            Channel* chn = channelGuid
+                ? ChannelMgr::GetChannelForPlayerByGuid(*channelGuid, sender)
+                : ChannelMgr::GetChannelForPlayerByNamePart(target, sender);
+            if (chn)
+                chn->AddonSay(sender->GetGUID(), prefix, text.c_str(), isLogged);
             break;
         }
         default:
         {
-            TC_LOG_ERROR("misc", "HandleAddonMessagechatOpcode: unknown addon message type %u", type);
+            TC_LOG_ERROR("misc", "HandleAddonMessagechatOpcode: unknown addon message type {}", type);
             break;
         }
     }
@@ -584,6 +588,16 @@ void WorldSession::HandleChatMessageAFKOpcode(WorldPackets::Chat::ChatMessageAFK
     Player* sender = GetPlayer();
 
     if (sender->IsInCombat())
+        return;
+
+    if (chatMessageAFK.Text.length() > 511)
+        return;
+
+    // do message validity checks
+    if (!ValidateMessage(sender, chatMessageAFK.Text))
+        return;
+
+    if (!ValidateHyperlinksAndMaybeKick(chatMessageAFK.Text))
         return;
 
     if (sender->HasAura(GM_SILENCE_AURA))
@@ -609,6 +623,9 @@ void WorldSession::HandleChatMessageAFKOpcode(WorldPackets::Chat::ChatMessageAFK
         sender->ToggleAFK();
     }
 
+    if (Guild* guild = sender->GetGuild())
+        guild->SendEventAwayChanged(sender->GetGUID(), sender->isAFK(), sender->isDND());
+
     sScriptMgr->OnPlayerChat(sender, CHAT_MSG_AFK, LANG_UNIVERSAL, chatMessageAFK.Text);
 }
 
@@ -617,6 +634,16 @@ void WorldSession::HandleChatMessageDNDOpcode(WorldPackets::Chat::ChatMessageDND
     Player* sender = GetPlayer();
 
     if (sender->IsInCombat())
+        return;
+
+    if (chatMessageDND.Text.length() > 511)
+        return;
+
+    // do message validity checks
+    if (!ValidateMessage(sender, chatMessageDND.Text))
+        return;
+
+    if (!ValidateHyperlinksAndMaybeKick(chatMessageDND.Text))
         return;
 
     if (sender->HasAura(GM_SILENCE_AURA))
@@ -642,6 +669,9 @@ void WorldSession::HandleChatMessageDNDOpcode(WorldPackets::Chat::ChatMessageDND
         sender->ToggleDND();
     }
 
+    if (Guild* guild = sender->GetGuild())
+        guild->SendEventAwayChanged(sender->GetGUID(), sender->isAFK(), sender->isDND());
+
     sScriptMgr->OnPlayerChat(sender, CHAT_MSG_DND, LANG_UNIVERSAL, chatMessageDND.Text);
 }
 
@@ -661,9 +691,9 @@ void WorldSession::HandleTextEmoteOpcode(WorldPackets::Chat::CTextEmote& packet)
     if (!_player->IsAlive())
         return;
 
-    if (!_player->CanSpeak())
+    if (!CanSpeak())
     {
-        std::string timeStr = secsToTimeString(m_muteTime - time(NULL));
+        std::string timeStr = secsToTimeString(m_muteTime - GameTime::GetGameTime());
         SendNotification(GetTrinityString(LANG_WAIT_BEFORE_SPEAKING), timeStr.c_str());
         return;
     }
@@ -674,9 +704,9 @@ void WorldSession::HandleTextEmoteOpcode(WorldPackets::Chat::CTextEmote& packet)
     if (!em)
         return;
 
-    uint32 emoteAnim = em->EmoteID;
+    Emote emote = static_cast<Emote>(em->EmoteID);
 
-    switch (emoteAnim)
+    switch (emote)
     {
         case EMOTE_STATE_SLEEP:
         case EMOTE_STATE_SIT:
@@ -685,13 +715,13 @@ void WorldSession::HandleTextEmoteOpcode(WorldPackets::Chat::CTextEmote& packet)
             break;
         case EMOTE_STATE_DANCE:
         case EMOTE_STATE_READ:
-            _player->SetUInt32Value(UNIT_NPC_EMOTESTATE, emoteAnim);
+            _player->SetUInt32Value(UNIT_NPC_EMOTESTATE, emote);
             break;
         default:
             // Only allow text-emotes for "dead" entities (feign death included)
             if (_player->HasUnitState(UNIT_STATE_DIED))
                 break;
-            _player->HandleEmoteCommand(emoteAnim);
+            _player->HandleEmoteCommand(emote);
             break;
     }
 

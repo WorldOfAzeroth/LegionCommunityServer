@@ -103,7 +103,7 @@ ItemRandomBonusListId GenerateItemRandomBonusListId(uint32 item_id)
     return *Trinity::Containers::SelectRandomWeightedContainerElement(tab->second.BonusListIDs, tab->second.Chances);
 }
 
-TC_GAME_API float GetRandomPropertyPoints(uint32 itemLevel, uint32 quality, uint32 inventoryType, uint32 subClass)
+TC_GAME_API uint32 GetRandomPropertyPoints(uint32 itemLevel, uint32 quality, uint32 inventoryType, uint32 subClass)
 {
     uint32 propIndex;
 
@@ -159,14 +159,14 @@ TC_GAME_API float GetRandomPropertyPoints(uint32 itemLevel, uint32 quality, uint
     switch (quality)
     {
         case ITEM_QUALITY_UNCOMMON:
-            return randPropPointsEntry->GoodF[propIndex];
+            return randPropPointsEntry->Good[propIndex];
         case ITEM_QUALITY_RARE:
         case ITEM_QUALITY_HEIRLOOM:
-            return randPropPointsEntry->SuperiorF[propIndex];
+            return randPropPointsEntry->Superior[propIndex];
         case ITEM_QUALITY_EPIC:
         case ITEM_QUALITY_LEGENDARY:
         case ITEM_QUALITY_ARTIFACT:
-            return randPropPointsEntry->EpicF[propIndex];
+            return randPropPointsEntry->Epic[propIndex];
     }
 
     return 0;

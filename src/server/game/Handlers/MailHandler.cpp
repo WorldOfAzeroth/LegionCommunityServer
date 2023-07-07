@@ -154,7 +154,7 @@ void WorldSession::HandleSendMail(WorldPackets::Mail::SendMail& packet)
     {
         receiverTeam = receiver->GetTeam();
         mailsCount = receiver->GetMailSize();
-        receiverLevel = receiver->getLevel();
+        receiverLevel = receiver->GetLevel();
         receiverAccountId = receiver->GetSession()->GetAccountId();
         receiverBnetAccountId = receiver->GetSession()->GetBattlenetAccountId();
     }

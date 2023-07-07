@@ -140,7 +140,7 @@ WorldPacket const* WorldPackets::Quest::QueryQuestInfoResponse::Write()
         _worldPacket << int32(Info.TimeAllowed);
 
         _worldPacket << uint32(Info.Objectives.size());
-        _worldPacket << uint64(Info.AllowableRaces);
+        _worldPacket << uint64(Info.AllowableRaces.RawValue);
         _worldPacket << int32(Info.QuestRewardID);
         _worldPacket << int32(Info.Expansion);
 
@@ -485,19 +485,8 @@ WorldPacket const* WorldPackets::Quest::QuestGiverQuestListMessage::Write()
     _worldPacket.WriteBits(Greeting.size(), 11);
     _worldPacket.FlushBits();
 
-    for (GossipText const& gossip : QuestDataText)
-    {
-        _worldPacket << uint32(gossip.QuestID);
-        _worldPacket << uint32(gossip.QuestType);
-        _worldPacket << int32(gossip.QuestLevel);
-        _worldPacket << int32(gossip.QuestMaxScalingLevel);
-        _worldPacket << uint32(gossip.QuestFlags);
-        _worldPacket << uint32(gossip.QuestFlagsEx);
-        _worldPacket.WriteBit(gossip.Repeatable);
-        _worldPacket.WriteBits(gossip.QuestTitle.size(), 9);
-        _worldPacket.FlushBits();
-        _worldPacket.WriteString(gossip.QuestTitle);
-    }
+    for (const auto &gossip: QuestDataText)
+        _worldPacket << gossip;
 
     _worldPacket.WriteString(Greeting);
 

@@ -20,8 +20,11 @@
 
 #include "Packet.h"
 #include "ItemPacketsCommon.h"
+#include "LootItemType.h"
+#include "NPCPackets.h"
 #include "ObjectGuid.h"
 #include "QuestDef.h"
+#include <array>
 
 namespace WorldPackets
 {
@@ -49,11 +52,11 @@ namespace WorldPackets
         struct QuestGiverInfo
         {
             QuestGiverInfo() { }
-            QuestGiverInfo(ObjectGuid const& guid, uint32 status)
+            QuestGiverInfo(ObjectGuid const& guid, ::QuestGiverStatus status)
                 : Guid(guid), Status(status) { }
 
             ObjectGuid Guid;
-            uint32 Status = DIALOG_STATUS_NONE;
+            ::QuestGiverStatus Status = ::QuestGiverStatus::None;
         };
 
         class QuestGiverStatus final : public ServerPacket
@@ -136,7 +139,7 @@ namespace WorldPackets
             float POIx                      = 0.0f;
             float POIy                      = 0.0f;
             int32 POIPriority               = 0;
-            uint64 AllowableRaces           = UI64LIT(0xFFFFFFFFFFFFFFFF);
+            Trinity::RaceMask<uint64> AllowableRaces = { UI64LIT(0xFFFFFFFFFFFFFFFF) };
             std::string LogTitle;
             std::string LogDescription;
             std::string QuestDescription;
@@ -486,7 +489,7 @@ namespace WorldPackets
             ObjectGuid QuestGiverGUID;
             uint32 GreetEmoteDelay      = 0;
             uint32 GreetEmoteType       = 0;
-            std::vector<GossipText> QuestDataText;
+            std::vector<NPC::ClientGossipText> QuestDataText;
             std::string Greeting;
         };
 

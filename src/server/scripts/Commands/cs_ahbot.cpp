@@ -24,15 +24,12 @@
 
 using namespace Trinity::ChatCommands;
 
-static std::unordered_map<AuctionQuality, uint32> const ahbotQualityLangIds =
+static const uint32 ahbotQualityIds[MAX_AUCTION_QUALITY] =
 {
-    { AUCTION_QUALITY_GRAY,   LANG_AHBOT_QUALITY_GRAY },
-    { AUCTION_QUALITY_WHITE,  LANG_AHBOT_QUALITY_WHITE },
-    { AUCTION_QUALITY_GREEN,  LANG_AHBOT_QUALITY_GREEN },
-    { AUCTION_QUALITY_BLUE,   LANG_AHBOT_QUALITY_BLUE },
-    { AUCTION_QUALITY_PURPLE, LANG_AHBOT_QUALITY_PURPLE },
-    { AUCTION_QUALITY_ORANGE, LANG_AHBOT_QUALITY_ORANGE },
-    { AUCTION_QUALITY_YELLOW, LANG_AHBOT_QUALITY_YELLOW }
+    LANG_AHBOT_QUALITY_GRAY, LANG_AHBOT_QUALITY_WHITE,
+    LANG_AHBOT_QUALITY_GREEN, LANG_AHBOT_QUALITY_BLUE,
+    LANG_AHBOT_QUALITY_PURPLE, LANG_AHBOT_QUALITY_ORANGE,
+    LANG_AHBOT_QUALITY_YELLOW
 };
 
 class ahbot_commandscript : public CommandScript
@@ -83,8 +80,8 @@ public:
     {
         sAuctionBot->SetItemsAmount(items);
 
-        for (AuctionQuality quality : EnumUtils::Iterate<AuctionQuality>())
-            handler->PSendSysMessage(LANG_AHBOT_ITEMS_AMOUNT, handler->GetTrinityString(ahbotQualityLangIds.at(quality)), sAuctionBotConfig->GetConfigItemQualityAmount(quality));
+        for (int i = 0; i < MAX_AUCTION_QUALITY; ++i)
+            handler->PSendSysMessage(LANG_AHBOT_ITEMS_AMOUNT, handler->GetTrinityString(ahbotQualityIds[i]), sAuctionBotConfig->GetConfigItemQualityAmount(AuctionQuality(i)));
 
         return true;
     }
@@ -93,7 +90,7 @@ public:
     static bool HandleAHBotItemsAmountQualityCommand(ChatHandler* handler, uint32 amount)
     {
         sAuctionBot->SetItemsAmountForQuality(Q, amount);
-        handler->PSendSysMessage(LANG_AHBOT_ITEMS_AMOUNT, handler->GetTrinityString(ahbotQualityLangIds.at(Q)),
+        handler->PSendSysMessage(LANG_AHBOT_ITEMS_AMOUNT, handler->GetTrinityString(ahbotQualityIds[Q]),
             sAuctionBotConfig->GetConfigItemQualityAmount(Q));
 
         return true;
@@ -131,7 +128,7 @@ public:
 
     static bool HandleAHBotStatusCommand(ChatHandler* handler, Optional<EXACT_SEQUENCE("all")> all)
     {
-        std::unordered_map<AuctionHouseType, AuctionHouseBotStatusInfoPerType> statusInfo;
+        AuctionHouseBotStatusInfo statusInfo;
         sAuctionBot->PrepareStatusInfos(statusInfo);
 
         WorldSession* session = handler->GetSession();
@@ -174,12 +171,12 @@ public:
             else
                 handler->SendSysMessage(LANG_AHBOT_STATUS_TITLE2_CHAT);
 
-            for (AuctionQuality quality : EnumUtils::Iterate<AuctionQuality>())
-                handler->PSendSysMessage(fmtId, handler->GetTrinityString(ahbotQualityLangIds.at(quality)),
-                    statusInfo[AUCTION_HOUSE_ALLIANCE].QualityInfo.at(quality),
-                    statusInfo[AUCTION_HOUSE_HORDE].QualityInfo.at(quality),
-                    statusInfo[AUCTION_HOUSE_NEUTRAL].QualityInfo.at(quality),
-                    sAuctionBotConfig->GetConfigItemQualityAmount(quality));
+            for (int i = 0; i < MAX_AUCTION_QUALITY; ++i)
+                handler->PSendSysMessage(fmtId, handler->GetTrinityString(ahbotQualityIds[i]),
+                    statusInfo[AUCTION_HOUSE_ALLIANCE].QualityInfo[i],
+                    statusInfo[AUCTION_HOUSE_HORDE].QualityInfo[i],
+                    statusInfo[AUCTION_HOUSE_NEUTRAL].QualityInfo[i],
+                    sAuctionBotConfig->GetConfigItemQualityAmount(AuctionQuality(i)));
         }
 
         if (!session)

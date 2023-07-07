@@ -22,6 +22,24 @@ void WorldPackets::NPC::Hello::Read()
     _worldPacket >> Unit;
 }
 
+ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::NPC::ClientGossipText const& gossipText)
+{
+    data << int32(gossipText.QuestID);
+    data << int32(gossipText.QuestType);
+    data << int32(gossipText.QuestLevel);
+    data << int32(gossipText.QuestMaxScalingLevel);
+    data << int32(gossipText.QuestFlags[0]);
+    data << int32(gossipText.QuestFlags[1]);
+
+    data.WriteBit(gossipText.Repeatable);
+    data.WriteBits(gossipText.QuestTitle.size(), 9);
+    data.FlushBits();
+
+    data.WriteString(gossipText.QuestTitle);
+
+    return data;
+}
+
 WorldPacket const* WorldPackets::NPC::GossipMessage::Write()
 {
     _worldPacket << GossipGUID;
@@ -46,20 +64,7 @@ WorldPacket const* WorldPackets::NPC::GossipMessage::Write()
     }
 
     for (ClientGossipText const& text : GossipText)
-    {
-        _worldPacket << int32(text.QuestID);
-        _worldPacket << int32(text.QuestType);
-        _worldPacket << int32(text.QuestLevel);
-        _worldPacket << int32(text.QuestMaxScalingLevel);
-        _worldPacket << int32(text.QuestFlags[0]);
-        _worldPacket << int32(text.QuestFlags[1]);
-
-        _worldPacket.WriteBit(text.Repeatable);
-        _worldPacket.WriteBits(text.QuestTitle.size(), 9);
-        _worldPacket.FlushBits();
-
-        _worldPacket.WriteString(text.QuestTitle);
-    }
+        _worldPacket << text;
 
     return &_worldPacket;
 }

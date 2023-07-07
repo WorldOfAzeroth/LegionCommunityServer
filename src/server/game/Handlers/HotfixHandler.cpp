@@ -18,6 +18,7 @@
 #include "WorldSession.h"
 #include "Containers.h"
 #include "DB2Stores.h"
+#include "GameTime.h"
 #include "HotfixPackets.h"
 #include "Log.h"
 #include "ObjectDefines.h"
@@ -46,8 +47,8 @@ void WorldSession::HandleDBQueryBulk(WorldPackets::Hotfix::DBQueryBulk& dbQuery)
         }
         else
         {
-            TC_LOG_TRACE("network", "CMSG_DB_QUERY_BULK: %s requested non-existing entry %u in datastore: %u", GetPlayerInfo().c_str(), record.RecordID, dbQuery.TableHash);
-            dbReply.Timestamp = time(NULL);
+            TC_LOG_TRACE("network", "CMSG_DB_QUERY_BULK: {} requested non-existing entry {} in datastore: {}", GetPlayerInfo(), record.RecordID, dbQuery.TableHash);
+            dbReply.Timestamp = GameTime::GetGameTime();
         }
 
         SendPacket(dbReply.Write());
@@ -75,7 +76,7 @@ void WorldSession::HandleHotfixRequest(WorldPackets::Hotfix::HotfixRequest& hotf
             hotfixData.RecordID = *hotfix;
             if (storage->HasRecord(hotfixData.RecordID))
             {
-                hotfixData.Data = boost::in_place();
+                hotfixData.Data.emplace();
                 storage->WriteRecord(hotfixData.RecordID, GetSessionDbcLocale(), *hotfixData.Data);
             }
 

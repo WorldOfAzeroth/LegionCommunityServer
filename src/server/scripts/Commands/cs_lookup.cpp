@@ -682,22 +682,7 @@ public:
                         }
 
                         if (handler->GetSession())
-                        {
-                            int32 maxLevel = 0;
-                            if (Optional<ContentTuningLevels> questLevels = sDB2Manager.GetContentTuningData(questTemplatePair.second.GetContentTuningId(),
-                                handler->GetSession()->GetPlayer()->m_playerData->CtrOptions->ContentTuningConditionMask))
-                                maxLevel = questLevels->MaxLevel;
-
-                            int32 scalingFactionGroup = 0;
-                            if (ContentTuningEntry const* contentTuning = sContentTuningStore.LookupEntry(questTemplatePair.second.GetContentTuningId()))
-                                scalingFactionGroup = contentTuning->GetScalingFactionGroup();
-
-                            handler->PSendSysMessage(LANG_QUEST_LIST_CHAT, questTemplatePair.first, questTemplatePair.first,
-                                handler->GetSession()->GetPlayer()->GetQuestLevel(&questTemplatePair.second),
-                                handler->GetSession()->GetPlayer()->GetQuestMinLevel(&questTemplatePair.second),
-                                maxLevel, scalingFactionGroup,
-                                title.c_str(), statusStr);
-                        }
+                            handler->PSendSysMessage(LANG_QUEST_LIST_CHAT, questTemplatePair.first, questTemplatePair.first, questTemplatePair.second.GetQuestMaxScalingLevel(), title.c_str(), statusStr);
                         else
                             handler->PSendSysMessage(LANG_QUEST_LIST_CONSOLE, questTemplatePair.first, title.c_str(), statusStr);
 
@@ -742,22 +727,7 @@ public:
                 }
 
                 if (handler->GetSession())
-                {
-                    int32 maxLevel = 0;
-                    if (Optional<ContentTuningLevels> questLevels = sDB2Manager.GetContentTuningData(questTemplatePair.second.GetContentTuningId(),
-                        handler->GetSession()->GetPlayer()->m_playerData->CtrOptions->ContentTuningConditionMask))
-                        maxLevel = questLevels->MaxLevel;
-
-                    int32 scalingFactionGroup = 0;
-                    if (ContentTuningEntry const* contentTuning = sContentTuningStore.LookupEntry(questTemplatePair.second.GetContentTuningId()))
-                        scalingFactionGroup = contentTuning->GetScalingFactionGroup();
-
-                    handler->PSendSysMessage(LANG_QUEST_LIST_CHAT, questTemplatePair.first, questTemplatePair.first,
-                        handler->GetSession()->GetPlayer()->GetQuestLevel(&questTemplatePair.second),
-                        handler->GetSession()->GetPlayer()->GetQuestMinLevel(&questTemplatePair.second),
-                        maxLevel, scalingFactionGroup,
-                        title.c_str(), statusStr);
-                }
+                    handler->PSendSysMessage(LANG_QUEST_LIST_CHAT, questTemplatePair.first, questTemplatePair.first, questTemplatePair.second.GetQuestMaxScalingLevel(), title.c_str(), statusStr);
                 else
                     handler->PSendSysMessage(LANG_QUEST_LIST_CONSOLE, questTemplatePair.first, title.c_str(), statusStr);
 
@@ -813,20 +783,8 @@ public:
 
             if (handler->GetSession())
             {
-                int32 maxLevel = 0;
-                if (Optional<ContentTuningLevels> questLevels = sDB2Manager.GetContentTuningData(quest->GetContentTuningId(),
-                    handler->GetSession()->GetPlayer()->m_playerData->CtrOptions->ContentTuningConditionMask))
-                    maxLevel = questLevels->MaxLevel;
+                handler->PSendSysMessage(LANG_ITEM_LIST_CHAT, quest->GetQuestId(), quest->GetQuestId(), quest->GetLogTitle());
 
-                int32 scalingFactionGroup = 0;
-                if (ContentTuningEntry const* contentTuning = sContentTuningStore.LookupEntry(quest->GetContentTuningId()))
-                    scalingFactionGroup = contentTuning->GetScalingFactionGroup();
-
-                handler->PSendSysMessage(LANG_QUEST_LIST_CHAT, id, id,
-                    handler->GetSession()->GetPlayer()->GetQuestLevel(quest),
-                    handler->GetSession()->GetPlayer()->GetQuestMinLevel(quest),
-                    maxLevel, scalingFactionGroup,
-                    title.c_str(), statusStr);
             }
             else
                 handler->PSendSysMessage(LANG_QUEST_LIST_CONSOLE, id, title.c_str(), statusStr);
@@ -951,7 +909,7 @@ public:
             if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellName->ID, DIFFICULTY_NONE))
             {
                 LocaleConstant locale = handler->GetSessionDbcLocale();
-                std::string name = spellInfo->SpellName[locale];
+                std::string name = spellInfo->SpellName->Str[locale];
                 if (name.empty())
                     continue;
 
@@ -963,7 +921,7 @@ public:
                         if (locale == handler->GetSessionDbcLocale())
                             continue;
 
-                        name = spellInfo->SpellName[locale];
+                        name = spellInfo->SpellName->Str[locale];
                         if (name.empty())
                             continue;
 
@@ -1048,7 +1006,7 @@ public:
         if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(id, DIFFICULTY_NONE))
         {
             LocaleConstant locale = handler->GetSessionDbcLocale();
-            std::string name = spellInfo->SpellName[locale];
+            std::string name = spellInfo->SpellName->Str[locale];
             if (name.empty())
             {
                 handler->SendSysMessage(LANG_COMMAND_NOSPELLFOUND);
@@ -1284,7 +1242,7 @@ public:
 
                         char const* knownStr = target && target->HasTitle(titleInfo) ? handler->GetTrinityString(LANG_KNOWN) : "";
 
-                        char const* activeStr = target && *target->m_playerData->PlayerTitle == titleInfo->MaskID
+                        char const* activeStr = target && target->GetInt32Value(PLAYER_CHOSEN_TITLE) == titleInfo->MaskID
                             ? handler->GetTrinityString(LANG_ACTIVE)
                             : "";
 

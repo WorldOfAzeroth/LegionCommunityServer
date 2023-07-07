@@ -297,7 +297,7 @@ public:
     // Followed method is mainly used by cs_ahbot.cpp for in-game/console command
     void SetItemsRatio(uint32 al, uint32 ho, uint32 ne);
     void SetItemsRatioForHouse(AuctionHouseType house, uint32 val);
-    void SetItemsAmount(uint32(&vals)[MAX_AUCTION_QUALITY]);
+    void SetItemsAmount(std::array<uint32, MAX_AUCTION_QUALITY> const& amounts);
     void SetItemsAmountForQuality(AuctionQuality quality, uint32 val);
     void ReloadAllConfig();
     void Rebuild(bool all);

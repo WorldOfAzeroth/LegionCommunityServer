@@ -31,9 +31,9 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::AreaTrigger::AreaTriggerS
     return data;
 }
 
-ByteBuffer& operator<<(ByteBuffer& data, AreaTriggerCircularMovementInfo const& areaTriggerCircularMovement)
+ByteBuffer& operator<<(ByteBuffer& data, AreaTriggerOrbitInfo const& areaTriggerCircularMovement)
 {
-    data.WriteBit(areaTriggerCircularMovement.TargetGUID.has_value());
+    data.WriteBit(areaTriggerCircularMovement.PathTarget.has_value());
     data.WriteBit(areaTriggerCircularMovement.Center.has_value());
     data.WriteBit(areaTriggerCircularMovement.CounterClockwise);
     data.WriteBit(areaTriggerCircularMovement.CanLoop);
@@ -46,8 +46,8 @@ ByteBuffer& operator<<(ByteBuffer& data, AreaTriggerCircularMovementInfo const& 
     data << float(areaTriggerCircularMovement.InitialAngle);
     data << float(areaTriggerCircularMovement.ZOffset);
 
-    if (areaTriggerCircularMovement.TargetGUID)
-        data << *areaTriggerCircularMovement.TargetGUID;
+    if (areaTriggerCircularMovement.PathTarget)
+        data << *areaTriggerCircularMovement.PathTarget;
 
     if (areaTriggerCircularMovement.Center)
         data << *areaTriggerCircularMovement.Center;
@@ -84,14 +84,14 @@ WorldPacket const* WorldPackets::AreaTrigger::AreaTriggerReShape::Write()
     _worldPacket << TriggerGUID;
 
     _worldPacket.WriteBit(AreaTriggerSpline.has_value());
-    _worldPacket.WriteBit(AreaTriggerCircularMovement.has_value());
+    _worldPacket.WriteBit(AreaTriggerOrbit.has_value());
     _worldPacket.FlushBits();
 
     if (AreaTriggerSpline)
         _worldPacket << *AreaTriggerSpline;
 
-    if (AreaTriggerCircularMovement)
-        _worldPacket << *AreaTriggerCircularMovement;
+    if (AreaTriggerOrbit)
+        _worldPacket << *AreaTriggerOrbit;
 
     return &_worldPacket;
 }

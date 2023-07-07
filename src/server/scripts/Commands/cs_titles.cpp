@@ -150,7 +150,7 @@ public:
 
         handler->PSendSysMessage(LANG_TITLE_REMOVE_RES, titleId, titleNameStr.c_str(), tNameLink.c_str());
 
-        if (!target->HasTitle(target->m_playerData->PlayerTitle))
+        if (!target->HasTitle(target->GetInt32Value(PLAYER_CHOSEN_TITLE)))
         {
             target->SetChosenTitle(0);
             handler->PSendSysMessage(LANG_CURRENT_TITLE_RESET, tNameLink.c_str());
@@ -185,7 +185,7 @@ public:
         target->SetKnownTitles(0, mask);
         handler->SendSysMessage(LANG_DONE);
 
-        if (!target->HasTitle(target->m_playerData->PlayerTitle))
+        if (!target->HasTitle(target->GetInt32Value(PLAYER_CHOSEN_TITLE)))
         {
             target->SetChosenTitle(0);
             handler->PSendSysMessage(LANG_CURRENT_TITLE_RESET, handler->GetNameLink(target).c_str());

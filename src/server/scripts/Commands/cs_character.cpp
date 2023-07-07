@@ -264,7 +264,7 @@ public:
                     continue;
 
                 char const* activeStr = "";
-                if (*target->m_playerData->PlayerTitle == titleInfo->MaskID)
+                if (target->GetInt32Value(PLAYER_CHOSEN_TITLE) == titleInfo->MaskID)
                     activeStr = handler->GetTrinityString(LANG_ACTIVE);
 
                 std::string titleName = fmt::sprintf(name, player->GetName());

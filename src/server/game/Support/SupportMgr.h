@@ -84,7 +84,7 @@ enum SupportSpamType
     SUPPORT_SPAM_TYPE_CALENDAR = 2
 };
 
-using ChatLog = WorldPackets::Ticket::SupportTicketChatLog;
+using ChatLog = WorldPackets::Ticket::SupportTicketSubmitComplaint::SupportTicketChatLog;
 
 class TC_GAME_API Ticket
 {

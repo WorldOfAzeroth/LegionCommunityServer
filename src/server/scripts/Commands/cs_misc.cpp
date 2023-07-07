@@ -962,7 +962,7 @@ public:
             if (Player* caster = handler->GetSession()->GetPlayer())
             {
                 ObjectGuid castId = ObjectGuid::Create<HighGuid::Cast>(SPELL_CAST_SOURCE_NORMAL, player->GetMapId(), SPELL_UNSTUCK_ID, player->GetMap()->GenerateLowGuid<HighGuid::Cast>());
-                Spell::SendCastResult(caster, spellInfo, { SPELL_UNSTUCK_VISUAL, 0 }, castId, SPELL_FAILED_CANT_DO_THAT_RIGHT_NOW);
+                Spell::SendCastResult(caster, spellInfo, 0, castId, SPELL_FAILED_CANT_DO_THAT_RIGHT_NOW);
             }
 
             return false;
@@ -2459,7 +2459,7 @@ public:
         if (!spellInfo)
             return false;
 
-        SpellNonMeleeDamage damageInfo(attacker, target, spellInfo, { spellInfo->GetSpellXSpellVisualId(handler->GetSession()->GetPlayer()), 0 }, spellInfo->SchoolMask);
+        SpellNonMeleeDamage damageInfo(attacker, target, spellInfo, spellInfo->GetSpellXSpellVisualId(handler->GetSession()->GetPlayer()), spellInfo->SchoolMask);
         damageInfo.damage = damage;
         Unit::DealDamageMods(damageInfo.attacker, damageInfo.target, damageInfo.damage, &damageInfo.absorb);
         target->DealSpellDamage(&damageInfo, true);
@@ -2716,7 +2716,7 @@ public:
             return false;
         }
 
-        sWorld->SendGlobalMessage(WorldPackets::Misc::PlaySound(handler->GetSession()->GetPlayer()->GetGUID(), soundId, broadcastTextId.value_or(0)).Write());
+        sWorld->SendGlobalMessage(WorldPackets::Misc::PlaySound(handler->GetSession()->GetPlayer()->GetGUID(), soundId).Write());
 
         handler->PSendSysMessage(LANG_COMMAND_PLAYED_TO_ALL, soundId);
         return true;

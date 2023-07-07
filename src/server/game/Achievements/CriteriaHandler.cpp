@@ -3560,11 +3560,11 @@ void CriteriaMgr::LoadCriteriaModifiersTree()
     }
 
     // Build tree
-    for (std::pair<uint32 const, ModifierTreeNode*>& criteriaModifier : _criteriaModifiers)
-        if (ModifierTreeNode* parentNode = Trinity::Containers::MapGetValuePtr(_criteriaModifiers, criteriaModifier.second->Entry->Parent))
-            parentNode->Children.push_back(criteriaModifier.second);
+    for (auto itr = _criteriaModifiers.begin(); itr != _criteriaModifiers.end(); ++itr)
+        if (ModifierTreeNode* parentNode = Trinity::Containers::MapGetValuePtr(_criteriaModifiers, itr->second->Entry->Parent))
+            parentNode->Children.push_back(itr->second);
 
-    TC_LOG_INFO("server.loading", ">> Loaded {} criteria modifiers in {} ms", uint32(_criteriaModifiers.size()), GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded %u criteria modifiers in %u ms", uint32(_criteriaModifiers.size()), GetMSTimeDiffToNow(oldMSTime));
 }
 
 template<typename T>

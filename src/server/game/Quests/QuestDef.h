@@ -532,9 +532,10 @@ class TC_GAME_API Quest
         uint32 GetQuestId() const { return _id; }
         uint32 GetQuestType() const { return _type; }
         uint32 GetQuestPackageID() const { return _packageID; }
-        uint32 GetContentTuningId() const { return _contentTuningID; }
         int32  GetZoneOrSort() const { return _questSortID; }
         uint32 GetMaxLevel() const { return _maxLevel; }
+        int32  GetQuestLevel() const { return _level; }
+        int32  GetQuestMaxScalingLevel() const { return _maxScalingLevel; }
         uint32 GetQuestInfoID() const { return _questInfoID; }
         uint32 GetAllowableClasses() const { return _allowableClasses; }
         Trinity::RaceMask<uint64> GetAllowableRaces() const { return _allowableRaces; }
@@ -611,10 +612,7 @@ class TC_GAME_API Quest
         int32 GetTreasurePickerId() const { return _treasurePickerID; }
         int32 GetExpansion() const { return _expansion; }
         int32 GetManagedWorldStateId() const { return _managedWorldStateID; }
-        int32 GetQuestSessionBonus() const { return _questSessionBonus; }
         uint32 GetQuestGiverPortrait() const { return _questGiverPortrait; }
-        int32 GetQuestGiverPortraitMount() const { return _questGiverPortraitMount; }
-        int32 GetQuestGiverPortraitModelSceneId() const { return _questGiverPortraitModelSceneId; }
         uint32 GetQuestTurnInPortrait() const { return _questTurnInPortrait; }
         bool IsDaily() const { return (_flags & QUEST_FLAGS_DAILY) != 0; }
         bool IsWeekly() const { return (_flags & QUEST_FLAGS_WEEKLY) != 0; }
@@ -677,8 +675,9 @@ class TC_GAME_API Quest
         // wdb data (quest query response)
         uint32 _id = 0;
         uint32 _type = 0;
+        int32  _level;
+        int32  _maxScalingLevel;
         uint32 _packageID = 0;
-        uint32 _contentTuningID = 0;
         int32 _questSortID = 0;
         uint32 _questInfoID = 0;
         uint32 _suggestedPlayers = 0;
@@ -707,8 +706,6 @@ class TC_GAME_API Quest
         uint32 _rewardSkillId = 0;
         uint32 _rewardSkillPoints = 0;
         uint32 _questGiverPortrait = 0;
-        int32 _questGiverPortraitMount = 0;
-        int32 _questGiverPortraitModelSceneId = 0;
         uint32 _questTurnInPortrait = 0;
         uint32 _rewardReputationMask;
         uint32 _soundAccept = 0;
@@ -719,7 +716,6 @@ class TC_GAME_API Quest
         int32 _treasurePickerID = 0;
         int32 _expansion = 0;
         int32 _managedWorldStateID = 0;
-        int32 _questSessionBonus = 0;
         std::string _logTitle;
         std::string _logDescription;
         std::string _questDescription;

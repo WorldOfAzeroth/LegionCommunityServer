@@ -17,15 +17,14 @@
 
 #include "LoginRESTService.h"
 #include "Configuration/Config.h"
+#include "CryptoHash.h"
+#include "CryptoRandom.h"
 #include "DatabaseEnv.h"
 #include "Errors.h"
 #include "IpNetwork.h"
 #include "ProtobufJSON.h"
 #include "Realm.h"
 #include "Resolver.h"
-#include "SessionManager.h"
-#include "SHA1.h"
-#include "SHA256.h"
 #include "SslContext.h"
 #include "Util.h"
 #include "httpget.h"
@@ -254,7 +253,7 @@ int32 LoginRESTService::HandleGetGameAccounts(std::shared_ptr<AsyncRequest> requ
         return 401;
 
     request->SetCallback(std::make_unique<QueryCallback>(LoginDatabase.AsyncQuery([&] {
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_GAME_ACCOUNT_LIST);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_GAME_ACCOUNT_LIST);
         stmt->setString(0, request->GetClient()->userid);
         return stmt;
     }())
@@ -340,7 +339,7 @@ int32 LoginRESTService::HandlePostLogin(std::shared_ptr<AsyncRequest> request)
     Utf8ToUpperOnlyLatin(login);
     Utf8ToUpperOnlyLatin(password);
 
-    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_AUTHENTICATION);
+    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_AUTHENTICATION);
     stmt->setString(0, login);
 
     std::string sentPasswordHash = CalculateShaPassHash(login, password);
@@ -362,13 +361,12 @@ int32 LoginRESTService::HandlePostLogin(std::shared_ptr<AsyncRequest> request)
             {
                 if (loginTicket.empty() || loginTicketExpiry < time(nullptr))
                 {
-                    BigNumber ticket;
-                    ticket.SetRand(20 * 8);
+                    std::array<uint8, 20> ticket = Trinity::Crypto::GetRandomBytes<20>();
 
-                    loginTicket = "TC-" + ByteArrayToHexStr(ticket.AsByteArray(20).get(), 20);
+                    loginTicket = "TC-" + ByteArrayToHexStr(ticket);
                 }
 
-                PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BNET_AUTHENTICATION);
+                LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BNET_AUTHENTICATION);
                 stmt->setString(0, loginTicket);
                 stmt->setUInt32(1, time(nullptr) + _loginTicketDuration);
                 stmt->setUInt32(2, accountId);
@@ -392,7 +390,7 @@ int32 LoginRESTService::HandlePostLogin(std::shared_ptr<AsyncRequest> request)
                 if (maxWrongPassword)
                 {
                     LoginDatabaseTransaction trans = LoginDatabase.BeginTransaction();
-                    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BNET_FAILED_LOGINS);
+                    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BNET_FAILED_LOGINS);
                     stmt->setUInt32(0, accountId);
                     trans->Append(stmt);
 
@@ -445,7 +443,7 @@ int32 LoginRESTService::HandlePostRefreshLoginTicket(std::shared_ptr<AsyncReques
         return 401;
 
     request->SetCallback(std::make_unique<QueryCallback>(LoginDatabase.AsyncQuery([&] {
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_EXISTING_AUTHENTICATION);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_EXISTING_AUTHENTICATION);
         stmt->setString(0, request->GetClient()->userid);
         return stmt;
     }())
@@ -460,7 +458,7 @@ int32 LoginRESTService::HandlePostRefreshLoginTicket(std::shared_ptr<AsyncReques
             {
                 loginRefreshResult.set_login_ticket_expiry(now + _loginTicketDuration);
 
-                PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BNET_EXISTING_AUTHENTICATION);
+                LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BNET_EXISTING_AUTHENTICATION);
                 stmt->setUInt32(0, uint32(now + _loginTicketDuration));
                 stmt->setString(1, request->GetClient()->userid);
                 LoginDatabase.Execute(stmt);
@@ -503,17 +501,17 @@ void LoginRESTService::HandleAsyncRequest(std::shared_ptr<AsyncRequest> request)
 
 std::string LoginRESTService::CalculateShaPassHash(std::string const& name, std::string const& password)
 {
-    SHA256Hash email;
+    Trinity::Crypto::SHA256 email;
     email.UpdateData(name);
     email.Finalize();
 
-    SHA256Hash sha;
-    sha.UpdateData(ByteArrayToHexStr(email.GetDigest(), email.GetLength()));
+    Trinity::Crypto::SHA256 sha;
+    sha.UpdateData(ByteArrayToHexStr(email.GetDigest()));
     sha.UpdateData(":");
     sha.UpdateData(password);
     sha.Finalize();
 
-    return ByteArrayToHexStr(sha.GetDigest(), sha.GetLength(), true);
+    return ByteArrayToHexStr(sha.GetDigest(), true);
 }
 
 Namespace namespaces[] =

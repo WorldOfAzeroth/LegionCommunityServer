@@ -663,7 +663,7 @@ void PlayerAchievementMgr::SendAchievementEarned(AchievementEntry const* achieve
         if (achievement->Flags & (ACHIEVEMENT_FLAG_REALM_FIRST_KILL | ACHIEVEMENT_FLAG_REALM_FIRST_REACH))
         {
             // broadcast realm first reached
-            WorldPackets::Achievement::BroadcastAchievement serverFirstAchievement;
+            WorldPackets::Achievement::ServerFirstAchievement serverFirstAchievement;
             serverFirstAchievement.Name = _owner->GetName();
             serverFirstAchievement.PlayerGUID = _owner->GetGUID();
             serverFirstAchievement.AchievementID = achievement->ID;
@@ -1017,7 +1017,7 @@ void GuildAchievementMgr::SendAchievementEarned(AchievementEntry const* achievem
     if (achievement->Flags & (ACHIEVEMENT_FLAG_REALM_FIRST_KILL | ACHIEVEMENT_FLAG_REALM_FIRST_REACH))
     {
         // broadcast realm first reached
-        WorldPackets::Achievement::BroadcastAchievement serverFirstAchievement;
+        WorldPackets::Achievement::ServerFirstAchievement serverFirstAchievement;
         serverFirstAchievement.Name = _owner->GetName();
         serverFirstAchievement.PlayerGUID = _owner->GetGUID();
         serverFirstAchievement.AchievementID = achievement->ID;
