@@ -387,6 +387,7 @@ class TC_GAME_API Item : public Object
 
         bool IsArtifactDisabled() const;
 
+        DynamicFieldStructuredView<ItemDynamicFieldArtifactPowers> GetArtifactPowers() const { return GetDynamicStructuredValues<ItemDynamicFieldArtifactPowers>(ITEM_DYNAMIC_FIELD_ARTIFACT_POWERS); }
         ItemDynamicFieldArtifactPowers const* GetArtifactPower(uint32 artifactPowerId) const;
         void AddArtifactPower(ArtifactPowerData const* artifactPower);
         void SetArtifactPower(uint16 artifactPowerId, uint8 purchasedRank, uint8 currentRankWithBonus);

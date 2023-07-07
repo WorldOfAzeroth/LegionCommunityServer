@@ -21,7 +21,7 @@
 
 // Auto generated for version 7, 3, 5, 25928
 
-enum ObjectFields
+enum ObjectFields : uint16
 {
     OBJECT_FIELD_GUID                                      = 0x000, // Size: 4, Flags: PUBLIC
     OBJECT_FIELD_DATA                                      = 0x004, // Size: 4, Flags: PUBLIC
@@ -32,12 +32,12 @@ enum ObjectFields
     OBJECT_END                                             = 0x00C,
 };
 
-enum ObjectDynamicFields
+enum ObjectDynamicFields : uint16
 {
     OBJECT_DYNAMIC_END                                     = 0x000,
 };
 
-enum ItemFields
+enum ItemFields : uint16
 {
     ITEM_FIELD_OWNER                                       = OBJECT_END + 0x000, // Size: 4, Flags: PUBLIC
     ITEM_FIELD_CONTAINED                                   = OBJECT_END + 0x004, // Size: 4, Flags: PUBLIC
@@ -60,7 +60,7 @@ enum ItemFields
     ITEM_END                                               = OBJECT_END + 0x049,
 };
 
-enum ItemDynamicFields
+enum ItemDynamicFields : uint16
 {
     ITEM_DYNAMIC_FIELD_MODIFIERS                           = OBJECT_DYNAMIC_END + 0x000, // Flags: OWNER
     ITEM_DYNAMIC_FIELD_BONUSLIST_IDS                       = OBJECT_DYNAMIC_END + 0x001, // Flags: OWNER, 0x100
@@ -70,19 +70,19 @@ enum ItemDynamicFields
     ITEM_DYNAMIC_END                                       = OBJECT_DYNAMIC_END + 0x005,
 };
 
-enum ContainerFields
+enum ContainerFields : uint16
 {
     CONTAINER_FIELD_SLOT_1                                 = ITEM_END + 0x000, // Size: 144, Flags: PUBLIC
     CONTAINER_FIELD_NUM_SLOTS                              = ITEM_END + 0x090, // Size: 1, Flags: PUBLIC
     CONTAINER_END                                          = ITEM_END + 0x091,
 };
 
-enum ContainerDynamicFields
+enum ContainerDynamicFields : uint16
 {
     CONTAINER_DYNAMIC_END                                  = ITEM_DYNAMIC_END + 0x000,
 };
 
-enum UnitFields
+enum UnitFields : uint16
 {
     UNIT_FIELD_CHARM                                       = OBJECT_END + 0x000, // Size: 4, Flags: PUBLIC
     UNIT_FIELD_SUMMON                                      = OBJECT_END + 0x004, // Size: 4, Flags: PUBLIC
@@ -185,7 +185,7 @@ enum UnitFields
     UNIT_END                                               = OBJECT_END + 0x0C9,
 };
 
-enum UnitDynamicFields
+enum UnitDynamicFields : uint16
 {
     UNIT_DYNAMIC_FIELD_PASSIVE_SPELLS                      = OBJECT_DYNAMIC_END + 0x000, // Flags: PUBLIC, URGENT
     UNIT_DYNAMIC_FIELD_WORLD_EFFECTS                       = OBJECT_DYNAMIC_END + 0x001, // Flags: PUBLIC, URGENT
@@ -193,7 +193,7 @@ enum UnitDynamicFields
     UNIT_DYNAMIC_END                                       = OBJECT_DYNAMIC_END + 0x003,
 };
 
-enum PlayerFields
+enum PlayerFields : uint16
 {
     PLAYER_DUEL_ARBITER                                    = UNIT_END + 0x000, // Size: 4, Flags: PUBLIC
     PLAYER_WOW_ACCOUNT                                     = UNIT_END + 0x004, // Size: 4, Flags: PUBLIC
@@ -310,7 +310,7 @@ enum PlayerFields
     PLAYER_END                                             = UNIT_END + 0x113C,
 };
 
-enum PlayerDynamicFields
+enum PlayerDynamicFields : uint16
 {
     PLAYER_DYNAMIC_FIELD_RESERACH_SITE                     = UNIT_DYNAMIC_END + 0x000, // Flags: PRIVATE
     PLAYER_DYNAMIC_FIELD_RESEARCH_SITE_PROGRESS            = UNIT_DYNAMIC_END + 0x001, // Flags: PRIVATE
@@ -329,7 +329,7 @@ enum PlayerDynamicFields
     PLAYER_DYNAMIC_END                                     = UNIT_DYNAMIC_END + 0x00E,
 };
 
-enum GameObjectFields
+enum GameObjectFields : uint16
 {
     GAMEOBJECT_FIELD_CREATED_BY                            = OBJECT_END + 0x000, // Size: 4, Flags: PUBLIC
     GAMEOBJECT_DISPLAYID                                   = OBJECT_END + 0x004, // Size: 1, Flags: DYNAMIC, URGENT
@@ -346,13 +346,13 @@ enum GameObjectFields
     GAMEOBJECT_END                                         = OBJECT_END + 0x015,
 };
 
-enum GameObjectDynamicFields
+enum GameObjectDynamicFields : uint16
 {
     GAMEOBJECT_DYNAMIC_ENABLE_DOODAD_SETS                  = OBJECT_DYNAMIC_END + 0x000, // Flags: PUBLIC
     GAMEOBJECT_DYNAMIC_END                                 = OBJECT_DYNAMIC_END + 0x001,
 };
 
-enum DynamicObjectFields
+enum DynamicObjectFields : uint16
 {
     DYNAMICOBJECT_CASTER                                   = OBJECT_END + 0x000, // Size: 4, Flags: PUBLIC
     DYNAMICOBJECT_TYPE                                     = OBJECT_END + 0x004, // Size: 1, Flags: PUBLIC
@@ -363,12 +363,12 @@ enum DynamicObjectFields
     DYNAMICOBJECT_END                                      = OBJECT_END + 0x009,
 };
 
-enum DynamicObjectDynamicFields
+enum DynamicObjectDynamicFields : uint16
 {
     DYNAMICOBJECT_DYNAMIC_END                              = OBJECT_DYNAMIC_END + 0x000,
 };
 
-enum CorpseFields
+enum CorpseFields : uint16
 {
     CORPSE_FIELD_OWNER                                     = OBJECT_END + 0x000, // Size: 4, Flags: PUBLIC
     CORPSE_FIELD_PARTY                                     = OBJECT_END + 0x004, // Size: 4, Flags: PUBLIC
@@ -383,12 +383,12 @@ enum CorpseFields
     CORPSE_END                                             = OBJECT_END + 0x022,
 };
 
-enum CorpseDynamicFields
+enum CorpseDynamicFields : uint16
 {
     CORPSE_DYNAMIC_END                                     = OBJECT_DYNAMIC_END + 0x000,
 };
 
-enum AreaTriggerFields
+enum AreaTriggerFields : uint16
 {
     AREATRIGGER_OVERRIDE_SCALE_CURVE                       = OBJECT_END + 0x000, // Size: 7, Flags: PUBLIC, URGENT
     AREATRIGGER_EXTRA_SCALE_CURVE                          = OBJECT_END + 0x007, // Size: 7, Flags: PUBLIC, URGENT
@@ -406,12 +406,12 @@ enum AreaTriggerFields
     AREATRIGGER_END                                        = OBJECT_END + 0x01F,
 };
 
-enum AreaTriggerDynamicFields
+enum AreaTriggerDynamicFields : uint16
 {
     AREATRIGGER_DYNAMIC_END                                = OBJECT_DYNAMIC_END + 0x000,
 };
 
-enum SceneObjectFields
+enum SceneObjectFields : uint16
 {
     SCENEOBJECT_FIELD_SCRIPT_PACKAGE_ID                    = OBJECT_END + 0x000, // Size: 1, Flags: PUBLIC
     SCENEOBJECT_FIELD_RND_SEED_VAL                         = OBJECT_END + 0x001, // Size: 1, Flags: PUBLIC
@@ -420,18 +420,18 @@ enum SceneObjectFields
     SCENEOBJECT_END                                        = OBJECT_END + 0x007,
 };
 
-enum SceneObjectDynamicFields
+enum SceneObjectDynamicFields : uint16
 {
     SCENEOBJECT_DYNAMIC_END                                = OBJECT_DYNAMIC_END + 0x000,
 };
 
-enum ConversationFields
+enum ConversationFields : uint16
 {
     CONVERSATION_LAST_LINE_END_TIME                        = OBJECT_END + 0x000, // Size: 1, Flags: DYNAMIC
     CONVERSATION_END                                       = OBJECT_END + 0x001,
 };
 
-enum ConversationDynamicFields
+enum ConversationDynamicFields : uint16
 {
     CONVERSATION_DYNAMIC_FIELD_ACTORS                      = OBJECT_DYNAMIC_END + 0x000, // Flags: PUBLIC
     CONVERSATION_DYNAMIC_FIELD_LINES                       = OBJECT_DYNAMIC_END + 0x001, // Flags: 0x100

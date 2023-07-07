@@ -1364,12 +1364,8 @@ void Guild::SendQueryResponse(WorldSession* session)
     response.Info->BorderColor = m_emblemInfo.GetBorderColor();
     response.Info->BackgroundColor = m_emblemInfo.GetBackgroundColor();
 
-    for (uint8 i = 0; i < _GetRanksSize(); ++i)
-    {
-        WorldPackets::Guild::QueryGuildInfoResponse::GuildInfo::GuildInfoRank info
-            (m_ranks[i].GetId(), i, m_ranks[i].GetName());
-        response.Info->Ranks.insert(info);
-    }
+    for (RankInfo const& rankInfo : m_ranks)
+        response.Info->Ranks.emplace_back(AsUnderlyingType(rankInfo.GetId()), AsUnderlyingType(rankInfo.GetOrder()), rankInfo.GetName());
 
     response.Info->GuildName = m_name;
 
@@ -2727,8 +2723,9 @@ bool Guild::AddMember(CharacterDatabaseTransaction trans, ObjectGuid guid, Optio
                 fields[1].GetUInt8(),
                 fields[2].GetUInt8(),
                 fields[3].GetUInt8(),
-                fields[4].GetUInt16(),
-                fields[5].GetUInt32(),
+                fields[4].GetUInt8(),
+                fields[5].GetUInt16(),
+                fields[6].GetUInt32(),
                 0);
 
             ok = member.CheckStats();
@@ -3477,7 +3474,7 @@ void Guild::SendBankList(WorldSession* session, uint8 tabId, bool fullUpdate) co
                     itemInfo.Charges = int32(abs(tabItem->GetSpellCharges()));
                     itemInfo.EnchantmentID = int32(tabItem->GetEnchantmentId(PERM_ENCHANTMENT_SLOT));
                     itemInfo.OnUseEnchantmentID = int32(tabItem->GetEnchantmentId(USE_ENCHANTMENT_SLOT));
-                    itemInfo.Flags = tabItem->m_itemData->DynamicFlags;
+                    itemInfo.Flags = tabItem->GetDynamicFlags();
 
                     uint8 i = 0;
                     for (ItemDynamicFieldGems const& gemData : tabItem->GetGems())

@@ -2178,12 +2178,12 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void LearnSkillRewardedSpells(uint32 skillId, uint32 skillValue, Races race);
         int32 FindProfessionSlotFor(uint32 skillId) const;
         void SetSkillLineId(uint32 pos, uint16 skillLineId) { SetUInt16Value(PLAYER_SKILL_LINEID + (pos / 2), pos & 1, skillLineId); }
-        void SetSkillStep(uint32 pos, uint16 step) { SetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_STEP_OFFSET + (pos / 2), pos & 1, step); };
-        void SetSkillRank(uint32 pos, uint16 rank) { SetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_RANK_OFFSET + (pos / 2), pos & 1, rank); }
-        void SetSkillStartingRank(uint32 pos, uint16 starting) { SetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SUBSKILL_START_RANK_OFFSET + (pos / 2), pos & 1, starting); }
-        void SetSkillMaxRank(uint32 pos, uint16 max) { SetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_MAX_RANK_OFFSET + (pos / 2), pos & 1, max); }
-        void SetSkillTempBonus(uint32 pos, uint16 bonus) { SetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_TEMP_BONUS_OFFSET + (pos / 2), pos & 1, bonus); }
-        void SetSkillPermBonus(uint32 pos, uint16 bonus) { SetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_PERM_BONUS_OFFSET + (pos / 2), pos & 1, bonus); }
+        void SetSkillStep(uint32 pos, uint16 step) { SetUInt16Value(PLAYER_SKILL_LINEID + SKILL_STEP_OFFSET + (pos / 2), pos & 1, step); };
+        void SetSkillRank(uint32 pos, uint16 rank) { SetUInt16Value(PLAYER_SKILL_LINEID + SKILL_RANK_OFFSET + (pos / 2), pos & 1, rank); }
+        void SetSkillStartingRank(uint32 pos, uint16 starting) { SetUInt16Value(PLAYER_SKILL_LINEID + SUBSKILL_START_RANK_OFFSET + (pos / 2), pos & 1, starting); }
+        void SetSkillMaxRank(uint32 pos, uint16 max) { SetUInt16Value(PLAYER_SKILL_LINEID + SKILL_MAX_RANK_OFFSET + (pos / 2), pos & 1, max); }
+        void SetSkillTempBonus(uint32 pos, uint16 bonus) { SetUInt16Value(PLAYER_SKILL_LINEID + SKILL_TEMP_BONUS_OFFSET + (pos / 2), pos & 1, bonus); }
+        void SetSkillPermBonus(uint32 pos, uint16 bonus) { SetUInt16Value(PLAYER_SKILL_LINEID + SKILL_PERM_BONUS_OFFSET + (pos / 2), pos & 1, bonus); }
 
         WorldLocation& GetTeleportDest() { return m_teleport_dest; }
         Optional<uint32> GetTeleportDestInstanceId() const { return m_teleport_instanceId; }

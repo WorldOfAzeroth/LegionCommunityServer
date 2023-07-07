@@ -4954,8 +4954,8 @@ void Unit::UpdateStatBuffMod(Stats stat)
 
 void Unit::UpdateStatBuffModForClient(Stats stat)
 {
-    ApplyPercentModFloatValue(uint16(UNIT_FIELD_POSSTAT) + stat, m_floatStatPosBuff[stat], true);
-    ApplyPercentModFloatValue(uint16(UNIT_FIELD_POSSTAT) + stat, m_floatStatNegBuff[stat], true);
+    ApplyPercentModFloatValue(UNIT_FIELD_POSSTAT + stat, m_floatStatPosBuff[stat], true);
+    ApplyPercentModFloatValue(UNIT_FIELD_POSSTAT + stat, m_floatStatNegBuff[stat], true);
 }
 
 void Unit::_RegisterDynObject(DynamicObject* dynObj)
@@ -10234,10 +10234,10 @@ void Unit::UpdateAttackTimeField(WeaponAttackType att)
     {
         case BASE_ATTACK:
         case OFF_ATTACK:
-            SetUInt32Value(uint16(UNIT_FIELD_BASEATTACKTIME) + att, uint32(m_baseAttackSpeed[att] * m_modAttackSpeedPct[att]));
+            SetUInt32Value(UNIT_FIELD_BASEATTACKTIME + att, uint32(m_baseAttackSpeed[att] * m_modAttackSpeedPct[att]));
             break;
         case RANGED_ATTACK:
-            SetUInt32Value(uint16(UNIT_FIELD_BASEATTACKTIME) + att, uint32(m_baseAttackSpeed[RANGED_ATTACK] * m_modAttackSpeedPct[RANGED_ATTACK]));
+            SetUInt32Value(UNIT_FIELD_BASEATTACKTIME + att, uint32(m_baseAttackSpeed[RANGED_ATTACK] * m_modAttackSpeedPct[RANGED_ATTACK]));
             break;
         default:
             break;;
@@ -12238,7 +12238,7 @@ void Unit::HandleSpellClick(Unit* clicker, int8 seatId /*= -1*/)
             {
                 CastSpellExtraArgs args(flags);
                 args.OriginalCaster = origCasterGUID;
-                args.AddSpellMod(SpellValueMod(uint8(SPELLVALUE_BASE_POINT0) + i), seatId + 1);
+                args.AddSpellMod(SpellValueMod(SPELLVALUE_BASE_POINT0 + i), seatId + 1);
                 caster->CastSpell(target, clickPair.second.spellId, args);
             }
             else    // This can happen during Player::_LoadAuras
