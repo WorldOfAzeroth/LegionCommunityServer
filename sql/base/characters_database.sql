@@ -2514,11 +2514,12 @@ DROP TABLE IF EXISTS `guild_rank`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `guild_rank` (
-  `guildid` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `rid` tinyint(3) unsigned NOT NULL,
-  `rname` varchar(20) NOT NULL DEFAULT '',
-  `rights` mediumint(8) unsigned NOT NULL DEFAULT '0',
-  `BankMoneyPerDay` int(10) unsigned NOT NULL DEFAULT '0',
+  `guildid` bigint unsigned NOT NULL DEFAULT '0',
+  `rid` tinyint unsigned NOT NULL,
+  `RankOrder` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `rname` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `rights` int unsigned NOT NULL DEFAULT '0',
+  `BankMoneyPerDay` int unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`guildid`,`rid`),
   KEY `Idx_rid` (`rid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Guild System';
