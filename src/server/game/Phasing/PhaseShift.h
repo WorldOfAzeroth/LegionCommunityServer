@@ -72,7 +72,7 @@ public:
         int32 References = 0;
         TerrainSwapInfo const* VisibleMapInfo = nullptr;
     };
-    struct UiMapPhaseIdRef
+    struct UiWorldMapAreaIdSwapRef
     {
         int32 References = 0;
     };
@@ -84,7 +84,7 @@ public:
     };
     using PhaseContainer = Trinity::Containers::FlatSet<PhaseRef>;
     using VisibleMapIdContainer = std::map<uint32, VisibleMapIdRef>;
-    using UiMapPhaseIdContainer = std::map<uint32, UiMapPhaseIdRef>;
+    using UiWorldMapAreaIdSwapContainer = std::map<uint32, UiWorldMapAreaIdSwapRef>;
 
     PhaseShift();
     PhaseShift(PhaseShift const& right);
@@ -105,10 +105,11 @@ public:
     bool HasVisibleMapId(uint32 visibleMapId) const { return VisibleMapIds.find(visibleMapId) != VisibleMapIds.end(); }
     VisibleMapIdContainer const& GetVisibleMapIds() const { return VisibleMapIds; }
 
-    bool AddUiMapPhaseId(uint32 uiMapPhaseId, int32 references = 1);
-    EraseResult<UiMapPhaseIdContainer> RemoveUiMapPhaseId(uint32 uiMapPhaseId);
-    bool HasUiMapPhaseId(uint32 uiMapPhaseId) const { return UiMapPhaseIds.find(uiMapPhaseId) != UiMapPhaseIds.end(); }
-    UiMapPhaseIdContainer const& GetUiMapPhaseIds() const { return UiMapPhaseIds; }
+
+    bool AddUiWorldMapAreaIdSwap(uint32 uiWorldMapAreaId, int32 references = 1);
+    EraseResult<UiWorldMapAreaIdSwapContainer> RemoveUiWorldMapAreaIdSwap(uint32 uiWorldMapAreaId);
+    bool HasUiWorldMapAreaIdSwap(uint32 uiWorldMapAreaId) const { return UiWorldMapAreaIdSwaps.find(uiWorldMapAreaId) != UiWorldMapAreaIdSwaps.end(); }
+    UiWorldMapAreaIdSwapContainer const& GetUiWorldMapAreaIdSwaps() const { return UiWorldMapAreaIdSwaps; }
 
     void Clear();
     void ClearPhases();
@@ -124,7 +125,7 @@ protected:
     ObjectGuid PersonalGuid;
     PhaseContainer Phases;
     VisibleMapIdContainer VisibleMapIds;
-    UiMapPhaseIdContainer UiMapPhaseIds;
+    UiWorldMapAreaIdSwapContainer UiWorldMapAreaIdSwaps;
 
     void ModifyPhasesReferences(PhaseContainer::iterator itr, int32 references);
     void UpdateUnphasedFlag();

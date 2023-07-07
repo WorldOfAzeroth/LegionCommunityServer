@@ -67,30 +67,30 @@ PhaseShift::EraseResult<PhaseShift::VisibleMapIdContainer> PhaseShift::RemoveVis
     return { VisibleMapIds.end(), false };
 }
 
-bool PhaseShift::AddUiMapPhaseId(uint32 uiMapPhaseId, int32 references /*= 1*/)
+bool PhaseShift::AddUiWorldMapAreaIdSwap(uint32 uiWorldMapAreaId, int32 references /*= 1*/)
 {
-    auto insertResult = UiMapPhaseIds.emplace(uiMapPhaseId, UiMapPhaseIdRef{ 0 });
+    auto insertResult = UiWorldMapAreaIdSwaps.emplace(uiWorldMapAreaId, UiWorldMapAreaIdSwapRef{ 0 });
     insertResult.first->second.References += references;
     return insertResult.second;
 }
 
-PhaseShift::EraseResult<PhaseShift::UiMapPhaseIdContainer> PhaseShift::RemoveUiMapPhaseId(uint32 uiMapPhaseId)
+PhaseShift::EraseResult<PhaseShift::UiWorldMapAreaIdSwapContainer> PhaseShift::RemoveUiWorldMapAreaIdSwap(uint32 uiWorldMapAreaId)
 {
-    auto itr = UiMapPhaseIds.find(uiMapPhaseId);
-    if (itr != UiMapPhaseIds.end())
+    auto itr = UiWorldMapAreaIdSwaps.find(uiWorldMapAreaId);
+    if (itr != UiWorldMapAreaIdSwaps.end())
     {
         if (!--itr->second.References)
-            return { UiMapPhaseIds.erase(itr), true };
+            return { UiWorldMapAreaIdSwaps.erase(itr), true };
         return { itr, false };
     }
-    return { UiMapPhaseIds.end(), false };
+    return { UiWorldMapAreaIdSwaps.end(), false };
 }
 
 void PhaseShift::Clear()
 {
     ClearPhases();
     VisibleMapIds.clear();
-    UiMapPhaseIds.clear();
+    UiWorldMapAreaIdSwaps.clear();
 }
 
 void PhaseShift::ClearPhases()

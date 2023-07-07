@@ -54,12 +54,6 @@ Graph m_graph;
 std::vector<TaxiNodesEntry const*> m_nodesByVertex;
 std::unordered_map<uint32, vertex_descriptor> m_verticesByNode;
 
-void GetTaxiMapPosition(DBCPosition3D const& position, int32 mapId, DBCPosition2D* uiMapPosition, int32* uiMapId)
-{
-    if (!DB2Manager::GetUiMapPosition(position.X, position.Y, position.Z, mapId, 0, 0, 0, UI_MAP_SYSTEM_ADVENTURE, false, uiMapId, uiMapPosition))
-        DB2Manager::GetUiMapPosition(position.X, position.Y, position.Z, mapId, 0, 0, 0, UI_MAP_SYSTEM_TAXI, false, uiMapId, uiMapPosition);
-}
-
 vertex_descriptor CreateVertexFromFromNodeInfoIfNeeded(TaxiNodesEntry const* node)
 {
     auto itr = m_verticesByNode.find(node->ID);
@@ -100,13 +94,13 @@ void AddVerticeAndEdgeFromNodeInfo(TaxiNodesEntry const* from, TaxiNodesEntry co
             if (nodes[i - 1]->Flags & TAXI_PATH_NODE_FLAG_TELEPORT)
                 continue;
 
-            int32 uiMap1, uiMap2;
+            uint32 map1, map2;
             DBCPosition2D pos1, pos2;
 
-            GetTaxiMapPosition(nodes[i - 1]->Loc, nodes[i - 1]->ContinentID, &pos1, &uiMap1);
-            GetTaxiMapPosition(nodes[i]->Loc, nodes[i]->ContinentID, &pos2, &uiMap2);
+            DB2Manager::DeterminaAlternateMapPosition(nodes[i - 1]->ContinentID, nodes[i - 1]->Loc.X, nodes[i - 1]->Loc.Y, nodes[i - 1]->Loc.Z, &map1, &pos1);
+            DB2Manager::DeterminaAlternateMapPosition(nodes[i]->ContinentID, nodes[i]->Loc.X, nodes[i]->Loc.Y, nodes[i]->Loc.Z, &map2, &pos2);
 
-            if (uiMap1 != uiMap2)
+            if (map1 != map2)
                 continue;
 
             totalDist += std::sqrt(
