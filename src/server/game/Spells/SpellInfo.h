@@ -242,7 +242,6 @@ public:
     // SpellScalingEntry
     struct ScalingInfo
     {
-        int32 Class;
         float Coefficient;
         float Variance;
         float ResourceCoefficient;
@@ -367,7 +366,6 @@ class TC_GAME_API SpellInfo
         uint32 CategoryRecoveryTime = 0;
         uint32 StartRecoveryCategory = 0;
         uint32 StartRecoveryTime = 0;
-        uint32 CooldownAuraSpellId = 0;
         EnumFlag<SpellInterruptFlags> InterruptFlags = SpellInterruptFlags::None;
         EnumFlag<SpellAuraInterruptFlags> AuraInterruptFlags = SpellAuraInterruptFlags::None;
         EnumFlag<SpellAuraInterruptFlags2> AuraInterruptFlags2 = SpellAuraInterruptFlags2::None;
@@ -397,8 +395,6 @@ class TC_GAME_API SpellInfo
         int32 EquippedItemInventoryTypeMask = 0;
         uint32 IconFileDataId = 0;
         uint32 ActiveIconFileDataId = 0;
-        uint32 ContentTuningId = 0;
-        uint32 ShowFutureSpellPlayerConditionID = 0;
         LocalizedString const* SpellName = nullptr;
         float ConeAngle = 0.0f;
         float Width = 0.0f;
@@ -416,6 +412,7 @@ class TC_GAME_API SpellInfo
         // SpellScalingEntry
         struct ScalingInfo
         {
+            int32 Class;
             uint32 MinScalingLevel = 0;
             uint32 MaxScalingLevel = 0;
             uint32 ScalesFromItemLevel = 0;
@@ -584,9 +581,6 @@ class TC_GAME_API SpellInfo
         uint64 GetAllowedMechanicMask() const;
 
         uint64 GetMechanicImmunityMask(Unit const* caster) const;
-
-        // Player Condition
-        bool MeetsFutureSpellPlayerCondition(Player const* player) const;
 
         bool HasLabel(uint32 labelId) const;
 

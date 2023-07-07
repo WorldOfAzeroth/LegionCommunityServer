@@ -449,14 +449,14 @@ void SpellHistory::StartCooldown(SpellInfo const* spellInfo, uint32 itemId, Spel
 
             if (_owner->HasAuraTypeWithAffectMask(SPELL_AURA_MOD_SPELL_COOLDOWN_BY_HASTE, spellInfo))
             {
-                cooldown = Duration(int64(cooldown.count() * _owner->m_unitData->ModSpellHaste));
-                categoryCooldown = Duration(int64(categoryCooldown.count() * _owner->m_unitData->ModSpellHaste));
+                cooldown = Duration(int64(cooldown.count() * _owner->GetFloatValue(UNIT_MOD_CAST_HASTE)));
+                categoryCooldown = Duration(int64(categoryCooldown.count() * _owner->GetFloatValue(UNIT_MOD_CAST_HASTE)));
             }
 
             if (_owner->HasAuraTypeWithAffectMask(SPELL_AURA_MOD_COOLDOWN_BY_HASTE_REGEN, spellInfo))
             {
-                cooldown = Duration(int64(cooldown.count() * _owner->m_unitData->ModHasteRegen));
-                categoryCooldown = Duration(int64(categoryCooldown.count() * _owner->m_unitData->ModHasteRegen));
+                cooldown = Duration(int64(cooldown.count() * _owner->GetFloatValue(UNIT_FIELD_MOD_HASTE_REGEN)));
+                categoryCooldown = Duration(int64(categoryCooldown.count() * _owner->GetFloatValue(UNIT_FIELD_MOD_HASTE_REGEN)));
             }
 
             if (int32 cooldownMod = _owner->GetTotalAuraModifier(SPELL_AURA_MOD_COOLDOWN))
@@ -599,7 +599,6 @@ void SpellHistory::ModifySpellCooldown(CooldownStorageType::iterator& itr, Durat
         modifyCooldown.IsPet = _owner != playerOwner;
         modifyCooldown.SpellID = itr->second.SpellId;
         modifyCooldown.DeltaTime = std::chrono::duration_cast<Milliseconds>(cooldownMod).count();
-        modifyCooldown.WithoutCategoryCooldown = withoutCategoryCooldown;
         playerOwner->SendDirectMessage(modifyCooldown.Write());
     }
 
@@ -669,9 +668,6 @@ void SpellHistory::ResetAllCooldowns()
 bool SpellHistory::HasCooldown(SpellInfo const* spellInfo, uint32 itemId /*= 0*/) const
 {
     if (_spellCooldowns.count(spellInfo->Id) != 0)
-        return true;
-
-    if (spellInfo->CooldownAuraSpellId && _owner->HasAura(spellInfo->CooldownAuraSpellId))
         return true;
 
     uint32 category = 0;
@@ -923,10 +919,10 @@ int32 SpellHistory::GetChargeRecoveryTime(uint32 chargeCategoryId) const
     recoveryTimeF *= _owner->GetTotalAuraMultiplierByMiscValue(SPELL_AURA_CHARGE_RECOVERY_MULTIPLIER, chargeCategoryId);
 
     if (_owner->HasAuraType(SPELL_AURA_CHARGE_RECOVERY_AFFECTED_BY_HASTE))
-        recoveryTimeF *= _owner->m_unitData->ModSpellHaste;
+        recoveryTimeF *= _owner->GetFloatValue(UNIT_MOD_CAST_HASTE);
 
     if (_owner->HasAuraType(SPELL_AURA_CHARGE_RECOVERY_AFFECTED_BY_HASTE_REGEN))
-        recoveryTimeF *= _owner->m_unitData->ModHasteRegen;
+        recoveryTimeF *= _owner->GetFloatValue(UNIT_FIELD_MOD_HASTE_REGEN);
 
     return int32(std::floor(recoveryTimeF));
 }

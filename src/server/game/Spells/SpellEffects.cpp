@@ -4335,7 +4335,7 @@ void Spell::EffectTransmitted()
 
     go->SetOwnerGUID(unitCaster->GetGUID());
 
-    //go->SetLevel(unitCaster->getLevel());
+    //go->SetLevel(unitCaster->GetLevel());
     go->SetSpellId(m_spellInfo->Id);
 
     ExecuteLogEffectSummonObject(SpellEffectName(effectInfo->Effect), go);
@@ -4351,7 +4351,7 @@ void Spell::EffectTransmitted()
         PhasingHandler::InheritPhaseShift(linkedTrap, m_caster);
 
         linkedTrap->SetRespawnTime(duration > 0 ? duration / IN_MILLISECONDS : 0);
-        //linkedTrap->SetLevel(unitCaster->getLevel());
+        //linkedTrap->SetLevel(unitCaster->GetLevel());
         linkedTrap->SetSpellId(m_spellInfo->Id);
         linkedTrap->SetOwnerGUID(unitCaster->GetGUID());
 

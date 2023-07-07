@@ -2529,9 +2529,6 @@ void SpellMgr::LoadSpellInfoStore()
     for (SpellReagentsEntry const* reagents : sSpellReagentsStore)
         loadData[{ reagents->SpellID, DIFFICULTY_NONE }].Reagents = reagents;
 
-    for (SpellReagentsCurrencyEntry const* reagentsCurrency : sSpellReagentsCurrencyStore)
-        loadData[{ reagentsCurrency->SpellID, DIFFICULTY_NONE }].ReagentsCurrency.push_back(reagentsCurrency);
-
     for (SpellScalingEntry const* scaling : sSpellScalingStore)
         loadData[{ scaling->SpellID, DIFFICULTY_NONE }].Scaling = scaling;
 
@@ -2613,9 +2610,6 @@ void SpellMgr::LoadSpellInfoStore()
 
                     if (!data.second.Reagents)
                         data.second.Reagents = fallbackData->Reagents;
-
-                    if (data.second.ReagentsCurrency.empty())
-                        data.second.ReagentsCurrency = fallbackData->ReagentsCurrency;
 
                     if (!data.second.Scaling)
                         data.second.Scaling = fallbackData->Scaling;
@@ -2836,7 +2830,6 @@ void SpellMgr::LoadSpellInfoServerside()
             spellInfo.AttributesEx11 = fields[16].GetUInt32();
             spellInfo.AttributesEx12 = fields[17].GetUInt32();
             spellInfo.AttributesEx13 = fields[18].GetUInt32();
-            spellInfo.AttributesEx14 = fields[19].GetUInt32();
             spellInfo.Stances = fields[20].GetUInt64();
             spellInfo.StancesNot = fields[21].GetUInt64();
             spellInfo.Targets = fields[22].GetUInt32();
@@ -2882,7 +2875,6 @@ void SpellMgr::LoadSpellInfoServerside()
             spellInfo.EquippedItemClass = fields[62].GetInt32();
             spellInfo.EquippedItemSubClassMask = fields[63].GetInt32();
             spellInfo.EquippedItemInventoryTypeMask = fields[64].GetInt32();
-            spellInfo.ContentTuningId = fields[65].GetUInt32();
             spellInfo.ConeAngle = fields[67].GetFloat();
             spellInfo.Width = fields[68].GetFloat();
             spellInfo.MaxTargetLevel = fields[69].GetUInt32();
@@ -3107,7 +3099,6 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                         case SPELL_EFFECT_APPLY_AREA_AURA_OWNER:
                         case SPELL_EFFECT_APPLY_AURA_ON_PET:
                         case SPELL_EFFECT_APPLY_AREA_AURA_SUMMONS:
-                        case SPELL_EFFECT_APPLY_AREA_AURA_PARTY_NONRANDOM:
                             if (spellEffectInfo.ApplyAuraName == SPELL_AURA_PERIODIC_DAMAGE ||
                                 spellEffectInfo.ApplyAuraName == SPELL_AURA_PERIODIC_DAMAGE_PERCENT ||
                                 spellEffectInfo.ApplyAuraName == SPELL_AURA_DUMMY ||
@@ -4707,7 +4698,7 @@ void SpellMgr::LoadSpellInfoCorrections()
 
         // disable proc for magnet auras, they're handled differently
         if (spellInfo->HasAura(SPELL_AURA_SPELL_MAGNET))
-            spellInfo->ProcFlags = std::array<int32, 2>{};
+            spellInfo->ProcFlags = std::array<int32, 1>{};
 
         // due to the way spell system works, unit would change orientation in Spell::_cast
         if (spellInfo->HasAura(SPELL_AURA_CONTROL_VEHICLE))

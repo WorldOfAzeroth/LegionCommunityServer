@@ -58,7 +58,6 @@ struct SpellMiscEntry;
 struct SpellNameEntry;
 struct SpellPowerEntry;
 struct SpellReagentsEntry;
-struct SpellReagentsCurrencyEntry;
 struct SpellScalingEntry;
 struct SpellShapeshiftEntry;
 struct SpellTargetRestrictionsEntry;
@@ -225,15 +224,6 @@ enum ProcFlags : uint32
 
 DEFINE_ENUM_FLAG(ProcFlags);
 
-enum ProcFlags2 : int32
-{
-    PROC_FLAG_2_NONE                            = 0x00000000,
-    PROC_FLAG_2_TARGET_DIES                     = 0x00000001,
-    PROC_FLAG_2_KNOCKBACK                       = 0x00000002,
-    PROC_FLAG_2_CAST_SUCCESSFUL                 = 0x00000004
-};
-
-DEFINE_ENUM_FLAG(ProcFlags2);
 
 #define MELEE_BASED_TRIGGER_MASK (PROC_FLAG_DEAL_MELEE_SWING    | \
                                   PROC_FLAG_TAKE_MELEE_SWING    | \
@@ -652,7 +642,6 @@ struct SpellInfoLoadHelper
     SpellMiscEntry const* Misc = nullptr;
     std::array<SpellPowerEntry const*, MAX_POWERS_PER_SPELL> Powers = { };
     SpellReagentsEntry const* Reagents = nullptr;
-    std::vector<SpellReagentsCurrencyEntry const*> ReagentsCurrency;
     SpellScalingEntry const* Scaling = nullptr;
     SpellShapeshiftEntry const* Shapeshift = nullptr;
     SpellTargetRestrictionsEntry const* TargetRestrictions = nullptr;

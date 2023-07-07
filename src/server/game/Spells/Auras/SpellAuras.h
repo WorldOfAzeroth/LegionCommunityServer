@@ -144,7 +144,7 @@ class TC_GAME_API Aura
         ObjectGuid GetCastItemGUID() const { return m_castItemGuid; }
         uint32 GetCastItemId() const { return m_castItemId; }
         int32 GetCastItemLevel() const { return m_castItemLevel; }
-        SpellCastVisual GetSpellVisual() const { return m_spellVisual; }
+        uint32 GetSpellVisual() const { return m_spellVisual; }
         Unit* GetCaster() const;
         WorldObject* GetWorldObjectCaster() const;
         WorldObject* GetOwner() const { return m_owner; }
@@ -330,7 +330,7 @@ class TC_GAME_API Aura
         ObjectGuid const m_castItemGuid;                    // it is NOT safe to keep a pointer to the item because it may get deleted
         uint32 m_castItemId;
         int32 m_castItemLevel;
-        SpellCastVisual const m_spellVisual;
+        uint32 const m_spellVisual;
         time_t const m_applyTime;
         WorldObject* const m_owner;
 
