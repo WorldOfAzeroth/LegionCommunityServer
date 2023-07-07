@@ -846,7 +846,6 @@ void Group::SendUpdateToPlayer(ObjectGuid playerGUID, MemberSlot* slot)
 
     partyUpdate.PartyGUID = m_guid;
     partyUpdate.LeaderGUID = m_leaderGuid;
-    partyUpdate.LeaderFactionGroup = m_leaderFactionGroup;
 
     partyUpdate.SequenceNum = player->NextGroupUpdateSequenceNumber(m_groupCategory);
 
@@ -865,9 +864,9 @@ void Group::SendUpdateToPlayer(ObjectGuid playerGUID, MemberSlot* slot)
         playerInfos.Name = citr->name;
         playerInfos.Class = citr->_class;
 
-        playerInfos.FactionGroup = Player::GetFactionGroupForRace(citr->race);
-
-        playerInfos.Connected = member && member->GetSession() && !member->GetSession()->PlayerLogout();
+        playerInfos.Status = MEMBER_STATUS_OFFLINE;
+        if (member && member->GetSession() && !member->GetSession()->PlayerLogout())
+            playerInfos.Status = MEMBER_STATUS_ONLINE | (isBGGroup() || isBFGroup() ? MEMBER_STATUS_PVP : 0);
 
         playerInfos.Subgroup = citr->group;         // groupid
         playerInfos.Flags = citr->flags;            // See enum GroupMemberFlags
@@ -1398,8 +1397,8 @@ void Group::BroadcastGroupUpdate(void)
     {
         if (Player * pp = ObjectAccessor::FindPlayer(citr->guid))
         {
-            pp->ForceUpdateFieldChange(pp->m_values.ModifyValue(&Unit::m_unitData).ModifyValue(&UF::UnitData::PvpFlags));
-            pp->ForceUpdateFieldChange(pp->m_values.ModifyValue(&Unit::m_unitData).ModifyValue(&UF::UnitData::FactionTemplate));
+            pp->ForceValuesUpdateAtIndex(UNIT_FIELD_BYTES_2);
+            pp->ForceValuesUpdateAtIndex(UNIT_FIELD_FACTIONTEMPLATE);
             TC_LOG_DEBUG("misc", "-- Forced group value update for '{}'", pp->GetName());
         }
     }

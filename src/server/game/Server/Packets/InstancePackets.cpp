@@ -35,13 +35,13 @@ WorldPacket const* WorldPackets::Instance::InstanceInfo::Write()
 {
     _worldPacket << int32(LockList.size());
 
-    for (InstanceLockInfos const& lockInfos : LockList)
+    for (InstanceLock const& lockInfos : LockList)
         _worldPacket << lockInfos;
 
     return &_worldPacket;
 }
 
-ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Instance::InstanceLockInfos const& lockInfos)
+ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Instance::InstanceLock const& lockInfos)
 {
     data << lockInfos.MapID;
     data << lockInfos.DifficultyID;

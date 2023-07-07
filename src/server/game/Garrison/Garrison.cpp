@@ -594,15 +594,15 @@ void Garrison::SendBlueprintAndSpecializationData()
 
 void Garrison::SendMapData(Player* receiver) const
 {
-    WorldPackets::Garrison::GarrisonMapDataResponse mapData;
-    mapData.Buildings.reserve(_plots.size());
+    WorldPackets::Garrison::GarrisonBuildingLandmarks mapData;
+    mapData.Landmarks.reserve(_plots.size());
 
     for (auto const& p : _plots)
     {
         Plot const& plot = p.second;
         if (plot.BuildingInfo.PacketInfo)
             if (uint32 garrBuildingPlotInstId = sGarrisonMgr.GetGarrBuildingPlotInst(plot.BuildingInfo.PacketInfo->GarrBuildingID, plot.GarrSiteLevelPlotInstId))
-                mapData.Buildings.emplace_back(garrBuildingPlotInstId, plot.PacketInfo.PlotPos.Pos);
+                mapData.Landmarks.emplace_back(garrBuildingPlotInstId, plot.PacketInfo.PlotPos.Pos);
     }
 
     receiver->SendDirectMessage(mapData.Write());

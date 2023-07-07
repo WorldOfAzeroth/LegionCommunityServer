@@ -81,8 +81,10 @@ AuctionHouseObject* AuctionHouseMgr::GetAuctionsMap(uint32 factionTemplateId)
 uint64 AuctionHouseMgr::GetAuctionDeposit(AuctionHouseEntry const* entry, uint32 time, Item* pItem, uint32 count)
 {
     uint32 MSV = pItem->GetTemplate()->GetSellPrice();
-    if (MSV <= 0)
-        return AH_MINIMUM_DEPOSIT * sWorld->getRate(RATE_AUCTION_DEPOSIT);
+    uint64_t defualtVal = uint64(float(AH_MINIMUM_DEPOSIT) * sWorld->getRate(RATE_AUCTION_DEPOSIT));
+    if (MSV <= 0) {
+        return defualtVal;
+    }
 
     float multiplier = CalculatePct(float(entry->DepositRate), 3);
     uint32 timeHr = (((time / 60) / 60) / 12);
@@ -104,8 +106,8 @@ uint64 AuctionHouseMgr::GetAuctionDeposit(AuctionHouseEntry const* entry, uint32
     TC_LOG_DEBUG("auctionHouse", "Deposit:    " UI64FMTD, deposit);
     TC_LOG_DEBUG("auctionHouse", "Deposit rm: %f", remainderbase * count);
 
-    if (deposit < AH_MINIMUM_DEPOSIT * sWorld->getRate(RATE_AUCTION_DEPOSIT))
-        return AH_MINIMUM_DEPOSIT * sWorld->getRate(RATE_AUCTION_DEPOSIT);
+    if (deposit < defualtVal)
+        return defualtVal;
     else
         return deposit;
 }

@@ -4954,8 +4954,8 @@ void Unit::UpdateStatBuffMod(Stats stat)
 
 void Unit::UpdateStatBuffModForClient(Stats stat)
 {
-    ApplyPercentModFloatValue(UNIT_FIELD_POSSTAT + stat, m_floatStatPosBuff[stat], true);
-    ApplyPercentModFloatValue(UNIT_FIELD_NEGSTAT + stat, m_floatStatNegBuff[stat], true);
+    ApplyPercentModFloatValue(uint16(UNIT_FIELD_POSSTAT) + stat, m_floatStatPosBuff[stat], true);
+    ApplyPercentModFloatValue(uint16(UNIT_FIELD_POSSTAT) + stat, m_floatStatNegBuff[stat], true);
 }
 
 void Unit::_RegisterDynObject(DynamicObject* dynObj)
@@ -6610,10 +6610,6 @@ uint32 Unit::SpellDamageBonusTaken(Unit* caster, SpellInfo const* spellProto, ui
                 return aurEff->GetCasterGUID() == caster->GetGUID() && aurEff->IsAffectingSpell(spellProto);
             });
 
-            TakenTotalMod *= GetTotalAuraMultiplier(SPELL_AURA_MOD_DAMAGE_TAKEN_FROM_CASTER_BY_LABEL, [caster, spellProto](AuraEffect const* aurEff) -> bool
-            {
-                return aurEff->GetCasterGUID() == caster->GetGUID() && spellProto->HasLabel(aurEff->GetMiscValue());
-            });
         }
 
         if (damagetype == DOT)
@@ -6843,11 +6839,6 @@ float Unit::SpellCritChanceTaken(Unit const* caster, Spell* spell, AuraEffect co
         if (crit_bonus != 0)
             AddPct(crit_bonus, crit_mod);
 
-        AddPct(crit_bonus, victim->GetTotalAuraModifier(SPELL_AURA_MOD_CRITICAL_DAMAGE_TAKEN_FROM_CASTER, [&](AuraEffect const* aurEff)
-        {
-            return aurEff->GetCasterGUID() == caster->GetGUID();
-        }));
-
         crit_bonus -= damage;
 
         // adds additional damage to critBonus (from talents)
@@ -7067,11 +7058,6 @@ uint32 Unit::SpellHealingBonusTaken(Unit* caster, SpellInfo const* spellProto, u
             if (caster->GetGUID() == aurEff->GetCasterGUID() && aurEff->IsAffectingSpell(spellProto))
                 return true;
             return false;
-        });
-
-        TakenTotalMod *= GetTotalAuraMultiplier(SPELL_AURA_MOD_HEALING_TAKEN_FROM_CASTER, [caster](AuraEffect const* aurEff) -> bool
-        {
-            return aurEff->GetCasterGUID() == caster->GetGUID();
         });
     }
 
@@ -10248,10 +10234,10 @@ void Unit::UpdateAttackTimeField(WeaponAttackType att)
     {
         case BASE_ATTACK:
         case OFF_ATTACK:
-            SetUInt32Value(UNIT_FIELD_BASEATTACKTIME + att, uint32(m_baseAttackSpeed[att] * m_modAttackSpeedPct[att]));
+            SetUInt32Value(uint16(UNIT_FIELD_BASEATTACKTIME) + att, uint32(m_baseAttackSpeed[att] * m_modAttackSpeedPct[att]));
             break;
         case RANGED_ATTACK:
-            SetUInt32Value(UNIT_FIELD_BASEATTACKTIME + att, uint32(m_baseAttackSpeed[RANGED_ATTACK] * m_modAttackSpeedPct[RANGED_ATTACK]));
+            SetUInt32Value(uint16(UNIT_FIELD_BASEATTACKTIME) + att, uint32(m_baseAttackSpeed[RANGED_ATTACK] * m_modAttackSpeedPct[RANGED_ATTACK]));
             break;
         default:
             break;;
@@ -12252,7 +12238,7 @@ void Unit::HandleSpellClick(Unit* clicker, int8 seatId /*= -1*/)
             {
                 CastSpellExtraArgs args(flags);
                 args.OriginalCaster = origCasterGUID;
-                args.AddSpellMod(SpellValueMod(SPELLVALUE_BASE_POINT0 + i), seatId + 1);
+                args.AddSpellMod(SpellValueMod(uint8(SPELLVALUE_BASE_POINT0) + i), seatId + 1);
                 caster->CastSpell(target, clickPair.second.spellId, args);
             }
             else    // This can happen during Player::_LoadAuras
@@ -13489,8 +13475,8 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
             // FIXME: Some values at server stored in float format but must be sent to client in uint32 format
             // there are some float values which may be negative or can't get negative due to other checks
             else if ((index >= UNIT_FIELD_NEGSTAT && index < UNIT_FIELD_NEGSTAT + MAX_STATS) ||
-                (index >= UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE  && index < (UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE + MAX_SPELL_SCHOOL)) ||
-                (index >= UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE  && index < (UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE + MAX_SPELL_SCHOOL)) ||
+                (index >= UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE  && index < (uint16(UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE) + MAX_SPELL_SCHOOL)) ||
+                (index >= UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE  && index < (uint16(UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE) + MAX_SPELL_SCHOOL)) ||
                 (index >= UNIT_FIELD_POSSTAT && index < UNIT_FIELD_POSSTAT + MAX_STATS))
             {
                 *data << uint32(m_floatValues[index]);

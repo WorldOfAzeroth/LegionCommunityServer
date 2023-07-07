@@ -60,6 +60,7 @@ struct Loot;
 struct MovementInfo;
 struct Petition;
 struct Position;
+enum class StableResult : uint8;
 namespace BattlePets
 {
     class BattlePetMgr;
@@ -89,7 +90,7 @@ namespace WorldPackets
         class GuildGetAchievementMembers;
     }
 
-    
+
     namespace AdventureJournal
     {
         class AdventureJournalOpenQuest;
@@ -514,6 +515,7 @@ namespace WorldPackets
         class SpiritHealerActivate;
         class TrainerBuySpell;
         class RequestStabledPets;
+        class SetPetSlot;
     }
 
     namespace Party
@@ -1026,8 +1028,7 @@ class TC_GAME_API WorldSession
         // Pet
         void SendQueryPetNameResponse(ObjectGuid guid);
         void SendStablePet(ObjectGuid guid);
-        void SendStablePetCallback(ObjectGuid guid, PreparedQueryResult result);
-        void SendPetStableResult(uint8 guid);
+        void SendPetStableResult(StableResult result);
         bool CheckStableMaster(ObjectGuid guid);
 
         // Account Data
@@ -1376,6 +1377,7 @@ class TC_GAME_API WorldSession
         void HandleNpcTextQueryOpcode(WorldPackets::Query::QueryNPCText& packet);
         void HandleBinderActivateOpcode(WorldPackets::NPC::Hello& packet);
         void HandleRequestStabledPets(WorldPackets::NPC::RequestStabledPets& packet);
+        void HandleSetPetSlot(WorldPackets::NPC::SetPetSlot& setPetSlot);
         void HandleStablePet(WorldPacket& recvPacket);
         void HandleStablePetCallback(PreparedQueryResult result);
         void HandleUnstablePet(WorldPacket& recvPacket);

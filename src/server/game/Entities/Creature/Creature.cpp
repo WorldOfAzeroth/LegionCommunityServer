@@ -241,9 +241,8 @@ WorldPacket CreatureTemplate::BuildQueryData(LocaleConstant loc) const
 
 CreatureLevelScaling const* CreatureTemplate::GetLevelScaling(Difficulty difficulty) const
 {
-    auto it = scalingStore.find(difficulty);
-    if (it != scalingStore.end())
-        return &it->second;
+    if (scalingStore.has_value())
+        return &*scalingStore;
 
     struct DefaultCreatureLevelScaling : public CreatureLevelScaling
     {
@@ -251,6 +250,8 @@ CreatureLevelScaling const* CreatureTemplate::GetLevelScaling(Difficulty difficu
         {
             DeltaLevelMin = 0;
             DeltaLevelMax = 0;
+            MinLevel = 0;
+            MaxLevel = 0;
         }
     };
     static const DefaultCreatureLevelScaling defScaling;
@@ -2853,7 +2854,8 @@ void Creature::AllLootRemovedFromCorpse()
 
 bool Creature::HasScalableLevels() const
 {
-    return GetCreatureTemplate()->GetLevelScaling(GetMap()->GetDifficultyID());
+    CreatureTemplate const* cinfo = GetCreatureTemplate();
+    return cinfo->scalingStore.has_value();
 }
 
 void Creature::ApplyLevelScaling()
@@ -3189,7 +3191,7 @@ void Creature::SetObjectScale(float scale)
     if (CreatureModelInfo const* minfo = sObjectMgr->GetCreatureModelInfo(GetDisplayId()))
     {
         SetBoundingRadius((IsPet() ? 1.0f : minfo->bounding_radius) * scale);
-        SetCombatReach((IsPet() ? UNIT_FIELD_COMBATREACH : minfo->combat_reach) * scale);
+        SetCombatReach((IsPet() ? DEFAULT_PLAYER_COMBAT_REACH : minfo->combat_reach) * scale);
     }
 }
 

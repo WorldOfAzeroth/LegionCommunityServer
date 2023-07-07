@@ -916,7 +916,7 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
         CreatureBaseStats const* stats = sObjectMgr->GetCreatureBaseStats(petlevel, cinfo->unit_class);
         ApplyLevelScaling();
 
-        SetCreateHealth(sDB2Manager.EvaluateExpectedStat(ExpectedStatType::CreatureHealth, petlevel, cinfo->GetHealthScalingExpansion(), m_unitData->ContentTuningID, Classes(cinfo->unit_class)) * cinfo->ModHealth * cinfo->ModHealthExtra * _GetHealthMod(cinfo->rank));
+        SetCreateHealth(stats->BaseHealth[cinfo->HealthScalingExpansion]);
         SetCreateMana(stats->GenerateMana(cinfo));
         SetCreateStat(STAT_STRENGTH, 22);
         SetCreateStat(STAT_AGILITY, 22);
@@ -944,8 +944,8 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
         case SUMMON_PET:
         {
             // the damage bonus used for pets is either fire or shadow damage, whatever is higher
-            int32 fire = GetOwner()->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + SPELL_SCHOOL_FIRE);
-            int32 shadow = GetOwner()->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + SPELL_SCHOOL_SHADOW);
+            int32 fire = GetOwner()->GetUInt32Value(uint16(uint16(PLAYER_FIELD_MOD_DAMAGE_DONE_POS)) + SPELL_SCHOOL_FIRE);
+            int32 shadow = GetOwner()->GetUInt32Value(uint16(PLAYER_FIELD_MOD_DAMAGE_DONE_POS) + SPELL_SCHOOL_SHADOW);
             int32 val = (fire > shadow) ? fire : shadow;
             if (val < 0)
                 val = 0;

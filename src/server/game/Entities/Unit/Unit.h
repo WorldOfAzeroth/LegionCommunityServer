@@ -868,11 +868,11 @@ class TC_GAME_API Unit : public WorldObject
             SetBonusResistanceMod(SPELL_SCHOOL_NORMAL, bonusVal);
         }
 
-        int32 GetResistance(SpellSchools school) const { return GetInt32Value(UNIT_FIELD_RESISTANCES + school); }
+        int32 GetResistance(SpellSchools school) const { return GetInt32Value(uint16(UNIT_FIELD_RESISTANCES) + school); }
         int32 GetBonusResistanceMod(SpellSchools school) const { return GetInt32Value(UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE + school); }
         int32 GetResistance(SpellSchoolMask mask) const;
-        void SetResistance(SpellSchools school, int32 val) { SetStatInt32Value(UNIT_FIELD_RESISTANCES+school, val); }
-        void SetBonusResistanceMod(SpellSchools school, int32 val) { SetStatInt32Value(UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE + school, val); }
+        void SetResistance(SpellSchools school, int32 val) { SetStatInt32Value(uint16(UNIT_FIELD_RESISTANCES)+school, val); }
+        void SetBonusResistanceMod(SpellSchools school, int32 val) { SetStatInt32Value(uint16(UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE) + school, val); }
         static float CalculateAverageResistReduction(WorldObject const* caster, SpellSchoolMask schoolMask, Unit const* victim, SpellInfo const* spellInfo = nullptr);
 
         uint64 GetHealth()    const { return GetUInt64Value(UNIT_FIELD_HEALTH); }
@@ -1464,7 +1464,7 @@ class TC_GAME_API Unit : public WorldObject
         void SetCreateMana(uint32 val) { SetUInt32Value(UNIT_FIELD_BASE_MANA, val); }
         uint32 GetCreateMana() const { return GetUInt32Value(UNIT_FIELD_BASE_MANA); }
         int32 GetCreatePowerValue(Powers power) const;
-        float GetPosStat(Stats stat) const { return GetFloatValue(UNIT_FIELD_POSSTAT + stat); }
+        float GetPosStat(Stats stat) const { return GetFloatValue(uint16(UNIT_FIELD_POSSTAT) + stat); }
         float GetNegStat(Stats stat) const { return GetFloatValue(UNIT_FIELD_NEGSTAT + stat); }
         float GetCreateStat(Stats stat) const { return m_createStats[stat]; }
 

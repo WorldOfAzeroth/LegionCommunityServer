@@ -1011,7 +1011,7 @@ typedef std::unordered_map<uint64, DungeonEncounterList> DungeonEncounterContain
 struct TerrainSwapInfo
 {
     uint32 Id;
-    std::vector<uint32> UiMapPhaseIDs;
+    std::vector<uint32> UiWorldMapAreaIDSwaps;
 };
 
 struct PhaseInfoStruct

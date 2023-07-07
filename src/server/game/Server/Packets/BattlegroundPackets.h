@@ -22,7 +22,9 @@
 #include "LFGPacketsCommon.h"
 #include "ObjectGuid.h"
 #include "Optional.h"
+#include "PacketUtilities.h"
 #include "Position.h"
+#include <array>
 
 namespace WorldPackets
 {

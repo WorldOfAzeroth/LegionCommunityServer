@@ -85,7 +85,7 @@ namespace
     }
 }
 
-CollectionMgr::CollectionMgr(WorldSession* owner) : _owner(owner), _appearances(std::make_unique<boost::dynamic_bitset<uint32>>()), _transmogIllusions(std::make_unique<boost::dynamic_bitset<uint32>>())
+CollectionMgr::CollectionMgr(WorldSession* owner) : _owner(owner), _appearances(std::make_unique<boost::dynamic_bitset<uint32>>())
 {
 }
 
@@ -322,9 +322,9 @@ void CollectionMgr::CheckHeirloomUpgrades(Item* item)
             return;
         }
 
-        auto const& bonusListIDs = item->m_itemData->BonusListIDs;
+        std::vector<uint32> const& bonusListIDs = item->GetDynamicValues(ITEM_DYNAMIC_FIELD_BONUSLIST_IDS);
 
-        for (uint32 bonusId : *bonusListIDs)
+        for (uint32 bonusId : bonusListIDs)
         {
             if (bonusId != itr->second.bonusId)
             {
@@ -333,7 +333,7 @@ void CollectionMgr::CheckHeirloomUpgrades(Item* item)
             }
         }
 
-        if (std::find(bonusListIDs->begin(), bonusListIDs->end(), int32(itr->second.bonusId)) == bonusListIDs->end())
+        if (std::find(bonusListIDs.begin(), bonusListIDs.end(), int32(itr->second.bonusId)) == bonusListIDs.end())
             item->AddBonuses(itr->second.bonusId);
     }
 }
@@ -863,7 +863,7 @@ void CollectionMgr::SetAppearanceIsFavorite(uint32 itemModifiedAppearanceId, boo
     else
         return;
 
-    WorldPackets::Transmogrification::AccountTransmogUpdate accountTransmogUpdate;
+    WorldPackets::Transmogrification::TransmogCollectionUpdate accountTransmogUpdate;
     accountTransmogUpdate.IsFullUpdate = false;
     accountTransmogUpdate.IsSetFavorite = apply;
     accountTransmogUpdate.FavoriteAppearances.push_back(itemModifiedAppearanceId);
@@ -873,7 +873,7 @@ void CollectionMgr::SetAppearanceIsFavorite(uint32 itemModifiedAppearanceId, boo
 
 void CollectionMgr::SendFavoriteAppearances() const
 {
-    WorldPackets::Transmogrification::AccountTransmogUpdate accountTransmogUpdate;
+    WorldPackets::Transmogrification::TransmogCollectionUpdate accountTransmogUpdate;
     accountTransmogUpdate.IsFullUpdate = true;
     accountTransmogUpdate.FavoriteAppearances.reserve(_favoriteAppearances.size());
     for (auto itr = _favoriteAppearances.begin(); itr != _favoriteAppearances.end(); ++itr)

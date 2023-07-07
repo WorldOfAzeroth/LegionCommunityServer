@@ -64,7 +64,7 @@ uint32 SceneMgr::PlaySceneByTemplate(SceneTemplate const* sceneTemplate, Positio
     playScene.SceneScriptPackageID = sceneTemplate->ScenePackageId;
     playScene.Location             = *position;
     playScene.TransportGUID        = GetPlayer()->GetTransGUID();
-    playScene.Encrypted            = sceneTemplate->Encrypted;
+    playScene.PlaybackFlags        = sceneTemplate->Encrypted;
     playScene.Write();
 
     if (GetPlayer()->IsInWorld())

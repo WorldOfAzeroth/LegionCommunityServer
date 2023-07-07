@@ -285,14 +285,13 @@ void PhasingHandler::OnMapChange(WorldObject* object)
                     phaseShift.AddVisibleMapId(visibleMapInfo->Id, visibleMapInfo);
 
                 // ui map is visible on all maps
-                for (uint32 uiMapPhaseId : visibleMapInfo->UiMapPhaseIDs)
-                    phaseShift.AddUiMapPhaseId(uiMapPhaseId);
+                for (uint32 uiWorldMapAreaIdSwap : visibleMapInfo->UiWorldMapAreaIDSwaps)
+                    phaseShift.AddUiWorldMapAreaIdSwap(uiWorldMapAreaIdSwap);
             }
             else if (visibleMapPair.first == object->GetMapId())
                 suppressedPhaseShift.AddVisibleMapId(visibleMapInfo->Id, visibleMapInfo);
         }
     }
-
     UpdateVisibilityIfNeeded(object, false, true);
 }
 

@@ -1678,7 +1678,7 @@ void Player::SetObjectScale(float scale)
     SetBoundingRadius(scale * DEFAULT_PLAYER_BOUNDING_RADIUS);
     SetCombatReach(scale * DEFAULT_PLAYER_COMBAT_REACH);
     if (IsInWorld())
-        SendMovementSetCollisionHeight(scale * GetCollisionHeight());
+        SendMovementSetCollisionHeight(GetCollisionHeight(), WorldPackets::Movement::UpdateCollisionHeightReason::Scale);
 }
 
 bool Player::IsImmunedToSpellEffect(SpellInfo const* spellInfo, SpellEffectInfo const& spellEffectInfo, WorldObject const* caster,
@@ -5022,7 +5022,7 @@ float Player::GetRatingMultiplier(CombatRating cr) const
 
 float Player::GetRatingBonusValue(CombatRating cr) const
 {
-    float baseResult = float(GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + cr)) * GetRatingMultiplier(cr);
+    float baseResult = float(GetUInt32Value(uint16(PLAYER_FIELD_COMBAT_RATING_1) + cr)) * GetRatingMultiplier(cr);
     if (cr != CR_RESILIENCE_PLAYER_DAMAGE)
         return baseResult;
     return float(1.0f - pow(0.99f, baseResult)) * 100.0f;
@@ -5073,8 +5073,8 @@ void Player::UpdateRating(CombatRating cr)
     if (amount < 0)
         amount = 0;
 
-    uint32 oldRating = GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + cr);
-    SetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + cr, uint32(amount));
+    uint32 oldRating = GetUInt32Value(uint16(PLAYER_FIELD_COMBAT_RATING_1) + cr);
+    SetUInt32Value(uint16(PLAYER_FIELD_COMBAT_RATING_1) + cr, uint32(amount));
 
     bool affectStats = CanModifyStats();
 
@@ -5384,8 +5384,8 @@ bool Player::UpdateSkillPro(uint16 skillId, int32 chance, uint32 step)
     uint16 field = itr->second.pos / 2;
     uint8 offset = itr->second.pos & 1; // itr->second.pos % 2
 
-    uint16 value = GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_RANK_OFFSET + field, offset);
-    uint16 max = GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_MAX_RANK_OFFSET + field, offset);
+    uint16 value = GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_RANK_OFFSET + field, offset);
+    uint16 max = GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_MAX_RANK_OFFSET + field, offset);
 
     if (!max || !value || value >= max)
         return false;
@@ -5427,7 +5427,7 @@ void Player::ModifySkillBonus(uint32 skillid, int32 val, bool talent)
     if (itr == mSkillStatus.end() || itr->second.uState == SKILL_DELETED)
         return;
 
-    uint16 field = itr->second.pos / 2 + (talent ? PLAYER_SKILL_LINEID + SKILL_PERM_BONUS_OFFSET : PLAYER_SKILL_LINEID + SKILL_TEMP_BONUS_OFFSET);
+    uint16 field = itr->second.pos / 2 + (talent ? uint16(PLAYER_SKILL_LINEID) + SKILL_PERM_BONUS_OFFSET : uint16(PLAYER_SKILL_LINEID) + SKILL_TEMP_BONUS_OFFSET);
     uint8 offset = itr->second.pos & 1; // itr->second.pos % 2
 
     uint16 bonus = GetUInt16Value(field, offset);
@@ -5464,7 +5464,7 @@ void Player::UpdateSkillsForLevel()
         }
 
         // Update level dependent skillline spells
-        LearnSkillRewardedSpells(rcEntry->SkillID, GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_RANK_OFFSET + field, offset), Races(GetRace()));
+        LearnSkillRewardedSpells(rcEntry->SkillID, GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_RANK_OFFSET + field, offset), Races(GetRace()));
     }
 }
 
@@ -5499,7 +5499,7 @@ void Player::SetSkill(uint32 id, uint16 step, uint16 newVal, uint16 maxVal)
     {
         uint16 field = itr->second.pos / 2;
         uint8 offset = itr->second.pos & 1; // itr->second.pos % 2
-        currVal = GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_RANK_OFFSET + field, offset);
+        currVal = GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_RANK_OFFSET + field, offset);
         if (newVal)
         {
             // if skill value is going down, update enchantments before setting the new value
@@ -5575,7 +5575,7 @@ void Player::SetSkill(uint32 id, uint16 step, uint16 newVal, uint16 maxVal)
         // Find a free skill slot
         for (uint32 i = 0; i < PLAYER_MAX_SKILLS; ++i)
         {
-            if (!GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_ID_OFFSET + (i / 2), (i & 1)))
+            if (!GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_ID_OFFSET + (i / 2), (i & 1)))
             {
                 skillSlot = i;
                 break;
@@ -5660,7 +5660,7 @@ uint16 Player::GetSkillStep(uint32 skill) const
     if (itr == mSkillStatus.end() || itr->second.uState == SKILL_DELETED)
         return 0;
 
-    return GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_STEP_OFFSET + itr->second.pos / 2, itr->second.pos & 1);
+    return GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_STEP_OFFSET + itr->second.pos / 2, itr->second.pos & 1);
 }
 
 uint16 Player::GetSkillValue(uint32 skill) const
@@ -5675,9 +5675,9 @@ uint16 Player::GetSkillValue(uint32 skill) const
     uint16 field = itr->second.pos / 2;
     uint8 offset = itr->second.pos & 1;
 
-    int32 result = int32(GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_RANK_OFFSET + field, offset));
-    result += int32(GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_TEMP_BONUS_OFFSET + field, offset));
-    result += int32(GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_PERM_BONUS_OFFSET + field, offset));
+    int32 result = int32(GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_RANK_OFFSET + field, offset));
+    result += int32(GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_TEMP_BONUS_OFFSET + field, offset));
+    result += int32(GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_PERM_BONUS_OFFSET + field, offset));
     return result < 0 ? 0 : result;
 }
 
@@ -5693,9 +5693,9 @@ uint16 Player::GetMaxSkillValue(uint32 skill) const
     uint16 field = itr->second.pos / 2;
     uint8 offset = itr->second.pos & 1;
 
-    int32 result = int32(GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_MAX_RANK_OFFSET + field, offset));
-    result += int32(GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_TEMP_BONUS_OFFSET + field, offset));
-    result += int32(GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_PERM_BONUS_OFFSET + field, offset));
+    int32 result = int32(GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_MAX_RANK_OFFSET + field, offset));
+    result += int32(GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_TEMP_BONUS_OFFSET + field, offset));
+    result += int32(GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_PERM_BONUS_OFFSET + field, offset));
     return result < 0 ? 0 : result;
 }
 
@@ -5711,7 +5711,7 @@ uint16 Player::GetPureMaxSkillValue(uint32 skill) const
     uint16 field = itr->second.pos / 2;
     uint8 offset = itr->second.pos & 1;
 
-    return GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_MAX_RANK_OFFSET + field, offset);
+    return GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_MAX_RANK_OFFSET + field, offset);
 }
 
 uint16 Player::GetBaseSkillValue(uint32 skill) const
@@ -5726,8 +5726,8 @@ uint16 Player::GetBaseSkillValue(uint32 skill) const
     uint16 field = itr->second.pos / 2;
     uint8 offset = itr->second.pos & 1;
 
-    int32 result = int32(GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_RANK_OFFSET + field, offset));
-    result += int32(GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_PERM_BONUS_OFFSET + field, offset));
+    int32 result = int32(GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_RANK_OFFSET + field, offset));
+    result += int32(GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_PERM_BONUS_OFFSET + field, offset));
     return result < 0 ? 0 : result;
 }
 
@@ -5743,7 +5743,7 @@ uint16 Player::GetPureSkillValue(uint32 skill) const
     uint16 field = itr->second.pos / 2;
     uint8 offset = itr->second.pos & 1;
 
-    return GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_RANK_OFFSET + field, offset);
+    return GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_RANK_OFFSET + field, offset);
 }
 
 int16 Player::GetSkillPermBonusValue(uint32 skill) const
@@ -5758,7 +5758,7 @@ int16 Player::GetSkillPermBonusValue(uint32 skill) const
     uint16 field = itr->second.pos / 2;
     uint8 offset = itr->second.pos & 1;
 
-    return GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_PERM_BONUS_OFFSET + field, offset);
+    return GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_PERM_BONUS_OFFSET + field, offset);
 }
 
 int16 Player::GetSkillTempBonusValue(uint32 skill) const
@@ -5773,7 +5773,7 @@ int16 Player::GetSkillTempBonusValue(uint32 skill) const
     uint16 field = itr->second.pos / 2;
     uint8 offset = itr->second.pos & 1;
 
-    return GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_TEMP_BONUS_OFFSET + field, offset);
+    return GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_TEMP_BONUS_OFFSET + field, offset);
 }
 
 void Player::SendActionButtons(uint32 state) const
@@ -6497,7 +6497,6 @@ void Player::ResetHonorStats()
 {
     SetUInt16Value(PLAYER_FIELD_KILLS, PLAYER_FIELD_KILLS_OFFSET_TODAY_KILLS, 0);
     SetUInt16Value(PLAYER_FIELD_KILLS, PLAYER_FIELD_KILLS_OFFSET_YESTERDAY_KILLS, 0);
-    SetUInt16Value(PLAYER_FIELD_KILLS, PLAYER_FIELD_LIFETIME_HONORABLE_KILLS, 0);
 }
 
 void Player::_InitHonorLevelOnLoadFromDB(uint32 honor, uint32 honorLevel, uint32 prestigeLevel)
@@ -7959,7 +7958,7 @@ void Player::ApplyArtifactPowerRank(Item* artifact, ArtifactPowerRankEntry const
             args.SetCastItem(artifact);
             if (artifactPowerRank->AuraPointsOverride)
                 for (SpellEffectInfo const& spellEffectInfo : spellInfo->GetEffects())
-                    args.AddSpellMod(SpellValueMod(SPELLVALUE_BASE_POINT0 + spellEffectInfo.EffectIndex), artifactPowerRank->AuraPointsOverride);
+                    args.AddSpellMod(SpellValueMod(uint8(SPELLVALUE_BASE_POINT0) + spellEffectInfo.EffectIndex), artifactPowerRank->AuraPointsOverride);
 
             CastSpell(this, artifactPowerRank->SpellID, args);
         }
@@ -8155,7 +8154,7 @@ void Player::CastItemCombatSpell(DamageInfo const& damageInfo, Item* item, ItemT
 
                     for (SpellEffectInfo const& spellEffectInfo : spellInfo->GetEffects())
                         if (spellEffectInfo.IsEffect())
-                            args.AddSpellMod(static_cast<SpellValueMod>(SPELLVALUE_BASE_POINT0 + spellEffectInfo.EffectIndex), CalculatePct(spellEffectInfo.CalcValue(this), effectPct));
+                            args.AddSpellMod(static_cast<SpellValueMod>(uint8(uint8(SPELLVALUE_BASE_POINT0)) + spellEffectInfo.EffectIndex), CalculatePct(spellEffectInfo.CalcValue(this), effectPct));
                 }
                 CastSpell(target, spellInfo->Id, args);
             }
@@ -9113,7 +9112,7 @@ void Player::SetInventorySlotCount(uint8 slots)
 
             CharacterDatabase.CommitTransaction(trans);
 
-            SendDirectMessage(WorldPackets::Item::InventoryFullOverflow().Write());
+            SendDirectMessage(WorldPackets::Item::CharacterInventoryOverflowWarning().Write());
         }
     }
 
@@ -13381,7 +13380,42 @@ void Player::PrepareGossipMenu(WorldObject* source, uint32 menuId, bool showQues
         }
 
         if (canTalk)
-            menu->GetGossipMenu().AddMenuItem(gossipMenuItem, gossipMenuItem.MenuID, gossipMenuItem.OrderIndex);
+        {
+            std::string strOptionText, strBoxText;
+            BroadcastTextEntry const* optionBroadcastText = sBroadcastTextStore.LookupEntry(gossipMenuItem.OptionBroadcastTextID);
+            BroadcastTextEntry const* boxBroadcastText = sBroadcastTextStore.LookupEntry(gossipMenuItem.BoxBroadcastTextID);
+            LocaleConstant locale = GetSession()->GetSessionDbLocaleIndex();
+
+            if (optionBroadcastText)
+                strOptionText = DB2Manager::GetBroadcastTextValue(optionBroadcastText, locale, GetGender());
+            else
+                strOptionText = gossipMenuItem.OptionText;
+
+            if (boxBroadcastText)
+                strBoxText = DB2Manager::GetBroadcastTextValue(boxBroadcastText, locale, GetGender());
+            else
+                strBoxText = gossipMenuItem.BoxText;
+
+            if (locale != DEFAULT_LOCALE)
+            {
+                if (!optionBroadcastText)
+                {
+                    /// Find localizations from database.
+                    if (GossipMenuItemsLocale const* gossipMenuLocale = sObjectMgr->GetGossipMenuItemsLocale(menuId, gossipMenuItem.OptionID))
+                        ObjectMgr::GetLocaleString(gossipMenuLocale->OptionText, locale, strOptionText);
+                }
+
+                if (!boxBroadcastText)
+                {
+                    /// Find localizations from database.
+                    if (GossipMenuItemsLocale const* gossipMenuLocale = sObjectMgr->GetGossipMenuItemsLocale(menuId, gossipMenuItem.OptionID))
+                        ObjectMgr::GetLocaleString(gossipMenuLocale->BoxText, locale, strBoxText);
+                }
+            }
+
+            menu->GetGossipMenu().AddMenuItem(gossipMenuItem.OptionID, gossipMenuItem.OptionNpc, strOptionText, 0, AsUnderlyingType(gossipMenuItem.OptionNpc), strBoxText, gossipMenuItem.BoxMoney, gossipMenuItem.BoxCoded);
+            menu->GetGossipMenu().AddGossipMenuItemData(gossipMenuItem.OptionID, gossipMenuItem.ActionMenuID, gossipMenuItem.ActionPoiID);
+        }
     }
 }
 
@@ -13435,6 +13469,10 @@ void Player::OnGossipSelect(WorldObject* source, int32 gossipOptionId, uint32 me
         }
     }
 
+    GossipMenuItemData const* menuItemData = gossipMenu.GetItemData(gossipOptionId);
+    if (!menuItemData)
+        return;
+
     int64 cost = int64(item->BoxMoney);
     if (!HasEnoughMoney(cost))
     {
@@ -13443,19 +13481,21 @@ void Player::OnGossipSelect(WorldObject* source, int32 gossipOptionId, uint32 me
         return;
     }
 
-    if (item->ActionPoiID)
-        PlayerTalkClass->SendPointOfInterest(item->ActionPoiID);
-
-    if (item->ActionMenuID)
-    {
-        PrepareGossipMenu(source, item->ActionMenuID);
-        SendPreparedGossip(source);
-    }
-
-    // types that have their dedicated open opcode dont send WorldPackets::NPC::GossipOptionNPCInteraction
-    bool handled = true;
     switch (gossipOptionNpc)
     {
+        case GossipOptionNpc::None:
+        {
+            if (menuItemData->GossipActionPoi)
+                PlayerTalkClass->SendPointOfInterest(menuItemData->GossipActionPoi);
+
+            if (menuItemData->GossipActionMenuId)
+            {
+                PrepareGossipMenu(source, menuItemData->GossipActionMenuId);
+                SendPreparedGossip(source);
+            }
+
+            break;
+        }
         case GossipOptionNpc::Vendor:
             GetSession()->SendListInventory(guid);
             break;
@@ -13463,15 +13503,27 @@ void Player::OnGossipSelect(WorldObject* source, int32 gossipOptionId, uint32 me
             GetSession()->SendTaxiMenu(source->ToCreature());
             break;
         case GossipOptionNpc::Trainer:
-            GetSession()->SendTrainerList(source->ToCreature(), sObjectMgr->GetCreatureTrainerForGossipOption(source->GetEntry(), menuId, item->OrderIndex));
+            GetSession()->SendTrainerList(source->ToCreature(), sObjectMgr->GetCreatureTrainerForGossipOption(source->GetEntry(), menuId, gossipOptionId));
             break;
         case GossipOptionNpc::SpiritHealer:
-            source->CastSpell(source->ToCreature(), 17251, CastSpellExtraArgs(TRIGGERED_FULL_MASK).SetOriginalCaster(GetGUID()));
-            handled = false;
+            if (isDead())
+                source->ToCreature()->CastSpell(source->ToCreature(), 17251, CastSpellExtraArgs(TRIGGERED_FULL_MASK)
+                    .SetOriginalCaster(GetGUID()));
+            break;
+        case GossipOptionNpc::Binder:
+            PlayerTalkClass->SendCloseGossip();
+            SetBindPoint(guid);
+            break;
+        case GossipOptionNpc::Banker:
+            GetSession()->SendShowBank(guid);
             break;
         case GossipOptionNpc::PetitionVendor:
             PlayerTalkClass->SendCloseGossip();
             GetSession()->SendPetitionShowList(guid);
+            break;
+        case GossipOptionNpc::TabardVendor:
+            PlayerTalkClass->SendCloseGossip();
+            GetSession()->SendTabardVendorActivate(guid);
             break;
         case GossipOptionNpc::Battlemaster:
         {
@@ -13521,6 +13573,9 @@ void Player::OnGossipSelect(WorldObject* source, int32 gossipOptionId, uint32 me
             RemoveAurasDueToSpell(SPELL_EXPERIENCE_ELIMINATED);
             RemovePlayerFlag(PLAYER_FLAGS_NO_XP_GAIN);
             break;
+        case GossipOptionNpc::Mailbox:
+            GetSession()->SendShowMailBox(guid);
+            break;
         case GossipOptionNpc::SpecializationMaster:
             PlayerTalkClass->SendCloseGossip();
             SendRespecWipeConfirm(guid, 0, SPEC_RESET_SPECIALIZATION);
@@ -13528,6 +13583,9 @@ void Player::OnGossipSelect(WorldObject* source, int32 gossipOptionId, uint32 me
         case GossipOptionNpc::GlyphMaster:
             PlayerTalkClass->SendCloseGossip();
             SendRespecWipeConfirm(guid, 0, SPEC_RESET_GLYPHS);
+            break;
+        case GossipOptionNpc::Transmogrify:
+            GetSession()->SendOpenTransmogrifier(guid);
             break;
         case GossipOptionNpc::GarrisonTradeskillNpc: // NYI
             break;
@@ -13546,7 +13604,6 @@ void Player::OnGossipSelect(WorldObject* source, int32 gossipOptionId, uint32 me
         case GossipOptionNpc::BarbersChoice: // NYI - unknown if needs sending
             break;
         default:
-            handled = false;
             break;
     }
 
@@ -16142,7 +16199,7 @@ void Player::SendPushToPartyResponse(Player const* player, QuestPushReason reaso
     {
         WorldPackets::Quest::QuestPushResultResponse data;
         data.SenderGUID = player->GetGUID();
-        data.Result = reason; // valid values: 0-13
+        data.Result = uint8(reason); // valid values: 0-13
         SendDirectMessage(data.Write());
     }
 }
@@ -17551,9 +17608,7 @@ void Player::LoadCorpse(PreparedQueryResult result)
     RemoveAtLoginFlag(AT_LOGIN_RESURRECT);
 }
 
-void Player::_LoadInventory(PreparedQueryResult result, PreparedQueryResult artifactsResult, PreparedQueryResult azeriteResult,
-    PreparedQueryResult azeriteItemMilestonePowersResult, PreparedQueryResult azeriteItemUnlockedEssencesResult,
-    PreparedQueryResult azeriteEmpoweredItemResult, uint32 timeDiff)
+void Player::_LoadInventory(PreparedQueryResult result, PreparedQueryResult artifactsResult, uint32 timeDiff)
 {
     //           0          1            2                3      4         5        6      7             8                 9          10          11    12
     // SELECT guid, itemEntry, creatorGuid, giftCreatorGuid, count, duration, charges, flags, enchantments, randomPropertyId, durability, playedTime, text,
@@ -18714,7 +18769,7 @@ void Player::SaveToDB(LoginDatabaseTransaction loginTransaction, CharacterDataba
             stmt->setUInt8(index++, GetByteValue(PLAYER_BYTES_2, PLAYER_BYTES_2_OFFSET_CUSTOM_DISPLAY_OPTION + i));
         stmt->setUInt8(index++, GetInventorySlotCount());
         stmt->setUInt8(index++, GetBankBagSlotCount());
-        stmt->setUInt8(index++, uint8(GetUInt32Value(PLAYER_FIELD_REST_INFO + REST_STATE_XP)));
+        stmt->setUInt8(index++, uint8(GetUInt32Value(uint16(PLAYER_FIELD_REST_INFO) + REST_STATE_XP)));
         stmt->setUInt32(index++, GetUInt32Value(PLAYER_FLAGS));
         stmt->setUInt32(index++, GetUInt32Value(PLAYER_FLAGS_EX));
         stmt->setUInt16(index++, (uint16)GetMapId());
@@ -18840,7 +18895,7 @@ void Player::SaveToDB(LoginDatabaseTransaction loginTransaction, CharacterDataba
             stmt->setUInt8(index++, GetByteValue(PLAYER_BYTES_2, PLAYER_BYTES_2_OFFSET_CUSTOM_DISPLAY_OPTION + i));
         stmt->setUInt8(index++, GetInventorySlotCount());
         stmt->setUInt8(index++, GetBankBagSlotCount());
-        stmt->setUInt8(index++, uint8(GetUInt32Value(PLAYER_FIELD_REST_INFO + REST_STATE_XP)));
+        stmt->setUInt8(index++, uint8(GetUInt32Value(uint16(PLAYER_FIELD_REST_INFO) + REST_STATE_XP)));
         stmt->setUInt32(index++, GetUInt32Value(PLAYER_FLAGS));
         stmt->setUInt32(index++, GetUInt32Value(PLAYER_FLAGS_EX));
 
@@ -18970,7 +19025,7 @@ void Player::SaveToDB(LoginDatabaseTransaction loginTransaction, CharacterDataba
         stmt->setUInt32(index++, GetUInt32Value(PLAYER_FIELD_HONOR));
         stmt->setUInt32(index++, GetHonorLevel());
         stmt->setUInt32(index++, GetPrestigeLevel());
-        stmt->setUInt8(index++, uint8(GetUInt32Value(PLAYER_FIELD_REST_INFO + REST_STATE_HONOR)));
+        stmt->setUInt8(index++, uint8(GetUInt32Value(uint16(PLAYER_FIELD_REST_INFO) + REST_STATE_HONOR)));
         stmt->setFloat(index++, finiteAlways(_restMgr->GetRestBonus(REST_TYPE_HONOR)));
 
         // Index
@@ -19670,8 +19725,8 @@ void Player::_SaveSkills(CharacterDatabaseTransaction trans)
 
         uint16 field = itr->second.pos / 2;
         uint8 offset = itr->second.pos & 1;
-        uint16 value = GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_RANK_OFFSET + field, offset);
-        uint16 max = GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_MAX_RANK_OFFSET + field, offset);
+        uint16 value = GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_RANK_OFFSET + field, offset);
+        uint16 max = GetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_MAX_RANK_OFFSET + field, offset);
 
         switch (itr->second.uState)
         {
@@ -19783,7 +19838,7 @@ void Player::_SaveStats(CharacterDatabaseTransaction trans) const
     stmt->setUInt32(index++, GetUInt32Value(UNIT_FIELD_ATTACK_POWER));
     stmt->setUInt32(index++, GetUInt32Value(UNIT_FIELD_RANGED_ATTACK_POWER));
     stmt->setUInt32(index++, GetBaseSpellPowerBonus());
-    stmt->setUInt32(index, GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + CR_RESILIENCE_PLAYER_DAMAGE));
+    stmt->setUInt32(index, GetUInt32Value(uint16(PLAYER_FIELD_COMBAT_RATING_1) + CR_RESILIENCE_PLAYER_DAMAGE));
 
     trans->Append(stmt);
 }
@@ -22241,8 +22296,8 @@ uint8 Player::GetStartLevel(uint8 race, uint8 playerClass, Optional<int32> chara
                 startLevel = std::max(charTemplate->Level, startLevel);
         }
         else
-            TC_LOG_WARN("cheat", "Account: %u (IP: %s) tried to use a character template without given permission. Possible cheating attempt.",
-                m_session->GetAccountId(), m_session->GetRemoteAddress().c_str());
+            TC_LOG_WARN("cheat", "Account: {} (IP: {}) tried to use a character template without given permission. Possible cheating attempt.",
+                m_session->GetAccountId(), m_session->GetRemoteAddress());
     }
 
     if (m_session->HasPermission(rbac::RBAC_PERM_USE_START_GM_LEVEL))
@@ -22745,7 +22800,7 @@ void Player::SendInitialPacketsBeforeAddToMap()
     SendDirectMessage(mountUpdate.Write());
 
     // SMSG_ACCOUNT_TOYS_UPDATE
-    WorldPackets::Toy::AccountToyUpdate toyUpdate;
+    WorldPackets::Toy::AccountToysUpdate toyUpdate;
     toyUpdate.IsFullUpdate = true;
     toyUpdate.Toys = &GetSession()->GetCollectionMgr()->GetAccountToys();
     SendDirectMessage(toyUpdate.Write());
@@ -23654,41 +23709,19 @@ void Player::SendSummonRequestFrom(Unit* summoner)
     summonRequest.SummonerVirtualRealmAddress = GetVirtualRealmAddress();
     summonRequest.AreaID = summoner->GetZoneId();
     SendDirectMessage(summonRequest.Write());
-
-    if (Group const* group = GetGroup())
-    {
-        WorldPackets::Party::BroadcastSummonCast summonCast;
-        summonCast.Target = GetGUID();
-        group->BroadcastPacket(summonCast.Write(), false);
-    }
 }
 
 void Player::SummonIfPossible(bool agree)
 {
-    auto broadcastSummonResponse = [&](bool accepted)
-    {
-        if (Group const* group = GetGroup())
-        {
-            WorldPackets::Party::BroadcastSummonResponse summonResponse;
-            summonResponse.Target = GetGUID();
-            summonResponse.Accepted = accepted;
-            group->BroadcastPacket(summonResponse.Write(), false);
-        }
-    };
-
     if (!agree)
     {
         m_summon_expire = 0;
-        broadcastSummonResponse(false);
         return;
     }
 
     // expire and auto declined
     if (m_summon_expire < GameTime::GetGameTime())
-    {
-        broadcastSummonResponse(false);
         return;
-    }
 
     // stop taxi flight at summon
     FinishTaxiFlight();
@@ -23704,8 +23737,6 @@ void Player::SummonIfPossible(bool agree)
     RemoveAurasWithInterruptFlags(SpellAuraInterruptFlags::Summon);
 
     TeleportTo(m_summon_location, 0, m_summon_instanceId);
-
-    broadcastSummonResponse(true);
 }
 
 void Player::RemoveItemDurations(Item* item)

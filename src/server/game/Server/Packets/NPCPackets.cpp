@@ -191,3 +191,10 @@ void WorldPackets::NPC::RequestStabledPets::Read()
 {
     _worldPacket >> StableMaster;
 }
+
+void WorldPackets::NPC::SetPetSlot::Read()
+{
+    _worldPacket >> PetNumber;
+    _worldPacket >> DestSlot;
+    _worldPacket >> StableMaster;
+}

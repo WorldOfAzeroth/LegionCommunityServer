@@ -893,6 +893,7 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOAD_BOUND_INSTANCES,
     PLAYER_LOGIN_QUERY_LOAD_AURAS,
     PLAYER_LOGIN_QUERY_LOAD_AURA_EFFECTS,
+    PLAYER_LOGIN_QUERY_LOAD_AURA_STORED_LOCATIONS,
     PLAYER_LOGIN_QUERY_LOAD_SPELLS,
     PLAYER_LOGIN_QUERY_LOAD_QUEST_STATUS,
     PLAYER_LOGIN_QUERY_LOAD_QUEST_STATUS_OBJECTIVES,
@@ -903,8 +904,9 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOAD_INVENTORY,
     PLAYER_LOGIN_QUERY_LOAD_ARTIFACTS,
     PLAYER_LOGIN_QUERY_LOAD_ACTIONS,
-    PLAYER_LOGIN_QUERY_LOAD_MAIL_COUNT,
-    PLAYER_LOGIN_QUERY_LOAD_MAIL_DATE,
+    PLAYER_LOGIN_QUERY_LOAD_MAILS,
+    PLAYER_LOGIN_QUERY_LOAD_MAIL_ITEMS,
+    PLAYER_LOGIN_QUERY_LOAD_MAIL_ITEMS_ARTIFACT,
     PLAYER_LOGIN_QUERY_LOAD_SOCIAL_LIST,
     PLAYER_LOGIN_QUERY_LOAD_HOME_BIND,
     PLAYER_LOGIN_QUERY_LOAD_SPELL_COOLDOWNS,
@@ -933,6 +935,7 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOAD_CURRENCY,
     PLAYER_LOGIN_QUERY_LOAD_CUF_PROFILES,
     PLAYER_LOGIN_QUERY_LOAD_CORPSE_LOCATION,
+    PLAYER_LOGIN_QUERY_LOAD_PET_SLOTS,
     PLAYER_LOGIN_QUERY_LOAD_GARRISON,
     PLAYER_LOGIN_QUERY_LOAD_GARRISON_BLUEPRINTS,
     PLAYER_LOGIN_QUERY_LOAD_GARRISON_BUILDINGS,
@@ -2175,12 +2178,12 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void LearnSkillRewardedSpells(uint32 skillId, uint32 skillValue, Races race);
         int32 FindProfessionSlotFor(uint32 skillId) const;
         void SetSkillLineId(uint32 pos, uint16 skillLineId) { SetUInt16Value(PLAYER_SKILL_LINEID + (pos / 2), pos & 1, skillLineId); }
-        void SetSkillStep(uint32 pos, uint16 step) { SetUInt16Value(PLAYER_SKILL_LINEID + SKILL_STEP_OFFSET + (pos / 2), pos & 1, step); };
-        void SetSkillRank(uint32 pos, uint16 rank) { SetUInt16Value(PLAYER_SKILL_LINEID + SKILL_RANK_OFFSET + (pos / 2), pos & 1, rank); }
-        void SetSkillStartingRank(uint32 pos, uint16 starting) { SetUInt16Value(PLAYER_SKILL_LINEID + SUBSKILL_START_RANK_OFFSET + (pos / 2), pos & 1, starting); }
-        void SetSkillMaxRank(uint32 pos, uint16 max) { SetUInt16Value(PLAYER_SKILL_LINEID + SKILL_MAX_RANK_OFFSET + (pos / 2), pos & 1, max); }
-        void SetSkillTempBonus(uint32 pos, uint16 bonus) { SetUInt16Value(PLAYER_SKILL_LINEID + SKILL_TEMP_BONUS_OFFSET + (pos / 2), pos & 1, bonus); }
-        void SetSkillPermBonus(uint32 pos, uint16 bonus) { SetUInt16Value(PLAYER_SKILL_LINEID + SKILL_PERM_BONUS_OFFSET + (pos / 2), pos & 1, bonus); }
+        void SetSkillStep(uint32 pos, uint16 step) { SetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_STEP_OFFSET + (pos / 2), pos & 1, step); };
+        void SetSkillRank(uint32 pos, uint16 rank) { SetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_RANK_OFFSET + (pos / 2), pos & 1, rank); }
+        void SetSkillStartingRank(uint32 pos, uint16 starting) { SetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SUBSKILL_START_RANK_OFFSET + (pos / 2), pos & 1, starting); }
+        void SetSkillMaxRank(uint32 pos, uint16 max) { SetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_MAX_RANK_OFFSET + (pos / 2), pos & 1, max); }
+        void SetSkillTempBonus(uint32 pos, uint16 bonus) { SetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_TEMP_BONUS_OFFSET + (pos / 2), pos & 1, bonus); }
+        void SetSkillPermBonus(uint32 pos, uint16 bonus) { SetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_PERM_BONUS_OFFSET + (pos / 2), pos & 1, bonus); }
 
         WorldLocation& GetTeleportDest() { return m_teleport_dest; }
         Optional<uint32> GetTeleportDestInstanceId() const { return m_teleport_instanceId; }
@@ -2673,8 +2676,8 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         SceneMgr& GetSceneMgr() { return m_sceneMgr; }
         SceneMgr const& GetSceneMgr() const { return m_sceneMgr; }
         RestMgr& GetRestMgr() const { return *_restMgr; }
-        void SetRestState(RestTypes type, PlayerRestState state) { SetUInt32Value(PLAYER_FIELD_REST_INFO + type, state); }
-        void SetRestThreshold(RestTypes type, uint32 threshold) { SetUInt32Value(PLAYER_FIELD_REST_INFO + type, threshold); }
+        void SetRestState(RestTypes type, PlayerRestState state) { SetUInt32Value(uint16(PLAYER_FIELD_REST_INFO) + type, state); }
+        void SetRestThreshold(RestTypes type, uint32 threshold) { SetUInt32Value(uint16(PLAYER_FIELD_REST_INFO) + type, threshold); }
 
         void SendPlayerChoice(ObjectGuid sender, int32 choiceId);
 

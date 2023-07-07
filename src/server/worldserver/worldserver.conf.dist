@@ -342,6 +342,15 @@ InstanceMapLoadAllGrids = 0
 SocketTimeOutTime = 900000
 
 #
+#    SocketTimeOutTimeActive
+#        Description: Time (in milliseconds) after which an idle connection is dropped while
+#                     logged into the world.
+#                     The client sends keepalive packets every 30 seconds. Values <= 30s are not recommended.
+#        Default:     60000 - (1 minute)
+
+SocketTimeOutTimeActive = 60000
+
+#
 #    SessionAddDelay
 #        Description: Time (in microseconds) that a network thread will sleep after authentication
 #                     protocol handling before adding a connection to the world session map.
@@ -437,6 +446,15 @@ vmap.enableIndoorCheck = 1
 DetectPosCollision = 1
 
 #
+#    CheckGameObjectLoS
+#        Description: Include dynamic game objects (doors, chests etc.) in line of sight checks.
+#                     This increases CPU usage somewhat.
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled, may break some boss encounters)
+
+CheckGameObjectLoS = 1
+
+#
 #    TargetPosRecalculateRange
 #        Description: Max distance from movement target point (+moving unit size) and targeted
 #                     object (+size) after that new target movement point calculated.
@@ -516,13 +534,12 @@ CleanCharacterDB = 0
 PersistentCharacterCleanFlags = 0
 
 #
-#    Auction.GetAllScanDelay
-#        Description: Sets the minimum time in seconds, a single player character can perform a getall scan.
+#    Auction.ReplicateItemsCooldown
+#        Description: Sets the minimum time in seconds, a single player character can perform a complete auction house scan.
 #                     The value is only held in memory so a server restart will clear it.
-#                     Setting this to zero, will disable GetAll functions completely.
-#        Default:     900 - (GetAll scan limited to once every 15mins per player character)
+#        Default:     900 - (Replicate scan limited to once every 15mins per player character)
 
-Auction.GetAllScanDelay = 900
+Auction.ReplicateItemsCooldown = 900
 
 #
 #    Auction.SearchDelay
@@ -532,6 +549,15 @@ Auction.GetAllScanDelay = 900
 #        Default:     300 - (Time delay between auction searches set to 0.3secs)
 
 Auction.SearchDelay = 300
+
+#
+#    Auction.TaintedSearchDelay
+#        Description: Sets the minimum time in milliseconds (seconds x 1000), that the client must wait between
+#                     auction search operations if auction house addon tainted lua environment. This can be increased
+#                     if somehow Auction House activity is causing too much load.
+#        Default:     3000 - (Time delay between auction searches set to 3secs)
+
+Auction.TaintedSearchDelay = 3000
 
 #
 ###################################################################################################
@@ -765,10 +791,20 @@ CharacterCreating.Disabled = 0
 #                     256  - (Disabled, Goblin)
 #                     512  - (Disabled, Blood Elf)
 #                     1024 - (Disabled, Draenei)
+#                     2048 - (Disabled, Dark Iron Dwarf)
+#                     4096 - (Disabled, Vulpera)
+#                     8192 - (Disabled, Maghar Orc)
+#                     16384 - (Disabled, Mechagnome)
 #                     2097152 - (Disabled, Worgen)
 #                     8388608 - (Disabled, Pandaren Neutral)
 #                     16777216 - (Disabled, Pandaren Alliance)
 #                     33554432 - (Disabled, Pandaren Horde)
+#                     67108864 - (Disabled, Nightborne)
+#                     134217728 - (Disabled, Highmountain Tauren)
+#                     268435456 - (Disabled, Void Elf)
+#                     536870912 - (Disabled, Lightforged Draenei)
+#                     1073741824 - (Disabled, Zandalari Troll)
+#                     2147483648 - (Disabled, Kul Tiran)
 
 CharacterCreating.Disabled.RaceMask = 0
 
@@ -788,6 +824,7 @@ CharacterCreating.Disabled.RaceMask = 0
 #                     256  - (Disabled, Warlock)
 #                     512  - (Disabled, Monk)
 #                     1024 - (Disabled, Druid)
+#                     2048 - (Disabled, Demon Hunter)
 
 CharacterCreating.Disabled.ClassMask = 0
 
@@ -874,6 +911,14 @@ StartDeathKnightPlayerLevel = 55
 #        Default:     98
 
 StartDemonHunterPlayerLevel = 98
+
+#
+#    StartAlliedRacePlayerLevel
+#        Description: Staring level for allied races after creation.
+#        Range:       1-MaxPlayerLevel
+#        Default:     10
+
+StartAlliedRacePlayerLevel = 100
 
 #
 #    StartPlayerMoney
@@ -1247,6 +1292,17 @@ Account.PasswordChangeSecurity = 0
 BirthdayTime = 1222964635
 
 #
+#   CacheDataQueries
+#        Description: Server caches data queries at startup.
+#                     Can be disabled if not enough memory is available.
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
+#
+#
+
+ CacheDataQueries = 1
+
+#
 #   FeatureSystem.BpayStore.Enabled
 #        Description: Not yet implemented
 #        Default:     0 - (Disabled)
@@ -1515,10 +1571,10 @@ AllowTwoSide.Interaction.Guild = 0
 #
 #    AllowTwoSide.Interaction.Auction
 #        Description: Allow auctions between factions.
-#        Default:     0 - (Disabled)
-#                     1 - (Enabled)
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
 
-AllowTwoSide.Interaction.Auction = 0
+AllowTwoSide.Interaction.Auction = 1
 
 #
 #    AllowTwoSide.Trade
@@ -1814,7 +1870,7 @@ Respawn.DynamicMode = 0
 #                     1 - Enabled
 #        Default:     0 - Disabled
 
-Respawn.DynamicEscortNPC = 1
+Respawn.DynamicEscortNPC = 0
 
 #
 #    Respawn.DynamicRateCreature
@@ -1949,13 +2005,6 @@ PartyLevelReq = 1
 #                     1 - (Enabled)
 
 PreserveCustomChannels = 1
-
-#
-#    PreserveCustomChannelInterval
-#        Description: Interval (in minutes) at which custom channel data is saved to the database
-#        Default:     5 minutes
-
-PreserveCustomChannelInterval = 5
 
 #
 #    PreserveCustomChannelDuration
@@ -2145,15 +2194,15 @@ Visibility.GroupMode = 1
 #    Visibility.Distance.Instances
 #    Visibility.Distance.BGArenas
 #        Description: Visibility distance to see other players or gameobjects.
-#                     Visibility on continents on retail ~90 yards. In BG/Arenas ~533.
+#                     Visibility on continents on retail ~100 yards. In BG/Arenas ~533.
 #                     For instances default ~170.
 #                     Max limited by grid size: 533.33333
 #                     Min limit is max aggro radius (45) * Rate.Creature.Aggro
-#        Default:     90  - (Visibility.Distance.Continents)
+#        Default:     100 - (Visibility.Distance.Continents)
 #                     170 - (Visibility.Distance.Instances)
 #                     533 - (Visibility.Distance.BGArenas)
 
-Visibility.Distance.Continents = 90
+Visibility.Distance.Continents = 100
 Visibility.Distance.Instances = 170
 Visibility.Distance.BGArenas = 533
 

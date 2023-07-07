@@ -48,8 +48,8 @@ namespace WorldPackets
 
             void Read() override;
 
-            int8 PartyIndex = 0;
-            int32 ProposedRoles = 0;
+            uint8 PartyIndex = 0;
+            uint32 ProposedRoles = 0;
             std::string TargetName;
             std::string TargetRealm;
             ObjectGuid TargetGUID;
@@ -67,7 +67,7 @@ namespace WorldPackets
             bool MightCRZYou = false;
             bool MustBeBNetFriend = false;
             bool AllowMultipleRoles = false;
-            bool Unk2 = false;
+            bool QuestSessionActive = false;
             uint16 Unk1 = 0;
 
             bool CanAccept = false;
@@ -97,9 +97,9 @@ namespace WorldPackets
 
             void Read() override;
 
-            int8 PartyIndex = 0;
+            uint8 PartyIndex = 0;
             bool Accept = false;
-            Optional<int32> RolesDesired;
+            Optional<uint32> RolesDesired;
         };
 
         class PartyUninvite final : public ClientPacket
@@ -109,7 +109,7 @@ namespace WorldPackets
 
             void Read() override;
 
-            int8 PartyIndex = 0;
+            uint8 PartyIndex = 0;
             ObjectGuid TargetGUID;
             std::string Reason;
         };
@@ -395,7 +395,7 @@ namespace WorldPackets
             int8 PartyIndex = 0;
             ObjectGuid PartyGUID;
             ObjectGuid InitiatorGUID;
-            uint32 Duration = 0u;
+            WorldPackets::Duration<Milliseconds> Duration;
         };
 
         class ReadyCheckResponseClient final : public ClientPacket
@@ -405,7 +405,7 @@ namespace WorldPackets
 
             void Read() override;
 
-            int8 PartyIndex = 0;
+            uint8 PartyIndex = 0;
             bool IsReady = false;
         };
 
@@ -554,7 +554,7 @@ namespace WorldPackets
 
             void Read() override;
 
-            int8 PartyIndex = 0;
+            uint8 PartyIndex = 0;
             bool EveryoneIsAssistant = false;
         };
 
@@ -599,10 +599,10 @@ namespace WorldPackets
 
             WorldPacket const* Write() override;
 
-            int8 PartyIndex = 0;
+            uint8 PartyIndex = 0;
             uint32 ActiveMarkers = 0u;
 
-            std::vector<RaidMarker*> RaidMarkers;
+            std::vector<RaidMarker const*> RaidMarkers;
         };
 
         class PartyKillLog final : public ServerPacket
