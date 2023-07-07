@@ -285,3 +285,26 @@ WorldPacket const* WorldPackets::Battleground::DestroyArenaUnit::Write()
     _worldPacket << Guid;
     return &_worldPacket;
 }
+
+
+ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Battleground::BattlegroundCapturePointInfo const& battlegroundCapturePointInfo)
+{
+    data << battlegroundCapturePointInfo.Guid;
+    data << battlegroundCapturePointInfo.Pos;
+    data << int8(battlegroundCapturePointInfo.State);
+
+    if (battlegroundCapturePointInfo.State == WorldPackets::Battleground::BattlegroundCapturePointState::ContestedHorde || battlegroundCapturePointInfo.State == WorldPackets::Battleground::BattlegroundCapturePointState::ContestedAlliance)
+    {
+        data << battlegroundCapturePointInfo.CaptureTime;
+        data << battlegroundCapturePointInfo.CaptureTotalDuration;
+    }
+
+    return data;
+}
+
+WorldPacket const* WorldPackets::Battleground::UpdateCapturePoint::Write()
+{
+    _worldPacket << CapturePointInfo;
+    return &_worldPacket;
+}
+

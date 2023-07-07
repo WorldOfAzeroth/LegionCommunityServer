@@ -1424,12 +1424,6 @@ void GameObject::Delete()
     SetLootState(GO_NOT_READY);
     RemoveFromOwner();
 
-    if (m_goInfo->type == GAMEOBJECT_TYPE_CAPTURE_POINT)
-    {
-        WorldPackets::Battleground::CapturePointRemoved packet(GetGUID());
-        SendMessageToSet(packet.Write(), true);
-    }
-
     SendGameObjectDespawn();
 
     if (m_goInfo->type != GAMEOBJECT_TYPE_TRANSPORT)
@@ -2920,7 +2914,7 @@ void GameObject::Use(Unit* user)
             if (!player)
                 return;
 
-            WorldPackets::GameObject::GameObjectUILink gameObjectUIAction;
+            WorldPackets::GameObject::GameObjectUIAction gameObjectUIAction;
             gameObjectUIAction.ObjectGUID = GetGUID();
             gameObjectUIAction.UILink = GetGOInfo()->UILink.UILinkType;
             player->SendDirectMessage(gameObjectUIAction.Write());

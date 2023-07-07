@@ -756,6 +756,29 @@ enum OpcodeClient : uint16
     CMSG_WORLD_PORT_RESPONSE                          = 0x35F9,
     CMSG_WRAP_ITEM                                    = 0x3994,
 
+    //Opcode from uwow.
+    CMSG_BATTLE_PAY_PURCHASE_PRODUCT                        = 0x36C8,
+    CMSG_BATTLE_PAY_PURCHASE_DETAILS_RESPONSE               = 0x370B,
+    CMSG_BATTLE_PAY_PURCHASE_UNK_RESPONSE                   = 0x370D,
+    CMSG_GARRISON_REQUEST_SCOUTING_MAP                      = 0x323B,
+    CMSG_GUILD_BANK_MERGE_ITEMS_BANK_BANK                   = 0x34C5,
+    CMSG_GUILD_BANK_MERGE_ITEMS_BANK_PLAYER                 = 0x34C2,
+    CMSG_GUILD_BANK_MERGE_ITEMS_PLAYER_BANK                 = 0x34C0,
+    CMSG_GUILD_BANK_MOVE_ITEMS_BANK_BANK                    = 0x34BF,
+    CMSG_GUILD_BANK_MOVE_ITEMS_BANK_BANK_COUNT              = 0x34C6,
+    CMSG_GUILD_BANK_MOVE_ITEMS_BANK_PLAYER                  = 0x34BC,
+    CMSG_GUILD_BANK_MOVE_ITEMS_BANK_PLAYER_AUTO             = 0x34C4,
+    CMSG_GUILD_BANK_MOVE_ITEMS_BANK_PLAYER_COUNT            = 0x34C3,
+    CMSG_GUILD_BANK_MOVE_ITEMS_PLAYER_BANK                  = 0x34BB,
+    CMSG_GUILD_BANK_MOVE_ITEMS_PLAYER_BANK_COUNT            = 0x34C1,
+    CMSG_GUILD_BANK_SWAP_ITEMS_BANK_BANK                    = 0x34BE,
+    CMSG_GUILD_BANK_SWAP_ITEMS_BANK_PLAYER                  = 0x34BD,
+    CMSG_GUILD_BANK_SWAP_ITEMS_LEGACY                       = 0x34BA,
+    CMSG_QUERY_ADVENTURE_MAP_POI                            = 0xBADD,
+    CMSG_QUERY_TREASURE_PICKER                              = 0x3336,
+    CMSG_CHANGE_BANK_BAG_SLOT_FLAG                          = 0x3313,
+    CMSG_TUTORIAL_FLAG                                      = 0x36DC,
+
     CMSG_BF_MGR_ENTRY_INVITE_RESPONSE                 = 0xBADD,
     CMSG_BF_MGR_QUEUE_INVITE_RESPONSE                 = 0xBADD,
     CMSG_BF_MGR_QUEUE_EXIT_REQUEST                    = 0xBADD,
@@ -1739,6 +1762,29 @@ enum OpcodeServer : uint16
     SMSG_XP_GAIN_ENABLED                              = 0x27F0,
     SMSG_ZONE_UNDER_ATTACK                            = 0x2BB5,
 
+    //Opcode that form the uwow
+    SMSG_AREA_TRIGGER_MOVE_SCALE                            = 0x2640,
+    SMSG_AREA_TRIGGER_SEQUENCE                              = 0x263D,
+    SMSG_ARTIFACT_FORGE_CLOSE                               = 0x27E3,
+    SMSG_ARTIFACT_ATTUNE_SOCKETED_RELIC_DATA                = 0x27E9,
+    SMSG_BATTLE_PAY_PURCHASE_DETAILS                        = 0x2861,
+    SMSG_BATTLE_PAY_PURCHASE_UNK                            = 0x285D,
+    SMSG_UPDATE_CAPTURE_POINT                               = 0x2596,
+    SMSG_CONTRIBUTION_RESPONSE                              = 0x285C,
+    SMSG_BATTLE_PAY_UNK                                     = 0x285F,
+    SMSG_GARRISON_COMPLETE_MISSION_RESULT_NEW               = 0x2908,
+    SMSG_GARRISON_REQUEST_MISSION_NPC                       = 0x2923,
+    SMSG_GARRISON_RESEARCH_TALENT                           = 0x28FE,
+    SMSG_GARRISON_RESPONSE_CLASS_SPEC_CASTEGORY_INFO        = 0x2901,
+    SMSG_GARRISON_SCOUTING_MAP_RESULT                       = 0x283B,
+    SMSG_LFG_LIST_APPLICATION_UPDATE                        = 0x2A2B,
+    SMSG_LFG_LIST_APPLY_TO_GROUP_RESPONCE                   = 0x2A29,
+    SMSG_LFG_LIST_INVITE_APPLICANT_RESPONSE                 = 0x2A27,
+    SMSG_LFG_LIST_INVITE_RESPONCE                           = 0x2A28,
+    SMSG_LFG_LIST_SEARCH_RESULT_UPDATE                      = 0x2A2C,
+    SMSG_SOCIAL_QUEUE_UPDATE_NOTIFY                         = 0x2853,
+
+
     // Opcodes that are not generated automatically
     SMSG_ACCOUNT_HEIRLOOM_UPDATE                      = 0xBADD, // no client handler
     SMSG_ITEM_UPGRADE_RESULT                          = 0xBADD, // no client handler
@@ -1752,6 +1798,7 @@ enum OpcodeServer : uint16
     SMSG_BF_MGR_ENTRY_INVITE                          = 0xBADD,
     SMSG_BF_MGR_QUEUE_INVITE                          = 0xBADD,
     SMSG_BF_MGR_QUEUE_REQUEST_RESPONSE                = 0xBADD,
+
 };
 
 inline bool IsInstanceOnlyOpcode(uint32 opcode)
