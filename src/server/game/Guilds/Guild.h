@@ -804,7 +804,7 @@ class TC_GAME_API Guild
 
         // Broadcasts
         void BroadcastToGuild(WorldSession* session, bool officerOnly, std::string_view msg, uint32 language = LANG_UNIVERSAL) const;
-        void BroadcastAddonToGuild(WorldSession* session, bool officerOnly, std::string_view msg, std::string_view prefix, bool isLogged) const;
+        void BroadcastAddonToGuild(WorldSession* session, bool officerOnly, std::string_view msg, std::string_view prefix) const;
         void BroadcastPacketToRank(WorldPacket const* packet, GuildRankId rankId) const;
         void BroadcastPacket(WorldPacket const* packet) const;
         void BroadcastPacketIfTrackingAchievement(WorldPacket const* packet, uint32 criteriaId) const;

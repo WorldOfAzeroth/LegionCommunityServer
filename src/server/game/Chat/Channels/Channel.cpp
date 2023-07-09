@@ -720,7 +720,7 @@ void Channel::Say(ObjectGuid const& guid, std::string const& what, uint32 lang) 
         !playerInfo.IsModerator() && player ? player->GetSession()->GetAccountGUID() : ObjectGuid::Empty);
 }
 
-void Channel::AddonSay(ObjectGuid const& guid, std::string const& prefix, std::string const& what, bool isLogged) const
+void Channel::AddonSay(ObjectGuid const& guid, std::string const& prefix, std::string const& what) const
 {
     if (what.empty())
         return;
@@ -750,10 +750,10 @@ void Channel::AddonSay(ObjectGuid const& guid, std::string const& prefix, std::s
 
         Trinity::PacketSenderOwning<WorldPackets::Chat::Chat>* packet = new Trinity::PacketSenderOwning<WorldPackets::Chat::Chat>();
         if (player)
-            packet->Data.Initialize(CHAT_MSG_CHANNEL, isLogged ? LANG_ADDON_LOGGED : LANG_ADDON, player, player, what, 0, GetName(localeIdx), DEFAULT_LOCALE, prefix);
+            packet->Data.Initialize(CHAT_MSG_CHANNEL, LANG_ADDON, player, player, what, 0, GetName(localeIdx), DEFAULT_LOCALE, prefix);
         else
         {
-            packet->Data.Initialize(CHAT_MSG_CHANNEL, isLogged ? LANG_ADDON_LOGGED : LANG_ADDON, nullptr, nullptr, what, 0, GetName(localeIdx), DEFAULT_LOCALE, prefix);
+            packet->Data.Initialize(CHAT_MSG_CHANNEL, LANG_ADDON, nullptr, nullptr, what, 0, GetName(localeIdx), DEFAULT_LOCALE, prefix);
             packet->Data.SenderGUID = guid;
             packet->Data.TargetGUID = guid;
         }
