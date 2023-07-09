@@ -1565,8 +1565,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         /***                    QUEST SYSTEM                   ***/
         /*********************************************************/
 
-        int32 GetQuestMinLevel(Quest const* quest) const;
-        int32 GetQuestLevel(Quest const* quest) const;
+
         void PrepareQuestMenu(ObjectGuid guid);
         void SendPreparedQuest(WorldObject* source);
         bool IsActiveQuest(uint32 quest_id) const;

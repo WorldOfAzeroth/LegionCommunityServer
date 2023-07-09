@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -15,8 +15,8 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _MEMORY_H
-#define _MEMORY_H
+#ifndef TRINITY_DETOUR_MEMORY_FUNCTIONS_H
+#define TRINITY_DETOUR_MEMORY_FUNCTIONS_H
 
 #include "DetourAlloc.h"
 
@@ -31,4 +31,4 @@ inline void dtCustomFree(void* ptr)
     delete [] (unsigned char*)ptr;
 }
 
-#endif
+#endif // TRINITY_DETOUR_MEMORY_FUNCTIONS_H

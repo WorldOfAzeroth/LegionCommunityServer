@@ -3536,20 +3536,10 @@ time_t Map::GetLinkedRespawnTime(ObjectGuid guid) const
 
 void Map::LoadCorpseData()
 {
-    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CORPSES);
-    stmt->setUInt32(0, GetId());
-    stmt->setUInt32(1, GetInstanceId());
-
-    //        0     1     2     3            4      5          6          7     8      9       10     11        12    13          14          15
-    // SELECT posX, posY, posZ, orientation, mapId, displayId, itemCache, race, class, gender, flags, dynFlags, time, corpseType, instanceId, guid FROM corpse WHERE mapId = ? AND instanceId = ?
-    PreparedQueryResult result = CharacterDatabase.Query(stmt);
-    if (!result)
-        return;
 
     std::unordered_map<ObjectGuid::LowType, std::unordered_set<uint32>> phases;
-    std::unordered_map<ObjectGuid::LowType, std::vector<UF::ChrCustomizationChoice>> customizations;
 
-    stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CORPSE_PHASES);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CORPSE_PHASES);
     stmt->setUInt32(0, GetId());
     stmt->setUInt32(1, GetInstanceId());
 
@@ -3568,33 +3558,21 @@ void Map::LoadCorpseData()
         } while (phaseResult->NextRow());
     }
 
-    stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CORPSE_CUSTOMIZATIONS);
+    stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CORPSES);
     stmt->setUInt32(0, GetId());
     stmt->setUInt32(1, GetInstanceId());
 
-    //        0             1                            2
-    // SELECT cc.ownerGuid, cc.chrCustomizationOptionID, cc.chrCustomizationChoiceID FROM corpse_customizations cc LEFT JOIN corpse c ON cc.ownerGuid = c.guid WHERE c.mapId = ? AND c.instanceId = ?
-    if (PreparedQueryResult customizationResult = CharacterDatabase.Query(stmt))
-    {
-        do
-        {
-            Field* fields = customizationResult->Fetch();
-            ObjectGuid::LowType guid = fields[0].GetUInt64();
-            std::vector<UF::ChrCustomizationChoice>& customizationsForCorpse = customizations[guid];
-
-            customizationsForCorpse.emplace_back();
-            UF::ChrCustomizationChoice& choice = customizationsForCorpse.back();
-            choice.ChrCustomizationOptionID = fields[1].GetUInt32();
-            choice.ChrCustomizationChoiceID = fields[2].GetUInt32();
-
-        } while (customizationResult->NextRow());
-    }
+    //        0     1     2     3            4      5          6          7       8       9      10        11    12          13          14
+    // SELECT posX, posY, posZ, orientation, mapId, displayId, itemCache, bytes1, bytes2, flags, dynFlags, time, corpseType, instanceId, guid FROM corpse WHERE mapId = ? AND instanceId = ?
+    PreparedQueryResult customizationResult = CharacterDatabase.Query(stmt);
+    if (!customizationResult)
+        return;
 
     do
     {
-        Field* fields = result->Fetch();
-        CorpseType type = CorpseType(fields[13].GetUInt8());
-        ObjectGuid::LowType guid = fields[15].GetUInt64();
+        Field* fields = customizationResult->Fetch();
+        CorpseType type = CorpseType(fields[12].GetUInt8());
+        ObjectGuid::LowType guid = fields[14].GetUInt64();
         if (type >= MAX_CORPSE_TYPE || type == CORPSE_BONES)
         {
             TC_LOG_ERROR("misc", "Corpse (guid: {}) have wrong corpse type ({}), not loading.", guid, type);
@@ -3611,11 +3589,9 @@ void Map::LoadCorpseData()
         for (uint32 phaseId : phases[guid])
             PhasingHandler::AddPhase(corpse, phaseId, false);
 
-        corpse->SetCustomizations(Trinity::Containers::MakeIteratorPair(customizations[guid].begin(), customizations[guid].end()));
-
         AddCorpse(corpse);
 
-    } while (result->NextRow());
+    } while (customizationResult->NextRow());
 }
 
 void Map::DeleteCorpseData()
