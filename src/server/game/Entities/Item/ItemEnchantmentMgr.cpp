@@ -30,7 +30,7 @@ namespace
 {
     struct RandomBonusListIds
     {
-        std::vector<int32> BonusListIDs;
+        std::vector<uint32> BonusListIDs;
         std::vector<double> Chances;
     };
 

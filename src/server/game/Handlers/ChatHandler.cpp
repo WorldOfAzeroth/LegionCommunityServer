@@ -43,6 +43,13 @@
 #include "World.h"
 #include <algorithm>
 
+enum class ChatWhisperTargetStatus : uint8
+{
+    CanWhisper      = 0,
+    Offline         = 1,
+    WrongFaction    = 2
+};
+
 inline bool isNasty(uint8 c)
 {
     if (c == '\t')
@@ -147,7 +154,7 @@ void WorldSession::HandleChatMessage(ChatMsg type, uint32 lang, std::string msg,
     }
 
     // prevent talking at unknown language (cheating)
-    auto languageData = sLanguageMgr->GetLanguageDescById(Language(lang));
+    auto languageData = sLanguageMgr->GetLanguageDescById(lang);
     if (languageData.begin() == languageData.end())
     {
         SendNotification(LANG_UNKNOWN_LANGUAGE);
@@ -474,7 +481,6 @@ void WorldSession::HandleChatAddonMessageOpcode(WorldPackets::Chat::ChatAddonMes
     }
 
     HandleChatAddonMessage(type, chatAddonMessage.Prefix, chatAddonMessage.Text);
-    HandleChatAddonMessage(chatAddonMessage.Params.Type, chatAddonMessage.Params.Prefix, chatAddonMessage.Params.Text, chatAddonMessage.Params.IsLogged);
 }
 
 void WorldSession::HandleChatAddonMessageWhisperOpcode(WorldPackets::Chat::ChatAddonMessageWhisper& chatAddonMessageWhisper)
@@ -487,19 +493,12 @@ void WorldSession::HandleChatAddonMessageChannelOpcode(WorldPackets::Chat::ChatA
     HandleChatAddonMessage(CHAT_MSG_CHANNEL, chatAddonMessageChannel.Prefix, chatAddonMessageChannel.Text, chatAddonMessageChannel.Target);
 }
 
-void WorldSession::HandleChatAddonMessage(ChatMsg type, std::string prefix, std::string text, bool isLogged, std::string target /*= ""*/, Optional<ObjectGuid> channelGuid /*= {}*/)
+void WorldSession::HandleChatAddonMessage(ChatMsg type, std::string prefix, std::string text, std::string target /*= ""*/)
 {
     Player* sender = GetPlayer();
 
     if (prefix.empty() || prefix.length() > 16)
         return;
-
-    // Our Warden module also uses SendAddonMessage as a way to communicate Lua check results to the server, see if this is that
-    if (type == CHAT_MSG_GUILD)
-    {
-        if (_warden && _warden->ProcessLuaCheckResponse(text))
-            return;
-    }
 
     // Disabled addon channel?
     if (!sWorld->getBoolConfig(CONFIG_ADDON_CHANNEL))
@@ -523,7 +522,7 @@ void WorldSession::HandleChatAddonMessage(ChatMsg type, std::string prefix, std:
         {
             if (sender->GetGuildId())
                 if (Guild* guild = sGuildMgr->GetGuildById(sender->GetGuildId()))
-                    guild->BroadcastAddonToGuild(this, type == CHAT_MSG_OFFICER, text, prefix, isLogged);
+                    guild->BroadcastAddonToGuild(this, type == CHAT_MSG_OFFICER, text, prefix);
             break;
         }
         case CHAT_MSG_WHISPER:
@@ -538,7 +537,7 @@ void WorldSession::HandleChatAddonMessage(ChatMsg type, std::string prefix, std:
             if (!receiver)
                 break;
 
-            sender->WhisperAddon(text, prefix, isLogged, receiver);
+            sender->WhisperAddon(text, prefix, receiver);
             break;
         }
         // Messages sent to "RAID" while in a party will get delivered to "PARTY"
@@ -568,11 +567,8 @@ void WorldSession::HandleChatAddonMessage(ChatMsg type, std::string prefix, std:
         }
         case CHAT_MSG_CHANNEL:
         {
-            Channel* chn = channelGuid
-                ? ChannelMgr::GetChannelForPlayerByGuid(*channelGuid, sender)
-                : ChannelMgr::GetChannelForPlayerByNamePart(target, sender);
-            if (chn)
-                chn->AddonSay(sender->GetGUID(), prefix, text.c_str(), isLogged);
+            if (Channel* chn = ChannelMgr::GetChannelForPlayerByNamePart(target, sender))
+                chn->AddonSay(sender->GetGUID(), prefix, text.c_str());
             break;
         }
         default:
@@ -588,16 +584,6 @@ void WorldSession::HandleChatMessageAFKOpcode(WorldPackets::Chat::ChatMessageAFK
     Player* sender = GetPlayer();
 
     if (sender->IsInCombat())
-        return;
-
-    if (chatMessageAFK.Text.length() > 511)
-        return;
-
-    // do message validity checks
-    if (!ValidateMessage(sender, chatMessageAFK.Text))
-        return;
-
-    if (!ValidateHyperlinksAndMaybeKick(chatMessageAFK.Text))
         return;
 
     if (sender->HasAura(GM_SILENCE_AURA))
@@ -715,7 +701,7 @@ void WorldSession::HandleTextEmoteOpcode(WorldPackets::Chat::CTextEmote& packet)
             break;
         case EMOTE_STATE_DANCE:
         case EMOTE_STATE_READ:
-            _player->SetUInt32Value(UNIT_NPC_EMOTESTATE, emote);
+            _player->SetEmoteState(emote);
             break;
         default:
             // Only allow text-emotes for "dead" entities (feign death included)

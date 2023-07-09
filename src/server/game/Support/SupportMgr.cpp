@@ -175,13 +175,9 @@ std::string BugTicket::FormatViewMessageString(ChatHandler& handler, bool detail
     return ss.str();
 }
 
-ComplaintTicket::ComplaintTicket() : _reportType(ReportType::Chat), _majorCategory(ReportMajorCategory::InappropriateCommunication),
-    _minorCategoryFlags(ReportMinorCategory::TextChat)
-{
-}
+ComplaintTicket::ComplaintTicket() : _complaintType(GMTICKET_SUPPORT_COMPLAINT_TYPE_NONE) { }
 
-ComplaintTicket::ComplaintTicket(Player* player) : Ticket(player), _reportType(ReportType::Chat), _majorCategory(ReportMajorCategory::InappropriateCommunication),
-    _minorCategoryFlags(ReportMinorCategory::TextChat)
+ComplaintTicket::ComplaintTicket(Player* player) : Ticket(player), _complaintType(GMTICKET_SUPPORT_COMPLAINT_TYPE_NONE)
 {
     _id = sSupportMgr->GenerateComplaintId();
 }
@@ -201,9 +197,7 @@ void ComplaintTicket::LoadFromDB(Field* fields)
     _pos.m_positionZ        = fields[++idx].GetFloat();
     _pos.SetOrientation(fields[++idx].GetFloat());
     _targetCharacterGuid    = ObjectGuid::Create<HighGuid::Player>(fields[++idx].GetUInt64());
-    _reportType             = ReportType(fields[++idx].GetInt32());
-    _majorCategory          = ReportMajorCategory(fields[++idx].GetInt32());
-    _minorCategoryFlags     = ReportMinorCategory(fields[++idx].GetInt32());
+    _complaintType          = GMSupportComplaintType(fields[++idx].GetUInt8());
     int32 reportLineIndex = fields[++idx].GetInt32();
     if (reportLineIndex != -1)
         _chatLog.ReportLineIndex = reportLineIndex;
@@ -246,9 +240,7 @@ void ComplaintTicket::SaveToDB() const
     stmt->setFloat(++idx, _pos.GetPositionZ());
     stmt->setFloat(++idx, _pos.GetOrientation());
     stmt->setUInt64(++idx, _targetCharacterGuid.GetCounter());
-    stmt->setInt32(++idx, AsUnderlyingType(_reportType));
-    stmt->setInt32(++idx, AsUnderlyingType(_majorCategory));
-    stmt->setInt32(++idx, AsUnderlyingType(_minorCategoryFlags));
+    stmt->setUInt8(++idx, _complaintType);
     if (_chatLog.ReportLineIndex)
         stmt->setInt32(++idx, *_chatLog.ReportLineIndex);
     else

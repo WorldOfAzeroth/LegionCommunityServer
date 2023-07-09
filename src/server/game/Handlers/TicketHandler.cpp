@@ -16,16 +16,10 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Common.h"
+#include "WorldSession.h"
 #include "DatabaseEnv.h"
-#include "ObjectMgr.h"
-#include "Opcodes.h"
-#include "Player.h"
 #include "SupportMgr.h"
 #include "TicketPackets.h"
-#include "Util.h"
-#include "WorldPacket.h"
-#include "WorldSession.h"
 
 void WorldSession::HandleGMTicketGetCaseStatusOpcode(WorldPackets::Ticket::GMTicketGetCaseStatus& /*packet*/)
 {

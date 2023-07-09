@@ -685,7 +685,7 @@ struct VendorItem
     uint32 incrtime;                                        // time for restore items amount if maxcount != 0
     uint32 ExtendedCost;
     uint8  Type;
-    std::vector<int32> BonusListIDs;
+    std::vector<uint32> BonusListIDs;
     uint32 PlayerConditionId;
     bool IgnoreFiltering;
 };

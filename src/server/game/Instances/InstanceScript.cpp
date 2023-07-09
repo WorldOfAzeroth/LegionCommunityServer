@@ -830,7 +830,7 @@ void InstanceScript::SendEncounterEnd()
 
 void InstanceScript::SendBossKillCredit(uint32 encounterId)
 {
-    WorldPackets::Instance::BossKill bossKillCreditMessage;
+    WorldPackets::Instance::BossKillCredit bossKillCreditMessage;
     bossKillCreditMessage.DungeonEncounterID = encounterId;
 
     instance->SendToPlayers(bossKillCreditMessage.Write());
@@ -849,9 +849,6 @@ void InstanceScript::UpdateEncounterState(EncounterCreditType type, uint32 credi
         if (encounter.creditType == type && encounter.creditEntry == creditEntry)
         {
             completedEncounters |= 1 << encounter.dbcEntry->Bit;
-            if (encounter.dbcEntry->CompleteWorldStateID)
-                DoUpdateWorldState(encounter.dbcEntry->CompleteWorldStateID, 1);
-
             if (encounter.lastEncounterDungeon)
             {
                 dungeonId = encounter.lastEncounterDungeon;
@@ -895,11 +892,6 @@ void InstanceScript::UpdateEncounterStateForSpellCast(uint32 spellId, Unit* sour
 void InstanceScript::SetCompletedEncountersMask(uint32 newMask)
 {
     completedEncounters = newMask;
-
-    if (DungeonEncounterList const* encounters = sObjectMgr->GetDungeonEncounterList(instance->GetId(), instance->GetDifficultyID()))
-        for (DungeonEncounter const& encounter : *encounters)
-            if (completedEncounters & (1 << encounter.dbcEntry->Bit) && encounter.dbcEntry->CompleteWorldStateID)
-                DoUpdateWorldState(encounter.dbcEntry->CompleteWorldStateID, 1);
 }
 
 void InstanceScript::UpdatePhasing()

@@ -164,6 +164,13 @@ enum ItemFieldFlags : uint32
 
 DEFINE_ENUM_FLAG(ItemFieldFlags);
 
+enum ItemFieldFlags2 : uint32
+{
+    ITEM_FIELD_FLAG2_EQUIPPED   = 0x1
+};
+
+DEFINE_ENUM_FLAG(ItemFieldFlags2);
+
 enum ItemFlags : uint32
 {
     ITEM_FLAG_NO_PICKUP                         = 0x00000001,
@@ -734,7 +741,10 @@ struct TC_GAME_API ItemTemplate
     uint32 GetClass() const { return BasicData->ClassID; }
     uint32 GetSubClass() const { return BasicData->SubclassID; }
     uint32 GetQuality() const { return ExtendedData->OverallQualityID; }
-    uint32 GetOtherFactionItemId() const { return 0;/*ExtendedData->FactionRelated*/}
+    uint32 GetFlags() const { return ExtendedData->Flags[0]; }
+    uint32 GetFlags2() const { return ExtendedData->Flags[1]; }
+    uint32 GetFlags3() const { return ExtendedData->Flags[2]; }
+    uint32 GetFlags4() const { return ExtendedData->Flags[3]; }
     float GetPriceRandomValue() const { return ExtendedData->PriceRandomValue; }
     float GetPriceVariance() const { return ExtendedData->PriceVariance; }
     uint32 GetBuyCount() const { return std::max<uint32>(ExtendedData->VendorStackCount, 1u); }
@@ -752,9 +762,11 @@ struct TC_GAME_API ItemTemplate
     uint32 GetRequiredReputationRank() const { return ExtendedData->MinReputation; }
     uint32 GetMaxCount() const { return ExtendedData->MaxCount; }
     uint32 GetContainerSlots() const { return ExtendedData->ContainerSlots; }
-    int32 GetStatModifierBonusStat(uint32 index) const { ASSERT(index < MAX_ITEM_PROTO_STATS); return ExtendedData->StatModifierBonusStat[index]; }
-    int32 GetStatPercentEditor(uint32 index) const { ASSERT(index < MAX_ITEM_PROTO_STATS); return ExtendedData->StatPercentEditor[index]; }
-    float GetStatPercentageOfSocket(uint32 index) const { ASSERT(index < MAX_ITEM_PROTO_STATS); return ExtendedData->StatPercentageOfSocket[index]; }
+    int32 GetItemStatType(uint32 index) const { ASSERT(index < MAX_ITEM_PROTO_STATS); return ExtendedData->StatModifierBonusStat[index]; }
+    int32 GetItemStatValue(uint32 index) const { ASSERT(index < MAX_ITEM_PROTO_STATS); return ExtendedData->ItemStatValue[index]; }
+    int32 GetItemStatAllocation(uint32 index) const { ASSERT(index < MAX_ITEM_PROTO_STATS); return ExtendedData->StatPercentEditor[index]; }
+    float GetItemStatSocketCostMultiplier(uint32 index) const { ASSERT(index < MAX_ITEM_PROTO_STATS); return ExtendedData->StatPercentageOfSocket[index]; }
+    uint32 GetScalingStatDistribution() const { return ExtendedData->ScalingStatDistributionID; }
     uint32 GetDamageType() const { return ExtendedData->DamageDamageType; }
     uint32 GetDelay() const { return ExtendedData->ItemDelay; }
     float GetRangedModRange() const { return ExtendedData->ItemRange; }
@@ -763,6 +775,8 @@ struct TC_GAME_API ItemTemplate
     uint32 GetPageText() const { return ExtendedData->PageID; }
     uint32 GetStartQuest() const { return ExtendedData->StartQuestID; }
     uint32 GetLockID() const { return ExtendedData->LockID; }
+    uint32 GetRandomProperty() const { return ExtendedData->RandomSelect; }
+    uint32 GetRandomSuffix() const { return ExtendedData->ItemRandomSuffixGroupID; }
     uint32 GetItemSet() const { return ExtendedData->ItemSet; }
     uint32 GetArea() const { return ExtendedData->ZoneBound; }
     uint32 GetMap() const { return ExtendedData->InstanceBound; }
@@ -778,7 +792,6 @@ struct TC_GAME_API ItemTemplate
     float  GetDmgVariance() const { return ExtendedData->DmgVariance; }
     uint8 GetArtifactID() const { return ExtendedData->ArtifactID; }
     uint8 GetRequiredExpansion() const { return ExtendedData->ExpansionID; }
-    uint32 GetScalingStatDistribution() const { return ExtendedData->ScalingStatDistributionID; }
 
     uint32 MaxDurability;
     std::vector<ItemEffectEntry const*> Effects;

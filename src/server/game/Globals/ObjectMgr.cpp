@@ -10113,27 +10113,6 @@ void ObjectMgr::LoadFactionChangeAchievements()
     TC_LOG_INFO("server.loading", ">> Loaded {} faction change achievement pairs in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
-void ObjectMgr::LoadFactionChangeItems()
-{
-    uint32 oldMSTime = getMSTime();
-    uint32 count = 0;
-
-    for (std::pair<uint32 const, ItemTemplate> const& itemPair : _itemTemplateStore)
-    {
-        if (!itemPair.second.GetOtherFactionItemId())
-            continue;
-
-        if (itemPair.second.HasFlag(ITEM_FLAG2_FACTION_HORDE))
-            FactionChangeItemsHordeToAlliance[itemPair.first] = itemPair.second.GetOtherFactionItemId();
-
-        if (itemPair.second.HasFlag(ITEM_FLAG2_FACTION_ALLIANCE))
-            FactionChangeItemsAllianceToHorde[itemPair.first] = itemPair.second.GetOtherFactionItemId();
-
-        ++count;
-    }
-
-    TC_LOG_INFO("server.loading", ">> Loaded {} faction change item pairs in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
-}
 
 void ObjectMgr::LoadFactionChangeQuests()
 {
@@ -11099,7 +11078,7 @@ void ObjectMgr::LoadPlayerChoices()
             int32 choiceId = fields[0].GetInt32();
             int32 responseId = fields[1].GetInt32();
             uint32 itemId = fields[2].GetUInt32();
-            std::vector<int32> bonusListIds;
+            std::vector<uint32> bonusListIds;
             for (std::string_view token : Trinity::Tokenize(fields[3].GetStringView(), ' ', false))
                 if (Optional<int32> bonusListID = Trinity::StringTo<int32>(token))
                     bonusListIds.push_back(*bonusListID);
@@ -11241,7 +11220,7 @@ void ObjectMgr::LoadPlayerChoices()
             int32 choiceId = fields[0].GetInt32();
             int32 responseId = fields[1].GetInt32();
             uint32 itemId = fields[2].GetUInt32();
-            std::vector<int32> bonusListIds;
+            std::vector<uint32> bonusListIds;
             for (std::string_view token : Trinity::Tokenize(fields[3].GetStringView(), ' ', false))
                 if (Optional<int32> bonusListID = Trinity::StringTo<int32>(token))
                     bonusListIds.push_back(*bonusListID);

@@ -17,6 +17,7 @@
  */
 
 #include "WorldSession.h"
+#include "AchievementMgr.h"
 #include "Guild.h"
 #include "GuildMgr.h"
 #include "InspectPackets.h"
@@ -27,14 +28,14 @@
 
 void WorldSession::HandleInspectOpcode(WorldPackets::Inspect::Inspect& inspect)
 {
-    Player* player = ObjectAccessor::FindPlayer(inspect.Target);
+    Player* player = ObjectAccessor::GetPlayer(*_player, inspect.Target);
     if (!player)
     {
-        TC_LOG_DEBUG("network", "WorldSession::HandleInspectOpcode: Target %s not found.", inspect.Target.ToString().c_str());
+        TC_LOG_DEBUG("network", "WorldSession::HandleInspectOpcode: Target {} not found.", inspect.Target.ToString());
         return;
     }
 
-    TC_LOG_DEBUG("network", "WorldSession::HandleInspectOpcode: Target %s.", inspect.Target.ToString().c_str());
+    TC_LOG_DEBUG("network", "WorldSession::HandleInspectOpcode: Target {}.", inspect.Target.ToString());
 
     if (!GetPlayer()->IsWithinDistInMap(player, INSPECT_DISTANCE, false))
         return;
@@ -58,10 +59,13 @@ void WorldSession::HandleInspectOpcode(WorldPackets::Inspect::Inspect& inspect)
     {
         PlayerTalentMap const* talents = player->GetTalentMap(player->GetActiveTalentGroup());
         for (PlayerTalentMap::value_type const& v : *talents)
-        {
             if (v.second != PLAYERSPELL_REMOVED)
                 inspectResult.Talents.push_back(v.first);
-        }
+
+        PlayerPvpTalentMap const* pvpTalents = player->GetPvpTalentMap(player->GetActiveTalentGroup());
+        for (PlayerTalentMap::value_type const& v : *pvpTalents)
+            if (v.second != PLAYERSPELL_REMOVED)
+                inspectResult.PvpTalents.push_back(v.first);
     }
 
     if (Guild* guild = sGuildMgr->GetGuildById(player->GetGuildId()))
@@ -108,15 +112,15 @@ void WorldSession::HandleRequestHonorStatsOpcode(WorldPackets::Inspect::RequestH
 void WorldSession::HandleInspectPVP(WorldPackets::Inspect::InspectPVPRequest& request)
 {
     /// @todo: deal with request.InspectRealmAddress
+    Player* player = ObjectAccessor::GetPlayer(*_player, request.InspectTarget);
 
-    Player* player = ObjectAccessor::FindPlayer(request.InspectTarget);
     if (!player)
     {
-        TC_LOG_DEBUG("network", "WorldSession::HandleInspectPVP: Target %s not found.", request.InspectTarget.ToString().c_str());
+        TC_LOG_DEBUG("network", "WorldSession::HandleInspectPVP: [{}] inspected unknown Player [{}]", GetPlayer()->GetGUID().ToString(), request.InspectTarget.ToString());
         return;
     }
 
-    TC_LOG_DEBUG("network", "WorldSession::HandleInspectPVP: Target %s, InspectRealmAddress %u.", request.InspectTarget.ToString().c_str(), request.InspectRealmAddress);
+    TC_LOG_DEBUG("network", "WorldSession::HandleInspectPVP: [{}] inspected Player [{}]", GetPlayer()->GetGUID().ToString(), request.InspectTarget.ToString());
 
     if (!GetPlayer()->IsWithinDistInMap(player, INSPECT_DISTANCE, false))
         return;
@@ -133,14 +137,14 @@ void WorldSession::HandleInspectPVP(WorldPackets::Inspect::InspectPVPRequest& re
 
 void WorldSession::HandleQueryInspectAchievements(WorldPackets::Inspect::QueryInspectAchievements& inspect)
 {
-    Player* player = ObjectAccessor::FindPlayer(inspect.Guid);
+    Player* player = ObjectAccessor::GetPlayer(*_player, inspect.Guid);
     if (!player)
     {
-        TC_LOG_DEBUG("network", "WorldSession::HandleQueryInspectAchievements: [%s] inspected unknown Player [%s]", GetPlayer()->GetGUID().ToString().c_str(), inspect.Guid.ToString().c_str());
+        TC_LOG_DEBUG("network", "WorldSession::HandleQueryInspectAchievements: [{}] inspected unknown Player [{}]", GetPlayer()->GetGUID().ToString(), inspect.Guid.ToString());
         return;
     }
 
-    TC_LOG_DEBUG("network", "WorldSession::HandleQueryInspectAchievements: [%s] inspected Player [%s]", GetPlayer()->GetGUID().ToString().c_str(), inspect.Guid.ToString().c_str());
+    TC_LOG_DEBUG("network", "WorldSession::HandleQueryInspectAchievements: [{}] inspected Player [{}]", GetPlayer()->GetGUID().ToString(), inspect.Guid.ToString());
 
     if (!GetPlayer()->IsWithinDistInMap(player, INSPECT_DISTANCE, false))
         return;

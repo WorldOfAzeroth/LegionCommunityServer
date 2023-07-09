@@ -138,6 +138,7 @@ namespace WorldPackets
                     uint32 Unknown735 = 0;
                     bool InGameRoom = false;
                 };
+                AuthSuccessInfo() { } // work around clang bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=101227
 
                 uint8 AccountExpansionLevel = 0; ///< the current expansion of this account, the possible values are in @ref Expansions
                 uint8 ActiveExpansionLevel = 0; ///< the current server expansion, the possible values are in @ref Expansions

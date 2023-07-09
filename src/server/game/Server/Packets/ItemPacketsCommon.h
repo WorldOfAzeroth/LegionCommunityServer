@@ -18,7 +18,7 @@
 #ifndef ItemPacketsCommon_h__
 #define ItemPacketsCommon_h__
 
-#include "Define.h"
+#include "ItemDefines.h"
 #include "PacketUtilities.h"
 #include "Optional.h"
 #include <vector>
@@ -37,31 +37,13 @@ namespace WorldPackets
         struct ItemBonuses
         {
             ItemContext Context = ItemContext(0);
-            std::vector<int32> BonusListIDs;
+            std::vector<uint32> BonusListIDs;
 
             bool operator==(ItemBonuses const& r) const;
             bool operator!=(ItemBonuses const& r) const { return !(*this == r); }
         };
 
-        struct ItemMod
-        {
-            ItemMod() = default;
-            ItemMod(int32 value, ItemModifier type) : Value(value), Type(type) { }
 
-            int32 Value = 0;
-            ItemModifier Type = MAX_ITEM_MODIFIERS;
-
-            bool operator==(ItemMod const& r) const;
-            bool operator!=(ItemMod const& r) const { return !(*this == r); }
-        };
-
-        struct ItemModList
-        {
-            Array<ItemMod, MAX_ITEM_MODIFIERS> Values;
-
-            bool operator==(ItemModList const& r) const;
-            bool operator!=(ItemModList const& r) const { return !(*this == r); }
-        };
 
         struct ItemInstance
         {
@@ -74,20 +56,10 @@ namespace WorldPackets
             uint32 RandomPropertiesSeed = 0;
             uint32 RandomPropertiesID = 0;
             Optional<ItemBonuses> ItemBonus;
-            ItemModList Modifications;
+            Optional<CompactArray<int32>> Modifications;
 
             bool operator==(ItemInstance const& r) const;
             bool operator!=(ItemInstance const& r) const { return !(*this == r); }
-        };
-
-        struct ItemBonusKey
-        {
-            int32 ItemID = 0;
-            std::vector<int32> BonusListIDs;
-            std::vector<ItemMod> Modifications;
-
-            bool operator==(ItemBonusKey const& right) const;
-            bool operator!=(ItemBonusKey const& r) const { return !(*this == r); }
         };
 
         struct ItemEnchantData

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
+#include "AchievementMgr.h"
 #include "CharacterCache.h"
 #include "WorldSession.h"
 #include "Guild.h"
@@ -145,7 +145,7 @@ void WorldSession::HandleGuildFinderGetGuildPost(WorldPackets::GuildFinder::LFGu
     if (guild->GetLeaderGUID() == player->GetGUID())
     {
         LFGuildSettings const& settings = sGuildFinderMgr->GetGuildSettings(guild->GetGUID());
-        lfGuildPost.Post = boost::in_place();
+        lfGuildPost.Post.emplace();
         lfGuildPost.Post->Active = settings.IsListed();
         lfGuildPost.Post->PlayStyle = settings.GetInterests();
         lfGuildPost.Post->Availability = settings.GetAvailability();

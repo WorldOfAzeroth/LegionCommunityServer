@@ -861,10 +861,10 @@ typedef std::unordered_map<uint32, std::string> PhaseNameContainer;
 struct PlayerChoiceResponseRewardItem
 {
     PlayerChoiceResponseRewardItem() : Id(0), Quantity(0) { }
-    PlayerChoiceResponseRewardItem(uint32 id, std::vector<int32> bonusListIDs, int32 quantity) : Id(id), BonusListIDs(std::move(bonusListIDs)), Quantity(quantity) { }
+    PlayerChoiceResponseRewardItem(uint32 id, std::vector<uint32> bonusListIDs, int32 quantity) : Id(id), BonusListIDs(std::move(bonusListIDs)), Quantity(quantity) { }
 
     uint32 Id;
-    std::vector<int32> BonusListIDs;
+    std::vector<uint32> BonusListIDs;
     int32 Quantity;
 };
 
@@ -1727,7 +1727,6 @@ class TC_GAME_API ObjectMgr
         CharacterConversionMap FactionChangeTitles;
 
         void LoadFactionChangeAchievements();
-        void LoadFactionChangeItems();
         void LoadFactionChangeQuests();
         void LoadFactionChangeReputations();
         void LoadFactionChangeSpells();

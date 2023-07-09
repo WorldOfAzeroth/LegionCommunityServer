@@ -464,21 +464,6 @@ namespace WorldPackets
             uint8 Entry = 0;
         };
 
-        struct GossipText
-        {
-            GossipText(uint32 questID, uint32 questType, int32 questLevel, int32 questMaxScalingLevel, uint32 questFlags, uint32 questFlagsEx, bool repeatable, std::string questTitle) :
-                QuestID(questID), QuestType(questType), QuestLevel(questLevel), QuestMaxScalingLevel(questMaxScalingLevel), QuestFlags(questFlags),
-                QuestFlagsEx(questFlagsEx), Repeatable(repeatable), QuestTitle(std::move(questTitle)) { }
-            uint32 QuestID;
-            uint32 QuestType;
-            int32 QuestLevel;
-            int32 QuestMaxScalingLevel;
-            uint32 QuestFlags;
-            uint32 QuestFlagsEx;
-            bool Repeatable;
-            std::string QuestTitle;
-        };
-
         class QuestGiverQuestListMessage final : public ServerPacket
         {
         public:

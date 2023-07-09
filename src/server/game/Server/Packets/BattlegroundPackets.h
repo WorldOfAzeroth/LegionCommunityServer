@@ -412,6 +412,27 @@ namespace WorldPackets
             void Read() override { }
         };
 
+        class RatedPvpInfo final : public ServerPacket
+        {
+        public:
+            RatedPvpInfo() : ServerPacket(SMSG_RATED_BATTLEFIELD_INFO, 6 * sizeof(BracketInfo)) { }
+
+            WorldPacket const* Write() override;
+
+            struct BracketInfo
+            {
+                uint32 PersonalRating = 0;
+                uint32 Ranking = 0;
+                uint32 SeasonPlayed = 0;
+                uint32 SeasonWon = 0;
+                uint32 WeeklyPlayed = 0;
+                uint32 WeeklyWon = 0;
+                uint32 BestWeeklyRating = 0;
+                uint32 BestSeasonRating = 0;
+                uint32 BestWeeklyLastRating = 0;
+            } Bracket[6];
+        };
+
         enum class BattlegroundCapturePointState : uint8
         {
             Neutral             = 1,

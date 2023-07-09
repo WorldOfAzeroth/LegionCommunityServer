@@ -75,7 +75,8 @@ enum GuildMemberData
 
 enum class GuildRankId : uint8
 {
-    GuildMaster = 0
+    GuildMaster = 0,
+    OFFICER     = 1
 };
 
 enum class GuildRankOrder : uint8 { };

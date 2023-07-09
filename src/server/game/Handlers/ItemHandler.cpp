@@ -232,7 +232,7 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPackets::Item::AutoEquipItem& 
             return;
         }
 
-        if (!dstItem->HasFlag(ITEM_FIELD_FLAGS, ITEM_FIELD_FLAG_CHILD))
+        if (!dstItem->HasItemFlag(ITEM_FIELD_FLAG_CHILD))
         {
             // check dest->src move possibility
             ItemPosCountVec sSrc;
@@ -289,7 +289,7 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPackets::Item::AutoEquipItem& 
         }
         else
         {
-            if (Item* parentItem = _player->GetItemByGuid(dstItem->GetGuidValue(ITEM_FIELD_CREATOR)))
+            if (Item* parentItem = _player->GetItemByGuid(dstItem->GetCreator()))
             {
                 if (Player::IsEquipmentPos(dest))
                 {
@@ -398,6 +398,12 @@ void WorldSession::HandleSellItemOpcode(WorldPackets::Item::SellItem& packet)
         return;
     }
 
+    if ((creature->GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_NO_SELL_VENDOR) != 0)
+    {
+        _player->SendSellError(SELL_ERR_CANT_SELL_TO_THIS_MERCHANT, creature, packet.ItemGUID);
+        return;
+    }
+
     // remove fake death
     if (GetPlayer()->HasUnitState(UNIT_STATE_DIED))
         GetPlayer()->RemoveAurasByType(SPELL_AURA_FEIGN_DEATH);
@@ -429,7 +435,7 @@ void WorldSession::HandleSellItemOpcode(WorldPackets::Item::SellItem& packet)
         // prevent selling item for sellprice when the item is still refundable
         // this probably happens when right clicking a refundable item, the client sends both
         // CMSG_SELL_ITEM and CMSG_REFUND_ITEM (unverified)
-        if (pItem->HasFlag(ITEM_FIELD_FLAGS, ITEM_FIELD_FLAG_REFUNDABLE))
+        if (pItem->IsRefundable())
             return; // Therefore, no feedback to client
 
         // special case at auto sell (sell all)
@@ -500,7 +506,7 @@ void WorldSession::HandleBuybackItem(WorldPackets::Item::BuyBackItem& packet)
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_BUYBACK_ITEM: Vendor {}, Slot: {}", packet.VendorGUID.ToString(), packet.Slot);
 
-    Creature* creature = GetPlayer()->GetNPCIfCanInteractWith(packet.VendorGUID, UNIT_NPC_FLAG_VENDOR);
+    Creature* creature = GetPlayer()->GetNPCIfCanInteractWith(packet.VendorGUID, UNIT_NPC_FLAG_VENDOR, UNIT_NPC_FLAG_2_NONE);
     if (!creature)
     {
         TC_LOG_DEBUG("network", "WORLD: HandleBuybackItem - Unit ({}) not found or you can not interact with him.", packet.VendorGUID.ToString());
@@ -569,7 +575,7 @@ void WorldSession::HandleBuyItemOpcode(WorldPackets::Item::BuyItem& packet)
         }
         default:
         {
-            TC_LOG_DEBUG("network", "WORLD: received wrong itemType (%u) in HandleBuyItemOpcode", packet.ItemType);
+            TC_LOG_DEBUG("network", "WORLD: received wrong itemType ({}) in HandleBuyItemOpcode", packet.ItemType);
             break;
         }
     }
@@ -1006,7 +1012,7 @@ void WorldSession::HandleSocketGems(WorldPackets::Item::SocketGems& socketGems)
                 {
                     if (iGemProto->GetId() == gems[j]->GetEntry())
                     {
-                        _player->SendEquipError(EQUIP_ERR_ITEM_UNIQUE_EQUIPPABLE_SOCKETED, itemTarget, NULL);
+                        _player->SendEquipError(EQUIP_ERR_ITEM_UNIQUE_EQUIPPABLE_SOCKETED, itemTarget, nullptr);
                         return;
                     }
                 }
@@ -1014,7 +1020,7 @@ void WorldSession::HandleSocketGems(WorldPackets::Item::SocketGems& socketGems)
                 {
                     if (iGemProto->GetId() == oldGemData[j]->ItemId)
                     {
-                        _player->SendEquipError(EQUIP_ERR_ITEM_UNIQUE_EQUIPPABLE_SOCKETED, itemTarget, NULL);
+                        _player->SendEquipError(EQUIP_ERR_ITEM_UNIQUE_EQUIPPABLE_SOCKETED, itemTarget, nullptr);
                         return;
                     }
                 }
@@ -1027,7 +1033,7 @@ void WorldSession::HandleSocketGems(WorldPackets::Item::SocketGems& socketGems)
         {
             if (ItemLimitCategoryEntry const* limitEntry = sItemLimitCategoryStore.LookupEntry(iGemProto->GetItemLimitCategory()))
             {
-                // NOTE: limitEntry->mode is not checked because if item has limit then it is applied in equip case
+                // NOTE: limitEntry->Flags is not checked because if item has limit then it is applied in equip case
                 for (int j = 0; j < MAX_GEM_SOCKETS; ++j)
                 {
                     if (gems[j])
@@ -1047,7 +1053,7 @@ void WorldSession::HandleSocketGems(WorldPackets::Item::SocketGems& socketGems)
 
                 if (limit_newcount > 0 && uint32(limit_newcount) > _player->GetItemLimitCategoryQuantity(limitEntry))
                 {
-                    _player->SendEquipError(EQUIP_ERR_ITEM_UNIQUE_EQUIPPABLE_SOCKETED, itemTarget, NULL);
+                    _player->SendEquipError(EQUIP_ERR_ITEM_UNIQUE_EQUIPPABLE_SOCKETED, itemTarget, nullptr);
                     return;
                 }
             }
@@ -1058,7 +1064,7 @@ void WorldSession::HandleSocketGems(WorldPackets::Item::SocketGems& socketGems)
         {
             if (InventoryResult res = _player->CanEquipUniqueItem(gems[i], slot, std::max(limit_newcount, 0)))
             {
-                _player->SendEquipError(res, itemTarget, NULL);
+                _player->SendEquipError(res, itemTarget, nullptr);
                 return;
             }
         }
@@ -1143,11 +1149,11 @@ void WorldSession::HandleGetItemPurchaseData(WorldPackets::Item::GetItemPurchase
     Item* item = _player->GetItemByGuid(packet.ItemGUID);
     if (!item)
     {
-        TC_LOG_DEBUG("network", "HandleGetItemPurchaseData: Item %s not found!", packet.ItemGUID.ToString().c_str());
+        TC_LOG_DEBUG("network", "HandleGetItemPurchaseData: Item {} not found!", packet.ItemGUID.ToString());
         return;
     }
 
-    TC_LOG_DEBUG("network", "HandleGetItemPurchaseData: Item %s", packet.ItemGUID.ToString().c_str());
+    TC_LOG_DEBUG("network", "HandleGetItemPurchaseData: Item {}", packet.ItemGUID.ToString());
 
     GetPlayer()->SendRefundInfo(item);
 }
@@ -1157,7 +1163,7 @@ void WorldSession::HandleItemRefund(WorldPackets::Item::ItemPurchaseRefund& pack
     Item* item = _player->GetItemByGuid(packet.ItemGUID);
     if (!item)
     {
-        TC_LOG_DEBUG("network", "WorldSession::HandleItemRefund: Item (%s) not found!", packet.ItemGUID.ToString().c_str());
+        TC_LOG_DEBUG("network", "WorldSession::HandleItemRefund: Item ({}) not found!", packet.ItemGUID.ToString());
         return;
     }
 
@@ -1172,9 +1178,9 @@ bool WorldSession::CanUseBank(ObjectGuid bankerGUID) const
 {
     // bankerGUID parameter is optional, set to 0 by default.
     if (!bankerGUID)
-        bankerGUID = m_currentBankerGUID;
+        bankerGUID = _player->PlayerTalkClass->GetInteractionData().SourceGuid;
 
-    bool isUsingBankCommand = (bankerGUID == GetPlayer()->GetGUID() && bankerGUID == m_currentBankerGUID);
+    bool isUsingBankCommand = (bankerGUID == GetPlayer()->GetGUID() && bankerGUID == _player->PlayerTalkClass->GetInteractionData().SourceGuid);
 
     if (!isUsingBankCommand)
     {
@@ -1208,7 +1214,7 @@ void WorldSession::HandleUseCritterItem(WorldPackets::Item::UseCritterItem& useC
 void WorldSession::HandleUpgradeItem(WorldPackets::Item::UpgradeItem& upgradeItem)
 {
     WorldPackets::Item::ItemUpgradeResult itemUpgradeResult;
-    if (!_player->GetNPCIfCanInteractWith(upgradeItem.ItemMaster, UNIT_NPC_FLAG_2_ITEM_UPGRADE_MASTER, UNIT_NPC_FLAG_2_NONE))
+    if (!_player->GetNPCIfCanInteractWith(upgradeItem.ItemMaster, UNIT_NPC_FLAG_NONE, UNIT_NPC_FLAG_2_ITEM_UPGRADE_MASTER))
     {
         TC_LOG_DEBUG("network", "WORLD: HandleUpgradeItems - %s not found or player can't interact with it.", upgradeItem.ItemMaster.ToString().c_str());
         itemUpgradeResult.Success = false;

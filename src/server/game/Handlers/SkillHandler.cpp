@@ -17,11 +17,9 @@
  */
 
 #include "WorldSession.h"
-#include "Common.h"
 #include "DB2Stores.h"
 #include "GossipDef.h"
 #include "Log.h"
-#include "ObjectAccessor.h"
 #include "Pet.h"
 #include "Player.h"
 #include "SpellPackets.h"
@@ -77,23 +75,20 @@ void WorldSession::HandleLearnPvpTalentsOpcode(WorldPackets::Talent::LearnPvpTal
 
 void WorldSession::HandleConfirmRespecWipeOpcode(WorldPackets::Talent::ConfirmRespecWipe& confirmRespecWipe)
 {
-    Creature* unit = GetPlayer()->GetNPCIfCanInteractWith(confirmRespecWipe.RespecMaster, UNIT_NPC_FLAG_TRAINER);
+    Creature* unit = GetPlayer()->GetNPCIfCanInteractWith(confirmRespecWipe.RespecMaster, UNIT_NPC_FLAG_TRAINER, UNIT_NPC_FLAG_2_NONE);
     if (!unit)
     {
-        TC_LOG_DEBUG("network", "WORLD: HandleConfirmRespecWipeOpcode - %s not found or you can't interact with him.", confirmRespecWipe.RespecMaster.ToString().c_str());
+        TC_LOG_DEBUG("network", "WORLD: HandleConfirmRespecWipeOpcode - {} not found or you can't interact with him.", confirmRespecWipe.RespecMaster.ToString());
         return;
     }
 
     if (confirmRespecWipe.RespecType != SPEC_RESET_TALENTS)
     {
-        TC_LOG_DEBUG("network", "WORLD: HandleConfirmRespecWipeOpcode - reset type %d is not implemented.", confirmRespecWipe.RespecType);
+        TC_LOG_DEBUG("network", "WORLD: HandleConfirmRespecWipeOpcode - reset type {} is not implemented.", confirmRespecWipe.RespecType);
         return;
     }
 
     if (!unit->CanResetTalents(_player))
-        return;
-
-    if (!_player->PlayerTalkClass->GetGossipMenu().HasMenuItemType(GOSSIP_OPTION_UNLEARNTALENTS))
         return;
 
     // remove fake death
@@ -101,10 +96,7 @@ void WorldSession::HandleConfirmRespecWipeOpcode(WorldPackets::Talent::ConfirmRe
         GetPlayer()->RemoveAurasByType(SPELL_AURA_FEIGN_DEATH);
 
     if (!_player->ResetTalents())
-    {
-        GetPlayer()->SendRespecWipeConfirm(ObjectGuid::Empty, 0);
         return;
-    }
 
     _player->SendTalentsInfoData();
     unit->CastSpell(_player, 14867, true);                  //spell: "Untalent Visual Effect"

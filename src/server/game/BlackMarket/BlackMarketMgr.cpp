@@ -369,10 +369,11 @@ bool BlackMarketTemplate::LoadFromDB(Field* fields)
     Duration = static_cast<time_t>(fields[5].GetUInt32());
     Chance = fields[6].GetFloat();
 
-    std::vector<int32> bonusListIDs;
+    std::vector<uint32> bonusListIDs;
     for (std::string_view token : Trinity::Tokenize(fields[7].GetStringView(), ' ', false))
-        if (Optional<int32> bonusListID = Trinity::StringTo<int32>(token))
+        if (Optional<uint32> bonusListID = Trinity::StringTo<uint32>(token)) {
             bonusListIDs.push_back(*bonusListID);
+        }
 
     if (!bonusListIDs.empty())
     {

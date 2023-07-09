@@ -661,7 +661,7 @@ namespace WorldPackets
 
             void Read() override;
 
-            uint32 CurrentVersion = 0;
+            Timestamp<> CurrentVersion;
         };
 
         struct GuildRewardItem
@@ -669,7 +669,7 @@ namespace WorldPackets
             uint32 ItemID = 0;
             uint32 Unk4 = 0;
             std::vector<uint32> AchievementsRequired;
-            uint64 RaceMask = 0;
+            Trinity::RaceMask<uint64> RaceMask = { 0 };
             int32 MinGuildLevel = 0;
             int32 MinGuildRep = 0;
             uint64 Cost = 0;
@@ -683,7 +683,7 @@ namespace WorldPackets
             WorldPacket const* Write() override;
 
             std::vector<GuildRewardItem> RewardItems;
-            uint32 Version = 0;
+            Timestamp<> Version;
         };
 
         class GuildBankActivate final : public ClientPacket
@@ -1012,7 +1012,7 @@ namespace WorldPackets
 
             void Read() override;
 
-            std::set<uint32> AchievementIDs;
+            Array<uint32, 10> AchievementIDs;
         };
 
         class GuildNameChanged final : ServerPacket

@@ -229,37 +229,7 @@ enum ItemModifier : uint16
     ITEM_MODIFIER_CHALLENGE_KEYSTONE_AFFIX_ID_4             = 22,
     ITEM_MODIFIER_ARTIFACT_KNOWLEDGE_LEVEL                  = 23,
     ITEM_MODIFIER_ARTIFACT_TIER                             = 24,
-    ITEM_MODIFIER_TRANSMOG_APPEARANCE_SPEC_5                = 25,
-    ITEM_MODIFIER_PVP_RATING                                = 26,
-    ITEM_MODIFIER_ENCHANT_ILLUSION_SPEC_5                   = 27,
-    ITEM_MODIFIER_CONTENT_TUNING_ID                         = 28,
-    ITEM_MODIFIER_CHANGE_MODIFIED_CRAFTING_STAT_1           = 29,
-    ITEM_MODIFIER_CHANGE_MODIFIED_CRAFTING_STAT_2           = 30,
-    ITEM_MODIFIER_TRANSMOG_SECONDARY_APPEARANCE_ALL_SPECS   = 31,
-    ITEM_MODIFIER_TRANSMOG_SECONDARY_APPEARANCE_SPEC_1      = 32,
-    ITEM_MODIFIER_TRANSMOG_SECONDARY_APPEARANCE_SPEC_2      = 33,
-    ITEM_MODIFIER_TRANSMOG_SECONDARY_APPEARANCE_SPEC_3      = 34,
-    ITEM_MODIFIER_TRANSMOG_SECONDARY_APPEARANCE_SPEC_4      = 35,
-    ITEM_MODIFIER_TRANSMOG_SECONDARY_APPEARANCE_SPEC_5      = 36,
-    ITEM_MODIFIER_SOULBIND_CONDUIT_RANK                     = 37,
-
     MAX_ITEM_MODIFIERS
-};
-
-enum class AzeriteEssenceActivateResult : uint32
-{
-    None                = 0,
-    EssenceNotUnlocked  = 2,    // Arg: AzeriteEssenceID
-    CantDoThatRightNow  = 3,
-    AffectingCombat     = 4,
-    CantRemoveEssence   = 5,    // Arg: SpellID of active essence on cooldown
-    ChallengeModeActive = 6,
-    NotInRestArea       = 7,
-    ConditionFailed     = 8,
-    SlotLocked          = 9,
-    NotAtForge          = 10,
-    HeartLevelTooLow    = 11,   // Arg: RequiredLevel
-    NotEquipped         = 12
 };
 
 #endif // ItemDefines_h__

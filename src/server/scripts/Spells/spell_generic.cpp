@@ -1108,7 +1108,7 @@ class spell_gen_consumption : public SpellScript
             return;
 
         int32 damage = 0;
-        if (SpellInfo const* createdBySpell = sSpellMgr->GetSpellInfo(caster->m_unitData->CreatedBySpell, GetCastDifficulty()))
+        if (SpellInfo const* createdBySpell = sSpellMgr->GetSpellInfo(caster->GetUInt32Value(UNIT_CREATED_BY_SPELL), GetCastDifficulty()))
             damage = createdBySpell->GetEffect(EFFECT_1).CalcValue();
 
         if (damage)
@@ -3383,10 +3383,8 @@ class spell_gen_spirit_healer_res : public SpellScript
         Player* originalCaster = GetOriginalCaster()->ToPlayer();
         if (Unit* target = GetHitUnit())
         {
-            WorldPackets::NPC::NPCInteractionOpenResult spiritHealerConfirm;
-            spiritHealerConfirm.Npc = target->GetGUID();
-            spiritHealerConfirm.InteractionType = PlayerInteractionType::SpiritHealer;
-            spiritHealerConfirm.Success = true;
+            WorldPackets::NPC::SpiritHealerConfirm spiritHealerConfirm;
+            spiritHealerConfirm.Unit = target->GetGUID();
             originalCaster->SendDirectMessage(spiritHealerConfirm.Write());
         }
     }
@@ -4898,9 +4896,6 @@ class spell_gen_war_mode_enlisted : public AuraScript
 
         if (spellInfo->HasAura(SPELL_AURA_MOD_MONEY_GAIN))
             DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_gen_war_mode_enlisted::CalcWarModeBonus, EFFECT_ALL, SPELL_AURA_MOD_MONEY_GAIN);
-
-        if (spellInfo->HasAura(SPELL_AURA_MOD_ANIMA_GAIN))
-            DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_gen_war_mode_enlisted::CalcWarModeBonus, EFFECT_ALL, SPELL_AURA_MOD_ANIMA_GAIN);
 
         if (spellInfo->HasAura(SPELL_AURA_DUMMY))
             DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_gen_war_mode_enlisted::CalcWarModeBonus, EFFECT_ALL, SPELL_AURA_DUMMY);

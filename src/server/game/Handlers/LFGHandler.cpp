@@ -18,16 +18,14 @@
 #include "CharacterCache.h"
 #include "DB2Stores.h"
 #include "WorldSession.h"
+#include "GameTime.h"
 #include "Group.h"
 #include "LFGMgr.h"
 #include "LFGPackets.h"
 #include "Log.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
-#include "Opcodes.h"
 #include "Player.h"
-#include "World.h"
-#include "WorldPacket.h"
 
 void WorldSession::HandleLfgJoinOpcode(WorldPackets::LFG::DFJoin& dfJoin)
 {
@@ -38,7 +36,7 @@ void WorldSession::HandleLfgJoinOpcode(WorldPackets::LFG::DFJoin& dfJoin)
 
     if (dfJoin.Slots.empty())
     {
-        TC_LOG_DEBUG("lfg", "CMSG_DF_JOIN %s no dungeons selected", GetPlayerInfo().c_str());
+        TC_LOG_DEBUG("lfg", "CMSG_DF_JOIN {} no dungeons selected", GetPlayerInfo());
         return;
     }
 
@@ -50,7 +48,7 @@ void WorldSession::HandleLfgJoinOpcode(WorldPackets::LFG::DFJoin& dfJoin)
             newDungeons.insert(dungeon);
     }
 
-    TC_LOG_DEBUG("lfg", "CMSG_DF_JOIN %s roles: %u, Dungeons: %u", GetPlayerInfo().c_str(), dfJoin.Roles, uint8(newDungeons.size()));
+    TC_LOG_DEBUG("lfg", "CMSG_DF_JOIN {} roles: {}, Dungeons: {}", GetPlayerInfo(), dfJoin.Roles, uint8(newDungeons.size()));
 
     sLFGMgr->JoinLfg(GetPlayer(), uint8(dfJoin.Roles), newDungeons);
 }
@@ -59,8 +57,8 @@ void WorldSession::HandleLfgLeaveOpcode(WorldPackets::LFG::DFLeave& dfLeave)
 {
     Group* group = GetPlayer()->GetGroup();
 
-    TC_LOG_DEBUG("lfg", "CMSG_DF_LEAVE %s in group: %u sent guid %s.",
-        GetPlayerInfo().c_str(), group ? 1 : 0, dfLeave.Ticket.RequesterGuid.ToString().c_str());
+    TC_LOG_DEBUG("lfg", "CMSG_DF_LEAVE {} in group: {} sent guid {}.",
+        GetPlayerInfo(), group ? 1 : 0, dfLeave.Ticket.RequesterGuid.ToString());
 
     // Check cheating - only leader can leave the queue
     if (!group || group->GetLeaderGUID() == dfLeave.Ticket.RequesterGuid)
@@ -69,8 +67,8 @@ void WorldSession::HandleLfgLeaveOpcode(WorldPackets::LFG::DFLeave& dfLeave)
 
 void WorldSession::HandleLfgProposalResultOpcode(WorldPackets::LFG::DFProposalResponse& dfProposalResponse)
 {
-    TC_LOG_DEBUG("lfg", "CMSG_LFG_PROPOSAL_RESULT %s proposal: %u accept: %u",
-        GetPlayerInfo().c_str(), dfProposalResponse.ProposalID, dfProposalResponse.Accepted ? 1 : 0);
+    TC_LOG_DEBUG("lfg", "CMSG_LFG_PROPOSAL_RESULT {} proposal: {} accept: {}",
+        GetPlayerInfo(), dfProposalResponse.ProposalID, dfProposalResponse.Accepted ? 1 : 0);
     sLFGMgr->UpdateProposal(dfProposalResponse.ProposalID, GetPlayer()->GetGUID(), dfProposalResponse.Accepted);
 }
 
@@ -80,34 +78,34 @@ void WorldSession::HandleLfgSetRolesOpcode(WorldPackets::LFG::DFSetRoles& dfSetR
     Group* group = GetPlayer()->GetGroup();
     if (!group)
     {
-        TC_LOG_DEBUG("lfg", "CMSG_DF_SET_ROLES %s Not in group",
-            GetPlayerInfo().c_str());
+        TC_LOG_DEBUG("lfg", "CMSG_DF_SET_ROLES {} Not in group",
+            GetPlayerInfo());
         return;
     }
     ObjectGuid gguid = group->GetGUID();
-    TC_LOG_DEBUG("lfg", "CMSG_DF_SET_ROLES: Group %s, Player %s, Roles: %u",
-        gguid.ToString().c_str(), GetPlayerInfo().c_str(), dfSetRoles.RolesDesired);
+    TC_LOG_DEBUG("lfg", "CMSG_DF_SET_ROLES: Group {}, Player {}, Roles: {}",
+        gguid.ToString(), GetPlayerInfo(), dfSetRoles.RolesDesired);
     sLFGMgr->UpdateRoleCheck(gguid, guid, dfSetRoles.RolesDesired);
 }
 
 void WorldSession::HandleLfgSetBootVoteOpcode(WorldPackets::LFG::DFBootPlayerVote& dfBootPlayerVote)
 {
     ObjectGuid guid = GetPlayer()->GetGUID();
-    TC_LOG_DEBUG("lfg", "CMSG_LFG_SET_BOOT_VOTE %s agree: %u",
-        GetPlayerInfo().c_str(), dfBootPlayerVote.Vote ? 1 : 0);
+    TC_LOG_DEBUG("lfg", "CMSG_LFG_SET_BOOT_VOTE {} agree: {}",
+        GetPlayerInfo(), dfBootPlayerVote.Vote ? 1 : 0);
     sLFGMgr->UpdateBoot(guid, dfBootPlayerVote.Vote);
 }
 
 void WorldSession::HandleLfgTeleportOpcode(WorldPackets::LFG::DFTeleport& dfTeleport)
 {
-    TC_LOG_DEBUG("lfg", "CMSG_DF_TELEPORT %s out: %u",
-        GetPlayerInfo().c_str(), dfTeleport.TeleportOut ? 1 : 0);
+    TC_LOG_DEBUG("lfg", "CMSG_DF_TELEPORT {} out: {}",
+        GetPlayerInfo(), dfTeleport.TeleportOut ? 1 : 0);
     sLFGMgr->TeleportPlayer(GetPlayer(), dfTeleport.TeleportOut, true);
 }
 
 void WorldSession::HandleDFGetSystemInfo(WorldPackets::LFG::DFGetSystemInfo& dfGetSystemInfo)
 {
-    TC_LOG_DEBUG("lfg", "CMSG_DF_GET_SYSTEM_INFO %s for %s", GetPlayerInfo().c_str(), (dfGetSystemInfo.Player ? "player" : "party"));
+    TC_LOG_DEBUG("lfg", "CMSG_DF_GET_SYSTEM_INFO {} for {}", GetPlayerInfo(), (dfGetSystemInfo.Player ? "player" : "party"));
 
     if (dfGetSystemInfo.Player)
         SendLfgPlayerLockInfo();
@@ -117,7 +115,7 @@ void WorldSession::HandleDFGetSystemInfo(WorldPackets::LFG::DFGetSystemInfo& dfG
 
 void WorldSession::HandleDFGetJoinStatus(WorldPackets::LFG::DFGetJoinStatus& /*dfGetJoinStatus*/)
 {
-    TC_LOG_DEBUG("lfg", "CMSG_DF_GET_JOIN_STATUS %s", GetPlayerInfo().c_str());
+    TC_LOG_DEBUG("lfg", "CMSG_DF_GET_JOIN_STATUS {}", GetPlayerInfo());
 
     if (!GetPlayer()->isUsingLfg())
         return;
@@ -145,7 +143,7 @@ void WorldSession::SendLfgPlayerLockInfo()
 
     // Get Random dungeons that can be done at a certain level and expansion
     uint8 level = GetPlayer()->GetLevel();
-    lfg::LfgDungeonSet const& randomDungeons = sLFGMgr->GetRandomAndSeasonalDungeons(level, GetExpansion());
+    lfg::LfgDungeonSet const& randomDungeons = sLFGMgr->GetRandomAndSeasonalDungeons(level, GetExpansion(), 0);
 
     WorldPackets::LFG::LfgPlayerInfo lfgPlayerInfo;
 
@@ -227,7 +225,7 @@ void WorldSession::SendLfgPartyLockInfo()
             lfgBlackList.Slot.emplace_back(lock.first, lock.second.lockStatus, lock.second.requiredItemLevel, lock.second.currentItemLevel);
     }
 
-    TC_LOG_DEBUG("lfg", "SMSG_LFG_PARTY_INFO %s", GetPlayerInfo().c_str());
+    TC_LOG_DEBUG("lfg", "SMSG_LFG_PARTY_INFO {}", GetPlayerInfo());
     SendPacket(lfgPartyInfo.Write());;
 }
 

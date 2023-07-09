@@ -380,6 +380,8 @@ struct BattlemasterListEntry
     int8 MinPlayers;
     int8 MaxPlayers;
     int8 Flags;
+
+    EnumFlag<BattlemasterListFlags> GetFlags() const { return static_cast<BattlemasterListFlags>(Flags); }
 };
 
 #define MAX_BROADCAST_TEXT_EMOTES 3
@@ -2010,6 +2012,12 @@ struct MapDifficultyEntry
     uint32 ItemContextPickerID;
     uint16 MapID;
 
+    bool HasResetSchedule() const { return ResetInterval != MAP_DIFFICULTY_RESET_ANYTIME; }
+    bool IsUsingEncounterLocks() const { return GetFlags().HasFlag(MapDifficultyFlags::UseLootBasedLockInsteadOfInstanceLock); }
+    bool IsRestoringDungeonState() const { return GetFlags().HasFlag(MapDifficultyFlags::ResumeDungeonProgressBasedOnLockout); }
+    bool IsExtendable() const { return !GetFlags().HasFlag(MapDifficultyFlags::DisableLockExtension); }
+
+
     uint32 GetRaidDuration() const
     {
         if (ResetInterval == 1)
@@ -2018,6 +2026,7 @@ struct MapDifficultyEntry
             return 604800;
         return 0;
     }
+    EnumFlag<MapDifficultyFlags> GetFlags() const { return static_cast<MapDifficultyFlags>(Flags); }
 };
 
 struct ModifierTreeEntry

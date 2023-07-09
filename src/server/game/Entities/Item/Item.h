@@ -78,21 +78,21 @@ struct BonusData
     int32 ItemLevelBonus;
     int32 RequiredLevel;
     int32 ItemStatType[MAX_ITEM_PROTO_STATS];
-    int32 StatPercentEditor[MAX_ITEM_PROTO_STATS];
+    int32 ItemStatValue[MAX_ITEM_PROTO_STATS];
+    int32 ItemStatAllocation[MAX_ITEM_PROTO_STATS];
     float ItemStatSocketCostMultiplier[MAX_ITEM_PROTO_STATS];
     uint32 SocketColor[MAX_ITEM_PROTO_SOCKETS];
     ItemBondingType Bonding;
     uint32 AppearanceModID;
     float RepairCostMultiplier;
     uint32 ScalingStatDistribution;
-    uint32 PlayerLevelToItemLevelCurveId;
+    uint32 SandboxScalingId;
     uint32 DisenchantLootId;
     uint32 GemItemLevelBonus[MAX_ITEM_PROTO_SOCKETS];
     int32 GemRelicType[MAX_ITEM_PROTO_SOCKETS];
     uint16 GemRelicRankBonus[MAX_ITEM_PROTO_SOCKETS];
     int32 RelicType;
     int32 RequiredLevelOverride;
-    int32 SandboxScalingId;
     uint32 Suffix;
     int32 RequiredLevelCurve;
     std::array<ItemEffectEntry const*, 13> Effects;
@@ -112,8 +112,6 @@ private:
         int32 SuffixPriority;
         int32 AppearanceModPriority;
         int32 ScalingStatDistributionPriority;
-        int32 AzeriteTierUnlockSetPriority;
-        int32 RequiredLevelCurvePriority;
         bool HasQualityBonus;
     } _state;
 };
@@ -213,7 +211,7 @@ class TC_GAME_API Item : public Object
 
         void AddBonuses(uint32 bonusListID);
         std::vector<uint32> const& GetBonusListIDs() const { return GetDynamicValues(ITEM_DYNAMIC_FIELD_BONUSLIST_IDS); }
-        void SetBonuses(std::vector<int32> bonusListIDs);
+        void SetBonuses(std::vector<uint32> bonusListIDs);
         void ClearBonuses();
 
         static void DeleteFromDB(CharacterDatabaseTransaction trans, ObjectGuid::LowType itemGuid);
@@ -275,6 +273,7 @@ class TC_GAME_API Item : public Object
 
         ItemRandomBonusListId GetItemRandomBonusListId() const { return m_randomBonusListId; }
         void SetItemRandomBonusList(ItemRandomBonusListId bonusListId);
+
         void SetEnchantment(EnchantmentSlot slot, uint32 id, uint32 duration, uint32 charges, ObjectGuid caster = ObjectGuid::Empty);
         void SetEnchantmentDuration(EnchantmentSlot slot, uint32 duration, Player* owner);
         void SetEnchantmentCharges(EnchantmentSlot slot, uint32 charges);

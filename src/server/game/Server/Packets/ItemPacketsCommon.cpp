@@ -30,19 +30,6 @@ bool WorldPackets::Item::ItemBonuses::operator==(ItemBonuses const& r) const
     return std::is_permutation(BonusListIDs.begin(), BonusListIDs.end(), r.BonusListIDs.begin());
 }
 
-bool WorldPackets::Item::ItemMod::operator==(ItemMod const& r) const
-{
-    return Value == r.Value && Type == r.Type;
-}
-
-bool WorldPackets::Item::ItemModList::operator==(ItemModList const& r) const
-{
-    if (Values.size() != r.Values.size())
-        return false;
-
-    return std::is_permutation(Values.begin(), Values.end(), r.Values.begin());
-}
-
 void WorldPackets::Item::ItemInstance::Initialize(::Item const* item)
 {
     ItemID               = item->GetEntry();
@@ -92,17 +79,26 @@ void WorldPackets::Item::ItemInstance::Initialize(::LootItem const& lootItem)
         if (lootItem.randomBonusListId)
             ItemBonus->BonusListIDs.push_back(lootItem.randomBonusListId);
     }
+    if (lootItem.upgradeId)
+    {
+        Modifications.emplace();
+        Modifications->Insert(ITEM_MODIFIER_UPGRADE_ID, lootItem.upgradeId);
+    }
 }
 
 void WorldPackets::Item::ItemInstance::Initialize(::VoidStorageItem const* voidItem)
 {
     ItemID = voidItem->ItemEntry;
+    RandomPropertiesSeed = voidItem->ItemSuffixFactor;
+
+    if (voidItem->ItemUpgradeId)
+        Modifications->Insert(ITEM_MODIFIER_UPGRADE_ID, voidItem->ItemUpgradeId);
 
     if (voidItem->FixedScalingLevel)
-        Modifications.Values.emplace_back(voidItem->FixedScalingLevel, ITEM_MODIFIER_TIMEWALKER_LEVEL);
+        Modifications->Insert(ITEM_MODIFIER_TIMEWALKER_LEVEL, voidItem->FixedScalingLevel);
 
     if (voidItem->ArtifactKnowledgeLevel)
-        Modifications.Values.emplace_back(voidItem->ArtifactKnowledgeLevel, ITEM_MODIFIER_ARTIFACT_KNOWLEDGE_LEVEL);
+        Modifications->Insert(ITEM_MODIFIER_ARTIFACT_KNOWLEDGE_LEVEL, voidItem->ArtifactKnowledgeLevel);
 
     if (!voidItem->BonusListIDs.empty())
     {
@@ -120,7 +116,7 @@ bool WorldPackets::Item::ItemInstance::operator==(ItemInstance const& r) const
     if (ItemBonus.has_value() != r.ItemBonus.has_value() || Modifications.has_value() != r.Modifications.has_value())
         return false;
 
-    if (Modifications != r.Modifications)
+    if (Modifications.has_value() && *Modifications != *r.Modifications)
         return false;
 
     if (ItemBonus.has_value() && *ItemBonus != *r.ItemBonus)
@@ -156,44 +152,6 @@ ByteBuffer& operator>>(ByteBuffer& data, WorldPackets::Item::ItemBonuses& ItemBo
     return data;
 }
 
-ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Item::ItemMod const& itemMod)
-{
-    data << int32(itemMod.Value);
-    data << uint8(itemMod.Type);
-
-    return data;
-}
-
-ByteBuffer& operator>>(ByteBuffer& data, WorldPackets::Item::ItemMod& itemMod)
-{
-    data >> itemMod.Value;
-    itemMod.Type = data.read<ItemModifier, uint8>();
-
-    return data;
-}
-
-ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Item::ItemModList const& itemModList)
-{
-    data.WriteBits(itemModList.Values.size(), 6);
-    data.FlushBits();
-
-    for (WorldPackets::Item::ItemMod const& itemMod : itemModList.Values)
-        data << itemMod;
-
-    return data;
-}
-
-ByteBuffer& operator>>(ByteBuffer& data, WorldPackets::Item::ItemModList& itemModList)
-{
-    itemModList.Values.resize(data.ReadBits(6));
-    data.ResetBitPos();
-
-    for (WorldPackets::Item::ItemMod& itemMod : itemModList.Values)
-        data >> itemMod;
-
-    return data;
-}
-
 ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Item::ItemInstance const& itemInstance)
 {
     data << int32(itemInstance.ItemID);
@@ -201,12 +159,14 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Item::ItemInstance const&
     data << int32(itemInstance.RandomPropertiesID);
 
     data.WriteBit(itemInstance.ItemBonus.has_value());
+    data.WriteBit(itemInstance.Modifications.has_value());
     data.FlushBits();
 
     if (itemInstance.ItemBonus)
         data << *itemInstance.ItemBonus;
 
-    data << itemInstance.Modifications;
+    if (itemInstance.Modifications)
+        data << *itemInstance.Modifications;
 
     return data;
 }
@@ -227,7 +187,11 @@ ByteBuffer& operator>>(ByteBuffer& data, WorldPackets::Item::ItemInstance& itemI
         data >> *itemInstance.ItemBonus;
     }
 
-    data >> itemInstance.Modifications;
+    if (hasModifications)
+    {
+        itemInstance.Modifications.emplace();
+        data >> *itemInstance.Modifications;
+    }
 
     return data;
 }

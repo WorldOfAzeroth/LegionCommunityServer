@@ -22,7 +22,6 @@
  */
 
 #include "ScriptMgr.h"
-#include "AzeritePackets.h"
 #include "Battleground.h"
 #include "Containers.h"
 #include "Creature.h"
@@ -978,36 +977,6 @@ enum DireBrew
     MODEL_CLASS_PLATE_FEMALE       = 25236
 };
 
-// 51010 - Dire Brew
-class spell_item_dire_brew : public AuraScript
-{
-    PrepareAuraScript(spell_item_dire_brew);
-
-    void AfterApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-    {
-        Unit* target = GetTarget();
-
-        uint32 model = 0;
-        uint8 gender = target->GetGender();
-        ChrClassesEntry const* chrClass = sChrClassesStore.AssertEntry(target->GetClass());
-        if (chrClass->ArmorTypeMask & (1 << ITEM_SUBCLASS_ARMOR_PLATE))
-            model = gender == GENDER_MALE ? MODEL_CLASS_PLATE_MALE : MODEL_CLASS_PLATE_FEMALE;
-        else if (chrClass->ArmorTypeMask & (1 << ITEM_SUBCLASS_ARMOR_MAIL))
-            model = gender == GENDER_MALE ? MODEL_CLASS_MAIL_MALE : MODEL_CLASS_MAIL_FEMALE;
-        else if (chrClass->ArmorTypeMask & (1 << ITEM_SUBCLASS_ARMOR_LEATHER))
-            model = gender == GENDER_MALE ? MODEL_CLASS_LEATHER_MALE : MODEL_CLASS_LEATHER_FEMALE;
-        else if (chrClass->ArmorTypeMask & (1 << ITEM_SUBCLASS_ARMOR_CLOTH))
-            model = gender == GENDER_MALE ? MODEL_CLASS_CLOTH_MALE : MODEL_CLASS_CLOTH_FEMALE;
-
-        if (model)
-            target->SetDisplayId(model);
-    }
-
-    void Register() override
-    {
-        AfterEffectApply += AuraEffectApplyFn(spell_item_dire_brew::AfterApply, EFFECT_0, SPELL_AURA_TRANSFORM, AURA_EFFECT_HANDLE_REAL);
-    }
-};
 
 enum DiscerningEyeBeastMisc
 {
@@ -4478,39 +4447,6 @@ class spell_item_eggnog : public SpellScript
     }
 };
 
-// 277253 - Heart of Azeroth
-class spell_item_heart_of_azeroth : public AuraScript
-{
-    PrepareAuraScript(spell_item_heart_of_azeroth);
-
-    void SetEquippedFlag(AuraEffect const* /*effect*/, AuraEffectHandleModes /*mode*/)
-    {
-        SetState(true);
-    }
-
-    void ClearEquippedFlag(AuraEffect const* /*effect*/, AuraEffectHandleModes /*mode*/)
-    {
-        SetState(false);
-    }
-
-    void SetState(bool equipped)
-    {
-        if (Player* target = GetTarget()->ToPlayer())
-        {
-            target->ApplyAllAzeriteEmpoweredItemMods(equipped);
-
-            WorldPackets::Azerite::PlayerAzeriteItemEquippedStatusChanged statusChanged;
-            statusChanged.IsHeartEquipped = equipped;
-            target->SendDirectMessage(statusChanged.Write());
-        }
-    }
-
-    void Register()
-    {
-        OnEffectApply += AuraEffectApplyFn(spell_item_heart_of_azeroth::SetEquippedFlag, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-        OnEffectRemove += AuraEffectRemoveFn(spell_item_heart_of_azeroth::ClearEquippedFlag, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-    }
-};
 
 void AddSC_item_spell_scripts()
 {
@@ -4548,7 +4484,6 @@ void AddSC_item_spell_scripts()
     RegisterSpellScript(spell_item_desperate_defense);
     RegisterSpellScript(spell_item_deviate_fish);
     RegisterSpellScript(spell_item_party_time);
-    RegisterSpellScript(spell_item_dire_brew);
     RegisterSpellScript(spell_item_discerning_eye_beast_dummy);
     RegisterSpellScript(spell_item_echoes_of_light);
     RegisterSpellScript(spell_item_extract_gas);
@@ -4652,5 +4587,4 @@ void AddSC_item_spell_scripts()
     RegisterSpellScript(spell_item_crazy_alchemists_potion);
     RegisterSpellScript(spell_item_eggnog);
 
-    RegisterSpellScript(spell_item_heart_of_azeroth);
 }

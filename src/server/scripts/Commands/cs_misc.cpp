@@ -1219,7 +1219,7 @@ public:
         if (count == 0)
             count = 1;
 
-        std::vector<int32> bonusListIDs;
+        std::vector<uint32> bonusListIDs;
         char const* bonuses = strtok(nullptr, " ");
 
         char const* context = strtok(nullptr, " ");
@@ -1227,7 +1227,7 @@ public:
         // semicolon separated bonuslist ids (parse them after all arguments are extracted by strtok!)
         if (bonuses)
             for (std::string_view token : Trinity::Tokenize(bonuses, ';', false))
-                if (Optional<int32> bonusListId = Trinity::StringTo<int32>(token))
+                if (Optional<uint32> bonusListId = Trinity::StringTo<uint32>(token))
                     bonusListIDs.push_back(*bonusListId);
 
         ItemContext itemContext = ItemContext::NONE;
@@ -1383,7 +1383,7 @@ public:
         if (count == 0)
             count = 1;
 
-        std::vector<int32> bonusListIDs;
+        std::vector<uint32> bonusListIDs;
         char const* bonuses = strtok(nullptr, " ");
 
         char const* context = strtok(nullptr, " ");
@@ -1487,7 +1487,7 @@ public:
             return false;
         }
 
-        std::vector<int32> bonusListIDs;
+        std::vector<uint32> bonusListIDs;
 
         // semicolon separated bonuslist ids (parse them after all arguments are extracted by strtok!)
         if (bonuses)
@@ -1516,7 +1516,7 @@ public:
             InventoryResult msg = playerTarget->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, itemTemplatePair.first, 1);
             if (msg == EQUIP_ERR_OK)
             {
-                std::vector<int32> bonusListIDsForItem = bonusListIDs; // copy, bonuses for each depending on context might be different for each item
+                std::vector<uint32> bonusListIDsForItem = bonusListIDs; // copy, bonuses for each depending on context might be different for each item
                 if (itemContext != ItemContext::NONE && itemContext < ItemContext::Max)
                 {
                     std::set<uint32> contextBonuses = sDB2Manager.GetDefaultItemBonusTree(itemTemplatePair.first, itemContext);

@@ -106,6 +106,19 @@ namespace WorldPackets
             std::string Name;
         };
 
+        struct CharFactionChangeDisplayInfo
+        {
+            std::string Name;
+            uint8 SexID             = 0;
+            uint8 SkinID            = 0;
+            uint8 HairColorID       = 0;
+            uint8 HairStyleID       = 0;
+            uint8 FacialHairStyleID = 0;
+            uint8 FaceID            = 0;
+            uint8 RaceID            = RACE_NONE;
+            std::array<uint8, PLAYER_CUSTOM_DISPLAY_SIZE> CustomDisplay = { };
+        };
+
         class EnumCharactersResult final : public ServerPacket
         {
         public:
@@ -320,18 +333,6 @@ namespace WorldPackets
         class CharFactionChangeResult final : public ServerPacket
         {
         public:
-            struct CharFactionChangeDisplayInfo
-            {
-                std::string Name;
-                uint8 SexID             = 0;
-                uint8 SkinID            = 0;
-                uint8 HairColorID       = 0;
-                uint8 HairStyleID       = 0;
-                uint8 FacialHairStyleID = 0;
-                uint8 FaceID            = 0;
-                uint8 RaceID            = RACE_NONE;
-                std::array<uint8, PLAYER_CUSTOM_DISPLAY_SIZE> CustomDisplay = { };
-            };
 
             CharFactionChangeResult() : ServerPacket(SMSG_CHAR_FACTION_CHANGE_RESULT, 20 + sizeof(CharFactionChangeDisplayInfo)) { }
 

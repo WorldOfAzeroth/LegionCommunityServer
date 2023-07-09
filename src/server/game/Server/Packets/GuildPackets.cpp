@@ -511,13 +511,13 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Guild::GuildRewardItem co
     data << rewardItem.ItemID;
     data << rewardItem.Unk4;
     data << uint32(rewardItem.AchievementsRequired.size());
-    data << uint64(rewardItem.RaceMask);
+    data << uint64(rewardItem.RaceMask.RawValue);
     data << rewardItem.MinGuildLevel;
     data << rewardItem.MinGuildRep;
     data << rewardItem.Cost;
 
-    for (uint8 i = 0; i < rewardItem.AchievementsRequired.size(); i++)
-        data << rewardItem.AchievementsRequired[i];
+    for (std::size_t i = 0; i < rewardItem.AchievementsRequired.size(); i++)
+        data << uint32(rewardItem.AchievementsRequired[i]);
 
     return data;
 }
@@ -592,9 +592,9 @@ void WorldPackets::Guild::GuildBankWithdrawMoney::Read()
 
 WorldPacket const* WorldPackets::Guild::GuildBankQueryResults::Write()
 {
-    _worldPacket << Money;
-    _worldPacket << Tab;
-    _worldPacket << WithdrawalsRemaining;
+    _worldPacket << uint64(Money);
+    _worldPacket << int32(Tab);
+    _worldPacket << int32(WithdrawalsRemaining);
     _worldPacket << uint32(TabInfo.size());
     _worldPacket << uint32(ItemInfo.size());
     _worldPacket.WriteBit(FullUpdate);
@@ -602,7 +602,7 @@ WorldPacket const* WorldPackets::Guild::GuildBankQueryResults::Write()
 
     for (GuildBankTabInfo const& tab : TabInfo)
     {
-        _worldPacket << tab.TabIndex;
+        _worldPacket << int32(tab.TabIndex);
         _worldPacket.WriteBits(tab.Name.length(), 7);
         _worldPacket.WriteBits(tab.Icon.length(), 9);
         _worldPacket.FlushBits();
@@ -613,12 +613,12 @@ WorldPacket const* WorldPackets::Guild::GuildBankQueryResults::Write()
 
     for (GuildBankItemInfo const& item : ItemInfo)
     {
-        _worldPacket << item.Slot;
-        _worldPacket << item.Count;
-        _worldPacket << item.EnchantmentID;
-        _worldPacket << item.Charges;
-        _worldPacket << item.OnUseEnchantmentID;
-        _worldPacket << item.Flags;
+        _worldPacket << int32(item.Slot);
+        _worldPacket << int32(item.Count);
+        _worldPacket << int32(item.EnchantmentID);
+        _worldPacket << int32(item.Charges);
+        _worldPacket << int32(item.OnUseEnchantmentID);
+        _worldPacket << int32(item.Flags);
         _worldPacket << item.Item;
         _worldPacket.WriteBits(item.SocketEnchant.size(), 2);
         _worldPacket.WriteBit(item.Locked);
@@ -676,20 +676,20 @@ WorldPacket const* WorldPackets::Guild::GuildBankLogQueryResults::Write()
         _worldPacket.FlushBits();
 
         if (logEntry.Money.has_value())
-            _worldPacket << *logEntry.Money;
+            _worldPacket << uint64(*logEntry.Money);
 
         if (logEntry.ItemID.has_value())
-            _worldPacket << *logEntry.ItemID;
+            _worldPacket << int32(*logEntry.ItemID);
 
         if (logEntry.Count.has_value())
-            _worldPacket << *logEntry.Count;
+            _worldPacket << int32(*logEntry.Count);
 
         if (logEntry.OtherTab.has_value())
-            _worldPacket << *logEntry.OtherTab;
+            _worldPacket << int8(*logEntry.OtherTab);
     }
 
     if (WeeklyBonusMoney)
-        _worldPacket << *WeeklyBonusMoney;
+        _worldPacket << uint64(*WeeklyBonusMoney);
 
     return &_worldPacket;
 }
@@ -701,7 +701,7 @@ void WorldPackets::Guild::GuildBankTextQuery::Read()
 
 WorldPacket const* WorldPackets::Guild::GuildBankTextQueryResult::Write()
 {
-    _worldPacket << Tab;
+    _worldPacket << int32(Tab);
 
     _worldPacket.WriteBits(Text.length(), 14);
     _worldPacket.FlushBits();
@@ -724,13 +724,13 @@ void WorldPackets::Guild::GuildQueryNews::Read()
 
 ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Guild::GuildNewsEvent const& newsEvent)
 {
-    data << newsEvent.Id;
+    data << int32(newsEvent.Id);
     data.AppendPackedTime(newsEvent.CompletedDate);
-    data << newsEvent.Type;
-    data << newsEvent.Flags;
+    data << int32(newsEvent.Type);
+    data << int32(newsEvent.Flags);
 
     for (uint8 i = 0; i < 2; i++)
-        data << newsEvent.Data[i];
+        data << int32(newsEvent.Data[i]);
 
     data << newsEvent.MemberGuid;
     data << uint32(newsEvent.MemberList.size());
@@ -806,15 +806,10 @@ WorldPacket const* WorldPackets::Guild::PlayerSaveGuildEmblem::Write()
 
 void WorldPackets::Guild::GuildSetAchievementTracking::Read()
 {
-    uint32 count;
-    _worldPacket >> count;
+    AchievementIDs.resize(_worldPacket.read<uint32>());
 
-    for (uint32 i = 0; i < count; ++i)
-    {
-        uint32 value;
-        _worldPacket >> value;
-        AchievementIDs.insert(value);
-    }
+    for (uint32& achievementID : AchievementIDs)
+        _worldPacket >> achievementID;
 }
 
 WorldPacket const* WorldPackets::Guild::GuildNameChanged::Write()

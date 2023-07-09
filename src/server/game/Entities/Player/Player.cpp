@@ -593,7 +593,7 @@ bool Player::StoreNewItemInBestSlots(uint32 itemId, uint32 amount, ItemContext c
     TC_LOG_DEBUG("entities.player.items", "Player::StoreNewItemInBestSlots: Player '{}' ({}) creates initial item (ItemID: {}, Count: {})",
         GetName(), GetGUID().ToString(), itemId, amount);
 
-    std::vector<int32> bonusListIDs;
+    std::vector<uint32> bonusListIDs;
     std::set<uint32> contextBonuses = sDB2Manager.GetDefaultItemBonusTree(itemId, context);
     bonusListIDs.insert(bonusListIDs.begin(), contextBonuses.begin(), contextBonuses.end());
 
@@ -10780,7 +10780,7 @@ InventoryResult Player::CanRollNeedForItem(ItemTemplate const* proto, Map const*
 
 // Return stored item (if stored to stack, it can diff. from pItem). And pItem ca be deleted in this case.
 Item* Player::StoreNewItem(ItemPosCountVec const& pos, uint32 itemId, bool update, ItemRandomBonusListId randomBonusListId /*= 0*/,
-    GuidSet const& allowedLooters /*= GuidSet()*/, ItemContext context /*= ItemContext::NONE*/, std::vector<int32> const& bonusListIDs /*= std::vector<int32>()*/, bool addToCollection /*= true*/)
+    GuidSet const& allowedLooters /*= GuidSet()*/, ItemContext context /*= ItemContext::NONE*/, std::vector<uint32> const& bonusListIDs /*= std::vector<int32>()*/, bool addToCollection /*= true*/)
 {
     uint32 count = 0;
     for (ItemPosCountVec::const_iterator itr = pos.begin(); itr != pos.end(); ++itr)
@@ -17804,7 +17804,7 @@ void Player::_LoadVoidStorage(PreparedQueryResult result)
         uint32 fixedScalingLevel = fields[5].GetUInt32();
         uint32 artifactKnowledgeLevel = fields[6].GetUInt32();
         ItemContext context = ItemContext(fields[7].GetUInt8());
-        std::vector<int32> bonusListIDs;
+        std::vector<uint32> bonusListIDs;
         for (std::string_view bonusListIDtoken : Trinity::Tokenize(fields[8].GetStringView(), ' ', false))
             if (Optional<int32> bonusListID = Trinity::StringTo<int32>(bonusListIDtoken))
                 bonusListIDs.push_back(*bonusListID);

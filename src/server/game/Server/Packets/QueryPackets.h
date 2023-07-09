@@ -22,12 +22,15 @@
 #include "AuthenticationPackets.h"
 #include "NPCHandler.h"
 #include "ObjectGuid.h"
+#include "PacketUtilities.h"
 #include "Position.h"
+#include "RaceMask.h"
 #include "SharedDefines.h"
 #include "UnitDefines.h"
 #include <array>
 
 class Player;
+struct QuestPOIData;
 
 namespace WorldPackets
 {
@@ -286,7 +289,7 @@ namespace WorldPackets
 
             WorldPacket const* Write() override;
 
-            time_t CurrentTime = time_t(0);
+            Timestamp<> CurrentTime;
         };
 
         class QuestPOIQuery final : public ClientPacket
@@ -297,37 +300,7 @@ namespace WorldPackets
             void Read() override;
 
             int32 MissingQuestCount = 0;
-            int32 MissingQuestPOIs[50];
-        };
-
-        struct QuestPOIBlobPoint
-        {
-            int32 X = 0;
-            int32 Y = 0;
-        };
-
-        struct QuestPOIBlobData
-        {
-            int32 BlobIndex = 0;
-            int32 ObjectiveIndex = 0;
-            int32 QuestObjectiveID = 0;
-            int32 QuestObjectID = 0;
-            int32 MapID = 0;
-            int32 WorldMapAreaID = 0;
-            int32 Floor = 0;
-            int32 Priority = 0;
-            int32 Flags = 0;
-            int32 WorldEffectID = 0;
-            int32 PlayerConditionID = 0;
-            int32 UnkWoD1 = 0;
-            std::vector<QuestPOIBlobPoint> QuestPOIBlobPointStats;
-            bool AlwaysAllowMergingBlobs = false;
-        };
-
-        struct QuestPOIData
-        {
-            int32 QuestID = 0;
-            std::vector<QuestPOIBlobData> QuestPOIBlobDataStats;
+            std::array<int32, 125> MissingQuestPOIs;
         };
 
         class QuestPOIQueryResponse final : public ServerPacket
@@ -337,7 +310,7 @@ namespace WorldPackets
 
             WorldPacket const* Write() override;
 
-            std::vector<QuestPOIData> QuestPOIDataStats;
+            std::vector<QuestPOIData const*> QuestPOIDataStats;
         };
 
         class QueryQuestCompletionNPCs final : public ClientPacket
@@ -388,7 +361,7 @@ namespace WorldPackets
 
             bool HasDeclined = false;
             DeclinedName DeclinedNames;
-            uint32 Timestamp = 0;
+            WorldPackets::Timestamp<> Timestamp;
             std::string Name;
         };
 
@@ -445,5 +418,6 @@ namespace WorldPackets
 
 ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Query::PlayerGuidLookupHint const& lookupHint);
 ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Query::PlayerGuidLookupData const& lookupData);
+ByteBuffer& operator<<(ByteBuffer& data, QuestPOIData const& questPOIData);
 
 #endif // QueryPackets_h__
