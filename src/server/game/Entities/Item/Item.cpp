@@ -742,7 +742,7 @@ bool Item::LoadFromDB(ObjectGuid::LowType guid, ObjectGuid ownerGuid, Field* fie
 
     ReplaceAllItemFlags(ItemFieldFlags(itemFlags));
 
-    uint32 durability = fields[10].GetUInt16();
+    uint32 durability = fields[11].GetUInt16();
     SetDurability(durability);
     // update max durability (and durability) if need
     SetMaxDurability(proto->MaxDurability);
@@ -754,8 +754,8 @@ bool Item::LoadFromDB(ObjectGuid::LowType guid, ObjectGuid ownerGuid, Field* fie
         need_save = true;
     }
 
-    SetCreatePlayedTime(fields[11].GetUInt32());
-    SetText(fields[12].GetString());
+    SetCreatePlayedTime(fields[12].GetUInt32());
+    SetText(fields[13].GetString());
 
     uint32 upgradeId = fields[14].GetUInt32();
     ItemUpgradeEntry const* rulesetUpgrade = sItemUpgradeStore.LookupEntry(sDB2Manager.GetRulesetItemUpgrade(entry));
@@ -2232,7 +2232,7 @@ void Item::AddBonuses(uint32 bonusListID)
 {
     if (HasDynamicValue(ITEM_DYNAMIC_FIELD_BONUSLIST_IDS, bonusListID))
         return;
-    
+
     if (DB2Manager::ItemBonusList const* bonuses = sDB2Manager.GetItemBonusList(bonusListID))
     {
         AddDynamicValue(ITEM_DYNAMIC_FIELD_BONUSLIST_IDS, bonusListID);
@@ -2250,7 +2250,7 @@ void Item::SetBonuses(std::vector<uint32> bonusListIDs)
         AddBonuses(bonusListID);
         _bonusData.AddBonusList(bonusListID);
     }
-    
+
 }
 
 void Item::ClearBonuses() {
@@ -2373,7 +2373,7 @@ void Item::ApplyArtifactPowerEnchantmentBonuses(EnchantmentSlot slot, uint32 enc
                                 if (ArtifactPowerRankEntry const* artifactPowerRank = sDB2Manager.GetArtifactPowerRank(artifactPower.ArtifactPowerId, newRank ? newRank - 1 : 0))
                                     owner->ApplyArtifactPowerRank(this, artifactPowerRank, newRank != 0);
                         }
-                    
+
                     }
                     break;
                 }

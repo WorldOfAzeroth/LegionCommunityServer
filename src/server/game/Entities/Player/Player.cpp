@@ -315,6 +315,7 @@ Player::Player(WorldSession* session) : Unit(true), m_sceneMgr(this)
     m_lastFallTime = 0;
     m_lastFallZ = 0;
 
+    m_grantableLevels = 0;
     m_fishingSteps = 0;
 
     m_ControlledByPlayer = true;
@@ -1669,7 +1670,6 @@ void Player::RemoveFromWorld()
     }
 
     RemovePlayerLocalFlag(PLAYER_LOCAL_FLAG_OVERRIDE_TRANSPORT_SERVER_TIME);
-    //SetTransportServerTime(0);
 }
 
 void Player::SetObjectScale(float scale)
@@ -2402,6 +2402,21 @@ void Player::GiveLevel(uint8 level)
 
     UpdateCriteria(CriteriaType::ReachLevel);
     UpdateCriteria(CriteriaType::ActivelyReachLevel, level);
+
+    // Refer-A-Friend
+    if (GetSession()->GetRecruiterId())
+    {
+        if (level < sWorld->getIntConfig(CONFIG_MAX_RECRUIT_A_FRIEND_BONUS_PLAYER_LEVEL))
+        {
+            if (level % 2 == 0)
+            {
+                ++m_grantableLevels;
+
+                if (!HasByteFlag(PLAYER_FIELD_BYTES, PLAYER_FIELD_BYTES_OFFSET_RAF_GRANTABLE_LEVEL, 0x01))
+                    SetByteFlag(PLAYER_FIELD_BYTES, PLAYER_FIELD_BYTES_OFFSET_RAF_GRANTABLE_LEVEL, 0x01);
+            }
+        }
+    }
 
     PushQuests();
 
@@ -4006,6 +4021,10 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
             trans->Append(stmt);
 
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_FISHINGSTEPS);
+            stmt->setUInt64(0, guid);
+            trans->Append(stmt);
+
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHARACTER_AURA_STORED_LOCATIONS_BY_GUID);
             stmt->setUInt64(0, guid);
             trans->Append(stmt);
 
@@ -17306,6 +17325,10 @@ bool Player::LoadFromDB(ObjectGuid guid, CharacterDatabaseQueryHolder const& hol
     if (GetSession()->IsARecruiter() || (GetSession()->GetRecruiterId() != 0))
         SetDynamicFlag(UNIT_DYNFLAG_REFER_A_FRIEND);
 
+    if (m_grantableLevels > 0)
+        SetByteValue(PLAYER_FIELD_BYTES, PLAYER_FIELD_BYTES_OFFSET_RAF_GRANTABLE_LEVEL, 0x01);
+
+
     _LoadDeclinedNames(holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_DECLINED_NAMES));
 
     _LoadEquipmentSets(holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_EQUIPMENT_SETS));
@@ -19061,6 +19084,7 @@ void Player::SaveToDB(LoginDatabaseTransaction loginTransaction, CharacterDataba
     _SaveActions(trans);
     _SaveAuras(trans);
     _SaveSkills(trans);
+    _SaveStoredAuraTeleportLocations(trans);
     m_achievementMgr->SaveToDB(trans);
     m_reputationMgr->SaveToDB(trans);
     m_questObjectiveCriteriaMgr->SaveToDB(trans);
@@ -19799,6 +19823,41 @@ void Player::_SaveSpells(CharacterDatabaseTransaction trans)
     }
 }
 
+void Player::_SaveStoredAuraTeleportLocations(CharacterDatabaseTransaction trans)
+{
+    for (auto itr = m_storedAuraTeleportLocations.begin(); itr != m_storedAuraTeleportLocations.end(); )
+    {
+        StoredAuraTeleportLocation& storedLocation = itr->second;
+        if (storedLocation.State == StoredAuraTeleportLocation::DELETED)
+        {
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHARACTER_AURA_STORED_LOCATION);
+            stmt->setUInt64(0, GetGUID().GetCounter());
+            trans->Append(stmt);
+            itr = m_storedAuraTeleportLocations.erase(itr);
+            continue;
+        }
+
+        if (storedLocation.State == StoredAuraTeleportLocation::CHANGED)
+        {
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHARACTER_AURA_STORED_LOCATION);
+            stmt->setUInt64(0, GetGUID().GetCounter());
+            trans->Append(stmt);
+
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHARACTER_AURA_STORED_LOCATION);
+            stmt->setUInt64(0, GetGUID().GetCounter());
+            stmt->setUInt32(1, itr->first);
+            stmt->setUInt32(2, storedLocation.Loc.GetMapId());
+            stmt->setFloat(3, storedLocation.Loc.GetPositionX());
+            stmt->setFloat(4, storedLocation.Loc.GetPositionY());
+            stmt->setFloat(5, storedLocation.Loc.GetPositionZ());
+            stmt->setFloat(6, storedLocation.Loc.GetOrientation());
+            trans->Append(stmt);
+        }
+
+        ++itr;
+    }
+}
+
 
 // save player stats -- only for external usage
 // real stats will be recalculated on player login
@@ -20388,16 +20447,16 @@ void Player::TextEmote(std::string_view text, WorldObject const* /*= nullptr*/, 
     SendMessageToSetInRange(packet.Write(), sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_TEXTEMOTE), true, !GetSession()->HasPermission(rbac::RBAC_PERM_TWO_SIDE_INTERACTION_CHAT));
 }
 
-void Player::WhisperAddon(std::string const& text, std::string const& prefix, bool isLogged, Player* receiver)
+void Player::WhisperAddon(std::string const& text, const std::string& prefix, Player* receiver)
 {
     std::string _text(text);
-    sScriptMgr->OnPlayerChat(this, CHAT_MSG_WHISPER, uint32(isLogged ? LANG_ADDON_LOGGED : LANG_ADDON), _text, receiver);
+    sScriptMgr->OnPlayerChat(this, CHAT_MSG_WHISPER, uint32(LANG_ADDON), _text, receiver);
 
     if (!receiver->GetSession()->IsAddonRegistered(prefix))
         return;
 
     WorldPackets::Chat::Chat packet;
-    packet.Initialize(CHAT_MSG_WHISPER, isLogged ? LANG_ADDON_LOGGED : LANG_ADDON, this, this, text, 0, "", DEFAULT_LOCALE, prefix);
+    packet.Initialize(CHAT_MSG_WHISPER, LANG_ADDON, this, this, text, 0, "", DEFAULT_LOCALE, prefix);
     receiver->SendDirectMessage(packet.Write());
 }
 
@@ -25307,7 +25366,7 @@ TalentLearnResult Player::LearnPvpTalent(uint32 talentID, int32* spellOnCooldown
         }
     }
 
-    
+
     // spell not set in talent.dbc
     uint32 spellid = talentInfo->SpellID;
     if (!spellid)
@@ -25378,7 +25437,7 @@ void Player::RemovePvpTalent(PvpTalentEntry const* talent, uint8 activeTalentGro
         return;
 
     RemoveSpell(talent->SpellID, true);
-    
+
     // search for spells that the talent teaches and unlearn them
     for (SpellEffectInfo const& spellEffectInfo : spellInfo->GetEffects())
         if (spellEffectInfo.IsEffect(SPELL_EFFECT_LEARN_SPELL) && spellEffectInfo.TriggerSpell > 0)
@@ -25391,7 +25450,7 @@ void Player::RemovePvpTalent(PvpTalentEntry const* talent, uint8 activeTalentGro
     PlayerPvpTalentMap::iterator plrTalent = GetPvpTalentMap(GetActiveTalentGroup())->find(talent->ID);
     if (plrTalent != GetTalentMap(GetActiveTalentGroup())->end())
         plrTalent->second = PLAYERSPELL_REMOVED;
-    
+
 }
 
 void Player::TogglePvpTalents(bool enable)

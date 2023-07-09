@@ -324,10 +324,12 @@ class TC_GAME_API Item : public Object
             uint32 minItemLevel, uint32 minItemLevelCutoff, uint32 maxItemLevel, bool pvpBonus, uint32 azeriteLevel);
         int32 GetRequiredLevel() const;
         int32 GetItemStatType(uint32 index) const { ASSERT(index < MAX_ITEM_PROTO_STATS); return _bonusData.ItemStatType[index]; }
-        float GetItemStatValue(uint32 index, Player const* owner) const;
+        int32 GetItemStatValue(uint32 index, Player const* owner) const;
         SocketColor GetSocketColor(uint32 index) const { ASSERT(index < MAX_ITEM_PROTO_SOCKETS); return SocketColor(_bonusData.SocketColor[index]); }
         uint32 GetAppearanceModId() const { return GetUInt32Value(ITEM_FIELD_APPEARANCE_MOD_ID); }
         void SetAppearanceModId(uint32 appearanceModId) { SetUInt32Value(ITEM_FIELD_APPEARANCE_MOD_ID, appearanceModId); }
+        uint32 GetArmor(Player const* owner) const { return GetTemplate()->GetArmor(GetItemLevel(owner)); }
+        void GetDamage(Player const* owner, float& minDamage, float& maxDamage) const { GetTemplate()->GetDamage(GetItemLevel(owner), minDamage, maxDamage); }
         uint32 GetDisplayId(Player const* owner) const;
         ItemModifiedAppearanceEntry const* GetItemModifiedAppearance() const;
         float GetRepairCostMultiplier() const { return _bonusData.RepairCostMultiplier; }
@@ -374,7 +376,6 @@ class TC_GAME_API Item : public Object
 
         uint32 GetVisibleEntry(Player const* owner) const;
         uint16 GetVisibleAppearanceModId(Player const* owner) const;
-        int32 GetVisibleSecondaryModifiedAppearanceId(Player const* owner) const;
         uint32 GetVisibleEnchantmentId(Player const* owner) const;
         uint16 GetVisibleItemVisual(Player const* owner) const;
 

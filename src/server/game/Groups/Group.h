@@ -334,6 +334,7 @@ class TC_GAME_API Group
         void BroadcastPacket(WorldPacket const* packet, bool ignorePlayersInBGRaid, int group = -1, ObjectGuid ignoredPlayer = ObjectGuid::Empty) const;
         void BroadcastAddonMessagePacket(WorldPacket const* packet, const std::string& prefix, bool ignorePlayersInBGRaid, int group = -1, ObjectGuid ignore = ObjectGuid::Empty) const;
 
+
         void LinkMember(GroupReference* pRef);
         void DelinkMember(ObjectGuid guid);
 
