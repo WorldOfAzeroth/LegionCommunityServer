@@ -167,6 +167,7 @@ class TC_GAME_API Object
         void SendUpdateToPlayer(Player* player);
 
         void BuildValuesUpdateBlockForPlayer(UpdateData* data, Player* target) const;
+        void BuildDestroyUpdateBlock(UpdateData* data) const;
         void BuildOutOfRangeUpdateBlock(UpdateData* data) const;
         ByteBuffer& PrepareValuesUpdateBuffer(UpdateData* data) const;
 
