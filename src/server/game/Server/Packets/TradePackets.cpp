@@ -82,7 +82,7 @@ WorldPacket const* WorldPackets::Trade::TradeStatus::Write()
     return &_worldPacket;
 }
 
-ByteBuffer& operator<<(ByteBuffer& buffer, WorldPackets::Trade::TradeUpdated::UnwrappedTradeItem const& unwrappedTradeItem)
+ByteBuffer& operator<<(ByteBuffer& buffer, WorldPackets::Trade::UnwrappedTradeItem const& unwrappedTradeItem)
 {
     buffer << int32(unwrappedTradeItem.EnchantID);
     buffer << int32(unwrappedTradeItem.OnUseEnchantmentID);
@@ -100,7 +100,7 @@ ByteBuffer& operator<<(ByteBuffer& buffer, WorldPackets::Trade::TradeUpdated::Un
     return buffer;
 }
 
-ByteBuffer& operator<<(ByteBuffer& buffer, WorldPackets::Trade::TradeUpdated::TradeItem const& tradeItem)
+ByteBuffer& operator<<(ByteBuffer& buffer, WorldPackets::Trade::TradeItem const& tradeItem)
 {
     buffer << uint8(tradeItem.Slot);
     buffer << uint32(tradeItem.StackCount);

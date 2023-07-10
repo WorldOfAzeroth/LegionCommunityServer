@@ -175,6 +175,7 @@ struct TC_GAME_API LootItem
     uint32  itemid;
     uint32  LootListId;
     ItemRandomBonusListId randomBonusListId;
+    int32   upgradeId;
     std::vector<uint32> BonusListIDs;
     ItemContext context;
     ConditionContainer conditions;                          // additional loot condition

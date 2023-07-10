@@ -19,6 +19,7 @@
 #define ItemPacketsCommon_h__
 
 #include "ItemDefines.h"
+#include "Loot.h"
 #include "PacketUtilities.h"
 #include "Optional.h"
 #include <vector>
@@ -26,7 +27,6 @@
 class ByteBuffer;
 class Item;
 struct ItemDynamicFieldGems;
-struct LootItem;
 struct VoidStorageItem;
 enum class ItemContext : uint8;
 

@@ -40,7 +40,7 @@ WorldPacket const* WorldPackets::Toy::AccountToysUpdate::Write()
         _worldPacket << uint32(item.first);
 
     for (auto const& favourite : *Toys)
-        _worldPacket.WriteBit(favourite.second);
+        _worldPacket.WriteBit(favourite.second.HasFlag(ToyFlags::Favorite));
 
     _worldPacket.FlushBits();
 

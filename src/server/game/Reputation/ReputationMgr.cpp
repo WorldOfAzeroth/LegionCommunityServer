@@ -259,17 +259,11 @@ bool ReputationMgr::HasMaximumRenownReputation(FactionEntry const* factionEntry)
 
 bool ReputationMgr::IsRenownReputation(FactionEntry const* factionEntry) const
 {
-    return factionEntry->RenownCurrencyID > 0;
+    return false;
 }
 
 int32 ReputationMgr::GetRenownLevel(FactionEntry const* renownFactionEntry) const
 {
-    if (!renownFactionEntry)
-        return 0;
-
-    if (CurrencyTypesEntry const* currency = sCurrencyTypesStore.LookupEntry(renownFactionEntry->RenownCurrencyID))
-        return _player->GetCurrency(currency->ID);
-
     return 0;
 }
 
@@ -287,12 +281,6 @@ int32 ReputationMgr::GetRenownLevelThreshold(FactionEntry const* renownFactionEn
 
 int32 ReputationMgr::GetRenownMaxLevel(FactionEntry const* renownFactionEntry) const
 {
-    if (!renownFactionEntry)
-        return 0;
-
-    if (CurrencyTypesEntry const* currency = sCurrencyTypesStore.LookupEntry(renownFactionEntry->RenownCurrencyID))
-        return currency->MaxQty;
-
     return 0;
 }
 
@@ -564,29 +552,6 @@ bool ReputationMgr::SetOneFactionReputation(FactionEntry const* factionEntry, in
 
         if (!IsRenownReputation(factionEntry))
             newStanding = standing - baseRep;
-        else
-        {
-            if (CurrencyTypesEntry const* currency = sCurrencyTypesStore.LookupEntry(factionEntry->RenownCurrencyID))
-            {
-                int32 renownLevelThreshold = GetRenownLevelThreshold(factionEntry);
-                int32 oldRenownLevel = GetRenownLevel(factionEntry);
-
-                int32 totalReputation = (oldRenownLevel * renownLevelThreshold) + (standing - baseRep);
-                int32 newRenownLevel = totalReputation / renownLevelThreshold;
-                newStanding = totalReputation % renownLevelThreshold;
-
-                if (newRenownLevel >= GetRenownMaxLevel(factionEntry))
-                {
-                    newStanding = 0;
-                    reputationChange += (GetRenownMaxLevel(factionEntry) * renownLevelThreshold) - totalReputation;
-                }
-
-                itr->second.VisualStandingIncrease = reputationChange;
-
-                if (oldRenownLevel != newRenownLevel)
-                    _player->ModifyCurrency(currency->ID, newRenownLevel - oldRenownLevel, false);
-            }
-        }
 
         _player->ReputationChanged(factionEntry, reputationChange);
 
@@ -862,5 +827,5 @@ bool ReputationMgr::CanGainParagonReputationForFaction(FactionEntry const* facti
     if (!quest)
         return false;
 
-    return _player->GetLevel() >= _player->GetQuestMinLevel(quest);
+    return _player->GetLevel() >= quest->GetMinLevel();
 }

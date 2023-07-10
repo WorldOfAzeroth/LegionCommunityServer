@@ -248,7 +248,6 @@ class TC_GAME_API Spell
         void EffectInstaKill();
         void EffectDummy();
         void EffectTeleportUnits();
-        void EffectTeleportUnitsWithVisualLoadingScreen();
         void EffectApplyAura();
         void EffectSendEvent();
         void EffectPowerBurn();
@@ -378,8 +377,6 @@ class TC_GAME_API Spell
         void EffectAddGarrisonFollower();
         void EffectActivateGarrisonBuilding();
         void EffectGrantBattlePetLevel();
-        void EffectGiveExperience();
-        void EffectGiveRestedExperience();
         void EffectHealBattlePetPct();
         void EffectEnableBattlePets();
         void EffectChangeBattlePetQuality();
@@ -399,7 +396,6 @@ class TC_GAME_API Spell
         void EffectGiveHonor();
         void EffectJumpCharge();
         void EffectLearnTransmogSet();
-        void EffectRespecAzeriteEmpoweredItem();
         void EffectSendChatMessage();
         void EffectGrantBattlePetExperience();
         void EffectModifyAuraStacks();
@@ -489,7 +485,7 @@ class TC_GAME_API Spell
         uint32 getState() const { return m_spellState; }
         void setState(uint32 state) { m_spellState = state; }
 
-        void DoCreateItem(uint32 itemId, ItemContext context = ItemContext::NONE, std::vector<int32> const& bonusListIDs = std::vector<int32>());
+        void DoCreateItem(uint32 itemId, ItemContext context = ItemContext::NONE, std::vector<uint32> const& bonusListIDs = std::vector<uint32>());
 
         bool CheckEffectTarget(Unit const* target, SpellEffectInfo const& spellEffectInfo, Position const* losPosition) const;
         bool CheckEffectTarget(GameObject const* target, SpellEffectInfo const& spellEffectInfo) const;

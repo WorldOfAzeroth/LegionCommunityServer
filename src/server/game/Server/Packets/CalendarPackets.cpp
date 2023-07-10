@@ -80,7 +80,7 @@ void WorldPackets::Calendar::CalendarGetEvent::Read()
     _worldPacket >> EventID;
 }
 
-void WorldPackets::Calendar::CalendarGuildFilter::Read()
+void WorldPackets::Calendar::CalendarCommunityInviteRequest::Read()
 {
     _worldPacket >> MinLevel;
     _worldPacket >> MaxLevel;
@@ -152,14 +152,14 @@ void WorldPackets::Calendar::CalendarCopyEvent::Read()
     Date = _worldPacket.ReadPackedTime();
 }
 
-void WorldPackets::Calendar::CalendarEventRSVP::Read()
+void WorldPackets::Calendar::CalendarRSVP::Read()
 {
     _worldPacket >> EventID;
     _worldPacket >> InviteID;
     _worldPacket >> Status;
 }
 
-void WorldPackets::Calendar::CalendarEventInvite::Read()
+void WorldPackets::Calendar::CalendarInvite::Read()
 {
     _worldPacket >> EventID;
     _worldPacket >> ModeratorID;
@@ -185,7 +185,7 @@ void WorldPackets::Calendar::CalendarRemoveInvite::Read()
     _worldPacket >> EventID;
 }
 
-void WorldPackets::Calendar::CalendarEventStatus::Read()
+void WorldPackets::Calendar::CalendarStatus::Read()
 {
     _worldPacket >> Guid;
     _worldPacket >> EventID;
@@ -201,7 +201,7 @@ void WorldPackets::Calendar::SetSavedInstanceExtend::Read()
     Extend = _worldPacket.ReadBit();
 }
 
-void WorldPackets::Calendar::CalendarEventModeratorStatus::Read()
+void WorldPackets::Calendar::CalendarModeratorStatusQuery::Read()
 {
     _worldPacket >> Guid;
     _worldPacket >> EventID;
@@ -210,7 +210,7 @@ void WorldPackets::Calendar::CalendarEventModeratorStatus::Read()
     _worldPacket >> Status;
 }
 
-WorldPacket const* WorldPackets::Calendar::CalendarEventInvite::Write()
+WorldPacket const* WorldPackets::Calendar::CalendarInviteAdded::Write()
 {
     _worldPacket << InviteGuid;
     _worldPacket << uint64(EventID);
@@ -270,7 +270,7 @@ WorldPacket const* WorldPackets::Calendar::CalendarSendEvent::Write()
     return &_worldPacket;
 }
 
-WorldPacket const* WorldPackets::Calendar::CalendarEventInviteAlert::Write()
+WorldPacket const* WorldPackets::Calendar::CalendarInviteAlert::Write()
 {
     _worldPacket << uint64(EventID);
     _worldPacket.AppendPackedTime(Date);
@@ -293,7 +293,7 @@ WorldPacket const* WorldPackets::Calendar::CalendarEventInviteAlert::Write()
     return &_worldPacket;
 }
 
-WorldPacket const* WorldPackets::Calendar::CalendarEventInviteStatus::Write()
+WorldPacket const* WorldPackets::Calendar::CalendarInviteStatus::Write()
 {
     _worldPacket << InviteGuid;
     _worldPacket << uint64(EventID);
@@ -308,7 +308,7 @@ WorldPacket const* WorldPackets::Calendar::CalendarEventInviteStatus::Write()
     return &_worldPacket;
 }
 
-WorldPacket const* WorldPackets::Calendar::CalendarEventInviteRemoved::Write()
+WorldPacket const* WorldPackets::Calendar::CalendarInviteRemoved::Write()
 {
     _worldPacket << InviteGuid;
     _worldPacket << uint64(EventID);
@@ -320,7 +320,7 @@ WorldPacket const* WorldPackets::Calendar::CalendarEventInviteRemoved::Write()
     return &_worldPacket;
 }
 
-WorldPacket const* WorldPackets::Calendar::CalendarEventInviteModeratorStatus::Write()
+WorldPacket const* WorldPackets::Calendar::CalendarModeratorStatus::Write()
 {
     _worldPacket << InviteGuid;
     _worldPacket << uint64(EventID);
@@ -332,7 +332,7 @@ WorldPacket const* WorldPackets::Calendar::CalendarEventInviteModeratorStatus::W
     return &_worldPacket;
 }
 
-WorldPacket const* WorldPackets::Calendar::CalendarEventInviteRemovedAlert::Write()
+WorldPacket const* WorldPackets::Calendar::CalendarInviteRemovedAlert::Write()
 {
     _worldPacket << uint64(EventID);
     _worldPacket.AppendPackedTime(Date);
@@ -446,7 +446,7 @@ WorldPacket const* WorldPackets::Calendar::CalendarEventInviteStatusAlert::Write
     return &_worldPacket;
 }
 
-WorldPacket const* WorldPackets::Calendar::CalendarEventInviteNotesAlert::Write()
+WorldPacket const* WorldPackets::Calendar::CalendarInviteNotesAlert::Write()
 {
     _worldPacket << uint64(EventID);
 
@@ -457,7 +457,7 @@ WorldPacket const* WorldPackets::Calendar::CalendarEventInviteNotesAlert::Write(
     return &_worldPacket;
 }
 
-WorldPacket const* WorldPackets::Calendar::CalendarEventInviteNotes::Write()
+WorldPacket const* WorldPackets::Calendar::CalendarInviteNotes::Write()
 {
     _worldPacket << InviteGuid;
     _worldPacket << uint64(EventID);

@@ -349,11 +349,17 @@ bool WorldSocket::ReadHeaderHandler()
 
 WorldSocket::ReadDataHandlerResult WorldSocket::ReadDataHandler()
 {
-    PacketHeader* header = reinterpret_cast<PacketHeader*>(_headerBuffer.GetReadPointer());
-    OpcodeClient opcode = static_cast<OpcodeClient>(header->Command);
 
+    WorldPacket packet(std::move(_packetBuffer), GetConnectionType());
+    OpcodeClient opcode = packet.read<OpcodeClient>();
+    if (uint32(opcode) >= uint32(NUM_OPCODE_HANDLERS))
+    {
+        TC_LOG_ERROR("network", "WorldSocket::ReadHeaderHandler(): client %s sent wrong opcode (opcode: %u)",
+            GetRemoteIpAddress().to_string().c_str(), uint32(opcode));
+        return ReadDataHandlerResult::Error;
+    }
 
-    WorldPacket packet(opcode, std::move(_packetBuffer), GetConnectionType());
+    packet.SetOpcode(opcode);
 
     if (sPacketLog->CanLogPacket())
         sPacketLog->LogPacket(packet, CLIENT_TO_SERVER, GetRemoteIpAddress(), GetRemotePort(), GetConnectionType());
@@ -416,8 +422,15 @@ WorldSocket::ReadDataHandlerResult WorldSocket::ReadDataHandler()
             return ReadDataHandlerResult::WaitingForQuery;
         }
         case CMSG_KEEP_ALIVE:
+            sessionGuard.lock();
             LogOpcodeText(opcode, sessionGuard);
-            break;
+            if (_worldSession)
+            {
+                _worldSession->ResetTimeOutTime(true);
+                return ReadDataHandlerResult::Ok;
+            }
+            TC_LOG_ERROR("network", "WorldSocket::ReadDataHandler: client %s sent CMSG_KEEP_ALIVE without being authenticated", GetRemoteIpAddress().to_string().c_str());
+            return ReadDataHandlerResult::Error;
         case CMSG_LOG_DISCONNECT:
             LogOpcodeText(opcode, sessionGuard);
             packet.rfinish();   // contains uint32 disconnectReason;
@@ -446,6 +459,9 @@ WorldSocket::ReadDataHandlerResult WorldSocket::ReadDataHandler()
             break;
         default:
         {
+            if (opcode == CMSG_TIME_SYNC_RESPONSE)
+                packet.SetReceiveTime(std::chrono::steady_clock::now());
+
             sessionGuard.lock();
 
             LogOpcodeText(opcode, sessionGuard);

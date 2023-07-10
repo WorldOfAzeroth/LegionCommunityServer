@@ -369,7 +369,7 @@ void WorldPackets::Movement::CommonMovement::WriteMovementForceWithDirection(Mov
 {
     data << movementForce.ID;
     data << movementForce.Origin;
-    if (movementForce.Type == 1 && objectPosition) // gravity
+    if (movementForce.Type == MovementForceType::Gravity && objectPosition)
     {
         TaggedPosition<Position::XYZ> direction;
         if (movementForce.Magnitude != 0.0f)
@@ -380,7 +380,7 @@ void WorldPackets::Movement::CommonMovement::WriteMovementForceWithDirection(Mov
             float lengthSquared = tmp.GetExactDistSq(0.0f, 0.0f, 0.0f);
             if (lengthSquared > 0.0f)
             {
-                float mult = 1.0f / std::sqrtf(lengthSquared) * movementForce.Magnitude;
+                float mult = 1.0f / std::sqrt(lengthSquared) * movementForce.Magnitude;
                 tmp.m_positionX *= mult;
                 tmp.m_positionY *= mult;
                 tmp.m_positionZ *= mult;
@@ -399,7 +399,7 @@ void WorldPackets::Movement::CommonMovement::WriteMovementForceWithDirection(Mov
 
     data << uint32(movementForce.TransportID);
     data << float(movementForce.Magnitude);
-    data.WriteBits(movementForce.Type, 2);
+    data.WriteBits(AsUnderlyingType(movementForce.Type), 2);
     data.FlushBits();
 }
 
@@ -418,7 +418,7 @@ void WorldPackets::Movement::MonsterMove::InitializeSplineData(::Movement::MoveS
 
     if (splineFlags.animation)
     {
-        movementSpline.AnimTier = splineFlags.getAnimationId();
+        movementSpline.AnimTier = AsUnderlyingType(moveSpline.anim_tier->AnimTier);
         movementSpline.TierTransStartTime = moveSpline.effect_start_time;
     }
 
@@ -618,7 +618,7 @@ ByteBuffer& operator>>(ByteBuffer& data, MovementForce& movementForce)
     data >> movementForce.Direction;
     data >> movementForce.TransportID;
     data >> movementForce.Magnitude;
-    movementForce.Type = data.ReadBits(2);
+    movementForce.Type = MovementForceType(data.ReadBits(2));
 
     return data;
 }
@@ -762,7 +762,7 @@ WorldPacket const* WorldPackets::Movement::MoveSetCollisionHeight::Write()
     _worldPacket << float(Scale);
     _worldPacket << uint32(MountDisplayID);
     _worldPacket << int32(ScaleDuration);
-    _worldPacket.WriteBits(Reason, 2);
+    _worldPacket.WriteBits(uint8(Reason), 2);
     _worldPacket.FlushBits();
 
     return &_worldPacket;
@@ -910,14 +910,14 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Movement::MoveSetCompound
     data.WriteBit(stateChange.VehicleRecID.has_value());
     data.WriteBit(stateChange.CollisionHeight.has_value());
     data.WriteBit(stateChange.MovementForce_.has_value());
-    data.WriteBit(stateChange.Unknown.has_value());
+    data.WriteBit(stateChange.MovementForceGUID.has_value());
     data.FlushBits();
 
     if (stateChange.CollisionHeight)
     {
         data << float(stateChange.CollisionHeight->Height);
         data << float(stateChange.CollisionHeight->Scale);
-        data.WriteBits(stateChange.CollisionHeight->Reason, 2);
+        data.WriteBits(uint8(stateChange.CollisionHeight->Reason), 2);
         data.FlushBits();
     }
 
@@ -934,8 +934,8 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Movement::MoveSetCompound
     if (stateChange.VehicleRecID)
         data << int32(*stateChange.VehicleRecID);
 
-    if (stateChange.Unknown)
-        data << *stateChange.Unknown;
+    if (stateChange.MovementForceGUID)
+        data << *stateChange.MovementForceGUID;
 
     if (stateChange.MovementForce_)
         data << *stateChange.MovementForce_;

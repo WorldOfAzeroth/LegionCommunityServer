@@ -148,8 +148,8 @@ void ScenarioMgr::LoadScenarioPOI()
 
     uint32 count = 0;
 
-    //                                                      0            1        2     3       4         5       6          7               8                        9
-    QueryResult result = WorldDatabase.Query("SELECT CriteriaTreeID, BlobIndex, Idx1, MapID, UiMapID, Priority, Flags, WorldEffectID, PlayerConditionID, NavigationPlayerConditionID FROM scenario_poi ORDER BY CriteriaTreeID, Idx1");
+    //                                                      0            1        2       3               4       5         6      7              8                  9                          10
+    QueryResult result = WorldDatabase.Query("SELECT CriteriaTreeID, BlobIndex, Idx1, MapID, WorldMapAreaID, Floor, Priority, Flags, WorldEffectID, PlayerConditionID, NavigationPlayerConditionID FROM scenario_poi ORDER BY CriteriaTreeID, Idx1");
     if (!result)
     {
         TC_LOG_ERROR("server.loading", ">> Loaded 0 scenario POI definitions. DB table `scenario_poi` is empty.");
@@ -187,12 +187,14 @@ void ScenarioMgr::LoadScenarioPOI()
         int32 blobIndex = fields[1].GetInt32();
         int32 idx1 = fields[2].GetInt32();
         int32 mapID = fields[3].GetInt32();
-        int32 uiMapID = fields[4].GetInt32();
-        int32 priority = fields[5].GetInt32();
-        int32 flags = fields[6].GetInt32();
-        int32 worldEffectID = fields[7].GetInt32();
-        int32 playerConditionID = fields[8].GetInt32();
-        int32 navigationPlayerConditionID = fields[9].GetInt32();
+        int32 worldMapAreaId = fields[4].GetInt32();
+        int32 floor = fields[5].GetInt32();
+        int32 priority = fields[6].GetInt32();
+        int32 flags = fields[7].GetInt32();
+        int32 worldEffectID = fields[8].GetInt32();
+        int32 playerConditionID = fields[9].GetInt32();
+        int32 navigationPlayerConditionID = fields[10].GetInt32();
+
 
         if (!sCriteriaMgr->GetCriteriaTree(criteriaTreeID))
             TC_LOG_ERROR("sql.sql", "`scenario_poi` CriteriaTreeID ({}) Idx1 ({}) does not correspond to a valid criteria tree", criteriaTreeID, idx1);
@@ -201,7 +203,7 @@ void ScenarioMgr::LoadScenarioPOI()
         {
             if (std::vector<ScenarioPOIPoint>* points = Trinity::Containers::MapGetValuePtr(*blobs, idx1))
             {
-                _scenarioPOIStore[criteriaTreeID].emplace_back(blobIndex, mapID, uiMapID, priority, flags, worldEffectID, playerConditionID, navigationPlayerConditionID, std::move(*points));
+                _scenarioPOIStore[criteriaTreeID].emplace_back(blobIndex, mapID, worldMapAreaId, floor, priority, flags, worldEffectID, playerConditionID, navigationPlayerConditionID, std::move(*points));
                 ++count;
                 continue;
             }

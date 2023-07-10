@@ -78,7 +78,7 @@ WorldPacket const* WorldPackets::Quest::QueryQuestInfoResponse::Write()
         _worldPacket << int32(Info.RewardMoneyDifficulty);
         _worldPacket << float(Info.RewardMoneyMultiplier);
         _worldPacket << int32(Info.RewardBonusMoney);
-        _worldPacket.append(Info.RewardDisplaySpell, QUEST_REWARD_DISPLAY_SPELL_COUNT);
+        _worldPacket.append(Info.RewardDisplaySpell.data(), Info.RewardDisplaySpell.size());
         _worldPacket << int32(Info.RewardSpell);
         _worldPacket << int32(Info.RewardHonor);
         _worldPacket << float(Info.RewardKillHonor);
@@ -141,7 +141,7 @@ WorldPacket const* WorldPackets::Quest::QueryQuestInfoResponse::Write()
 
         _worldPacket << uint32(Info.Objectives.size());
         _worldPacket << uint64(Info.AllowableRaces.RawValue);
-        _worldPacket << int32(Info.QuestRewardID);
+        _worldPacket << int32(Info.TreasurePickerID);
         _worldPacket << int32(Info.Expansion);
 
         _worldPacket.WriteBits(Info.LogTitle.size(), 9);
@@ -266,7 +266,7 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Quest::QuestRewards const
 
     data << int32(questRewards.SkillLineID);
     data << int32(questRewards.NumSkillUps);
-    data << int32(questRewards.RewardID);
+    data << int32(questRewards.TreasurePickerID);
 
     data.WriteBit(questRewards.IsBoostSpell);
     data.FlushBits();

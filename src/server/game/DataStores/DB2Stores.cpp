@@ -199,6 +199,7 @@ DB2Storage<PvpRewardEntry>                      sPvpRewardStore("PvpReward.db2",
 DB2Storage<PvpTalentEntry>                      sPvpTalentStore("PvpTalent.db2", PvpTalentLoadInfo::Instance());
 DB2Storage<PvpTalentUnlockEntry>                sPvpTalentUnlockStore("PvpTalentUnlock.db2", PvpTalentUnlockLoadInfo::Instance());
 DB2Storage<QuestFactionRewardEntry>             sQuestFactionRewardStore("QuestFactionReward.db2", QuestFactionRewardLoadInfo::Instance());
+DB2Storage<QuestInfoEntry>                      sQuestInfoStore("QuestInfo.db2", QuestInfoLoadInfo::Instance());
 DB2Storage<QuestMoneyRewardEntry>               sQuestMoneyRewardStore("QuestMoneyReward.db2", QuestMoneyRewardLoadInfo::Instance());
 DB2Storage<QuestPackageItemEntry>               sQuestPackageItemStore("QuestPackageItem.db2", QuestPackageItemLoadInfo::Instance());
 DB2Storage<QuestSortEntry>                      sQuestSortStore("QuestSort.db2", QuestSortLoadInfo::Instance());
@@ -361,7 +362,7 @@ namespace
     CurvePointsContainer _curvePoints;
     EmotesTextSoundContainer _emoteTextSounds;
     FactionTeamContainer _factionTeams;
-    std::unordered_map<uint32, std::set<FriendshipRepReactionEntry const*>> _friendshipRepReactions;
+    std::unordered_map<uint32, std::set<FriendshipRepReactionEntry const*, DB2Manager::FriendshipRepReactionEntryComparator>> _friendshipRepReactions;
     HeirloomItemsContainer _heirlooms;
     GlyphBindableSpellsContainer _glyphBindableSpells;
     GlyphRequiredSpecsContainer _glyphRequiredSpecs;
@@ -659,6 +660,7 @@ void DB2Manager::LoadStores(std::string const& dataPath, uint32 defaultLocale)
     LOAD_DB2(sPvpTalentStore);
     LOAD_DB2(sPvpTalentUnlockStore);
     LOAD_DB2(sQuestFactionRewardStore);
+    LOAD_DB2(sQuestInfoStore);
     LOAD_DB2(sQuestMoneyRewardStore);
     LOAD_DB2(sQuestPackageItemStore);
     LOAD_DB2(sQuestSortStore);
@@ -1609,7 +1611,7 @@ HeirloomEntry const* DB2Manager::GetHeirloomByItemId(uint32 itemId) const
     return nullptr;
 }
 
-std::set<FriendshipRepReactionEntry const*> const* DB2Manager::GetFriendshipRepReactions(uint32 friendshipRepID) const
+DB2Manager::FriendshipRepReactionSet const* DB2Manager::GetFriendshipRepReactions(uint32 friendshipRepID) const
 {
     return Trinity::Containers::MapGetValuePtr(_friendshipRepReactions, friendshipRepID);
 }

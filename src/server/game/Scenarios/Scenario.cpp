@@ -333,7 +333,7 @@ CriteriaList const& Scenario::GetCriteriaByType(CriteriaType type, uint32 /*asse
 
 void Scenario::SendBootPlayer(Player* player)
 {
-    WorldPackets::Scenario::ScenarioVacate scenarioBoot;
+    WorldPackets::Scenario::ScenarioBoot scenarioBoot;
     scenarioBoot.ScenarioID = _data->Entry->ID;
     player->SendDirectMessage(scenarioBoot.Write());
 }

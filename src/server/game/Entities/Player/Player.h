@@ -1565,6 +1565,12 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         /***                    QUEST SYSTEM                   ***/
         /*********************************************************/
 
+        int32 GetQuestLevel(Quest const* quest) const
+        {
+            if (!quest)
+                return GetLevel();
+            return quest->GetQuestLevel() > 0 ? quest->GetQuestLevel() : std::min<int32>(GetLevel(), quest->GetQuestMaxScalingLevel());
+        }
 
         void PrepareQuestMenu(ObjectGuid guid);
         void SendPreparedQuest(WorldObject* source);

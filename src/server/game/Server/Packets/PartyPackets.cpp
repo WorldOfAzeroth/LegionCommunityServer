@@ -68,7 +68,7 @@ WorldPacket const* WorldPackets::Party::PartyInvite::Write()
 
     _worldPacket << InviterVirtualRealmAddress;
     _worldPacket.WriteBit(IsLocal);
-    _worldPacket.WriteBit(Unk2);
+    _worldPacket.WriteBit(QuestSessionActive);
     _worldPacket.WriteBits(InviterRealmNameActual.size(), 8);
     _worldPacket.WriteBits(InviterRealmNameNormalized.size(), 8);
     _worldPacket.WriteString(InviterRealmNameActual);
@@ -530,7 +530,7 @@ WorldPacket const* WorldPackets::Party::RaidMarkersChanged::Write()
     _worldPacket.WriteBits(RaidMarkers.size(), 4);
     _worldPacket.FlushBits();
 
-    for (RaidMarker* raidMarker : RaidMarkers)
+    for (RaidMarker const* raidMarker : RaidMarkers)
     {
         _worldPacket << raidMarker->TransportGUID;
         _worldPacket << raidMarker->Location.GetMapId();
@@ -573,7 +573,7 @@ void WorldPackets::Party::PartyMemberState::Initialize(Player const* player)
         MemberStats.Status |= MEMBER_STATUS_VEHICLE;
 
     // Level
-    MemberStats.Level = player->etLevel();
+    MemberStats.Level = player->GetLevel();
 
     // Health
     MemberStats.CurrentHealth = player->GetHealth();

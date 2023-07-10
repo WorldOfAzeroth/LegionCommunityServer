@@ -125,7 +125,7 @@ namespace WorldPackets
             int32 RewardMoneyDifficulty     = 0;
             float RewardMoneyMultiplier     = 1.0f;
             int32 RewardBonusMoney          = 0;
-            int32 RewardDisplaySpell[QUEST_REWARD_DISPLAY_SPELL_COUNT] = { }; // reward spell, this spell will be displayed (icon)
+            std::array<uint32, QUEST_REWARD_DISPLAY_SPELL_COUNT> RewardDisplaySpell; // reward spell, this spell will be displayed (icon)
             int32 RewardSpell               = 0;
             int32 RewardHonor               = 0;
             float RewardKillHonor           = 0.0f;
@@ -138,7 +138,7 @@ namespace WorldPackets
             int32 POIContinent              = 0;
             float POIx                      = 0.0f;
             float POIy                      = 0.0f;
-            int32 POIPriority               = 0;
+            uint32 POIPriority              = 0;
             Trinity::RaceMask<uint64> AllowableRaces = { UI64LIT(0xFFFFFFFFFFFFFFFF) };
             std::string LogTitle;
             std::string LogDescription;
@@ -160,8 +160,8 @@ namespace WorldPackets
             int32 CompleteSoundKitID        = 0;
             int32 AreaGroupID               = 0;
             int32 TimeAllowed               = 0;
-            int32 QuestRewardID             = 0;
-            int32 Expansion                 = 0;
+            int32 TreasurePickerID          = 0;
+            uint32 Expansion                = 0;
             std::vector<QuestObjective> Objectives;
             int32 RewardItems[QUEST_REWARD_ITEM_COUNT] = { };
             int32 RewardAmount[QUEST_REWARD_ITEM_COUNT] = { };
@@ -243,20 +243,20 @@ namespace WorldPackets
             int32 Honor                     = 0;
             int32 Title                     = 0;
             int32 FactionFlags              = 0;
-            int32 SpellCompletionDisplayID[QUEST_REWARD_DISPLAY_SPELL_COUNT] = { };
+            std::array<uint32, QUEST_REWARD_DISPLAY_SPELL_COUNT> SpellCompletionDisplayID = { };
             int32 SpellCompletionID         = 0;
             int32 SkillLineID               = 0;
             int32 NumSkillUps               = 0;
-            int32 RewardID                  = 0;
-            QuestChoiceItem ChoiceItems[QUEST_REWARD_CHOICES_COUNT];
-            int32 ItemID[QUEST_REWARD_ITEM_COUNT] = { };
-            int32 ItemQty[QUEST_REWARD_ITEM_COUNT] = { };
-            int32 FactionID[QUEST_REWARD_REPUTATIONS_COUNT] = { };
-            int32 FactionValue[QUEST_REWARD_REPUTATIONS_COUNT] = { };
-            int32 FactionOverride[QUEST_REWARD_REPUTATIONS_COUNT] = { };
-            int32 FactionCapIn[QUEST_REWARD_REPUTATIONS_COUNT] = { };
-            int32 CurrencyID[QUEST_REWARD_CURRENCY_COUNT] = { };
-            int32 CurrencyQty[QUEST_REWARD_CURRENCY_COUNT] = { };
+            int32 TreasurePickerID          = 0;
+            std::array<QuestChoiceItem, QUEST_REWARD_CHOICES_COUNT> ChoiceItems;
+            std::array<int32, QUEST_REWARD_ITEM_COUNT> ItemID = { };
+            std::array<int32, QUEST_REWARD_ITEM_COUNT> ItemQty = { };
+            std::array<int32, QUEST_REWARD_REPUTATIONS_COUNT> FactionID = { };
+            std::array<int32, QUEST_REWARD_REPUTATIONS_COUNT> FactionValue = { };
+            std::array<int32, QUEST_REWARD_REPUTATIONS_COUNT> FactionOverride = { };
+            std::array<int32, QUEST_REWARD_REPUTATIONS_COUNT> FactionCapIn = { };
+            std::array<int32, QUEST_REWARD_CURRENCY_COUNT> CurrencyID = { };
+            std::array<int32, QUEST_REWARD_CURRENCY_COUNT> CurrencyQty = { };
             bool IsBoostSpell = false;
         };
 
