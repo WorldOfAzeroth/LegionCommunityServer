@@ -350,22 +350,6 @@ struct LinkValidator<LinkTags::item>
     }
 };
 
-template <>
-struct LinkValidator<LinkTags::journal>
-{
-    static bool IsTextValid(JournalLinkData const& data, std::string_view text)
-    {
-        for (LocaleConstant i = LOCALE_enUS; i < TOTAL_LOCALES; i = LocaleConstant(i + 1))
-            if ((*data.ExpectedText)[i] == text)
-                return true;
-        return false;
-    }
-
-    static bool IsColorValid(JournalLinkData const&, HyperlinkColor c)
-    {
-        return c == CHAT_LINK_COLOR_JOURNAL;
-    }
-};
 
 template <>
 struct LinkValidator<LinkTags::quest>
@@ -564,7 +548,6 @@ static bool ValidateLinkInfo(HyperlinkInfo const& info)
     TryValidateAs(instancelock);
     TryValidateAs(item);
     TryValidateAs(itemset);
-    TryValidateAs(journal);
     TryValidateAs(outfit);
     TryValidateAs(player);
     TryValidateAs(pvptal);

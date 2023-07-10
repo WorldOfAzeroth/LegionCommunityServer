@@ -33,7 +33,7 @@ char const* localeNames[TOTAL_LOCALES] =
   "itIT"
 };
 
-LocaleConstant GetLocaleByName(std::string_view name)
+LocaleConstant GetLocaleByName(std::string const& name)
 {
     for (uint32 i = 0; i < TOTAL_LOCALES; ++i)
         if (name == localeNames[i])

@@ -4764,6 +4764,20 @@ struct SpellMiscLoadInfo
     }
 };
 
+struct SpellNameLoadInfo
+{
+    static DB2LoadInfo const* Instance()
+    {
+        static DB2FieldMeta const fields[] =
+        {
+            { false, FT_INT, "ID" },
+            { false, FT_STRING, "Name" },
+        };
+        static DB2LoadInfo const loadInfo(&fields[0], std::size(fields), SpellNameMeta::Instance(), HOTFIX_SEL_SPELL_NAME);
+        return &loadInfo;
+    }
+};
+
 struct SpellPowerLoadInfo
 {
     static DB2LoadInfo const* Instance()

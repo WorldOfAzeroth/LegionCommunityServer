@@ -4977,10 +4977,10 @@ inline float GetGameTableColumnForCombatRating(GtCombatRatingsEntry const* row, 
             return row->CritRanged;
         case CR_CRIT_SPELL:
             return row->CritSpell;
-        case CR_CORRUPTION:
-            return row->Corruption;
-        case CR_CORRUPTION_RESISTANCE:
-            return row->CorruptionResistance;
+        case CR_MULTISTRIKE:
+            return row->MultiStrike;
+        case CR_READINESS:
+            return row->Readiness;
         case CR_SPEED:
             return row->Speed;
         case CR_RESILIENCE_CRIT_TAKEN:
@@ -5135,10 +5135,8 @@ void Player::UpdateRating(CombatRating cr)
             if (affectStats)
                 UpdateSpellCritChance();
             break;
-        case CR_CORRUPTION:
-        case CR_CORRUPTION_RESISTANCE:
-            UpdateCorruption();
-            break;
+        case CR_MULTISTRIKE:
+        case CR_READINESS:
         case CR_SPEED:
         case CR_RESILIENCE_PLAYER_DAMAGE:
         case CR_RESILIENCE_CRIT_TAKEN:
@@ -5150,8 +5148,8 @@ void Player::UpdateRating(CombatRating cr)
         {
             // explicit affected values
             float const multiplier = GetRatingMultiplier(cr);
-            float const oldVal = ApplyRatingDiminishing(cr, oldRating * multiplier);
-            float const newVal = ApplyRatingDiminishing(cr, amount * multiplier);
+            float const oldVal = oldRating * multiplier;
+            float const newVal = amount * multiplier;
             switch (cr)
             {
                 case CR_HASTE_MELEE:
@@ -7601,11 +7599,14 @@ void Player::_ApplyItemBonuses(Item* item, uint8 slot, bool apply)
             case ITEM_MOD_PVP_POWER:
                 ApplyRatingMod(CR_PVP_POWER, int32(val), apply);
                 break;
-            case ITEM_MOD_CORRUPTION:
-                ApplyRatingMod(CR_CORRUPTION, int32(val), apply);
+            case ITEM_MOD_CR_AMPLIFY:
+                ApplyRatingMod(CR_AMPLIFY, int32(val), apply);
                 break;
-            case ITEM_MOD_CORRUPTION_RESISTANCE:
-                ApplyRatingMod(CR_CORRUPTION_RESISTANCE, int32(val), apply);
+            case ITEM_MOD_CR_MULTISTRIKE:
+                ApplyRatingMod(CR_MULTISTRIKE, int32(val), apply);
+                break;
+            case ITEM_MOD_CR_READINESS:
+                ApplyRatingMod(CR_READINESS, int32(val * combatRatingMultiplier), apply);
                 break;
             case ITEM_MOD_CR_SPEED:
                 ApplyRatingMod(CR_SPEED, int32(val * combatRatingMultiplier), apply);
@@ -15532,6 +15533,12 @@ uint32 Player::GetQuestSlotAcceptTime(uint16 slot) const
     return GetUInt32Value(PLAYER_QUEST_LOG + slot * MAX_QUEST_OFFSET + QUEST_ACCEPTED_TIME_OFFSET);
 }
 
+bool Player::GetQuestSlotObjectiveFlag(uint16 slot, int8 objectiveIndex) const
+{
+    if (objectiveIndex < MAX_QUEST_COUNTS)
+        return GetUInt32Value(PLAYER_QUEST_LOG + slot * MAX_QUEST_OFFSET + QUEST_OBJECTIVE_FLAGS_OFFSET) & (1 << objectiveIndex);
+    return false;
+}
 
 int32 Player::GetQuestSlotObjectiveData(uint16 slot, QuestObjective const& objective) const
 {
@@ -15590,7 +15597,17 @@ void Player::SetQuestSlotEndTime(uint16 slot, time_t endTime)
 
 void Player::SetQuestSlotAcceptTime(uint16 slot, time_t acceptTime)
 {
-        SetUInt32Value(PLAYER_QUEST_LOG + slot * MAX_QUEST_OFFSET + QUEST_ACCEPTED_TIME_OFFSET, uint32(acceptTime));
+    SetUInt32Value(PLAYER_QUEST_LOG + slot * MAX_QUEST_OFFSET + QUEST_ACCEPTED_TIME_OFFSET, uint32(acceptTime));
+}
+void Player::SetQuestSlotObjectiveFlag(uint16 slot, int8 objectiveIndex)
+{
+    SetByteValue(PLAYER_QUEST_LOG, slot * MAX_QUEST_OFFSET + QUEST_OBJECTIVE_FLAGS_OFFSET, 1 << objectiveIndex);
+
+}
+
+void Player::RemoveQuestSlotObjectiveFlag(uint16 slot, int8 objectiveIndex)
+{
+    SetUInt32Value(PLAYER_QUEST_LOG + slot * MAX_QUEST_OFFSET + QUEST_OBJECTIVE_FLAGS_OFFSET, 1 << objectiveIndex);
 
 }
 
@@ -17801,8 +17818,6 @@ void Player::_LoadInventory(PreparedQueryResult result, PreparedQueryResult arti
     }
     //if (IsAlive())
     _ApplyAllItemMods();
-    // Apply all azerite item mods, azerite empowered item mods will get applied through its spell script
-    ApplyAllAzeriteItemMods(true);
 }
 
 void Player::_LoadVoidStorage(PreparedQueryResult result)
@@ -20932,6 +20947,7 @@ void Player::GetSpellModValues(SpellInfo const* spellInfo, SpellModOp op, Spell*
 template TC_GAME_API void Player::GetSpellModValues(SpellInfo const* spellInfo, SpellModOp op, Spell* spell, int32 base, int32* flat, float* pct) const;
 template TC_GAME_API void Player::GetSpellModValues(SpellInfo const* spellInfo, SpellModOp op, Spell* spell, uint32 base, int32* flat, float* pct) const;
 template TC_GAME_API void Player::GetSpellModValues(SpellInfo const* spellInfo, SpellModOp op, Spell* spell, float base, int32* flat, float* pct) const;
+template TC_GAME_API void Player::GetSpellModValues(SpellInfo const* spellInfo, SpellModOp op, Spell* spell, double base, int32* flat, float* pct) const;
 
 template <class T>
 void Player::ApplySpellMod(SpellInfo const* spellInfo, SpellModOp op, T& basevalue, Spell* spell /*= nullptr*/) const
@@ -20941,12 +20957,13 @@ void Player::ApplySpellMod(SpellInfo const* spellInfo, SpellModOp op, T& baseval
 
     GetSpellModValues(spellInfo, op, spell, basevalue, &totalflat, &totalmul);
 
-    basevalue = T(float(basevalue + totalflat) * totalmul);
+    basevalue = T(double(basevalue + totalflat) * totalmul);
 }
 
 template TC_GAME_API void Player::ApplySpellMod(SpellInfo const* spellInfo, SpellModOp op, int32& basevalue, Spell* spell) const;
 template TC_GAME_API void Player::ApplySpellMod(SpellInfo const* spellInfo, SpellModOp op, uint32& basevalue, Spell* spell) const;
 template TC_GAME_API void Player::ApplySpellMod(SpellInfo const* spellInfo, SpellModOp op, float& basevalue, Spell* spell) const;
+template TC_GAME_API void Player::ApplySpellMod(SpellInfo const* spellInfo, SpellModOp op, double& basevalue, Spell* spell) const;
 
 void Player::AddSpellMod(SpellModifier* mod, bool apply)
 {

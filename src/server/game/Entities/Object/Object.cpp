@@ -137,6 +137,14 @@ void Object::_Create(ObjectGuid const& guid)
     SetUInt16Value(OBJECT_FIELD_TYPE, 0, m_objectType);
 }
 
+std::string Object::_ConcatFields(uint16 startIndex, uint16 size) const
+{
+    std::ostringstream ss;
+    for (uint16 index = 0; index < size; ++index)
+        ss << GetUInt32Value(index + startIndex) << ' ';
+    return ss.str();
+}
+
 void Object::AddToWorld()
 {
     if (m_inWorld)
@@ -2397,6 +2405,12 @@ bool WorldObject::CanDetectStealthOf(WorldObject const* obj, bool checkAlert) co
     }
 
     return true;
+}
+
+void Object::ForceValuesUpdateAtIndex(uint32 i)
+{
+    _changesMask[i] = 1;
+    AddToObjectUpdateIfNeeded();
 }
 
 void WorldObject::SendMessageToSet(WorldPacket const* data, bool self) const

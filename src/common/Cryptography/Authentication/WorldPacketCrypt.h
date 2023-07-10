@@ -31,6 +31,7 @@ public:
     WorldPacketCrypt();
 
     void Init(SessionKey const& K);
+    void Init(SessionKey const& K, std::array<uint8, 16> const& serverKey, std::array<uint8, 16> const& clientKey);
     void DecryptRecv(uint8* data, size_t len);
     void EncryptSend(uint8* data, size_t len);
 

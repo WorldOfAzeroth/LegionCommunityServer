@@ -672,10 +672,11 @@ typedef std::map<uint32, QuestSaveType> QuestStatusSaveMap;
 
 enum QuestSlotOffsets
 {
-    QUEST_ID_OFFSET            = 0,
-    QUEST_STATE_OFFSET         = 1,
-    QUEST_END_TIME_OFFSET      = 2,
-    QUEST_ACCEPTED_TIME_OFFSET = 3,
+    QUEST_ID_OFFSET              = 0,
+    QUEST_STATE_OFFSET           = 1,
+    QUEST_END_TIME_OFFSET        = 2,
+    QUEST_ACCEPTED_TIME_OFFSET   = 3,
+    QUEST_OBJECTIVE_FLAGS_OFFSET = 4,
     QUEST_COUNTS_OFFSET = 2,
     QUEST_TIME_OFFSET   = 14
 };
@@ -2062,7 +2063,6 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void GetDodgeFromAgility(float &diminishing, float &nondiminishing) const;
         float GetRatingMultiplier(CombatRating cr) const;
         float GetRatingBonusValue(CombatRating cr) const;
-        float ApplyRatingDiminishing(CombatRating cr, float bonusValue) const;
 
         /// Returns base spellpower bonus from spellpower stat on items, without spellpower from intellect stat
         uint32 GetBaseSpellPowerBonus() const { return m_baseSpellPower; }
@@ -2081,7 +2081,6 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void UpdateSpellHitChances();
 
         void UpdateSpellCritChance();
-        void UpdateCorruption();
         void UpdateArmorPenetration(int32 amount);
         void UpdateExpertise(WeaponAttackType attType);
         void ApplyManaRegenBonus(int32 amount, bool apply);
@@ -2324,8 +2323,6 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void _RemoveAllItemMods();
         void _ApplyAllItemMods();
         void _ApplyAllLevelScaleItemMods(bool apply);
-        void ApplyAllAzeriteItemMods(bool apply);
-        void ApplyAllAzeriteEmpoweredItemMods(bool apply);
         void _ApplyItemBonuses(Item* item, uint8 slot, bool apply);
         void _ApplyWeaponDamage(uint8 slot, Item* item, bool apply);
         bool EnchantmentFitsRequirements(uint32 enchantmentcondition, int8 slot) const;

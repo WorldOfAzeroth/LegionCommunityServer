@@ -174,7 +174,6 @@ TC_GAME_API extern DB2Storage<SceneScriptPackageEntry>              sSceneScript
 TC_GAME_API extern DB2Storage<SkillLineAbilityEntry>                sSkillLineAbilityStore;
 TC_GAME_API extern DB2Storage<SkillRaceClassInfoEntry>              sSkillRaceClassInfoStore;
 TC_GAME_API extern DB2Storage<SoundKitEntry>                        sSoundKitStore;
-TC_GAME_API extern DB2Storage<SpellEntry>                           sSpellStore;
 TC_GAME_API extern DB2Storage<SpellAuraOptionsEntry>                sSpellAuraOptionsStore;
 TC_GAME_API extern DB2Storage<SpellAuraRestrictionsEntry>           sSpellAuraRestrictionsStore;
 TC_GAME_API extern DB2Storage<SpellCastTimesEntry>                  sSpellCastTimesStore;
@@ -300,7 +299,6 @@ public:
     std::vector<uint32> const* GetFactionTeamList(uint32 faction) const;
     HeirloomEntry const* GetHeirloomByItemId(uint32 itemId) const;
     FriendshipRepReactionSet const* GetFriendshipRepReactions(uint32 friendshipRepID) const;
-    uint32 GetGlobalCurveId(GlobalCurve globalCurveType) const;
     std::vector<uint32> const* GetGlyphBindableSpells(uint32 glyphPropertiesId) const;
     std::vector<uint32> const* GetGlyphRequiredSpecs(uint32 glyphPropertiesId) const;
     ItemBonusList const* GetItemBonusList(uint32 bonusListId) const;

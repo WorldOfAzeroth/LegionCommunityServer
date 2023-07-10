@@ -128,15 +128,16 @@ private:
     void LoadSessionPermissionsCallback(PreparedQueryResult result);
     void HandleConnectToFailed(WorldPackets::Auth::ConnectToFailed& connectToFailed);
     bool HandlePing(WorldPackets::Auth::Ping& ping);
-    void HandleEnableEncryptionAck();
+    void HandleEnterEncryptedModeAck();
 
     ConnectionType _type;
     uint64 _key;
 
     std::array<uint8, 16> _serverChallenge;
     WorldPacketCrypt _authCrypt;
+    std::array<uint8, 16> _encryptSeed;
+    std::array<uint8, 16>  _decryptSeed;
     SessionKey _sessionKey;
-    std::array<uint8, 16> _encryptKey;
 
     TimePoint _LastPingTime;
     uint32 _OverSpeedPings;

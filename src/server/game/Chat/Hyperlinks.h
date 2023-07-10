@@ -315,14 +315,6 @@ namespace Trinity::Hyperlinks
             static bool StoreTo(ItemLinkData& val, std::string_view text);
         };
 
-        struct TC_GAME_API journal
-        {
-            using value_type = JournalLinkData const&;
-            static constexpr std::string_view tag() { return "journal"; }
-            static bool StoreTo(JournalLinkData& val, std::string_view text);
-        };
-
-
         struct TC_GAME_API pvptal
         {
             using value_type = PvpTalentEntry const*;

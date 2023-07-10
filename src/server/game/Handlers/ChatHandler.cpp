@@ -629,9 +629,6 @@ void WorldSession::HandleChatMessageAFKOpcode(WorldPackets::Chat::ChatMessageAFK
         sender->ToggleAFK();
     }
 
-    if (Guild* guild = sender->GetGuild())
-        guild->SendEventAwayChanged(sender->GetGUID(), sender->isAFK(), sender->isDND());
-
     sScriptMgr->OnPlayerChat(sender, CHAT_MSG_AFK, LANG_UNIVERSAL, chatMessageAFK.Text);
 }
 
@@ -674,9 +671,6 @@ void WorldSession::HandleChatMessageDNDOpcode(WorldPackets::Chat::ChatMessageDND
 
         sender->ToggleDND();
     }
-
-    if (Guild* guild = sender->GetGuild())
-        guild->SendEventAwayChanged(sender->GetGUID(), sender->isAFK(), sender->isDND());
 
     sScriptMgr->OnPlayerChat(sender, CHAT_MSG_DND, LANG_UNIVERSAL, chatMessageDND.Text);
 }

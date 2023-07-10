@@ -79,7 +79,6 @@ WorldSocket::WorldSocket(tcp::socket&& socket) : Socket(std::move(socket)),
     _worldSession(nullptr), _authed(false), _sendBufferSize(4096), _compressionStream(nullptr)
 {
     Trinity::Crypto::GetRandomBytes(_serverChallenge);
-    _encryptKey.fill(0);
     _headerBuffer.Resize(sizeof(PacketHeader));
 }
 
@@ -243,9 +242,13 @@ bool WorldSocket::Update()
 
 void WorldSocket::HandleSendAuthSession()
 {
+    Trinity::Crypto::GetRandomBytes(_encryptSeed);
+    Trinity::Crypto::GetRandomBytes(_decryptSeed);
+
     WorldPackets::Auth::AuthChallenge challenge;
-    challenge.Challenge = _serverChallenge;
-    memcpy(challenge.DosChallenge.data(), Trinity::Crypto::GetRandomBytes<32>().data(), 32);
+    memcpy(challenge.Challenge.data(), _serverChallenge.data(), 16);
+    memcpy(&challenge.DosChallenge[0], _encryptSeed.data(), 16);
+    memcpy(&challenge.DosChallenge[4], _decryptSeed.data(), 16);
     challenge.DosZeroBits = 1;
 
     SendPacketAndLogOpcode(*challenge.Write());
@@ -349,9 +352,10 @@ bool WorldSocket::ReadHeaderHandler()
 
 WorldSocket::ReadDataHandlerResult WorldSocket::ReadDataHandler()
 {
+    PacketHeader* header = reinterpret_cast<PacketHeader*>(_headerBuffer.GetReadPointer());
+    OpcodeClient opcode = static_cast<OpcodeClient>(header->Command);
 
     WorldPacket packet(std::move(_packetBuffer), GetConnectionType());
-    OpcodeClient opcode = packet.read<OpcodeClient>();
     if (uint32(opcode) >= uint32(NUM_OPCODE_HANDLERS))
     {
         TC_LOG_ERROR("network", "WorldSocket::ReadHeaderHandler(): client %s sent wrong opcode (opcode: %u)",
@@ -455,7 +459,7 @@ WorldSocket::ReadDataHandlerResult WorldSocket::ReadDataHandler()
         }
         case CMSG_ENABLE_ENCRYPTION_ACK:
             LogOpcodeText(opcode, sessionGuard);
-            HandleEnableEncryptionAck();
+            HandleEnterEncryptedModeAck();
             break;
         default:
         {
@@ -715,14 +719,6 @@ void WorldSocket::HandleAuthSessionCallback(std::shared_ptr<WorldPackets::Auth::
     SessionKeyGenerator<Trinity::Crypto::SHA256> sessionKeyGenerator(sessionKeyHmac.GetDigest());
     sessionKeyGenerator.Generate(_sessionKey.data(), 40);
 
-    Trinity::Crypto::HMAC_SHA256 encryptKeyGen(_sessionKey);
-    encryptKeyGen.UpdateData(authSession->LocalChallenge);
-    encryptKeyGen.UpdateData(_serverChallenge);
-    encryptKeyGen.Finalize();
-
-    // only first 16 bytes of the hmac are used
-    memcpy(_encryptKey.data(), encryptKeyGen.GetDigest().data(), 16);
-
     // As we don't know if attempted login process by ip works, we update last_attempt_ip right away
     LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_LAST_ATTEMPT_IP);
     stmt->setString(0, address);
@@ -951,6 +947,19 @@ void WorldSocket::HandleConnectToFailed(WorldPackets::Auth::ConnectToFailed& con
     }
 }
 
+void WorldSocket::HandleEnterEncryptedModeAck()
+{
+    if (_type == CONNECTION_TYPE_REALM)
+    {
+        _authCrypt.Init(_sessionKey);
+        sWorld->AddSession(_worldSession);
+    }
+    else
+    {
+        _authCrypt.Init(_sessionKey, _encryptSeed, _decryptSeed);
+        sWorld->AddInstanceSocket(shared_from_this(), _key);
+    }
+}
 
 void WorldSocket::SendAuthResponseError(uint32 code)
 {
@@ -1012,4 +1021,9 @@ bool WorldSocket::HandlePing(WorldPackets::Auth::Ping& ping)
 
     SendPacketAndLogOpcode(*WorldPackets::Auth::Pong(ping.Serial).Write());
     return true;
+}
+
+bool PacketHeader::IsValidOpcode()
+{
+    return Command < NUM_OPCODE_HANDLERS;
 }

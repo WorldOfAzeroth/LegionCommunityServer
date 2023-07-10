@@ -961,6 +961,10 @@ void HotfixDatabaseConnection::DoPrepareStatements()
         "ActiveIconFileDataID, LaunchDelay, DifficultyID, Attributes1, Attributes2, Attributes3, Attributes4, Attributes5, Attributes6, Attributes7, "
         "Attributes8, Attributes9, Attributes10, Attributes11, Attributes12, Attributes13, Attributes14, SpellID FROM spell_misc ORDER BY ID DESC", CONNECTION_SYNCH);
 
+    // SpellName.db2
+    PrepareStatement(HOTFIX_SEL_SPELL_NAME, "SELECT ID, Name FROM spell_name ORDER BY ID DESC", CONNECTION_SYNCH);
+    PREPARE_LOCALE_STMT(HOTFIX_SEL_SPELL_NAME, "SELECT ID, Name_lang FROM spell_name_locale WHERE locale = ?", CONNECTION_SYNCH);
+
     // SpellPower.db2
     PrepareStatement(HOTFIX_SEL_SPELL_POWER, "SELECT ManaCost, PowerCostPct, PowerPctPerSecond, RequiredAuraSpellID, PowerCostMaxPct, OrderIndex, "
         "PowerType, ID, ManaCostPerLevel, ManaPerSecond, OptionalCost, PowerDisplayID, AltPowerBarID, SpellID FROM spell_power ORDER BY ID DESC", CONNECTION_SYNCH);

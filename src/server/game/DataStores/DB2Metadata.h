@@ -5531,6 +5531,17 @@ struct SpellMissileMotionMeta
     }
 };
 
+struct SpellNameMeta
+{
+    static DB2Meta const* Instance()
+    {
+        static char const* types = "is";
+        static uint8 const arraySizes[2] = { 1, 1};
+        static DB2Meta instance(-1, 2, 0x6B78A45B, types, arraySizes, -1);
+        return &instance;
+    }
+};
+
 struct SpellPowerMeta
 {
     static DB2Meta const* Instance()
