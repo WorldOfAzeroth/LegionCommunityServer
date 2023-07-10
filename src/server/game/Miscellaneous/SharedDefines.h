@@ -130,7 +130,8 @@ enum Gender
     GENDER_NONE                        =  2
 };
 
-// Class value is index in ChrClasses.dbc
+// Class value is index in ChrClasses.db2
+// EnumUtils: DESCRIBE THIS
 enum Classes : uint8
 {
     CLASS_NONE          = 0,
@@ -262,6 +263,7 @@ enum Stats : uint16
 
 #define MAX_STATS                        4
 
+// EnumUtils: DESCRIBE THIS
 enum Powers : int8
 {
     POWER_HEALTH                        = -2, // TITLE Health
@@ -291,6 +293,7 @@ enum Powers : int8
 
 #define MAX_POWERS_PER_CLASS            6
 
+// EnumUtils: DESCRIBE THIS
 enum SpellSchools : uint16
 {
     SPELL_SCHOOL_NORMAL                 = 0, // TITLE Physical
@@ -397,7 +400,8 @@ uint32 constexpr QuestDifficultyColors[MAX_QUEST_DIFFICULTY] =
 // Spell Attributes definitions
 // ***********************************
 
-enum SpellAttr0
+// EnumUtils: DESCRIBE THIS
+enum SpellAttr0 : uint32
 {
     SPELL_ATTR0_PROC_FAILURE_BURNS_CHARGE                           = 0x00000001, // TITLE Proc Failure Burns Charge
     SPELL_ATTR0_USES_RANGED_SLOT                                    = 0x00000002, // TITLE Uses Ranged Slot DESCRIPTION Use ammo, ranged attack range modifiers, ranged haste, etc.
@@ -1373,7 +1377,8 @@ enum SpellEffectName
     TOTAL_SPELL_EFFECTS                             = 256,
 };
 
-enum SpellCastResult
+// EnumUtils: DESCRIBE THIS
+enum SpellCastResult : int32
 {
     SPELL_FAILED_SUCCESS                                        = 0,
     SPELL_FAILED_AFFECTING_COMBAT                               = 1,
@@ -2094,6 +2099,7 @@ enum GhostVisibilityType
 };
 
 // Spell aura states
+// EnumUtils: DESCRIBE THIS
 enum AuraStateType
 {   // (C) used in caster aura state     (T) used in target aura state
     // (c) used in caster aura state-not (t) used in target aura state-not
@@ -2128,7 +2134,8 @@ enum AuraStateType
     (1<<(AURA_STATE_RAID_ENCOUNTER_2-1))|(1<<(AURA_STATE_ROGUE_POISONED-1)))
 
 // Spell mechanics
-enum Mechanics
+// EnumUtils: DESCRIBE THIS
+enum Mechanics : uint32
 {
     MECHANIC_NONE             = 0,
     MECHANIC_CHARM            = 1,
@@ -2395,6 +2402,7 @@ enum SpellHitType
     SPELL_HIT_TYPE_NO_ATTACKER          = 0x80, // does the same as SPELL_ATTR4_COMBAT_LOG_NO_CASTER
 };
 
+// EnumUtils: DESCRIBE THIS
 enum SpellDmgClass
 {
     SPELL_DAMAGE_CLASS_NONE     = 0, // TITLE None
@@ -2403,6 +2411,7 @@ enum SpellDmgClass
     SPELL_DAMAGE_CLASS_RANGED   = 3  // TITLE Ranged
 };
 
+// EnumUtils: DESCRIBE THIS
 enum SpellPreventionType
 {
     SPELL_PREVENTION_TYPE_NONE          = 0, // TITLE None
@@ -2789,7 +2798,8 @@ enum TextEmotes
     TEXT_EMOTE_BOOT                 = 506
 };
 
-// Emotes.dbc (6.0.2.18988)
+// Emotes.db2 (9.0.2.37176)
+// EnumUtils: DESCRIBE THIS
 enum Emote : uint32
 {
     EMOTE_ONESHOT_NONE                           = 0,
@@ -5313,9 +5323,10 @@ enum WeatherType
 
 #define MAX_WEATHER_TYPE 4
 
-enum ChatMsg
+// EnumUtils: DESCRIBE THIS
+enum ChatMsg : int32
 {
-    CHAT_MSG_ADDON                              = 0xFFFFFFFF, // -1
+    CHAT_MSG_ADDON                              = -1,
     CHAT_MSG_SYSTEM                             = 0x00,
     CHAT_MSG_SAY                                = 0x01,
     CHAT_MSG_PARTY                              = 0x02,
