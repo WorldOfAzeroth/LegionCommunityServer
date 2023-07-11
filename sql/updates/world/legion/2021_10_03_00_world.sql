@@ -2,7 +2,7 @@
 -- Quest: 27635 Decontamination
 
 UPDATE `creature_template` SET `AIName` = 'SmartAI' WHERE entry in (46185, 46165, 46320, 46208);
-UPDATE `creature_template` SET `npcflag` = 16777216 AND 'InhabitType' = 4 WHERE (entry = 46185);
+UPDATE `creature_template` SET `npcflag` = 16777216 AND `InhabitType` = 4 WHERE (entry = 46185);
 
 -- 46185 Sanitron 500
 -- Move the outer ones slightly to get out of the decontamination range.
