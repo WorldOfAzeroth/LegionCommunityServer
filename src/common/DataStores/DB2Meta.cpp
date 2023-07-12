@@ -56,11 +56,13 @@ uint32 DB2Meta::GetRecordSize() const
                     size += 8;
                     break;
                 case FT_STRING:
+                    size += sizeof(LocalizedString);
+                    break;
+                case FT_STRING_NOT_LOCALIZED:
                     size += sizeof(char*);
                     break;
                 default:
                     ASSERT(false, "Unsupported column type specified %c", Types[i]);
-                    break;
             }
         }
     }
@@ -100,6 +102,9 @@ int32 DB2Meta::GetParentIndexFieldOffset() const
                     offset += 8;
                     break;
                 case FT_STRING:
+                    offset += sizeof(LocalizedString);
+                    break;
+                case FT_STRING_NOT_LOCALIZED:
                     offset += sizeof(char*);
                     break;
                 default:

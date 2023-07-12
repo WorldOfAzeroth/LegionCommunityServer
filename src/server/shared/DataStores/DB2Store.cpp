@@ -34,7 +34,7 @@ DB2StorageBase::~DB2StorageBase()
         delete[] strings;
 }
 
-void DB2StorageBase::WriteRecordData(char const* entry, uint32 locale, ByteBuffer& buffer) const
+void DB2StorageBase::WriteRecordData(char const* entry, LocaleConstant locale, ByteBuffer& buffer) const
 {
     std::size_t i = 0;
     if (!_loadInfo->Meta->HasIndexFieldInData())
@@ -47,6 +47,7 @@ void DB2StorageBase::WriteRecordData(char const* entry, uint32 locale, ByteBuffe
     {
         switch (_loadInfo->TypesString[i])
         {
+
             case FT_INT:
                 buffer << *(uint32*)entry;
                 entry += 4;
@@ -69,12 +70,8 @@ void DB2StorageBase::WriteRecordData(char const* entry, uint32 locale, ByteBuffe
                 break;
             case FT_STRING:
             {
-                LocalizedString* locStr = *(LocalizedString**)entry;
-                if (locStr->Str[locale][0] == '\0')
-                    locale = 0;
-
-                buffer << locStr->Str[locale];
-                entry += sizeof(LocalizedString*);
+                buffer << (*(LocalizedString*)entry)[locale];
+                entry += sizeof(LocalizedString);
                 break;
             }
             case FT_STRING_NOT_LOCALIZED:
@@ -83,11 +80,12 @@ void DB2StorageBase::WriteRecordData(char const* entry, uint32 locale, ByteBuffe
                 entry += sizeof(char const*);
                 break;
             }
+
         }
     }
 }
 
-bool DB2StorageBase::Load(std::string const& path, uint32 locale, char**& indexTable)
+bool DB2StorageBase::Load(std::string const& path, LocaleConstant locale, char**& indexTable)
 {
     indexTable = nullptr;
     DB2FileLoader db2;
@@ -116,7 +114,7 @@ bool DB2StorageBase::Load(std::string const& path, uint32 locale, char**& indexT
     return indexTable != nullptr;
 }
 
-bool DB2StorageBase::LoadStringsFrom(std::string const& path, uint32 locale, char** indexTable)
+bool DB2StorageBase::LoadStringsFrom(std::string const& path, LocaleConstant locale, char** indexTable)
 {
     // DB2 must be already loaded using Load
     if (!indexTable)
@@ -146,7 +144,7 @@ void DB2StorageBase::LoadFromDB(char**& indexTable)
         _stringPool.push_back(extraStringHolders);
 }
 
-void DB2StorageBase::LoadStringsFromDB(uint32 locale, char** indexTable)
+void DB2StorageBase::LoadStringsFromDB(LocaleConstant locale, char** indexTable)
 {
     if (!_loadInfo->GetStringFieldCount(true))
         return;

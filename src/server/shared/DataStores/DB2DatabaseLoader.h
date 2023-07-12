@@ -38,7 +38,7 @@ public:
     DB2DatabaseLoader(std::string const& storageName, DB2LoadInfo const* loadInfo) : _storageName(storageName), _loadInfo(loadInfo) { }
 
     char* Load(uint32& records, char**& indexTable, char*& stringHolders, std::vector<char*>& stringPool);
-    void LoadStrings(uint32 locale, uint32 records, char** indexTable, std::vector<char*>& stringPool);
+    void LoadStrings(bool custom, LocaleConstant locale, uint32 records, char** indexTable, std::vector<char*>& stringPool);
     static char* AddString(char const** holder, std::string const& value);
 
 private:
