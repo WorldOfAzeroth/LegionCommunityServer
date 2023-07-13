@@ -80,11 +80,14 @@ struct TC_COMMON_API DB2FileSource
     virtual bool Read(void* buffer, std::size_t numBytes) = 0;
 
     // Returns current read position in file
-    virtual std::size_t GetPosition() const = 0;
+    virtual int64 GetPosition() const = 0;
 
-    virtual std::size_t GetFileSize() const = 0;
+    virtual bool SetPosition(int64 position) = 0;
+
+    virtual int64 GetFileSize() const = 0;
 
     virtual char const* GetFileName() const = 0;
+
 };
 
 class TC_COMMON_API DB2Record
@@ -132,14 +135,25 @@ struct DB2RecordCopy
 };
 #pragma pack(pop)
 
+class TC_COMMON_API DB2FileLoadException : public std::exception
+{
+public:
+    DB2FileLoadException(std::string msg) : _msg(std::move(msg)) { }
+
+    char const* what() const noexcept override { return _msg.c_str(); }
+
+private:
+    std::string _msg;
+};
+
 class TC_COMMON_API DB2FileLoader
 {
 public:
     DB2FileLoader();
     ~DB2FileLoader();
 
-    bool Load(DB2FileSource* source, DB2FileLoadInfo const* loadInfo);
-    char* AutoProduceData(uint32& count, char**& indexTable, std::vector<char*>& stringPool);
+    void Load(DB2FileSource* source, DB2FileLoadInfo const* loadInfo);
+    char* AutoProduceData(uint32& count, char**& indexTable);
     char* AutoProduceStrings(char** indexTable, uint32 indexTableSize, uint32 locale);
     void AutoProduceRecordCopies(uint32 records, char** indexTable, char* dataTable);
 

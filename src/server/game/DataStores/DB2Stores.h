@@ -20,6 +20,7 @@
 
 #include "DB2Store.h"
 #include "DB2Structure.h"
+#include "Optional.h"
 #include "SharedDefines.h"
 #include <map>
 #include <set>
@@ -174,6 +175,7 @@ TC_GAME_API extern DB2Storage<SceneScriptPackageEntry>              sSceneScript
 TC_GAME_API extern DB2Storage<SkillLineAbilityEntry>                sSkillLineAbilityStore;
 TC_GAME_API extern DB2Storage<SkillRaceClassInfoEntry>              sSkillRaceClassInfoStore;
 TC_GAME_API extern DB2Storage<SoundKitEntry>                        sSoundKitStore;
+TC_GAME_API extern DB2Storage<SpellEntry>                           sSpellStore;
 TC_GAME_API extern DB2Storage<SpellAuraOptionsEntry>                sSpellAuraOptionsStore;
 TC_GAME_API extern DB2Storage<SpellAuraRestrictionsEntry>           sSpellAuraRestrictionsStore;
 TC_GAME_API extern DB2Storage<SpellCastTimesEntry>                  sSpellCastTimesStore;
@@ -193,7 +195,6 @@ TC_GAME_API extern DB2Storage<SpellLabelEntry>                      sSpellLabelS
 TC_GAME_API extern DB2Storage<SpellLearnSpellEntry>                 sSpellLearnSpellStore;
 TC_GAME_API extern DB2Storage<SpellLevelsEntry>                     sSpellLevelsStore;
 TC_GAME_API extern DB2Storage<SpellMiscEntry>                       sSpellMiscStore;
-TC_GAME_API extern DB2Storage<SpellNameEntry>                       sSpellNameStore;
 TC_GAME_API extern DB2Storage<SpellPowerEntry>                      sSpellPowerStore;
 TC_GAME_API extern DB2Storage<SpellPowerDifficultyEntry>            sSpellPowerDifficultyStore;
 TC_GAME_API extern DB2Storage<SpellProcsPerMinuteEntry>             sSpellProcsPerMinuteStore;
@@ -273,7 +274,7 @@ public:
 
     static DB2Manager& Instance();
 
-    void LoadStores(std::string const& dataPath, uint32 defaultLocale);
+    uint32 LoadStores(std::string const& dataPath, LocaleConstant defaultLocale);
     DB2StorageBase const* GetStorage(uint32 type) const;
 
     void LoadHotfixData();

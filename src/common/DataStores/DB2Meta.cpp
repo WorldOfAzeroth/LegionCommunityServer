@@ -73,6 +73,48 @@ uint32 DB2Meta::GetRecordSize() const
     return size;
 }
 
+uint32 DB2Meta::GetIndexFieldOffset() const
+{
+    if (IndexField == -1)
+        return 0;
+
+    uint32 offset = 0;
+
+    for (int32 i = 0; i < IndexField; ++i)
+    {
+        for (uint8 j = 0; j < ArraySizes[i]; ++j)
+        {
+            switch (Types[i])
+            {
+                case FT_BYTE:
+                    offset += 1;
+                    break;
+                case FT_SHORT:
+                    offset += 2;
+                    break;
+                case FT_FLOAT:
+                case FT_INT:
+                    offset += 4;
+                    break;
+                case FT_LONG:
+                    offset += 8;
+                    break;
+                case FT_STRING:
+                    offset += sizeof(LocalizedString);
+                    break;
+                case FT_STRING_NOT_LOCALIZED:
+                    offset += sizeof(char*);
+                    break;
+                default:
+                    ABORT_MSG("Unsupported column type specified %c", Types[i]);
+                    break;
+            }
+        }
+    }
+
+    return offset;
+}
+
 int32 DB2Meta::GetParentIndexFieldOffset() const
 {
     if (ParentIndexField == -1)
@@ -145,3 +187,4 @@ DB2FieldMeta::DB2FieldMeta(bool isSigned, DBCFormer type, char const* name)
     : IsSigned(isSigned), Type(type), Name(name)
 {
 }
+

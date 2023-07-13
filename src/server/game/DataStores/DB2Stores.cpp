@@ -15,17 +15,20 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "DB2Stores.h"
 #include "Containers.h"
 #include "DatabaseEnv.h"
 #include "DB2LoadInfo.h"
 #include "Hash.h"
+#include "ItemTemplate.h"
 #include "IteratorPair.h"
 #include "Log.h"
-#include "ObjectDefines.h"
 #include "Regex.h"
 #include "Timer.h"
 #include "Util.h"
+#include <boost/filesystem/operations.hpp>
 #include <array>
+#include <bitset>
 #include <sstream>
 #include <cctype>
 
@@ -223,6 +226,7 @@ DB2Storage<SkillLineAbilityEntry>               sSkillLineAbilityStore("SkillLin
 DB2Storage<SkillRaceClassInfoEntry>             sSkillRaceClassInfoStore("SkillRaceClassInfo.db2", SkillRaceClassInfoLoadInfo::Instance());
 DB2Storage<SoundKitEntry>                       sSoundKitStore("SoundKit.db2", SoundKitLoadInfo::Instance());
 DB2Storage<SpecializationSpellsEntry>           sSpecializationSpellsStore("SpecializationSpells.db2", SpecializationSpellsLoadInfo::Instance());
+DB2Storage<SpellEntry>                          sSpellStore("Spell.db2", SpellLoadInfo::Instance());
 DB2Storage<SpellAuraOptionsEntry>               sSpellAuraOptionsStore("SpellAuraOptions.db2", SpellAuraOptionsLoadInfo::Instance());
 DB2Storage<SpellAuraRestrictionsEntry>          sSpellAuraRestrictionsStore("SpellAuraRestrictions.db2", SpellAuraRestrictionsLoadInfo::Instance());
 DB2Storage<SpellCastTimesEntry>                 sSpellCastTimesStore("SpellCastTimes.db2", SpellCastTimesLoadInfo::Instance());
@@ -242,7 +246,6 @@ DB2Storage<SpellLabelEntry>                     sSpellLabelStore("SpellLabel.db2
 DB2Storage<SpellLearnSpellEntry>                sSpellLearnSpellStore("SpellLearnSpell.db2", SpellLearnSpellLoadInfo::Instance());
 DB2Storage<SpellLevelsEntry>                    sSpellLevelsStore("SpellLevels.db2", SpellLevelsLoadInfo::Instance());
 DB2Storage<SpellMiscEntry>                      sSpellMiscStore("SpellMisc.db2", SpellMiscLoadInfo::Instance());
-DB2Storage<SpellNameEntry>                      sSpellNameStore("SpellName.db2", SpellNameLoadInfo::Instance());
 DB2Storage<SpellPowerEntry>                     sSpellPowerStore("SpellPower.db2", SpellPowerLoadInfo::Instance());
 DB2Storage<SpellPowerDifficultyEntry>           sSpellPowerDifficultyStore("SpellPowerDifficulty.db2", SpellPowerDifficultyLoadInfo::Instance());
 DB2Storage<SpellProcsPerMinuteEntry>            sSpellProcsPerMinuteStore("SpellProcsPerMinute.db2", SpellProcsPerMinuteLoadInfo::Instance());
@@ -414,67 +417,80 @@ namespace
     WorldSafeLocContainer _worldSafeLocContainer;
 }
 
-typedef std::vector<std::string> DB2StoreProblemList;
+template<typename T>
+constexpr std::size_t GetCppRecordSize(DB2Storage<T> const&) { return sizeof(T); }
 
-template<class T, template<class> class DB2>
-inline void LoadDB2(uint32& availableDb2Locales, DB2StoreProblemList& errlist, StorageMap& stores, DB2StorageBase* storage, std::string const& db2Path, uint32 defaultLocale, DB2<T> const& /*hint*/)
+void LoadDB2(std::bitset<TOTAL_LOCALES>& availableDb2Locales, std::vector<std::string>& errlist, StorageMap& stores, DB2StorageBase* storage, std::string const& db2Path,
+    LocaleConstant defaultLocale, std::size_t cppRecordSize)
 {
     // validate structure
-    DB2LoadInfo const* loadInfo = storage->GetLoadInfo();
     {
+        DB2LoadInfo const* loadInfo = storage->GetLoadInfo();
         std::string clientMetaString, ourMetaString;
         for (std::size_t i = 0; i < loadInfo->Meta->FieldCount; ++i)
             for (std::size_t j = 0; j < loadInfo->Meta->ArraySizes[i]; ++j)
                 clientMetaString += loadInfo->Meta->Types[i];
 
         for (std::size_t i = loadInfo->Meta->HasIndexFieldInData() ? 0 : 1; i < loadInfo->FieldCount; ++i)
-            ourMetaString += char(std::tolower(loadInfo->Fields[i].Type));
+            ourMetaString += char(loadInfo->Fields[i].Type);
 
         ASSERT(clientMetaString == ourMetaString,
             "%s C++ structure fields %s do not match generated types from the client %s",
             storage->GetFileName().c_str(), ourMetaString.c_str(), clientMetaString.c_str());
 
         // compatibility format and C++ structure sizes
-        ASSERT(loadInfo->Meta->GetRecordSize() == sizeof(T),
+        ASSERT(loadInfo->Meta->GetRecordSize() == cppRecordSize,
             "Size of '%s' set by format string (%u) not equal size of C++ structure (" SZFMTD ").",
-            storage->GetFileName().c_str(), loadInfo->Meta->GetRecordSize(), sizeof(T));
+            storage->GetFileName().c_str(), loadInfo->Meta->GetRecordSize(), cppRecordSize);
     }
 
-    if (storage->Load(db2Path + localeNames[defaultLocale] + '/', defaultLocale))
+    try
     {
-        storage->LoadFromDB();
-        // LoadFromDB() always loads strings into enUS locale, other locales are expected to have data in corresponding _locale tables
-        // so we need to make additional call to load that data in case said locale is set as default by worldserver.conf (and we do not want to load all this data from .db2 file again)
-        if (defaultLocale != LOCALE_enUS)
-            storage->LoadStringsFromDB(defaultLocale);
-
-        for (uint32 i = 0; i < TOTAL_LOCALES; ++i)
-        {
-            if (defaultLocale == i || i == LOCALE_none)
-                continue;
-
-            if (availableDb2Locales & (1 << i))
-                if (!storage->LoadStringsFrom((db2Path + localeNames[i] + '/'), i))
-                    availableDb2Locales &= ~(1 << i);             // mark as not available for speedup next checks
-
-            storage->LoadStringsFromDB(i);
-        }
+        storage->Load(db2Path + localeNames[defaultLocale] + '/', defaultLocale);
     }
-    else
+    catch (std::system_error const& e)
     {
-        // sort problematic db2 to (1) non compatible and (2) nonexistent
-        if (FILE* f = fopen((db2Path + localeNames[defaultLocale] + '/' + storage->GetFileName()).c_str(), "rb"))
+        if (e.code() == std::errc::no_such_file_or_directory)
         {
-            std::ostringstream stream;
-            stream << storage->GetFileName() << " exists, and has " << storage->GetFieldCount() << " field(s) (expected " << loadInfo->Meta->FieldCount
-                << "). Extracted file might be from wrong client version.";
-            std::string buf = stream.str();
-            errlist.push_back(buf);
-            fclose(f);
+            errlist.push_back(Trinity::StringFormat("File {}{}/{} does not exist", db2Path, localeNames[defaultLocale], storage->GetFileName()));
         }
         else
-            errlist.push_back(storage->GetFileName());
+            throw;
     }
+    catch (std::exception const& e)
+    {
+        errlist.emplace_back(e.what());
+        return;
+    }
+
+    // load additional data and enUS strings from db
+    storage->LoadFromDB();
+
+    for (LocaleConstant i = LOCALE_enUS; i < TOTAL_LOCALES; i = LocaleConstant(i + 1))
+    {
+        if (defaultLocale == i || !availableDb2Locales[i])
+            continue;
+
+        try
+        {
+            storage->LoadStringsFrom((db2Path + localeNames[i] + '/'), i);
+        }
+        catch (std::system_error const& e)
+        {
+            if (e.code() != std::errc::no_such_file_or_directory)
+                throw;
+
+            // locale db2 files are optional, do not error if nothing is found
+        }
+        catch (std::exception const& e)
+        {
+            errlist.emplace_back(e.what());
+        }
+    }
+
+    for (LocaleConstant i = LOCALE_koKR; i < TOTAL_LOCALES; i = LocaleConstant(i + 1))
+        if (availableDb2Locales[i])
+            storage->LoadStringsFromDB(i);
 
     stores[storage->GetTableHash()] = storage;
 }
@@ -485,16 +501,32 @@ DB2Manager& DB2Manager::Instance()
     return instance;
 }
 
-void DB2Manager::LoadStores(std::string const& dataPath, uint32 defaultLocale)
+uint32 DB2Manager::LoadStores(std::string const& dataPath, LocaleConstant defaultLocale)
 {
     uint32 oldMSTime = getMSTime();
 
     std::string db2Path = dataPath + "dbc/";
 
-    DB2StoreProblemList bad_db2_files;
-    uint32 availableDb2Locales = 0xFF;
+    std::vector<std::string> loadErrors;
+    std::bitset<TOTAL_LOCALES> availableDb2Locales = [&]()
+    {
+        std::bitset<TOTAL_LOCALES> foundLocales;
+        boost::filesystem::directory_iterator db2PathItr(db2Path), end;
+        while (db2PathItr != end)
+        {
+            LocaleConstant locale = GetLocaleByName(db2PathItr->path().filename().string());
+            if (IsValidLocale(locale))
+                foundLocales[locale] = true;
 
-#define LOAD_DB2(store) LoadDB2(availableDb2Locales, bad_db2_files, _stores, &store, db2Path, defaultLocale, store)
+            ++db2PathItr;
+        }
+        return foundLocales;
+    }();
+
+    if (!availableDb2Locales[defaultLocale])
+        return 0;
+
+#define LOAD_DB2(store) LoadDB2(availableDb2Locales, loadErrors, _stores, &(store), db2Path, defaultLocale, GetCppRecordSize(store))
 
     LOAD_DB2(sAchievementStore);
     LOAD_DB2(sAchievementCategoryStore);
@@ -684,6 +716,7 @@ void DB2Manager::LoadStores(std::string const& dataPath, uint32 defaultLocale)
     LOAD_DB2(sSkillRaceClassInfoStore);
     LOAD_DB2(sSoundKitStore);
     LOAD_DB2(sSpecializationSpellsStore);
+    LOAD_DB2(sSpellStore);
     LOAD_DB2(sSpellAuraOptionsStore);
     LOAD_DB2(sSpellAuraRestrictionsStore);
     LOAD_DB2(sSpellCastTimesStore);
@@ -703,7 +736,6 @@ void DB2Manager::LoadStores(std::string const& dataPath, uint32 defaultLocale)
     LOAD_DB2(sSpellLearnSpellStore);
     LOAD_DB2(sSpellLevelsStore);
     LOAD_DB2(sSpellMiscStore);
-    LOAD_DB2(sSpellNameStore);
     LOAD_DB2(sSpellPowerStore);
     LOAD_DB2(sSpellPowerDifficultyStore);
     LOAD_DB2(sSpellProcsPerMinuteStore);
@@ -747,6 +779,30 @@ void DB2Manager::LoadStores(std::string const& dataPath, uint32 defaultLocale)
     LOAD_DB2(sWorldStateExpressionStore);
 
 #undef LOAD_DB2
+
+    // error checks
+    if (!loadErrors.empty())
+    {
+        sLog->SetSynchronous(); // server will shut down after this, so set sync logging to prevent messages from getting lost
+
+        for (std::string const& error : loadErrors)
+            TC_LOG_ERROR("misc", "{}", error);
+
+        return 0;
+    }
+
+    // Check loaded DB2 files proper version
+    if (!sAreaTableStore.LookupEntry(9531) ||                // last area added in 7.3.5 (25996)
+        !sCharTitlesStore.LookupEntry(522) ||                // last char title added in 7.3.5 (25996)
+        !sGemPropertiesStore.LookupEntry(3632) ||            // last gem property added in 7.3.5 (25996)
+        !sItemStore.LookupEntry(157831) ||                   // last item added in 7.3.5 (25996)
+        !sItemExtendedCostStore.LookupEntry(6300) ||         // last item extended cost added in 7.3.5 (25996)
+        !sMapStore.LookupEntry(1903) ||                      // last map added in 7.3.5 (25996)
+        !sSpellStore.LookupEntry(263166))                    // last spell added in 7.3.5 (25996)
+    {
+        TC_LOG_ERROR("misc", "You have _outdated_ DB2 files. Please extract correct versions from current using client.");
+        exit(1);
+    }
 
     for (AreaGroupMemberEntry const* areaGroupMember : sAreaGroupMemberStore)
         _areaGroupMembers[areaGroupMember->AreaGroupID].push_back(areaGroupMember->AreaID);
@@ -1184,38 +1240,9 @@ void DB2Manager::LoadStores(std::string const& dataPath, uint32 defaultLocale)
     for (WorldSafeLocsEntry const* safeLoc : sWorldSafeLocsStore)
         _worldSafeLocContainer[safeLoc->ID] = safeLoc;
 
+    TC_LOG_INFO("server.loading", ">> Initialized {} DB2 data stores in {} ms", _stores.size(), GetMSTimeDiffToNow(oldMSTime));
 
-
-    // error checks
-    if (bad_db2_files.size() == _stores.size())
-    {
-        TC_LOG_ERROR("misc", "\nIncorrect DataDir value in worldserver.conf or ALL required *.db2 files (" SZFMTD ") not found by path: %sdbc/%s/", _stores.size(), dataPath.c_str(), localeNames[defaultLocale]);
-        exit(1);
-    }
-    else if (!bad_db2_files.empty())
-    {
-        std::string str;
-        for (auto const& bad_db2_file : bad_db2_files)
-            str += bad_db2_file + "\n";
-
-        TC_LOG_ERROR("misc", "\nSome required *.db2 files (" SZFMTD " from " SZFMTD ") not found or not compatible:\n%s", bad_db2_files.size(), _stores.size(), str.c_str());
-        exit(1);
-    }
-
-    // Check loaded DB2 files proper version
-    if (!sAreaTableStore.LookupEntry(9531) ||                // last area added in 7.3.5 (25996)
-        !sCharTitlesStore.LookupEntry(522) ||                // last char title added in 7.3.5 (25996)
-        !sGemPropertiesStore.LookupEntry(3632) ||            // last gem property added in 7.3.5 (25996)
-        !sItemStore.LookupEntry(157831) ||                   // last item added in 7.3.5 (25996)
-        !sItemExtendedCostStore.LookupEntry(6300) ||         // last item extended cost added in 7.3.5 (25996)
-        !sMapStore.LookupEntry(1903) ||                      // last map added in 7.3.5 (25996)
-        !sSpellNameStore.LookupEntry(263166))                // last spell added in 7.3.5 (25996)
-    {
-        TC_LOG_ERROR("misc", "You have _outdated_ DB2 files. Please extract correct versions from current using client.");
-        exit(1);
-    }
-
-    TC_LOG_INFO("server.loading", ">> Initialized " SZFMTD " DB2 data stores in %u ms", _stores.size(), GetMSTimeDiffToNow(oldMSTime));
+    return availableDb2Locales.to_ulong();
 }
 
 DB2StorageBase const* DB2Manager::GetStorage(uint32 type) const

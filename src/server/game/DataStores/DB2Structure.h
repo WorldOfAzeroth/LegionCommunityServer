@@ -47,9 +47,9 @@ struct AchievementEntry
 struct Achievement_CategoryEntry
 {
     LocalizedString Name;
-    uint32 ID;
-    int16 Parent;
-    int8 UiOrder;
+    uint16 Parent;
+    uint8 UiOrder;
+    int32 ID;
 };
 
 struct AdventureJournalEntry
@@ -1085,21 +1085,16 @@ struct FriendshipRepReactionEntry
 {
     uint32 ID;
     LocalizedString Reaction;
-    uint32 FriendshipRepID;
     uint16 ReactionThreshold;
+    uint8 FriendshipRepID;
 };
 
 struct FriendshipReputationEntry
 {
     LocalizedString Description;
-    LocalizedString StandingModified;
-    LocalizedString StandingChanged;
-    uint32 ID;
-    int32 FactionID;
     int32 TextureFileID;
-    int32 Flags;
-
-    EnumFlag<FriendshipReputationFlags> GetFlags() const { return static_cast<FriendshipReputationFlags>(Flags); }
+    uint16 FactionID;
+    uint32 ID;
 };
 
 struct GameObjectDisplayInfoEntry
@@ -1820,7 +1815,7 @@ struct LanguageWordsEntry
 {
     uint32 ID;
     char const* Word;
-    uint32 LanguageID;
+    uint8 LanguageID;
 };
 
 struct LanguagesEntry
@@ -2340,9 +2335,9 @@ struct QuestInfoEntry
 {
     uint32 ID;
     LocalizedString InfoName;
+    uint16 Profession;
     int8 Type;
     uint8 Modifiers;
-    uint16 Profession;
 };
 
 struct QuestMoneyRewardEntry
@@ -2821,12 +2816,6 @@ struct SpellMiscEntry
     int32 SpellID;
 };
 
-struct SpellNameEntry
-{
-    uint32 ID;                      // SpellID
-    LocalizedString Name;
-};
-
 struct SpellPowerEntry
 {
     int32 ManaCost;
@@ -2964,72 +2953,66 @@ struct SpellVisualEntry
     uint32 ID;
     float MissileCastOffset[3];
     float MissileImpactOffset[3];
-    uint32 AnimEventSoundID;
     int32 Flags;
-    int8 MissileAttachment;
+    uint16 SpellVisualMissileSetID;
     int8 MissileDestinationAttachment;
+    int8 MissileAttachment;
     uint32 MissileCastPositionerID;
     uint32 MissileImpactPositionerID;
     int32 MissileTargetingKit;
+    uint32 AnimEventSoundID;
+    uint16 DamageNumberDelay;
     uint32 HostileSpellVisualID;
     uint32 CasterSpellVisualID;
-    uint16 SpellVisualMissileSetID;
-    uint16 DamageNumberDelay;
     uint32 LowViolenceSpellVisualID;
-    uint32 RaidSpellVisualMissileSetID;
-    int32 ReducedUnexpectedCameraMovementSpellVisualID;
 };
 
 struct SpellVisualEffectNameEntry
 {
     uint32 ID;
-    int32 ModelFileDataID;
+    float EffectRadius;
     float BaseMissileSpeed;
     float Scale;
     float MinAllowedScale;
     float MaxAllowedScale;
     float Alpha;
     uint32 Flags;
-    int32 TextureFileDataID;
-    float EffectRadius;
-    uint32 Type;
     int32 GenericID;
-    uint32 RibbonQualityID;
+    int32 TextureFileDataID;
+    uint8 Type;
+    uint32 ModelFileDataID;
+    int32 RibbonQualityID;
     int32 DissolveEffectID;
-    int32 ModelPosition;
-    int8 Unknown901;
 };
 
 struct SpellVisualMissileEntry
 {
-    float CastOffset[3];
-    float ImpactOffset[3];
-    uint32 ID;
-    uint16 SpellVisualEffectNameID;
-    uint32 SoundEntriesID;
-    int8 Attachment;
-    int8 DestinationAttachment;
-    uint16 CastPositionerID;
-    uint16 ImpactPositionerID;
     int32 FollowGroundHeight;
     uint32 FollowGroundDropSpeed;
-    uint16 FollowGroundApproach;
     uint32 Flags;
+    float CastOffset[3];
+    float ImpactOffset[3];
+    uint16 SpellVisualEffectNameID;
+    uint16 CastPositionerID;
+    uint16 ImpactPositionerID;
+    uint16 FollowGroundApproach;
     uint16 SpellMissileMotionID;
+    int8 Attachment;
+    int8 DestinationAttachment;
+    uint32 ID;
+    uint32 SoundEntriesID;
     uint32 AnimKitID;
-    int8 ClutterLevel;
-    int32 DecayTimeAfterImpact;
-    uint32 SpellVisualMissileSetID;
+    uint16 SpellVisualMissileSetID;
 };
 
 struct SpellVisualKitEntry
 {
     uint32 ID;
+    int32 Flags;
     int8 FallbackPriority;
-    int32 FallbackSpellVisualKitId;
+    uint32 FallbackSpellVisualKitId;
     uint16 DelayMin;
     uint16 DelayMax;
-    int32 Flags[2];
 };
 
 struct SpellXSpellVisualEntry

@@ -58,9 +58,9 @@ struct AchievementCategoryLoadInfo
         static DB2FieldMeta const fields[] =
         {
             { false, FT_STRING, "Name" },
-            { false, FT_INT, "ID" },
-            { true, FT_SHORT, "Parent" },
-            { true, FT_BYTE, "UiOrder" },
+            { false, FT_SHORT, "Parent" },
+            { false, FT_BYTE, "UiOrder" },
+            { true, FT_INT, "ID" },
         };
         static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, Achievement_CategoryMeta::Instance(), HOTFIX_SEL_ACHIEVEMENT_CATEGORY);
         return &loadInfo;
@@ -1527,8 +1527,8 @@ struct FriendshipRepReactionLoadInfo
         {
             { false, FT_INT, "ID" },
             { false, FT_STRING, "Reaction" },
-            { false, FT_INT, "FriendshipRepID" },
             { false, FT_SHORT, "ReactionThreshold" },
+            { false, FT_BYTE, "FriendshipRepID" },
         };
         static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, FriendshipRepReactionMeta::Instance(), HOTFIX_SEL_FRIENDSHIP_REP_REACTION);
         return &loadInfo;
@@ -1542,12 +1542,9 @@ struct FriendshipReputationLoadInfo
         static DB2FieldMeta const fields[] =
         {
             { false, FT_STRING, "Description" },
-            { false, FT_STRING, "StandingModified" },
-            { false, FT_STRING, "StandingChanged" },
-            { false, FT_INT, "ID" },
-            { true, FT_INT, "FactionID" },
             { true, FT_INT, "TextureFileID" },
-            { true, FT_INT, "Flags" },
+            { false, FT_SHORT, "FactionID" },
+            { true, FT_INT, "ID" },
         };
         static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, FriendshipReputationMeta::Instance(), HOTFIX_SEL_FRIENDSHIP_REPUTATION);
         return &loadInfo;
@@ -3012,7 +3009,7 @@ struct LanguageWordsLoadInfo
         {
             { false, FT_INT, "ID" },
             { false, FT_STRING_NOT_LOCALIZED, "Word" },
-            { false, FT_INT, "LanguageID" },
+            { false, FT_BYTE, "LanguageID" },
         };
         static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, LanguageWordsMeta::Instance(), HOTFIX_SEL_LANGUAGE_WORDS);
         return &loadInfo;
@@ -3865,9 +3862,9 @@ struct QuestInfoLoadInfo
         {
             { false, FT_INT, "ID" },
             { false, FT_STRING, "InfoName" },
+            { false, FT_SHORT, "Profession" },
             { true, FT_BYTE, "Type" },
             { false, FT_BYTE, "Modifiers" },
-            { false, FT_SHORT, "Profession" },
         };
         static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, QuestInfoMeta::Instance(), HOTFIX_SEL_QUEST_INFO);
         return &loadInfo;
@@ -5040,20 +5037,18 @@ struct SpellVisualLoadInfo
             { false, FT_FLOAT, "MissileImpactOffset1" },
             { false, FT_FLOAT, "MissileImpactOffset2" },
             { false, FT_FLOAT, "MissileImpactOffset3" },
-            { false, FT_INT, "AnimEventSoundID" },
             { true, FT_INT, "Flags" },
-            { true, FT_BYTE, "MissileAttachment" },
+            { false, FT_SHORT, "SpellVisualMissileSetID" },
             { true, FT_BYTE, "MissileDestinationAttachment" },
+            { true, FT_BYTE, "MissileAttachment" },
             { false, FT_INT, "MissileCastPositionerID" },
             { false, FT_INT, "MissileImpactPositionerID" },
             { true, FT_INT, "MissileTargetingKit" },
-            { false, FT_INT, "HostileSpellVisualID" },
-            { false, FT_INT, "CasterSpellVisualID" },
-            { false, FT_SHORT, "SpellVisualMissileSetID" },
+            { true, FT_INT, "AnimEventSoundID" },
             { false, FT_SHORT, "DamageNumberDelay" },
-            { false, FT_INT, "LowViolenceSpellVisualID" },
-            { false, FT_INT, "RaidSpellVisualMissileSetID" },
-            { true, FT_INT, "ReducedUnexpectedCameraMovementSpellVisualID" },
+            { true, FT_INT, "HostileSpellVisualID" },
+            { true, FT_INT, "CasterSpellVisualID" },
+            { true, FT_INT, "LowViolenceSpellVisualID" },
         };
         static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, SpellVisualMeta::Instance(), HOTFIX_SEL_SPELL_VISUAL);
         return &loadInfo;
@@ -5067,21 +5062,19 @@ struct SpellVisualEffectNameLoadInfo
         static DB2FieldMeta const fields[] =
         {
             { false, FT_INT, "ID" },
-            { true, FT_INT, "ModelFileDataID" },
+            { false, FT_FLOAT, "EffectRadius" },
             { false, FT_FLOAT, "BaseMissileSpeed" },
             { false, FT_FLOAT, "Scale" },
             { false, FT_FLOAT, "MinAllowedScale" },
             { false, FT_FLOAT, "MaxAllowedScale" },
             { false, FT_FLOAT, "Alpha" },
             { false, FT_INT, "Flags" },
-            { true, FT_INT, "TextureFileDataID" },
-            { false, FT_FLOAT, "EffectRadius" },
-            { false, FT_INT, "Type" },
             { true, FT_INT, "GenericID" },
+            { true, FT_INT, "TextureFileDataID" },
+            { false, FT_BYTE, "Type" },
+            { true, FT_INT, "ModelFileDataID" },
             { false, FT_INT, "RibbonQualityID" },
             { true, FT_INT, "DissolveEffectID" },
-            { true, FT_INT, "ModelPosition" },
-            { true, FT_BYTE, "Unknown901" },
         };
         static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, SpellVisualEffectNameMeta::Instance(), HOTFIX_SEL_SPELL_VISUAL_EFFECT_NAME);
         return &loadInfo;
@@ -5094,28 +5087,26 @@ struct SpellVisualMissileLoadInfo
     {
         static DB2FieldMeta const fields[] =
         {
+            { true, FT_INT, "FollowGroundHeight" },
+            { false, FT_INT, "FollowGroundDropSpeed" },
+            { false, FT_INT, "Flags" },
             { false, FT_FLOAT, "CastOffset1" },
             { false, FT_FLOAT, "CastOffset2" },
             { false, FT_FLOAT, "CastOffset3" },
             { false, FT_FLOAT, "ImpactOffset1" },
             { false, FT_FLOAT, "ImpactOffset2" },
             { false, FT_FLOAT, "ImpactOffset3" },
-            { false, FT_INT, "ID" },
             { false, FT_SHORT, "SpellVisualEffectNameID" },
-            { false, FT_INT, "SoundEntriesID" },
-            { true, FT_BYTE, "Attachment" },
-            { true, FT_BYTE, "DestinationAttachment" },
             { false, FT_SHORT, "CastPositionerID" },
             { false, FT_SHORT, "ImpactPositionerID" },
-            { true, FT_INT, "FollowGroundHeight" },
-            { false, FT_INT, "FollowGroundDropSpeed" },
             { false, FT_SHORT, "FollowGroundApproach" },
-            { false, FT_INT, "Flags" },
             { false, FT_SHORT, "SpellMissileMotionID" },
+            { true, FT_BYTE, "Attachment" },
+            { true, FT_BYTE, "DestinationAttachment" },
+            { false, FT_INT, "ID" },
+            { false, FT_INT, "SoundEntriesID" },
             { false, FT_INT, "AnimKitID" },
-            { true, FT_BYTE, "ClutterLevel" },
-            { true, FT_INT, "DecayTimeAfterImpact" },
-            { false, FT_INT, "SpellVisualMissileSetID" },
+            { false, FT_SHORT, "SpellVisualMissileSetID" },
         };
         static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, SpellVisualMissileMeta::Instance(), HOTFIX_SEL_SPELL_VISUAL_MISSILE);
         return &loadInfo;
@@ -5129,12 +5120,11 @@ struct SpellVisualKitLoadInfo
         static DB2FieldMeta const fields[] =
         {
             { false, FT_INT, "ID" },
+            { true, FT_INT, "Flags" },
             { true, FT_BYTE, "FallbackPriority" },
-            { true, FT_INT, "FallbackSpellVisualKitId" },
+            { false, FT_INT, "FallbackSpellVisualKitId" },
             { false, FT_SHORT, "DelayMin" },
             { false, FT_SHORT, "DelayMax" },
-            { true, FT_INT, "Flags1" },
-            { true, FT_INT, "Flags2" },
         };
         static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, SpellVisualKitMeta::Instance(), HOTFIX_SEL_SPELL_VISUAL_KIT);
         return &loadInfo;

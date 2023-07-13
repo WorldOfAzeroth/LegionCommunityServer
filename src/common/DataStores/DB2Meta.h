@@ -32,10 +32,12 @@ struct TC_COMMON_API DB2Meta
     // Returns size of final loaded structure
     uint32 GetRecordSize() const;
 
+    uint32 GetIndexFieldOffset() const;
     int32 GetParentIndexFieldOffset() const;
 
     uint32 GetDbIndexField() const;
     uint32 GetDbFieldCount() const;
+
 
     int32 IndexField;
     int32 ParentIndexField;
