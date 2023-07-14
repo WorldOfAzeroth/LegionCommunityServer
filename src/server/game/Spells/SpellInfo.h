@@ -357,10 +357,6 @@ class TC_GAME_API SpellInfo
         uint32 TargetAuraSpell = 0;
         uint32 ExcludeCasterAuraSpell = 0;
         uint32 ExcludeTargetAuraSpell = 0;
-        AuraType CasterAuraType = SPELL_AURA_NONE;
-        AuraType TargetAuraType = SPELL_AURA_NONE;
-        AuraType ExcludeCasterAuraType = SPELL_AURA_NONE;
-        AuraType ExcludeTargetAuraType = SPELL_AURA_NONE;
         SpellCastTimesEntry const* CastTimeEntry = nullptr;
         uint32 RecoveryTime = 0;
         uint32 CategoryRecoveryTime = 0;
@@ -421,8 +417,8 @@ class TC_GAME_API SpellInfo
         uint32 ExplicitTargetMask = 0;
         SpellChainNode const* ChainEntry = nullptr;
 
-        explicit SpellInfo(SpellNameEntry const* spellName, ::Difficulty difficulty, SpellInfoLoadHelper const& data);
-        explicit SpellInfo(SpellNameEntry const* spellName, ::Difficulty difficulty, std::vector<SpellEffectEntry> const& effects);
+        explicit SpellInfo(SpellEntry const* spell, ::Difficulty difficulty, SpellInfoLoadHelper const& data);
+        explicit SpellInfo(SpellEntry const* spell, ::Difficulty difficulty, std::vector<SpellEffectEntry> const& effects);
         SpellInfo(SpellInfo const&) = delete;
         SpellInfo(SpellInfo&&) = delete;
         ~SpellInfo();

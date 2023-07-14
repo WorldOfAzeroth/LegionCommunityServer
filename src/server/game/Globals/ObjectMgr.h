@@ -613,13 +613,7 @@ struct QuestRelationResult
 typedef std::multimap<int32, uint32> ExclusiveQuestGroups; // exclusiveGroupId -> quest
 typedef std::pair<ExclusiveQuestGroups::const_iterator, ExclusiveQuestGroups::const_iterator> ExclusiveQuestGroupsBounds;
 
-enum class PlayerCreateMode : int8
-{
-    Normal  = 0,
-    NPE     = 1,
 
-    Max
-};
 
 struct PlayerCreateInfoItem
 {
@@ -654,28 +648,17 @@ typedef std::vector<SkillRaceClassInfoEntry const*> PlayerCreateInfoSkills;
 // existence checked by displayId != 0
 struct PlayerInfo
 {
-    struct CreatePosition
-    {
-        WorldLocation Loc;
-        Optional<ObjectGuid::LowType> TransportGuid;
-    };
+    WorldLocation createPosition;
 
     uint16 displayIdM;
     uint16 displayIdF;
 
-    CreatePosition createPosition;
-    Optional<CreatePosition> createPositionNPE;
-
     ItemContext itemContext;
     PlayerCreateInfoItems item;
     PlayerCreateInfoSpells customSpells;
-    PlayerCreateInfoSpells castSpells[size_t(PlayerCreateMode::Max)];
+    PlayerCreateInfoSpells castSpells;
     PlayerCreateInfoActions action;
     PlayerCreateInfoSkills skills;
-
-    Optional<uint32> introMovieId;
-    Optional<uint32> introSceneId;
-    Optional<uint32> introSceneIdNPE;
 
     //[level-1] 0..MaxPlayerLevel-1
     std::unique_ptr<PlayerLevelInfo[]> levelInfo;
@@ -783,10 +766,9 @@ struct QuestPOIBlobPoint
 {
     int32 X;
     int32 Y;
-    int32 Z;
 
-    QuestPOIBlobPoint() : X(0), Y(0), Z(0) { }
-    QuestPOIBlobPoint(int32 x, int32 y, int32 z) : X(x), Y(y), Z(z) { }
+    QuestPOIBlobPoint() : X(0), Y(0) { }
+    QuestPOIBlobPoint(int32 x, int32 y) : X(x), Y(y){ }
 };
 
 struct QuestPOIBlobData
@@ -796,23 +778,23 @@ struct QuestPOIBlobData
     int32 QuestObjectiveID;
     int32 QuestObjectID;
     int32 MapID;
-    int32 UiMapID;
+    int32 WorldMapAreaID;
+    int32 Floor;
     int32 Priority;
     int32 Flags;
     int32 WorldEffectID;
     int32 PlayerConditionID;
-    int32 NavigationPlayerConditionID;
     int32 SpawnTrackingID;
     std::vector<QuestPOIBlobPoint> Points;
     bool AlwaysAllowMergingBlobs;
 
-    QuestPOIBlobData() : BlobIndex(0), ObjectiveIndex(0), QuestObjectiveID(0), QuestObjectID(0), MapID(0), UiMapID(0), Priority(0), Flags(0), WorldEffectID(0),
-        PlayerConditionID(0), NavigationPlayerConditionID(0), SpawnTrackingID(0), AlwaysAllowMergingBlobs(false) { }
-    QuestPOIBlobData(int32 blobIndex, int32 objectiveIndex, int32 questObjectiveID, int32 questObjectID, int32 mapID, int32 uiMapID, int32 priority,
-        int32 flags, int32 worldEffectID, int32 playerConditionID, int32 navigationPlayerConditionID, int32 spawnTrackingID, std::vector<QuestPOIBlobPoint> points,
+    QuestPOIBlobData() : BlobIndex(0), ObjectiveIndex(0), QuestObjectiveID(0), QuestObjectID(0), MapID(0), WorldMapAreaID(0), Floor(0), Priority(0), Flags(0), WorldEffectID(0),
+        PlayerConditionID(0), SpawnTrackingID(0), AlwaysAllowMergingBlobs(false) { }
+    QuestPOIBlobData(int32 blobIndex, int32 objectiveIndex, int32 questObjectiveID, int32 questObjectID, int32 mapID, int32 worldMapAreaID, int32 floor, int32 priority,
+        int32 flags, int32 worldEffectID, int32 playerConditionID, int32 spawnTrackingID, std::vector<QuestPOIBlobPoint> points,
         bool alwaysAllowMergingBlobs) : BlobIndex(blobIndex), ObjectiveIndex(objectiveIndex), QuestObjectiveID(questObjectiveID),
-        QuestObjectID(questObjectID), MapID(mapID), UiMapID(uiMapID), Priority(priority), Flags(flags), WorldEffectID(worldEffectID),
-        PlayerConditionID(playerConditionID), NavigationPlayerConditionID(navigationPlayerConditionID), SpawnTrackingID(spawnTrackingID), Points(std::move(points)),
+        QuestObjectID(questObjectID), MapID(mapID), WorldMapAreaID(worldMapAreaID), Floor(floor), Priority(priority), Flags(flags), WorldEffectID(worldEffectID),
+        PlayerConditionID(playerConditionID), SpawnTrackingID(spawnTrackingID), Points(std::move(points)),
         AlwaysAllowMergingBlobs(alwaysAllowMergingBlobs) { }
 };
 
@@ -908,10 +890,6 @@ struct PlayerChoiceResponse
     uint16 ResponseIdentifier = 0;
     int32 ChoiceArtFileId = 0;
     int32 Flags = 0;
-    uint32 WidgetSetID = 0;
-    uint32 UiTextureAtlasElementID = 0;
-    uint32 SoundKitID = 0;
-    uint8 GroupID = 0;
     int32 UiTextureKitID = 0;
     std::string Answer;
     std::string Header;
@@ -928,14 +906,9 @@ struct PlayerChoice
 {
     int32 ChoiceId;
     int32 UiTextureKitId;
-    uint32 SoundKitId;
-    uint32 CloseSoundKitId;
-    int64 Duration;
     std::string Question;
-    std::string PendingChoiceText;
     std::vector<PlayerChoiceResponse> Responses;
     bool HideWarboardHeader;
-    bool KeepOpenAfterChoice;
 
     PlayerChoiceResponse const* GetResponse(int32 responseId) const
     {

@@ -1940,8 +1940,6 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void ResurrectUsingRequestData();
         void ResurrectUsingRequestDataImpl();
 
-        PlayerCreateMode GetCreateMode() const { return m_createMode;  }
-
         uint8 getCinematic() const { return m_cinematic; }
         void setCinematic(uint8 cine) { m_cinematic = cine; }
 
@@ -2685,7 +2683,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void SetRestState(RestTypes type, PlayerRestState state) { SetUInt32Value(uint16(PLAYER_FIELD_REST_INFO) + type, state); }
         void SetRestThreshold(RestTypes type, uint32 threshold) { SetUInt32Value(uint16(PLAYER_FIELD_REST_INFO) + type, threshold); }
 
-        void SendPlayerChoice(ObjectGuid sender, int32 choiceId);
+        void SendPlayerChoice(ObjectGuid sender, int32 choiceId) const;
 
         bool MeetPlayerCondition(uint32 conditionId) const;
 
@@ -2992,7 +2990,6 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         JoinedChannelsList m_channels;
 
         time_t m_createTime;
-        PlayerCreateMode m_createMode;
         uint8 m_cinematic;
 
         uint32 m_movie;

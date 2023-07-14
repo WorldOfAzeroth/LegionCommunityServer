@@ -18,7 +18,6 @@
 #include "CreatureTextMgr.h"
 #include "CreatureTextMgrImpl.h"
 #include "CellImpl.h"
-#include "Chat.h"
 #include "ChatTextBuilder.h"
 #include "Common.h"
 #include "Containers.h"
@@ -74,9 +73,8 @@ void CreatureTextMgr::LoadCreatureTexts()
         temp.emote           = Emote(fields[7].GetUInt32());
         temp.duration        = fields[8].GetUInt32();
         temp.sound           = fields[9].GetUInt32();
-        temp.SoundPlayType   = SoundKitPlayType(fields[10].GetUInt8());
-        temp.BroadcastTextId = fields[11].GetUInt32();
-        temp.TextRange       = CreatureTextRange(fields[12].GetUInt8());
+        temp.BroadcastTextId = fields[10].GetUInt32();
+        temp.TextRange       = CreatureTextRange(fields[11].GetUInt8());
 
         if (temp.sound)
         {

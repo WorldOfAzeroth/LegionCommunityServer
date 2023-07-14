@@ -3803,8 +3803,8 @@ void ObjectMgr::LoadPlayerInfo()
     // Load playercreate
     {
         uint32 oldMSTime = getMSTime();
-        //                                                0     1      2       3           4           5           6           7           8               9               10              11                 12                13              14                15
-        QueryResult result = WorldDatabase.Query("SELECT race, class, map, position_x, position_y, position_z, orientation, npe_map, npe_position_x, npe_position_y, npe_position_z, npe_orientation, npe_transport_guid, intro_movie_id, intro_scene_id, npe_intro_scene_id FROM playercreateinfo");
+        //                                                0     1      2    3        4          5           6
+        QueryResult result = WorldDatabase.Query("SELECT race, class, map, zone, position_x, position_y, position_z, orientation FROM playercreateinfo");
 
         if (!result)
         {
@@ -3822,10 +3822,11 @@ void ObjectMgr::LoadPlayerInfo()
                 uint32 current_race  = fields[0].GetUInt8();
                 uint32 current_class = fields[1].GetUInt8();
                 uint32 mapId         = fields[2].GetUInt16();
-                float  positionX     = fields[3].GetFloat();
-                float  positionY     = fields[4].GetFloat();
-                float  positionZ     = fields[5].GetFloat();
-                float  orientation   = fields[6].GetFloat();
+                uint32 areaId        = fields[3].GetUInt32(); // zone
+                float  positionX     = fields[4].GetFloat();
+                float  positionY     = fields[5].GetFloat();
+                float  positionZ     = fields[6].GetFloat();
+                float  orientation   = fields[7].GetFloat();
 
                 if (!sChrRacesStore.LookupEntry(current_race))
                 {
@@ -3853,60 +3854,8 @@ void ObjectMgr::LoadPlayerInfo()
                 }
 
                 std::unique_ptr<PlayerInfo> info = std::make_unique<PlayerInfo>();
-                info->createPosition.Loc.WorldRelocate(mapId, positionX, positionY, positionZ, orientation);
+                info->createPosition.WorldRelocate(mapId, positionX, positionY, positionZ, orientation);
 
-                if (std::none_of(fields + 7, fields + 12, [](Field const& field) { return field.IsNull(); }))
-                {
-                    info->createPositionNPE.emplace();
-
-                    info->createPositionNPE->Loc.WorldRelocate(fields[7].GetUInt32(), fields[8].GetFloat(), fields[9].GetFloat(), fields[10].GetFloat(), fields[11].GetFloat());
-                    if (!fields[12].IsNull())
-                        info->createPositionNPE->TransportGuid = fields[12].GetUInt64();
-
-                    if (!sMapStore.LookupEntry(info->createPositionNPE->Loc.GetMapId()))
-                    {
-                        TC_LOG_ERROR("sql.sql", "Invalid NPE map id {} for class {} race {} pair in `playercreateinfo` table, ignoring.",
-                            info->createPositionNPE->Loc.GetMapId(), current_class, current_race);
-                        info->createPositionNPE.reset();
-                    }
-
-                    if (info->createPositionNPE && info->createPositionNPE->TransportGuid && !sTransportMgr->GetTransportSpawn(*info->createPositionNPE->TransportGuid))
-                    {
-                        TC_LOG_ERROR("sql.sql", "Invalid NPE transport spawn id {} for class {} race {} pair in `playercreateinfo` table, ignoring.",
-                            *info->createPositionNPE->TransportGuid, current_class, current_race);
-                        info->createPositionNPE.reset(); // remove entire NPE data - assume user put transport offsets into npe_position fields
-                    }
-                }
-
-                if (!fields[13].IsNull())
-                {
-                    uint32 introMovieId = fields[13].GetUInt32();
-                    if (sMovieStore.LookupEntry(introMovieId))
-                        info->introMovieId = introMovieId;
-                    else
-                        TC_LOG_ERROR("sql.sql", "Invalid intro movie id {} for class {} race {} pair in `playercreateinfo` table, ignoring.",
-                            introMovieId, current_class, current_race);
-                }
-
-                if (!fields[14].IsNull())
-                {
-                    uint32 introSceneId = fields[14].GetUInt32();
-                    if (GetSceneTemplate(introSceneId))
-                        info->introSceneId = introSceneId;
-                    else
-                        TC_LOG_ERROR("sql.sql", "Invalid intro scene id {} for class {} race {} pair in `playercreateinfo` table, ignoring.",
-                            introSceneId, current_class, current_race);
-                }
-
-                if (!fields[15].IsNull())
-                {
-                    uint32 introSceneId = fields[15].GetUInt32();
-                    if (GetSceneTemplate(introSceneId))
-                        info->introSceneIdNPE = introSceneId;
-                    else
-                        TC_LOG_ERROR("sql.sql", "Invalid NPE intro scene id {} for class {} race {} pair in `playercreateinfo` table, ignoring.",
-                            introSceneId, current_class, current_race);
-                }
 
                 _playerInfo[{ Races(current_race), Classes(current_class) }] = std::move(info);
 
@@ -4125,7 +4074,7 @@ void ObjectMgr::LoadPlayerInfo()
     {
         uint32 oldMSTime = getMSTime();
 
-        QueryResult result = WorldDatabase.PQuery("SELECT raceMask, classMask, spell, createMode FROM playercreateinfo_cast_spell");
+        QueryResult result = WorldDatabase.PQuery("SELECT raceMask, classMask, spell FROM playercreateinfo_cast_spell");
 
         if (!result)
             TC_LOG_INFO("server.loading", ">> Loaded 0 player create cast spells. DB table `playercreateinfo_cast_spell` is empty.");
@@ -4139,7 +4088,6 @@ void ObjectMgr::LoadPlayerInfo()
                 Trinity::RaceMask<uint64> raceMask = { fields[0].GetUInt64() };
                 uint32 classMask    = fields[1].GetUInt32();
                 uint32 spellId      = fields[2].GetUInt32();
-                int8 playerCreateMode = fields[3].GetInt8();
 
                 if (!raceMask.IsEmpty() && (raceMask & RACEMASK_ALL_PLAYABLE).IsEmpty())
                 {
@@ -4153,11 +4101,6 @@ void ObjectMgr::LoadPlayerInfo()
                     continue;
                 }
 
-                if (playerCreateMode < 0 || playerCreateMode >= AsUnderlyingType(PlayerCreateMode::Max))
-                {
-                    TC_LOG_ERROR("sql.sql", "Uses invalid createMode {} in `playercreateinfo_cast_spell` table, ignoring.", playerCreateMode);
-                    continue;
-                }
 
                 for (uint32 raceIndex = RACE_HUMAN; raceIndex < MAX_RACES; ++raceIndex)
                 {
@@ -4169,7 +4112,7 @@ void ObjectMgr::LoadPlayerInfo()
                             {
                                 if (auto const& playerInfo = Trinity::Containers::MapGetValuePtr(_playerInfo, { Races(raceIndex), Classes(classIndex) }))
                                 {
-                                    playerInfo->get()->castSpells[playerCreateMode].push_back(spellId);
+                                    playerInfo->get()->castSpells.push_back(spellId);
                                     ++count;
                                 }
                             }
@@ -4539,37 +4482,37 @@ void ObjectMgr::LoadQuests()
     _exclusiveQuestGroups.clear();
 
     QueryResult result = WorldDatabase.Query("SELECT "
-        //0  1          2               3                4            5            6                  7                8                   9
-        "ID, QuestType, QuestPackageID, ContentTuningID, QuestSortID, QuestInfoID, SuggestedGroupNum, RewardNextQuest, RewardXPDifficulty, RewardXPMultiplier, "
-        //10                    11                     12                13           14           15               16
+        //0  1          2           3                4               5          6           7             8                 9                10                  11
+        "ID, QuestType, QuestLevel, QuestPackageID, MaxScalingLevel, MinLevel, QuestSortID, QuestInfoID, SuggestedGroupNum, RewardNextQuest, RewardXPDifficulty, RewardXPMultiplier, "
+        //12                    13                     14                15           16           17               18
         "RewardMoneyDifficulty, RewardMoneyMultiplier, RewardBonusMoney, RewardSpell, RewardHonor, RewardKillHonor, StartItem, "
-        //17                         18                          19                        20     21       22
+        //19                         20                          21                        22     23       24
         "RewardArtifactXPDifficulty, RewardArtifactXPMultiplier, RewardArtifactCategoryID, Flags, FlagsEx, FlagsEx2, "
-        //23          24             25         26                 27           28             29         30
-        "RewardItem1, RewardAmount1, ItemDrop1, ItemDropQuantity1, RewardItem2, RewardAmount2, ItemDrop2, ItemDropQuantity2, "
-        //31          32             33         34                 35           36             37         38
+        //25                   26                    27                         28           29           30                 31           32   33             34         35
+        "RewardDisplaySpell1, RewardDisplaySpell2, RewardDisplaySpell3, RewardItem1, RewardAmount1, ItemDrop1, ItemDropQuantity1, RewardItem2, RewardAmount2, ItemDrop2, ItemDropQuantity2, "
+        //36          37             38         39                 40           41             42         43
         "RewardItem3, RewardAmount3, ItemDrop3, ItemDropQuantity3, RewardItem4, RewardAmount4, ItemDrop4, ItemDropQuantity4, "
-        //39                  40                         41                          42                   43                         44
+        //44                  45                         46                          47                   48                         49
         "RewardChoiceItemID1, RewardChoiceItemQuantity1, RewardChoiceItemDisplayID1, RewardChoiceItemID2, RewardChoiceItemQuantity2, RewardChoiceItemDisplayID2, "
-        //45                  46                         47                          48                   49                         50
+        //50                  51                         52                          53                   54                         55
         "RewardChoiceItemID3, RewardChoiceItemQuantity3, RewardChoiceItemDisplayID3, RewardChoiceItemID4, RewardChoiceItemQuantity4, RewardChoiceItemDisplayID4, "
-        //51                  52                         53                          54                   55                         56
+        //56                  57                         58                          59                   60                         61
         "RewardChoiceItemID5, RewardChoiceItemQuantity5, RewardChoiceItemDisplayID5, RewardChoiceItemID6, RewardChoiceItemQuantity6, RewardChoiceItemDisplayID6, "
-        //57           58    59    60           61           62                 63                 64
+        //62           63    64    65           66           67                 68                 69
         "POIContinent, POIx, POIy, POIPriority, RewardTitle, RewardArenaPoints, RewardSkillLineID, RewardNumSkillUps, "
-        //65            66                  67                         68
-        "PortraitGiver, PortraitGiverMount, PortraitGiverModelSceneID, PortraitTurnIn, "
-        //69               70                   71                      72                   73                74                   75                      76
+        //70            71
+        "PortraitGiver, PortraitTurnIn, "
+        //72               73                   74                      75                   76                77                   78                      79
         "RewardFactionID1, RewardFactionValue1, RewardFactionOverride1, RewardFactionCapIn1, RewardFactionID2, RewardFactionValue2, RewardFactionOverride2, RewardFactionCapIn2, "
-        //77               78                   79                      80                   81                82                   83                      84
+        //80               81                   82                      83                   84                85                   86                      87
         "RewardFactionID3, RewardFactionValue3, RewardFactionOverride3, RewardFactionCapIn3, RewardFactionID4, RewardFactionValue4, RewardFactionOverride4, RewardFactionCapIn4, "
-        //85               86                   87                      88                   89
+        //88               89                   90                      91                   92
         "RewardFactionID5, RewardFactionValue5, RewardFactionOverride5, RewardFactionCapIn5, RewardFactionFlags, "
-        //90                91                  92                 93                  94                 95                  96                 97
+        //93                94                  95                 96                  97                 98                  99                 100
         "RewardCurrencyID1, RewardCurrencyQty1, RewardCurrencyID2, RewardCurrencyQty2, RewardCurrencyID3, RewardCurrencyQty3, RewardCurrencyID4, RewardCurrencyQty4, "
-        //98                 99                  100          101          102             103               104        105                  106
-        "AcceptedSoundKitID, CompleteSoundKitID, AreaGroupID, TimeAllowed, AllowableRaces, TreasurePickerID, Expansion, ManagedWorldStateID, QuestSessionBonus, "
-        //107      108             109               110              111                112                113                 114                 115
+        //101                 102                  103          104          105             106               107
+        "AcceptedSoundKitID, CompleteSoundKitID, AreaGroupID, TimeAllowed, AllowableRaces, TreasurePickerID, Expansion, "
+        //108      109             110               111              112                113                114                 115                 116
         "LogTitle, LogDescription, QuestDescription, AreaDescription, PortraitGiverText, PortraitGiverName, PortraitTurnInText, PortraitTurnInName, QuestCompletionLog "
         "FROM quest_template");
     if (!result)
@@ -5339,9 +5282,9 @@ void ObjectMgr::LoadQuests()
     }
 
     // check QUEST_SPECIAL_FLAGS_EXPLORATION_OR_EVENT for spell with SPELL_EFFECT_QUEST_COMPLETE
-    for (SpellNameEntry const* spellNameEntry : sSpellNameStore)
+    for (SpellEntry const* spellEntry : sSpellStore)
     {
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellNameEntry->ID, DIFFICULTY_NONE);
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellEntry->ID, DIFFICULTY_NONE);
         if (!spellInfo)
             continue;
 
@@ -5936,8 +5879,8 @@ void ObjectMgr::LoadEventScripts()
             evt_scripts.insert(eventId);
 
     // Load all possible script entries from spells
-    for (SpellNameEntry const* spellNameEntry : sSpellNameStore)
-        if (SpellInfo const* spell = sSpellMgr->GetSpellInfo(spellNameEntry->ID, DIFFICULTY_NONE))
+    for (SpellEntry const* spellEntry : sSpellStore)
+        if (SpellInfo const* spell = sSpellMgr->GetSpellInfo(spellEntry->ID, DIFFICULTY_NONE))
             for (SpellEffectInfo const& spellEffectInfo : spell->GetEffects())
                 if (spellEffectInfo.IsEffect(SPELL_EFFECT_SEND_EVENT))
                     if (spellEffectInfo.MiscValue)
@@ -7396,8 +7339,7 @@ void ObjectMgr::SetHighestGuids()
     // Cleanup other tables from nonexistent guids ( >= _hiItemGuid)
     CharacterDatabase.PExecute("DELETE FROM character_inventory WHERE item >= '{}'", GetGuidSequenceGenerator(HighGuid::Item).GetNextAfterMaxUsed());    // One-time query
     CharacterDatabase.PExecute("DELETE FROM mail_items WHERE item_guid >= '{}'", GetGuidSequenceGenerator(HighGuid::Item).GetNextAfterMaxUsed());        // One-time query
-    CharacterDatabase.PExecute("DELETE a, ab, ai FROM auctionhouse a LEFT JOIN auction_bidders ab ON ab.auctionId = a.id LEFT JOIN auction_items ai ON ai.auctionId = a.id WHERE ai.itemGuid >= '{}'",
-        GetGuidSequenceGenerator(HighGuid::Item).GetNextAfterMaxUsed());       // One-time query
+    CharacterDatabase.PExecute("DELETE FROM auctionhouse WHERE itemguid >= '{}'", GetGuidSequenceGenerator(HighGuid::Item).GetNextAfterMaxUsed());       // One-time query
     CharacterDatabase.PExecute("DELETE FROM guild_bank_item WHERE item_guid >= '{}'", GetGuidSequenceGenerator(HighGuid::Item).GetNextAfterMaxUsed());   // One-time query
 
     result = WorldDatabase.Query("SELECT MAX(guid) FROM transports");
@@ -7625,7 +7567,7 @@ void ObjectMgr::LoadGameObjectTemplate()
         go.size = db2go->Scale;
         memset(go.raw.data, 0, sizeof(go.raw.data));
         std::copy(std::begin(db2go->PropValue), std::end(db2go->PropValue), std::begin(go.raw.data));
-        go.ContentTuningId = 0;
+        go.RequiredLevel = 0;
         go.ScriptId = 0;
     }
 
@@ -7635,8 +7577,8 @@ void ObjectMgr::LoadGameObjectTemplate()
                                              "Data0, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10, Data11, Data12, "
     //                                        21      22      23      24      25      26      27      28      29      30      31      32      33      34      35      36
                                              "Data13, Data14, Data15, Data16, Data17, Data18, Data19, Data20, Data21, Data22, Data23, Data24, Data25, Data26, Data27, Data28, "
-    //                                        37      38       39     40      41      42      43               44      45
-                                             "Data29, Data30, Data31, Data32, Data33, Data34, ContentTuningId, AIName, ScriptName "
+    //                                        37      38       39     40      41             42      43
+                                             "Data29, Data30, Data31, Data32, RequiredLevel, AIName, ScriptName "
                                              "FROM gameobject_template");
 
     if (!result)
@@ -7665,9 +7607,9 @@ void ObjectMgr::LoadGameObjectTemplate()
         for (uint8 i = 0; i < MAX_GAMEOBJECT_DATA; ++i)
             got.raw.data[i] = fields[8 + i].GetUInt32();
 
-        got.ContentTuningId = fields[43].GetInt32();
-        got.AIName = fields[44].GetString();
-        got.ScriptId = GetScriptId(fields[45].GetString());
+        got.RequiredLevel = fields[41].GetInt32();
+        got.AIName = fields[42].GetString();
+        got.ScriptId = GetScriptId(fields[43].GetString());
 
         // Checks
         if (!got.AIName.empty() && !sGameObjectAIRegistry->HasItem(got.AIName))
@@ -8320,8 +8262,8 @@ void ObjectMgr::LoadPointsOfInterest()
 
     uint32 count = 0;
 
-    //                                               0   1          2          3          4     5      6           7     8
-    QueryResult result = WorldDatabase.Query("SELECT ID, PositionX, PositionY, PositionZ, Icon, Flags, Importance, Name, WMOGroupID FROM points_of_interest");
+    //                                               0   1          2          3     4      5           6
+    QueryResult result = WorldDatabase.Query("SELECT ID, PositionX, PositionY, Icon, Flags, Importance, Name FROM points_of_interest");
 
     if (!result)
     {
@@ -8337,12 +8279,11 @@ void ObjectMgr::LoadPointsOfInterest()
 
         PointOfInterest pointOfInterest;
         pointOfInterest.ID              = id;
-        pointOfInterest.Pos.Relocate(fields[1].GetFloat(), fields[2].GetFloat(), fields[3].GetFloat());
-        pointOfInterest.Icon            = fields[4].GetUInt32();
-        pointOfInterest.Flags           = fields[5].GetUInt32();
-        pointOfInterest.Importance      = fields[6].GetUInt32();
-        pointOfInterest.Name            = fields[7].GetString();
-        pointOfInterest.WMOGroupID      = fields[8].GetInt32();
+        pointOfInterest.Pos.Relocate(fields[1].GetFloat(), fields[2].GetFloat());
+        pointOfInterest.Icon            = fields[3].GetUInt32();
+        pointOfInterest.Flags           = fields[4].GetUInt32();
+        pointOfInterest.Importance      = fields[5].GetUInt32();
+        pointOfInterest.Name            = fields[6].GetString();
 
         if (!Trinity::IsValidMapCoord(pointOfInterest.Pos.GetPositionX(), pointOfInterest.Pos.GetPositionY(), pointOfInterest.Pos.GetPositionZ()))
         {
@@ -8365,16 +8306,16 @@ void ObjectMgr::LoadQuestPOI()
 
     _questPOIStore.clear();                              // need for reload case
 
-    //                                               0        1          2     3               4                 5              6      7        8         9      10             11                 12                           13               14
-    QueryResult result = WorldDatabase.Query("SELECT QuestID, BlobIndex, Idx1, ObjectiveIndex, QuestObjectiveID, QuestObjectID, MapID, UiMapID, Priority, Flags, WorldEffectID, PlayerConditionID, NavigationPlayerConditionID, SpawnTrackingID, AlwaysAllowMergingBlobs FROM quest_poi order by QuestID, Idx1");
+    //                                               0        1          2     3               4                 5              6      7               8      9         10             11                   12               13                       14
+    QueryResult result = WorldDatabase.Query("SELECT QuestID, BlobIndex, Idx1, ObjectiveIndex, QuestObjectiveID, QuestObjectID, MapID, WorldMapAreaId, Floor, Priority, Flags, WorldEffectID, PlayerConditionID, SpawnTrackingID, AlwaysAllowMergingBlobs FROM quest_poi order by QuestID, Idx1");
     if (!result)
     {
         TC_LOG_INFO("server.loading", ">> Loaded 0 quest POI definitions. DB table `quest_poi` is empty.");
         return;
     }
 
-    //                                                0        1    2  3  4
-    QueryResult pointsResult = WorldDatabase.Query("SELECT QuestID, Idx1, X, Y, Z FROM quest_poi_points ORDER BY QuestID DESC, Idx1, Idx2");
+    //                                                0        1    2  3
+    QueryResult pointsResult = WorldDatabase.Query("SELECT QuestID, Idx1, X, Y FROM quest_poi_points ORDER BY QuestID DESC, Idx1, Idx2");
 
     std::unordered_map<int32, std::map<int32, std::vector<QuestPOIBlobPoint>>> allPoints;
 
@@ -8388,9 +8329,8 @@ void ObjectMgr::LoadQuestPOI()
             int32 Idx1                = fields[1].GetInt32();
             int32 x                   = fields[2].GetInt32();
             int32 y                   = fields[3].GetInt32();
-            int32 z                   = fields[4].GetInt32();
 
-            allPoints[QuestID][Idx1].emplace_back(x, y, z);
+            allPoints[QuestID][Idx1].emplace_back(x, y);
         } while (pointsResult->NextRow());
     }
 
@@ -8405,12 +8345,12 @@ void ObjectMgr::LoadQuestPOI()
         int32 questObjectiveID      = fields[4].GetInt32();
         int32 questObjectID         = fields[5].GetInt32();
         int32 mapID                 = fields[6].GetInt32();
-        int32 uiMapID               = fields[7].GetInt32();
-        int32 priority              = fields[8].GetInt32();
-        int32 flags                 = fields[9].GetInt32();
-        int32 worldEffectID         = fields[10].GetInt32();
-        int32 playerConditionID     = fields[11].GetInt32();
-        int32 navigationPlayerConditionID = fields[12].GetInt32();
+        int32 worldMapAreaID        = fields[7].GetInt32();
+        int32 floor                 = fields[8].GetInt32();
+        int32 priority              = fields[9].GetInt32();
+        int32 flags                 = fields[10].GetInt32();
+        int32 worldEffectID         = fields[11].GetInt32();
+        int32 playerConditionID     = fields[12].GetInt32();
         int32 spawnTrackingID       = fields[13].GetInt32();
         bool alwaysAllowMergingBlobs = fields[14].GetBool();
 
@@ -8423,8 +8363,8 @@ void ObjectMgr::LoadQuestPOI()
             {
                 QuestPOIData& poiData = _questPOIStore[questID];
                 poiData.QuestID = questID;
-                poiData.Blobs.emplace_back(blobIndex, objectiveIndex, questObjectiveID, questObjectID, mapID, uiMapID, priority, flags,
-                    worldEffectID, playerConditionID, navigationPlayerConditionID, spawnTrackingID, std::move(*points), alwaysAllowMergingBlobs);
+                poiData.Blobs.emplace_back(blobIndex, objectiveIndex, questObjectiveID, questObjectID, mapID, worldMapAreaID, floor, priority, flags,
+                    worldEffectID, playerConditionID, spawnTrackingID, std::move(*points), alwaysAllowMergingBlobs);
                 continue;
             }
         }
@@ -9595,10 +9535,9 @@ void ObjectMgr::LoadGossipMenuItems()
     _gossipMenuItemsStore.clear();
 
     QueryResult result = WorldDatabase.Query(
-        //      0       1               2         3          4           5                      6             7
-        "SELECT MenuID, GossipOptionID, OptionID, OptionNpc, OptionText, OptionBroadcastTextID, ActionMenuID, ActionPoiID, "
-        //8        9         10       11
-        "BoxCoded, BoxMoney, BoxText, BoxBroadcastTextID FROM gossip_menu_option ORDER BY MenuID, OptionID");
+                //      0       1         2          3           4                      5         6             7            8         9         10
+        "SELECT MenuID, OptionID, OptionNpc, OptionText, OptionBroadcastTextID, ActionMenuID, ActionPoiID, BoxCoded, BoxMoney, BoxText, BoxBroadcastTextID "
+        "FROM gossip_menu_option ORDER BY MenuID, OptionID");
 
     if (!result)
     {
@@ -9617,12 +9556,12 @@ void ObjectMgr::LoadGossipMenuItems()
         gMenuItem.OptionNpc             = GossipOptionNpc(fields[2].GetUInt8());
         gMenuItem.OptionText            = fields[3].GetString();
         gMenuItem.OptionBroadcastTextID = fields[4].GetUInt32();
-        gMenuItem.ActionMenuID          = fields[6].GetUInt32();
-        gMenuItem.ActionPoiID           = fields[7].GetUInt32();
-        gMenuItem.BoxCoded              = fields[8].GetBool();
-        gMenuItem.BoxMoney              = fields[9].GetUInt32();
-        gMenuItem.BoxText               = fields[10].GetString();
-        gMenuItem.BoxBroadcastTextID    = fields[11].GetUInt32();
+        gMenuItem.ActionMenuID          = fields[5].GetUInt32();
+        gMenuItem.ActionPoiID           = fields[6].GetUInt32();
+        gMenuItem.BoxCoded              = fields[7].GetBool();
+        gMenuItem.BoxMoney              = fields[8].GetUInt32();
+        gMenuItem.BoxText               = fields[9].GetString();
+        gMenuItem.BoxBroadcastTextID    = fields[10].GetUInt32();
         if (gMenuItem.OptionNpc >= GossipOptionNpc::Count)
         {
             TC_LOG_ERROR("sql.sql", "Table `gossip_menu_option` for menu {}, id {} has unknown NPC option id {}. Replacing with GossipOptionNpc::None", gMenuItem.MenuID, gMenuItem.OptionID, AsUnderlyingType(gMenuItem.OptionNpc));
@@ -10842,8 +10781,8 @@ void ObjectMgr::LoadPlayerChoices()
     uint32 oldMSTime = getMSTime();
     _playerChoices.clear();
 
-    //                                                       0               1           2                3         4         5                  6                   7                    8
-    QueryResult choices = WorldDatabase.Query("SELECT ChoiceId, UiTextureKitId, SoundKitId, CloseSoundKitId, Duration, Question, PendingChoiceText, HideWarboardHeader, KeepOpenAfterChoice FROM playerchoice");
+    //                                                       0               1       2         3
+    QueryResult choices = WorldDatabase.Query("SELECT ChoiceId, UiTextureKitId, Question, HideWarboardHeader FROM playerchoice");
 
     if (!choices)
     {
@@ -10868,21 +10807,12 @@ void ObjectMgr::LoadPlayerChoices()
         PlayerChoice& choice = _playerChoices[choiceId];
         choice.ChoiceId = choiceId;
         choice.UiTextureKitId = fields[1].GetInt32();
-        choice.SoundKitId = fields[2].GetUInt32();
-        choice.CloseSoundKitId = fields[3].GetUInt32();
-        choice.Duration = fields[4].GetInt64();
-        choice.Question = fields[5].GetString();
-        choice.PendingChoiceText = fields[6].GetString();
-        choice.HideWarboardHeader = fields[7].GetBool();
-        choice.KeepOpenAfterChoice = fields[8].GetBool();
+        choice.Question = fields[2].GetString();
+        choice.HideWarboardHeader = fields[3].GetBool();
 
     } while (choices->NextRow());
 
-    //                                                             0           1                   2                3      4            5
-    if (QueryResult responses = WorldDatabase.Query("SELECT ChoiceId, ResponseId, ResponseIdentifier, ChoiceArtFileId, Flags, WidgetSetID, "
-    //                         6           7        8               9      10      11         12              13           14            15             16
-        "UiTextureAtlasElementID, SoundKitID, GroupID, UiTextureKitID, Answer, Header, SubHeader, ButtonTooltip, Description, Confirmation, RewardQuestID "
-        "FROM playerchoice_response ORDER BY `Index` ASC"))
+    if (QueryResult responses = WorldDatabase.Query("SELECT ChoiceId, ResponseId, ChoiceArtFileId, Header, Answer, Description, Confirmation FROM playerchoice_response ORDER BY `Index` ASC"))
     {
         do
         {
@@ -10902,23 +10832,11 @@ void ObjectMgr::LoadPlayerChoices()
 
             PlayerChoiceResponse& response = choice->Responses.back();
             response.ResponseId         = responseId;
-            response.ResponseIdentifier = fields[2].GetUInt16();
-            response.ChoiceArtFileId    = fields[3].GetInt32();
-            response.Flags              = fields[4].GetInt32();
-            response.WidgetSetID        = fields[5].GetUInt32();
-            response.UiTextureAtlasElementID = fields[6].GetUInt32();
-            response.SoundKitID         = fields[7].GetUInt32();
-            response.GroupID            = fields[8].GetUInt8();
-            response.UiTextureKitID     = fields[9].GetInt32();
-            response.Answer             = fields[10].GetString();
-            response.Header             = fields[11].GetString();
-            response.SubHeader          = fields[12].GetString();
-            response.ButtonTooltip      = fields[13].GetString();
-            response.Description        = fields[14].GetString();
-            response.Confirmation       = fields[15].GetString();
-            if (!fields[16].IsNull())
-                response.RewardQuestID  = fields[16].GetUInt32();
-
+            response.ChoiceArtFileId    = fields[2].GetInt32();
+            response.Header             = fields[3].GetString();
+            response.Answer             = fields[4].GetString();
+            response.Description        = fields[5].GetString();
+            response.Confirmation       = fields[6].GetString();
             ++responseCount;
 
         } while (responses->NextRow());
@@ -11256,8 +11174,8 @@ void ObjectMgr::LoadPlayerChoicesLocale()
 
     oldMSTime = getMSTime();
 
-    //                                                   0         1           2       3       4       5          6               7            8
-    if (QueryResult result = WorldDatabase.Query("SELECT ChoiceID, ResponseID, locale, Answer, Header, SubHeader, ButtonTooltip, Description, Confirmation FROM playerchoice_response_locale"))
+    //                                                   0         1           2       3       4       5            6
+    if (QueryResult result = WorldDatabase.Query("SELECT ChoiceID, ResponseID, locale, Header, Answer, Description, Confirmation FROM playerchoice_response_locale"))
     {
         std::size_t count = 0;
         do
@@ -11289,12 +11207,10 @@ void ObjectMgr::LoadPlayerChoicesLocale()
                 continue;
 
             PlayerChoiceResponseLocale& data = itr->second.Responses[responseId];
-            AddLocaleString(fields[3].GetString(), locale, data.Answer);
-            AddLocaleString(fields[4].GetString(), locale, data.Header);
-            AddLocaleString(fields[5].GetString(), locale, data.SubHeader);
-            AddLocaleString(fields[6].GetString(), locale, data.ButtonTooltip);
-            AddLocaleString(fields[7].GetString(), locale, data.Description);
-            AddLocaleString(fields[8].GetString(), locale, data.Confirmation);
+            AddLocaleString(fields[3].GetString(), locale, data.Header);
+            AddLocaleString(fields[4].GetString(), locale, data.Answer);
+            AddLocaleString(fields[5].GetString(), locale, data.Description);
+            AddLocaleString(fields[6].GetString(), locale, data.Confirmation);
             ++count;
         } while (result->NextRow());
 

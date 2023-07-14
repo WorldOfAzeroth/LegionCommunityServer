@@ -94,6 +94,7 @@ WorldPacket GameObjectTemplate::BuildQueryData(LocaleConstant loc) const
             stats.QuestItems.push_back(item);
 
     memcpy(stats.Data, raw.data, MAX_GAMEOBJECT_DATA * sizeof(int32));
+    stats.RequiredLevel = RequiredLevel;
 
     queryTemp.Write();
     queryTemp.ShrinkToFit();
@@ -2724,11 +2725,11 @@ void GameObject::Use(Unit* user)
 
             //required lvl checks!
             /*
-            if (Optional<ContentTuningLevels> userLevels = sDB2Manager.GetContentTuningData(info->ContentTuningId, player->m_playerData->CtrOptions->ContentTuningConditionMask))
+            if (Optional<ContentTuningLevels> userLevels = sDB2Manager.GetContentTuningData(info->RequiredLevel, player->m_playerData->CtrOptions->ContentTuningConditionMask))
                 if (player->GetLevel() < userLevels->MaxLevel)
                     return;
 
-            if (Optional<ContentTuningLevels> targetLevels = sDB2Manager.GetContentTuningData(info->ContentTuningId, targetPlayer->m_playerData->CtrOptions->ContentTuningConditionMask))
+            if (Optional<ContentTuningLevels> targetLevels = sDB2Manager.GetContentTuningData(info->RequiredLevel, targetPlayer->m_playerData->CtrOptions->ContentTuningConditionMask))
                 if (targetPlayer->GetLevel() < targetLevels->MaxLevel)
                     return;
             */

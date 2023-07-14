@@ -204,7 +204,6 @@ Player::Player(WorldSession* session) : Unit(true), m_sceneMgr(this)
     m_trade = nullptr;
 
     m_createTime = 0;
-    m_createMode = PlayerCreateMode::Normal;
     m_cinematic = 0;
 
     m_movie = 0;
@@ -435,27 +434,14 @@ bool Player::Create(ObjectGuid::LowType guidlow, WorldPackets::Character::Charac
         return false;
     }
 
-    PlayerInfo::CreatePosition const& position = info->createPosition;
+    WorldLocation const& position = info->createPosition;
 
     m_createTime = GameTime::GetGameTime();
-    m_createMode = PlayerCreateMode::Normal;
 
-    Relocate(position.Loc);
+    Relocate(position);
 
-    SetMap(sMapMgr->CreateMap(position.Loc.GetMapId(), this));
+    SetMap(sMapMgr->CreateMap(position.GetMapId(), this));
 
-    if (position.TransportGuid)
-    {
-        if (Transport* transport = ObjectAccessor::GetTransport(*this, ObjectGuid::Create<HighGuid::Transport>(*position.TransportGuid)))
-        {
-            transport->AddPassenger(this);
-            m_movementInfo.transport.pos.Relocate(position.Loc);
-            float x, y, z, o;
-            position.Loc.GetPosition(x, y, z, o);
-            transport->CalculatePassengerPosition(x, y, z, &o);
-            Relocate(x, y, z, o);
-        }
-    }
 
     // set initial homebind position
     SetHomebind(*this, GetAreaId());
@@ -6139,8 +6125,7 @@ int32 Player::CalculateReputationGain(ReputationSource source, uint32 creatureOr
     bool noBonuses = false;
     if (FactionEntry const* factionEntry = sFactionStore.LookupEntry(faction))
         if (FriendshipReputationEntry const* friendshipReputation = sFriendshipReputationStore.LookupEntry(factionEntry->FriendshipRepID))
-            if (friendshipReputation->GetFlags().HasFlag(FriendshipReputationFlags::NoRepGainModifiers))
-                noBonuses = true;
+            noBonuses = true;
 
     float percent = 100.0f;
 
@@ -17104,7 +17089,6 @@ bool Player::LoadFromDB(ObjectGuid guid, CharacterDatabaseQueryHolder const& hol
         SetDrunkValue(0);
 
     m_createTime = fields.createTime;
-    m_createMode = fields.createMode;
     m_cinematic = fields.cinematic;
     m_Played_time[PLAYED_TIME_TOTAL] = fields.totaltime;
     m_Played_time[PLAYED_TIME_LEVEL] = fields.leveltime;
@@ -18704,15 +18688,12 @@ bool Player::_LoadHomeBind(PreparedQueryResult result)
 
     if (!ok && HasAtLoginFlag(AT_LOGIN_FIRST))
     {
-        PlayerInfo::CreatePosition const& createPosition = m_createMode == PlayerCreateMode::NPE && info->createPositionNPE ? *info->createPositionNPE : info->createPosition;
-        if (!createPosition.TransportGuid)
-        {
-            m_homebind.WorldRelocate(createPosition.Loc);
-            m_homebindAreaId = sTerrainMgr.GetAreaId(PhasingHandler::GetEmptyPhaseShift(), m_homebind);
+        WorldLocation const& createPosition = info->createPosition;
+        m_homebind.WorldRelocate(createPosition);
+        m_homebindAreaId = sTerrainMgr.GetAreaId(PhasingHandler::GetEmptyPhaseShift(), m_homebind);
 
-            saveHomebindToDb();
-            ok = true;
-        }
+        saveHomebindToDb();
+        ok = true;
     }
 
     if (!ok)
@@ -18828,7 +18809,6 @@ void Player::SaveToDB(LoginDatabaseTransaction loginTransaction, CharacterDataba
         ss << m_taxi;
         stmt->setString(index++, ss.str());
         stmt->setInt64(index++, m_createTime);
-        stmt->setInt8(index++, AsUnderlyingType(m_createMode));
         stmt->setUInt8(index++, m_cinematic);
         stmt->setUInt32(index++, m_Played_time[PLAYED_TIME_TOTAL]);
         stmt->setUInt32(index++, m_Played_time[PLAYED_TIME_LEVEL]);
@@ -26738,7 +26718,7 @@ void Player::SendMovementSetCollisionHeight(float height, WorldPackets::Movement
     SendMessageToSet(updateCollisionHeight.Write(), false);
 }
 
-void Player::SendPlayerChoice(ObjectGuid sender, int32 choiceId)
+void Player::SendPlayerChoice(ObjectGuid sender, int32 choiceId) const
 {
     PlayerChoice const* playerChoice = sObjectMgr->GetPlayerChoice(choiceId);
     if (!playerChoice)

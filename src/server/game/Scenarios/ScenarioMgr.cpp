@@ -148,16 +148,16 @@ void ScenarioMgr::LoadScenarioPOI()
 
     uint32 count = 0;
 
-    //                                                      0            1        2       3               4       5         6      7              8                  9                          10
-    QueryResult result = WorldDatabase.Query("SELECT CriteriaTreeID, BlobIndex, Idx1, MapID, WorldMapAreaID, Floor, Priority, Flags, WorldEffectID, PlayerConditionID, NavigationPlayerConditionID FROM scenario_poi ORDER BY CriteriaTreeID, Idx1");
+    //                                                      0            1        2       3              4       5       6      7               8                  9                          10
+    QueryResult result = WorldDatabase.Query("SELECT CriteriaTreeID, BlobIndex, Idx1, MapID, WorldMapAreaID, Floor, Priority, Flags, WorldEffectID, PlayerConditionID  FROM scenario_poi ORDER BY CriteriaTreeID, Idx1");
     if (!result)
     {
         TC_LOG_ERROR("server.loading", ">> Loaded 0 scenario POI definitions. DB table `scenario_poi` is empty.");
         return;
     }
 
-    //                                                       0        1    2  3  4
-    QueryResult pointsResult = WorldDatabase.Query("SELECT CriteriaTreeID, Idx1, X, Y, Z FROM scenario_poi_points ORDER BY CriteriaTreeID DESC, Idx1, Idx2");
+    //                                                                 0        1    2  3
+    QueryResult pointsResult = WorldDatabase.Query("SELECT CriteriaTreeID, Idx1, X, Y FROM scenario_poi_points ORDER BY CriteriaTreeID DESC, Idx1, Idx2");
 
     std::unordered_map<int32, std::map<int32, std::vector<ScenarioPOIPoint>>> allPoints;
 
@@ -173,9 +173,8 @@ void ScenarioMgr::LoadScenarioPOI()
             int32 Idx1 = fields[1].GetInt32();
             int32 X = fields[2].GetInt32();
             int32 Y = fields[3].GetInt32();
-            int32 Z = fields[4].GetInt32();
 
-            allPoints[CriteriaTreeID][Idx1].emplace_back(X, Y, Z);
+            allPoints[CriteriaTreeID][Idx1].emplace_back(X, Y);
         } while (pointsResult->NextRow());
     }
 
@@ -193,7 +192,6 @@ void ScenarioMgr::LoadScenarioPOI()
         int32 flags = fields[7].GetInt32();
         int32 worldEffectID = fields[8].GetInt32();
         int32 playerConditionID = fields[9].GetInt32();
-        int32 navigationPlayerConditionID = fields[10].GetInt32();
 
 
         if (!sCriteriaMgr->GetCriteriaTree(criteriaTreeID))
@@ -203,7 +201,7 @@ void ScenarioMgr::LoadScenarioPOI()
         {
             if (std::vector<ScenarioPOIPoint>* points = Trinity::Containers::MapGetValuePtr(*blobs, idx1))
             {
-                _scenarioPOIStore[criteriaTreeID].emplace_back(blobIndex, mapID, worldMapAreaId, floor, priority, flags, worldEffectID, playerConditionID, navigationPlayerConditionID, std::move(*points));
+                _scenarioPOIStore[criteriaTreeID].emplace_back(blobIndex, mapID, worldMapAreaId, floor, priority, flags, worldEffectID, playerConditionID, std::move(*points));
                 ++count;
                 continue;
             }

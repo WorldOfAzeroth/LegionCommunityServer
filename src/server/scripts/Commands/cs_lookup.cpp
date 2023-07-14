@@ -904,7 +904,7 @@ public:
         uint32 maxResults = sWorld->getIntConfig(CONFIG_MAX_RESULTS_LOOKUP_COMMANDS);
 
         // Search in SpellName.dbc
-        for (SpellNameEntry const* spellName : sSpellNameStore)
+        for (SpellEntry const* spellName : sSpellStore)
         {
             if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellName->ID, DIFFICULTY_NONE))
             {

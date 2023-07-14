@@ -396,15 +396,6 @@ class TC_GAME_API Spell
         void EffectGiveHonor();
         void EffectJumpCharge();
         void EffectLearnTransmogSet();
-        void EffectSendChatMessage();
-        void EffectGrantBattlePetExperience();
-        void EffectModifyAuraStacks();
-        void EffectModifyCooldown();
-        void EffectModifyCooldowns();
-        void EffectModifyCooldownsByCategory();
-        void EffectModifySpellCharges();
-        void EffectCreateTraitTreeConfig();
-        void EffectChangeActiveCombatTraitConfig();
 
         typedef std::unordered_set<Aura*> UsedSpellMods;
 

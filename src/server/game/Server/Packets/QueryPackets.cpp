@@ -351,12 +351,12 @@ ByteBuffer& operator<<(ByteBuffer& data, QuestPOIData const& questPOIData)
         data << int32(questPOIBlobData.QuestObjectiveID);
         data << int32(questPOIBlobData.QuestObjectID);
         data << int32(questPOIBlobData.MapID);
-        data << int32(questPOIBlobData.UiMapID);
+        data << int32(questPOIBlobData.WorldMapAreaID);
+        data << int32(questPOIBlobData.Floor);
         data << int32(questPOIBlobData.Priority);
         data << int32(questPOIBlobData.Flags);
         data << int32(questPOIBlobData.WorldEffectID);
         data << int32(questPOIBlobData.PlayerConditionID);
-        data << int32(questPOIBlobData.NavigationPlayerConditionID);
         data << int32(questPOIBlobData.SpawnTrackingID);
         data << int32(questPOIBlobData.Points.size());
 
@@ -364,7 +364,6 @@ ByteBuffer& operator<<(ByteBuffer& data, QuestPOIData const& questPOIData)
         {
             data << int16(questPOIBlobPoint.X);
             data << int16(questPOIBlobPoint.Y);
-            data << int16(questPOIBlobPoint.Z);
         }
 
         data.WriteBit(questPOIBlobData.AlwaysAllowMergingBlobs);

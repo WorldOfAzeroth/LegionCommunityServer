@@ -1014,27 +1014,27 @@ void HotfixDatabaseConnection::DoPrepareStatements()
     // SpellTotems.db2
     PrepareStatement(HOTFIX_SEL_SPELL_TOTEMS, "SELECT ID, SpellID, Totem1, Totem2, RequiredTotemCategoryID1, RequiredTotemCategoryID2"
         " FROM spell_totems ORDER BY ID DESC", CONNECTION_SYNCH);
+
     // SpellVisual.db2
     PrepareStatement(HOTFIX_SEL_SPELL_VISUAL, "SELECT ID, MissileCastOffset1, MissileCastOffset2, MissileCastOffset3, MissileImpactOffset1, "
-        "MissileImpactOffset2, MissileImpactOffset3, AnimEventSoundID, Flags, MissileAttachment, MissileDestinationAttachment, "
-        "MissileCastPositionerID, MissileImpactPositionerID, MissileTargetingKit, HostileSpellVisualID, CasterSpellVisualID, SpellVisualMissileSetID, "
-        "DamageNumberDelay, LowViolenceSpellVisualID, RaidSpellVisualMissileSetID, ReducedUnexpectedCameraMovementSpellVisualID FROM spell_visual"
-        " WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+        "MissileImpactOffset2, MissileImpactOffset3, Flags, SpellVisualMissileSetID, MissileDestinationAttachment, MissileAttachment, "
+        "MissileCastPositionerID, MissileImpactPositionerID, MissileTargetingKit, AnimEventSoundID, DamageNumberDelay, HostileSpellVisualID, "
+        "CasterSpellVisualID, LowViolenceSpellVisualID FROM spell_visual ORDER BY ID DESC", CONNECTION_SYNCH);
 
     // SpellVisualEffectName.db2
-    PrepareStatement(HOTFIX_SEL_SPELL_VISUAL_EFFECT_NAME, "SELECT ID, ModelFileDataID, BaseMissileSpeed, Scale, MinAllowedScale, MaxAllowedScale, "
-        "Alpha, Flags, TextureFileDataID, EffectRadius, Type, GenericID, RibbonQualityID, DissolveEffectID, ModelPosition, Unknown901"
-        " FROM spell_visual_effect_name WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+    PrepareStatement(HOTFIX_SEL_SPELL_VISUAL_EFFECT_NAME, "SELECT ID, ModelFileDataID, EffectRadius, BaseMissileSpeed, Scale, MinAllowedScale, "
+       "MaxAllowedScale, Alpha, Flags, Type, GenericID, TextureFileDataID, RibbonQualityID, DissolveEffectID, ModelPosition FROM spell_visual_effect_name"
+       " ORDER BY ID DESC", CONNECTION_SYNCH);
 
     // SpellVisualMissile.db2
-    PrepareStatement(HOTFIX_SEL_SPELL_VISUAL_MISSILE, "SELECT CastOffset1, CastOffset2, CastOffset3, ImpactOffset1, ImpactOffset2, ImpactOffset3, ID, "
-        "SpellVisualEffectNameID, SoundEntriesID, Attachment, DestinationAttachment, CastPositionerID, ImpactPositionerID, FollowGroundHeight, "
-        "FollowGroundDropSpeed, FollowGroundApproach, Flags, SpellMissileMotionID, AnimKitID, ClutterLevel, DecayTimeAfterImpact, "
-        "SpellVisualMissileSetID FROM spell_visual_missile WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+    PrepareStatement(HOTFIX_SEL_SPELL_VISUAL_MISSILE, "SELECT FollowGroundHeight, FollowGroundDropSpeed, Flags, CastOffset1, CastOffset2, "
+        "CastOffset3, ImpactOffset1, ImpactOffset2, ImpactOffset3, SpellVisualEffectNameID, CastPositionerID, ImpactPositionerID, "
+        "FollowGroundApproach, SpellMissileMotionID, Attachment, DestinationAttachment, ID, SoundEntriesID, AnimKitID, SpellVisualMissileSetID FROM spell_visual_missile"
+        " ORDER BY ID DESC", CONNECTION_SYNCH);
 
     // SpellVisualKit.db2
-    PrepareStatement(HOTFIX_SEL_SPELL_VISUAL_KIT, "SELECT ID, FallbackPriority, FallbackSpellVisualKitId, DelayMin, DelayMax, Flags1, Flags2"
-        " FROM spell_visual_kit WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+    PrepareStatement(HOTFIX_SEL_SPELL_VISUAL_KIT, "SELECT ID, Flags, FallbackPriority, FallbackSpellVisualKitId, DelayMin, DelayMax"
+        " FROM spell_visual_kit ORDER BY ID DESC", CONNECTION_SYNCH);
 
     // SpellXSpellVisual.db2
     PrepareStatement(HOTFIX_SEL_SPELL_X_SPELL_VISUAL, "SELECT SpellVisualID, ID, Probability, CasterPlayerConditionID, CasterUnitConditionID, "

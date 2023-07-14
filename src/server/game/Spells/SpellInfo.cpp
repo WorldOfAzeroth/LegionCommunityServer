@@ -1056,8 +1056,8 @@ std::array<SpellEffectInfo::StaticData, TOTAL_SPELL_EFFECTS> SpellEffectInfo::_d
     {EFFECT_IMPLICIT_TARGET_EXPLICIT, TARGET_OBJECT_TYPE_UNIT}, // 255 SPELL_EFFECT_LEARN_TRANSMOG_SET
 } };
 
-SpellInfo::SpellInfo(SpellNameEntry const* spellName, ::Difficulty difficulty, SpellInfoLoadHelper const& data)
-    : Id(spellName->ID), Difficulty(difficulty)
+SpellInfo::SpellInfo(SpellEntry const* spell, ::Difficulty difficulty, SpellInfoLoadHelper const& data)
+    : Id(spell->ID), Difficulty(difficulty)
 {
     _effects.reserve(32);
     for (SpellEffectEntry const* spellEffect : data.Effects)
@@ -1074,7 +1074,7 @@ SpellInfo::SpellInfo(SpellNameEntry const* spellName, ::Difficulty difficulty, S
 
     _effects.shrink_to_fit();
 
-    SpellName = &spellName->Name;
+    SpellName = &spell->Name;
 
     // SpellMiscEntry
     if (SpellMiscEntry const* _misc = data.Misc)
@@ -1138,10 +1138,6 @@ SpellInfo::SpellInfo(SpellNameEntry const* spellName, ::Difficulty difficulty, S
         TargetAuraSpell = _aura->TargetAuraSpell;
         ExcludeCasterAuraSpell = _aura->ExcludeCasterAuraSpell;
         ExcludeTargetAuraSpell = _aura->ExcludeTargetAuraSpell;
-        CasterAuraType = AuraType(_aura->CasterAuraSpell);
-        TargetAuraType = AuraType(_aura->TargetAuraSpell);
-        ExcludeCasterAuraType = AuraType(_aura->ExcludeCasterAuraSpell);
-        ExcludeTargetAuraType = AuraType(_aura->ExcludeTargetAuraSpell);
     }
 
     // SpellCastingRequirementsEntry
@@ -1246,10 +1242,10 @@ SpellInfo::SpellInfo(SpellNameEntry const* spellName, ::Difficulty difficulty, S
     _visuals = data.Visuals;
 }
 
-SpellInfo::SpellInfo(SpellNameEntry const* spellName, ::Difficulty difficulty, std::vector<SpellEffectEntry> const& effects)
-    : Id(spellName->ID), Difficulty(difficulty)
+SpellInfo::SpellInfo(SpellEntry const* spell, ::Difficulty difficulty, std::vector<SpellEffectEntry> const& effects)
+    : Id(spell->ID), Difficulty(difficulty)
 {
-    SpellName = &spellName->Name;
+    SpellName = &spell->Name;
 
     _effects.reserve(32);
     for (SpellEffectEntry const& spellEffect : effects)

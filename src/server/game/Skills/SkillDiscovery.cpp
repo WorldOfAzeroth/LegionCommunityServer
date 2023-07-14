@@ -139,7 +139,7 @@ void LoadSkillDiscoveryTable()
         TC_LOG_ERROR("sql.sql", "Some items can't be successfully discovered, their chance field value is < 0.000001 in the `skill_discovery_template` DB table. List:\n{}", ssNonDiscoverableEntries.str());
 
     // report about empty data for explicit discovery spells
-    for (SpellNameEntry const* spellNameEntry : sSpellNameStore)
+    for (SpellEntry const* spellNameEntry : sSpellStore)
     {
         SpellInfo const* spellEntry = sSpellMgr->GetSpellInfo(spellNameEntry->ID, DIFFICULTY_NONE);
         if (!spellEntry)

@@ -21,7 +21,6 @@
 #include "Battleground.h"
 #include "BattlegroundPackets.h"
 #include "CellImpl.h"
-#include "Common.h"
 #include "Containers.h"
 #include "DB2Stores.h"
 #include "GridNotifiersImpl.h"
