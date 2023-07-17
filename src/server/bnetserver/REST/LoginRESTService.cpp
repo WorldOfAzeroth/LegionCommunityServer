@@ -77,7 +77,7 @@ bool LoginRESTService::Start(Trinity::Asio::IoContext* ioContext)
     _port = sConfigMgr->GetIntDefault("LoginREST.Port", 8081);
     if (_port < 0 || _port > 0xFFFF)
     {
-        TC_LOG_ERROR("server.rest", "Specified login service port (%d) out of allowed range (1-65535), defaulting to 8081", _port);
+        TC_LOG_ERROR("server.rest", "Specified login service port ({}) out of allowed range (1-65535), defaulting to 8081", _port);
         _port = 8081;
     }
 
@@ -87,7 +87,7 @@ bool LoginRESTService::Start(Trinity::Asio::IoContext* ioContext)
     Optional<boost::asio::ip::tcp::endpoint> externalAddress = resolver.Resolve(boost::asio::ip::tcp::v4(), configuredAddress, std::to_string(_port));
     if (!externalAddress)
     {
-        TC_LOG_ERROR("server.rest", "Could not resolve LoginREST.ExternalAddress %s", configuredAddress.c_str());
+        TC_LOG_ERROR("server.rest", "Could not resolve LoginREST.ExternalAddress {}", configuredAddress);
         return false;
     }
 
@@ -97,7 +97,7 @@ bool LoginRESTService::Start(Trinity::Asio::IoContext* ioContext)
     Optional<boost::asio::ip::tcp::endpoint> localAddress = resolver.Resolve(boost::asio::ip::tcp::v4(), configuredAddress, std::to_string(_port));
     if (!localAddress)
     {
-        TC_LOG_ERROR("server.rest", "Could not resolve LoginREST.LocalAddress %s", configuredAddress.c_str());
+        TC_LOG_ERROR("server.rest", "Could not resolve LoginREST.LocalAddress {}", configuredAddress);
         return false;
     }
 
@@ -159,11 +159,11 @@ void LoginRESTService::Run()
     soapServer.send_timeout = 5;
     if (!soap_valid_socket(soap_bind(&soapServer, _bindIP.c_str(), _port, 100)))
     {
-        TC_LOG_ERROR("server.rest", "Couldn't bind to %s:%d", _bindIP.c_str(), _port);
+        TC_LOG_ERROR("server.rest", "Couldn't bind to {}:{}", _bindIP, _port);
         return;
     }
 
-    TC_LOG_INFO("server.rest", "Login service bound to http://%s:%d", _bindIP.c_str(), _port);
+    TC_LOG_INFO("server.rest", "Login service bound to http://{}:{}", _bindIP, _port);
 
     http_post_handlers handlers[] =
     {
@@ -196,11 +196,11 @@ void LoginRESTService::Run()
         std::shared_ptr<AsyncRequest> soapClient = std::make_shared<AsyncRequest>(soapServer);
         if (soap_ssl_accept(soapClient->GetClient()) != SOAP_OK)
         {
-            TC_LOG_DEBUG("server.rest", "Failed SSL handshake from IP=%s", boost::asio::ip::address_v4(soapClient->GetClient()->ip).to_string().c_str());
+            TC_LOG_DEBUG("server.rest", "Failed SSL handshake from IP={}", boost::asio::ip::address_v4(soapClient->GetClient()->ip).to_string());
             continue;
         }
 
-        TC_LOG_DEBUG("server.rest", "Accepted connection from IP=%s", boost::asio::ip::address_v4(soapClient->GetClient()->ip).to_string().c_str());
+        TC_LOG_DEBUG("server.rest", "Accepted connection from IP={}", boost::asio::ip::address_v4(soapClient->GetClient()->ip).to_string());
 
         Trinity::Asio::post(*_ioContext, [soapClient]()
         {
@@ -218,8 +218,8 @@ void LoginRESTService::Run()
 
 int32 LoginRESTService::HandleHttpRequest(soap* soapClient, char const* method, HttpMethodHandlerMap const& handlers)
 {
-    TC_LOG_DEBUG("server.rest", "[%s:%d] Handling %s request path=\"%s\"",
-        boost::asio::ip::address_v4(soapClient->ip).to_string().c_str(), soapClient->port, method, soapClient->path);
+    TC_LOG_DEBUG("server.rest", "[{}:{}] Handling {} request path=\"{}\"",
+        boost::asio::ip::address_v4(soapClient->ip).to_string(), soapClient->port, method, soapClient->path);
 
     size_t pathLength = strlen(soapClient->path);
     if (char const* queryPart = strchr(soapClient->path, '?'))
@@ -300,7 +300,7 @@ int32 LoginRESTService::HandleGetGameAccounts(std::shared_ptr<AsyncRequest> requ
 int32 LoginRESTService::HandleGetPortal(std::shared_ptr<AsyncRequest> request)
 {
     boost::asio::ip::tcp::endpoint const& endpoint = GetAddressForClient(boost::asio::ip::address_v4(request->GetClient()->ip));
-    std::string response = Trinity::StringFormat("%s:%d", endpoint.address().to_string().c_str(), sConfigMgr->GetIntDefault("BattlenetPort", 1119));
+    std::string response = Trinity::StringFormat("{}:{}", endpoint.address().to_string(), sConfigMgr->GetIntDefault("BattlenetPort", 1119));
 
     soap_response(request->GetClient(), SOAP_FILE);
     soap_send_raw(request->GetClient(), response.c_str(), response.length());
@@ -370,7 +370,7 @@ int32 LoginRESTService::HandlePostLogin(std::shared_ptr<AsyncRequest> request)
                 stmt->setString(0, loginTicket);
                 stmt->setUInt32(1, time(nullptr) + _loginTicketDuration);
                 stmt->setUInt32(2, accountId);
-                callback.WithPreparedCallback([request, loginTicket](PreparedQueryResult)
+                callback.WithPreparedCallback([request, loginTicket](const PreparedQueryResult&)
                 {
                     Battlenet::JSON::Login::LoginResult loginResult;
                     loginResult.set_authentication_state(Battlenet::JSON::Login::DONE);
@@ -385,7 +385,7 @@ int32 LoginRESTService::HandlePostLogin(std::shared_ptr<AsyncRequest> request)
                 uint32 maxWrongPassword = uint32(sConfigMgr->GetIntDefault("WrongPass.MaxCount", 0));
 
                 if (sConfigMgr->GetBoolDefault("WrongPass.Logging", false))
-                    TC_LOG_DEBUG("server.rest", "[%s, Account %s, Id %u] Attempted to connect with wrong password!", ip_address.c_str(), login.c_str(), accountId);
+                    TC_LOG_DEBUG("server.rest", "[{}, Account {}, Id {}] Attempted to connect with wrong password!", ip_address, login, accountId);
 
                 if (maxWrongPassword)
                 {
@@ -396,7 +396,7 @@ int32 LoginRESTService::HandlePostLogin(std::shared_ptr<AsyncRequest> request)
 
                     ++failedLogins;
 
-                    TC_LOG_DEBUG("server.rest", "MaxWrongPass : %u, failed_login : %u", maxWrongPassword, accountId);
+                    TC_LOG_DEBUG("server.rest", "MaxWrongPass : {}, failed_login : {}", maxWrongPassword, accountId);
 
                     if (failedLogins >= maxWrongPassword)
                     {

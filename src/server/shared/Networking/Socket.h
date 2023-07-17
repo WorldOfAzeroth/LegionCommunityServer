@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -147,8 +147,8 @@ public:
         boost::system::error_code shutdownError;
         _socket.shutdown(boost::asio::socket_base::shutdown_send, shutdownError);
         if (shutdownError)
-            TC_LOG_DEBUG("network", "Socket::CloseSocket: %s errored when shutting down socket: %i (%s)", GetRemoteIpAddress().to_string().c_str(),
-                shutdownError.value(), shutdownError.message().c_str());
+            TC_LOG_DEBUG("network", "Socket::CloseSocket: {} errored when shutting down socket: {} ({})", GetRemoteIpAddress().to_string(),
+                shutdownError.value(), shutdownError.message());
 
         OnClose();
     }
@@ -187,8 +187,8 @@ protected:
         boost::system::error_code err;
         _socket.set_option(tcp::no_delay(enable), err);
         if (err)
-            TC_LOG_DEBUG("network", "Socket::SetNoDelay: failed to set_option(boost::asio::ip::tcp::no_delay) for %s - %d (%s)",
-                GetRemoteIpAddress().to_string().c_str(), err.value(), err.message().c_str());
+            TC_LOG_DEBUG("network", "Socket::SetNoDelay: failed to set_option(boost::asio::ip::tcp::no_delay) for {} - {} ({})",
+                GetRemoteIpAddress().to_string(), err.value(), err.message());
     }
 
     Stream& underlying_stream()

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -46,9 +46,10 @@ public:
     template<AcceptCallback acceptCallback>
     void AsyncAcceptWithCallback()
     {
-        tcp::socket* socket;
-        uint32 threadIndex;
-        std::tie(socket, threadIndex) = _socketFactory();
+        auto [tmpSocket, tmpThreadIndex] = _socketFactory();
+        // TODO: get rid of temporary variables (clang 15 cannot handle variables from structured bindings as lambda captures)
+        tcp::socket* socket = tmpSocket;
+        uint32 threadIndex = tmpThreadIndex;
         _acceptor.async_accept(*socket, [this, socket, threadIndex](boost::system::error_code error)
         {
             if (!error)
@@ -61,7 +62,7 @@ public:
                 }
                 catch (boost::system::system_error const& err)
                 {
-                    TC_LOG_INFO("network", "Failed to initialize client's socket %s", err.what());
+                    TC_LOG_INFO("network", "Failed to initialize client's socket {}", err.what());
                 }
             }
 
@@ -76,21 +77,30 @@ public:
         _acceptor.open(_endpoint.protocol(), errorCode);
         if (errorCode)
         {
-            TC_LOG_INFO("network", "Failed to open acceptor %s", errorCode.message().c_str());
+            TC_LOG_INFO("network", "Failed to open acceptor {}", errorCode.message());
             return false;
         }
+
+#if TRINITY_PLATFORM != TRINITY_PLATFORM_WINDOWS
+        _acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true), errorCode);
+        if (errorCode)
+        {
+            TC_LOG_INFO("network", "Failed to set reuse_address option on acceptor {}", errorCode.message());
+            return false;
+        }
+#endif
 
         _acceptor.bind(_endpoint, errorCode);
         if (errorCode)
         {
-            TC_LOG_INFO("network", "Could not bind to %s:%u %s", _endpoint.address().to_string().c_str(), _endpoint.port(), errorCode.message().c_str());
+            TC_LOG_INFO("network", "Could not bind to {}:{} {}", _endpoint.address().to_string(), _endpoint.port(), errorCode.message());
             return false;
         }
 
         _acceptor.listen(TRINITY_MAX_LISTEN_CONNECTIONS, errorCode);
         if (errorCode)
         {
-            TC_LOG_INFO("network", "Failed to start listening on %s:%u %s", _endpoint.address().to_string().c_str(), _endpoint.port(), errorCode.message().c_str());
+            TC_LOG_INFO("network", "Failed to start listening on {}:{} {}", _endpoint.address().to_string(), _endpoint.port(), errorCode.message());
             return false;
         }
 
@@ -132,7 +142,7 @@ void AsyncAcceptor::AsyncAccept()
             }
             catch (boost::system::system_error const& err)
             {
-                TC_LOG_INFO("network", "Failed to retrieve client's remote address %s", err.what());
+                TC_LOG_INFO("network", "Failed to retrieve client's remote address {}", err.what());
             }
         }
 
