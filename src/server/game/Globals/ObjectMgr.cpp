@@ -3828,7 +3828,8 @@ void ObjectMgr::LoadPlayerInfo()
                 float  positionZ     = fields[6].GetFloat();
                 float  orientation   = fields[7].GetFloat();
 
-                if (!sChrRacesStore.LookupEntry(current_race))
+                const ChrRacesEntry *pRacesEntry = sChrRacesStore.LookupEntry(current_race);
+                if (!pRacesEntry)
                 {
                     TC_LOG_ERROR("sql.sql", "Wrong race {} in `playercreateinfo` table, ignoring.", current_race);
                     continue;
@@ -3855,7 +3856,8 @@ void ObjectMgr::LoadPlayerInfo()
 
                 std::unique_ptr<PlayerInfo> info = std::make_unique<PlayerInfo>();
                 info->createPosition.WorldRelocate(mapId, positionX, positionY, positionZ, orientation);
-
+                info->displayIdM = pRacesEntry->MaleDisplayId;
+                info->displayIdF = pRacesEntry->FemaleDisplayId;
 
                 _playerInfo[{ Races(current_race), Classes(current_class) }] = std::move(info);
 
@@ -3864,60 +3866,6 @@ void ObjectMgr::LoadPlayerInfo()
             while (result->NextRow());
 
             TC_LOG_INFO("server.loading", ">> Loaded {} player create definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
-        }
-    }
-
-    // Load playercreate items
-    TC_LOG_INFO("server.loading", "Loading Player Create Items Data...");
-    {
-        std::unordered_map<uint32, std::vector<ItemTemplate const*>> itemsByCharacterLoadout;
-        for (CharStartOutfitEntry const* characterLoadoutItem : sCharStartOutfitStore)
-            for (const auto &itemId : characterLoadoutItem->ItemID)
-                if (ItemTemplate const* itemTemplate = GetItemTemplate(itemId))
-                    itemsByCharacterLoadout[characterLoadoutItem->ID].push_back(itemTemplate);
-
-        for (CharStartOutfitEntry const* characterLoadout : sCharStartOutfitStore)
-        {
-            std::vector<ItemTemplate const*> const* items = Trinity::Containers::MapGetValuePtr(itemsByCharacterLoadout, characterLoadout->ID);
-            if (!items)
-                continue;
-            for (uint32 raceIndex = RACE_HUMAN; raceIndex < MAX_RACES; ++raceIndex)
-            {
-                if (!characterLoadout->RaceID == raceIndex)
-                    continue;
-
-                if (auto const& playerInfo = Trinity::Containers::MapGetValuePtr(_playerInfo, { Races(raceIndex), Classes(characterLoadout->ClassID) }))
-                {
-                    playerInfo->get()->itemContext = ItemContext::NONE;
-
-                    for (ItemTemplate const* itemTemplate : *items)
-                    {
-                        // BuyCount by default
-                        uint32 count = itemTemplate->GetBuyCount();
-
-                        // special amount for food/drink
-                        if (itemTemplate->GetClass() == ITEM_CLASS_CONSUMABLE && itemTemplate->GetSubClass() == ITEM_SUBCLASS_FOOD_DRINK)
-                        {
-                            if (!itemTemplate->Effects.empty())
-                            {
-                                switch (itemTemplate->Effects[0]->SpellCategoryID)
-                                {
-                                    case SPELL_CATEGORY_FOOD:                                // food
-                                        count = characterLoadout->ClassID == CLASS_DEATH_KNIGHT ? 10 : 4;
-                                        break;
-                                    case SPELL_CATEGORY_DRINK:                                // drink
-                                        count = 2;
-                                        break;
-                                }
-                            }
-                            if (itemTemplate->GetMaxStackSize() < count)
-                                count = itemTemplate->GetMaxStackSize();
-                        }
-
-                        playerInfo->get()->item.emplace_back(itemTemplate->GetId(), count);
-                    }
-                }
-            }
         }
     }
 

@@ -27,7 +27,7 @@ CREATE TABLE `account` (
   `username` varchar(32) NOT NULL DEFAULT '',
   `salt` BINARY(32),
   `verifier` BINARY(32),
-  `session_key` BINARY(40) DEFAULT NULL,
+  `session_key` varbinary(64) DEFAULT NULL,
   `sha_pass_hash` varchar(40) NOT NULL DEFAULT '',
   `v` varchar(64) NOT NULL DEFAULT 'dummy value, use `verifier` instead',
   `s` varchar(64) NOT NULL DEFAULT 'dummy value, use `salt` instead',

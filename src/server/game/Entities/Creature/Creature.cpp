@@ -296,6 +296,8 @@ Creature::Creature(bool isWorldObject): Unit(isWorldObject), MapObject(), m_Play
     _regenerateHealth(true), _regenerateHealthLock(false), _isMissingCanSwimFlagOutOfCombat(false)
 {
     m_regenTimer = CREATURE_REGEN_INTERVAL;
+    m_valuesCount = UNIT_END;
+    _dynamicValuesCount = UNIT_DYNAMIC_END;
 
     for (uint8 i = 0; i < MAX_CREATURE_SPELLS; ++i)
         m_spells[i] = 0;

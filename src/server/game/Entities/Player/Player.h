@@ -96,7 +96,6 @@ enum ItemClass : uint8;
 enum LootError : uint8;
 enum LootType : uint8;
 enum PlayerRestState : uint8;
-enum class PlayerCreateMode : int8;
 enum RestTypes : uint8;
 enum TransferAbortReason : uint32;
 
@@ -891,7 +890,6 @@ enum PlayerLoginQueryIndex
 {
     PLAYER_LOGIN_QUERY_LOAD_FROM,
     PLAYER_LOGIN_QUERY_LOAD_GROUP,
-    PLAYER_LOGIN_QUERY_LOAD_BOUND_INSTANCES,
     PLAYER_LOGIN_QUERY_LOAD_AURAS,
     PLAYER_LOGIN_QUERY_LOAD_AURA_EFFECTS,
     PLAYER_LOGIN_QUERY_LOAD_AURA_STORED_LOCATIONS,
@@ -2758,9 +2756,6 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void SetPlayerLocalFlag(PlayerLocalFlags flags) { SetFlag(PLAYER_FIELD_LOCAL_FLAGS, flags); }
         void RemovePlayerLocalFlag(PlayerLocalFlags flags) { RemoveFlag(PLAYER_FIELD_LOCAL_FLAGS, flags); }
         void ReplaceAllPlayerLocalFlags(PlayerLocalFlags flags) { ToggleFlag(PLAYER_FIELD_LOCAL_FLAGS, flags); }
-
-        uint8 GetNumRespecs() const { return 0; }
-        void SetNumRespecs(uint8 /*numRespecs*/) { }
 
         void SetWatchedFactionIndex(int32 index) { SetInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX, index); }
 

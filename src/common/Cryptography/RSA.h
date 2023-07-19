@@ -1,5 +1,5 @@
 /*
- * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
+ * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -15,99 +15,64 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TRINITYCORE_RSA_H
-#define TRINITYCORE_RSA_H
-
 #include "Define.h"
-#include <openssl/evp.h>
-#include <array>
-#include <memory>
+#include <openssl/objects.h>
+#include <openssl/rsa.h>
 #include <string>
-#include <vector>
+#include <type_traits>
+
+class BigNumber;
 
 namespace Trinity
 {
 namespace Crypto
 {
-class TC_COMMON_API RsaSignature
+class TC_COMMON_API RSA
 {
 public:
-    class TC_COMMON_API DigestGenerator
+    struct PublicKey {};
+    struct PrivateKey {};
+
+    struct NoPadding : std::integral_constant<int32, RSA_NO_PADDING> {};
+    struct PKCS1Padding : std::integral_constant<int32, RSA_PKCS1_PADDING> {};
+
+    struct SHA256 : std::integral_constant<int32, NID_sha256> {};
+
+    RSA();
+    RSA(RSA&& rsa);
+    ~RSA();
+
+    template <typename KeyTag>
+    bool LoadFromFile(std::string const& fileName, KeyTag);
+
+    template <typename KeyTag>
+    bool LoadFromString(std::string const& keyPem, KeyTag);
+
+    uint32 GetOutputSize() const { return uint32(RSA_size(_rsa)); }
+    BigNumber GetModulus() const;
+
+    template <typename KeyTag, typename PaddingTag>
+    bool Encrypt(uint8 const* data, std::size_t dataLength, uint8* output, KeyTag, PaddingTag)
     {
-    public:
-        struct EVP_MD_Deleter
-        {
-            void operator()(EVP_MD* md) const;
-        };
-
-        virtual ~DigestGenerator() = default;
-        virtual std::unique_ptr<EVP_MD, EVP_MD_Deleter> GetGenerator() const = 0;
-
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-        virtual OSSL_LIB_CTX* GetLib() const = 0;
-        virtual std::unique_ptr<OSSL_PARAM[]> GetParams() const = 0;
-#else
-        virtual void PostInitCustomizeContext(EVP_MD_CTX* ctx) = 0;
-#endif
-    };
-
-    class TC_COMMON_API SHA256 : public DigestGenerator
-    {
-    public:
-        std::unique_ptr<EVP_MD, EVP_MD_Deleter> GetGenerator() const override;
-
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-        OSSL_LIB_CTX* GetLib() const override;
-        std::unique_ptr<OSSL_PARAM[]> GetParams() const override;
-#else
-        void PostInitCustomizeContext(EVP_MD_CTX* ctx) override;
-#endif
-    };
-
-    class TC_COMMON_API HMAC_SHA256 : public DigestGenerator
-    {
-    public:
-        explicit HMAC_SHA256(uint8 const* key, size_t keyLength) : _key(key), _keyLength(keyLength) { }
-
-        std::unique_ptr<EVP_MD, EVP_MD_Deleter> GetGenerator() const override;
-
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-        OSSL_LIB_CTX* GetLib() const override;
-        std::unique_ptr<OSSL_PARAM[]> GetParams() const override;
-#else
-        void PostInitCustomizeContext(EVP_MD_CTX* ctx) override;
-#endif
-
-    private:
-        uint8 const* _key;
-        size_t _keyLength;
-    };
-
-    RsaSignature();
-    RsaSignature(RsaSignature const& other);
-    RsaSignature(RsaSignature&& other) noexcept;
-    ~RsaSignature();
-
-    RsaSignature& operator=(RsaSignature const& right);
-    RsaSignature& operator=(RsaSignature&& right) noexcept;
-
-    bool LoadKeyFromFile(std::string const& fileName);
-
-    bool LoadKeyFromString(std::string const& keyPem);
-
-    template <std::size_t N>
-    bool Sign(std::array<uint8, N> const& message, DigestGenerator& generator, std::vector<uint8>& output)
-    {
-        return this->Sign(message.data(), message.size(), generator, output);
+        return Encrypt<KeyTag>(data, dataLength, output, PaddingTag::value);
     }
 
-    bool Sign(uint8 const* message, std::size_t messageLength, DigestGenerator& generator, std::vector<uint8>& output);
+    template <typename HashTag>
+    bool Sign(uint8 const* dataHash, std::size_t dataHashLength, uint8* output, HashTag)
+    {
+        return Sign(HashTag::value, dataHash, dataHashLength, output);
+    }
 
 private:
-    EVP_MD_CTX* _ctx = nullptr;
-    EVP_PKEY* _key = nullptr;
+    template <typename KeyTag>
+    bool Encrypt(uint8 const* data, std::size_t dataLength, uint8* output, int32 paddingType);
+
+    bool Sign(int32 hashType, uint8 const* dataHash, std::size_t dataHashLength, uint8* output);
+
+    RSA(RSA const& rsa) = delete;
+    RSA& operator=(RSA const& rsa) = delete;
+
+    ::RSA* _rsa;
 };
 }
 }
-
-#endif // TRINITYCORE_RSA_H

@@ -18,7 +18,6 @@
 
 #include "WorldSession.h"
 #include "AccountMgr.h"
-#include "ArenaTeam.h"
 #include "ArenaTeamMgr.h"
 #include "ArtifactPackets.h"
 #include "AuthenticationPackets.h"
@@ -30,8 +29,6 @@
 #include "CharacterPackets.h"
 #include "Chat.h"
 #include "ClientConfigPackets.h"
-#include "Common.h"
-#include "Containers.h"
 #include "DatabaseEnv.h"
 #include "DB2Stores.h"
 #include "EquipmentSetPackets.h"
@@ -736,7 +733,7 @@ void WorldSession::HandleCharCreateOpcode(WorldPackets::Character::CreateCharact
 
             LoginDatabaseTransaction trans = LoginDatabase.BeginTransaction();
 
-            LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_REALM_CHARACTERS_BY_REALM);
+            LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_REP_REALM_CHARACTERS);
             stmt->setUInt32(0, createInfo->CharCount);
             stmt->setUInt32(1, GetAccountId());
             stmt->setUInt32(2, realm.Id.Realm);

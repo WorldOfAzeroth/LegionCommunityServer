@@ -112,7 +112,7 @@ WorldPackets::Character::EnumCharactersResult::CharacterInfo::CharacterInfo(Fiel
     ProfessionIds[0] = 0;
     ProfessionIds[1] = 0;
 
-    std::vector<std::string_view> equipment = Trinity::Tokenize(fields[17].GetStringView(), ' ', false);
+    std::vector<std::string_view> equipment = Trinity::Tokenize(fields[25].GetStringView(), ' ', false);
     ListPosition = fields[27].GetUInt8();
     LastPlayedTime = fields[28].GetUInt32();
     if (ChrSpecializationEntry const* spec = sDB2Manager.GetChrSpecializationByIndex(Class, fields[29].GetUInt8()))

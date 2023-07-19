@@ -308,6 +308,7 @@ typedef std::unordered_map<uint32 /*areaGroupId*/, std::vector<uint32/*areaId*/>
 typedef std::unordered_map<uint32, std::vector<ArtifactPowerEntry const*>> ArtifactPowersContainer;
 typedef std::unordered_map<uint32, std::unordered_set<uint32>> ArtifactPowerLinksContainer;
 typedef std::unordered_map<std::pair<uint32, uint8>, ArtifactPowerRankEntry const*> ArtifactPowerRanksContainer;
+typedef std::unordered_map<uint32, CharStartOutfitEntry const*> CharStartOutfitContainer;
 typedef ChrSpecializationEntry const* ChrSpecializationByIndexContainer[MAX_CLASSES + 1][MAX_SPECIALIZATIONS];
 typedef std::unordered_map<uint32, ChrSpecializationEntry const*> ChrSpecialzationByClassContainer;
 typedef std::unordered_map<uint32 /*curveID*/, std::vector<CurvePointEntry const*>> CurvePointsContainer;
@@ -359,6 +360,7 @@ namespace
     ArtifactPowerRanksContainer _artifactPowerRanks;
     std::set<std::tuple<uint8, uint8, uint32>> _characterFacialHairStyles;
     std::multimap<std::tuple<uint8, uint8, CharBaseSectionVariation>, CharSectionsEntry const*> _charSections;
+    CharStartOutfitContainer _charStartOutfits;
     uint32 _powersByClass[MAX_CLASSES][MAX_POWERS];
     ChrSpecializationByIndexContainer _chrSpecializationsByIndex;
     ChrSpecialzationByClassContainer _defaultChrSpecializationsByClass;
@@ -851,6 +853,8 @@ uint32 DB2Manager::LoadStores(std::string const& dataPath, LocaleConstant defaul
         _charSections.insert({ sectionKey, charSection });
     }
 
+    for (CharStartOutfitEntry const* outfit : sCharStartOutfitStore)
+        _charStartOutfits[outfit->RaceID | (outfit->ClassID << 8) | (outfit->SexID << 16)] = outfit;
 
     {
         std::set<ChrClassesXPowerTypesEntry const*, ChrClassesXPowerTypesEntryComparator> powers;
@@ -1394,6 +1398,15 @@ CharSectionsEntry const* DB2Manager::GetCharSectionEntry(uint8 race, uint8 gende
             return section.second;
 
     return nullptr;
+}
+
+CharStartOutfitEntry const* DB2Manager::GetCharStartOutfitEntry(uint8 race, uint8 class_, uint8 gender) const
+{
+    auto itr = _charStartOutfits.find(race | (class_ << 8) | (gender << 16));
+    if (itr == _charStartOutfits.end())
+        return nullptr;
+
+    return itr->second;
 }
 
 char const* DB2Manager::GetClassName(uint8 class_, LocaleConstant locale /*= DEFAULT_LOCALE*/)

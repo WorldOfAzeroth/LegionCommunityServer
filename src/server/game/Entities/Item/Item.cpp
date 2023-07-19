@@ -29,7 +29,6 @@
 #include "ItemEnchantmentMgr.h"
 #include "ItemPackets.h"
 #include "Log.h"
-#include "Loot.h"
 #include "LootItemStorage.h"
 #include "LootMgr.h"
 #include "Map.h"
@@ -329,6 +328,7 @@ Item::Item()
     m_paidMoney = 0;
     m_paidExtendedCost = 0;
 
+    m_randomBonusListId = 0;
     m_gemScalingLevels = { };
 
     memset(&_bonusData, 0, sizeof(_bonusData));
@@ -594,8 +594,9 @@ void Item::SaveToDB(CharacterDatabaseTransaction trans)
                 stmt->setUInt32(2, GetModifier(ITEM_MODIFIER_ARTIFACT_APPEARANCE_ID));
                 stmt->setUInt32(3, GetModifier(ITEM_MODIFIER_ARTIFACT_TIER));
                 trans->Append(stmt);
-                auto powers = GetDynamicStructuredValues<ItemDynamicFieldArtifactPowers>(ITEM_DYNAMIC_FIELD_ARTIFACT_POWERS);
-                for (const auto &artifactPower : powers) {
+
+                for (ItemDynamicFieldArtifactPowers const& artifactPower : GetArtifactPowers())
+                {
                     stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_ITEM_INSTANCE_ARTIFACT_POWERS);
                     stmt->setUInt64(0, GetGUID().GetCounter());
                     stmt->setUInt32(1, artifactPower.ArtifactPowerId);
@@ -680,19 +681,15 @@ void Item::SaveToDB(CharacterDatabaseTransaction trans)
 
 bool Item::LoadFromDB(ObjectGuid::LowType guid, ObjectGuid ownerGuid, Field* fields, uint32 entry)
 {
-    //           0          1            2                3      4         5        6      7             8                  9          10          11    12
-    // SELECT guid, itemEntry, creatorGuid, giftCreatorGuid, count, duration, charges, flags, enchantments, randomBonusListId, durability, playedTime, text,
-    //                        13                  14              15                  16       17            18
-    //        battlePetSpeciesId, battlePetBreedData, battlePetLevel, battlePetDisplayId, context, bonusListIDs,
-    //                                    19                           20                           21                           22                           23                           24
-    //        itemModifiedAppearanceAllSpecs, itemModifiedAppearanceSpec1, itemModifiedAppearanceSpec2, itemModifiedAppearanceSpec3, itemModifiedAppearanceSpec4, itemModifiedAppearanceSpec5,
-    //                                  25                         26                         27                         28                         29                         30
-    //        spellItemEnchantmentAllSpecs, spellItemEnchantmentSpec1, spellItemEnchantmentSpec2, spellItemEnchantmentSpec3, spellItemEnchantmentSpec4, spellItemEnchantmentSpec5,
-    //                                             31                                    32                                    33
-    //        secondaryItemModifiedAppearanceAllSpecs, secondaryItemModifiedAppearanceSpec1, secondaryItemModifiedAppearanceSpec2,
-    //                                          34                                    35                                    36
-    //        secondaryItemModifiedAppearanceSpec3, secondaryItemModifiedAppearanceSpec4, secondaryItemModifiedAppearanceSpec5,
-    //                37           38           39                40          41           42           43                44          45           46           47                48
+    //           0          1            2                3      4         5        6      7             8                   9                10          11          12    13
+    // SELECT guid, itemEntry, creatorGuid, giftCreatorGuid, count, duration, charges, flags, enchantments, randomPropertyType, randomPropertyId, durability, playedTime, text,
+    //               14                  15                  16              17                  18       19            20
+    //        upgradeId, battlePetSpeciesId, battlePetBreedData, battlePetLevel, battlePetDisplayId, context, bonusListIDs,
+    //                                   21                            22                           23                           24                           25
+    //        itemModifiedAppearanceAllSpecs, itemModifiedAppearanceSpec1, itemModifiedAppearanceSpec2, itemModifiedAppearanceSpec3, itemModifiedAppearanceSpec4,
+    //                                  26                        27                          28                         29                         30
+    //        spellItemEnchantmentAllSpecs, spellItemEnchantmentSpec1, spellItemEnchantmentSpec2, spellItemEnchantmentSpec3, spellItemEnchantmentSpec4,
+    //                31           32           33                34          35           36           37                38          39           40           41                42
     //        gemItemId1, gemBonuses1, gemContext1, gemScalingLevel1, gemItemId2, gemBonuses2, gemContext2, gemScalingLevel2, gemItemId3, gemBonuses3, gemContext3, gemScalingLevel3
     //                       43                      44
     //        fixedScalingLevel, artifactKnowledgeLevel FROM item_instance
@@ -740,6 +737,11 @@ bool Item::LoadFromDB(ObjectGuid::LowType guid, ObjectGuid ownerGuid, Field* fie
         need_save = true;
     }
 
+    // load charges after bonuses, they can add more item effects
+    std::vector<std::string_view> tokens = Trinity::Tokenize(fields[6].GetStringView(), ' ', false);
+    for (uint8 i = 0; i < 6 && i < _bonusData.EffectCount && i < tokens.size(); ++i)
+        SetSpellCharges(i, Trinity::StringTo<int32>(tokens[i]).value_or(0));
+
     ReplaceAllItemFlags(ItemFieldFlags(itemFlags));
 
     uint32 durability = fields[11].GetUInt16();
@@ -778,7 +780,9 @@ bool Item::LoadFromDB(ObjectGuid::LowType guid, ObjectGuid ownerGuid, Field* fie
     SetModifier(ITEM_MODIFIER_BATTLE_PET_LEVEL, fields[17].GetUInt16());
     SetModifier(ITEM_MODIFIER_BATTLE_PET_DISPLAY_ID, fields[18].GetUInt32());
 
-    std::vector<std::string_view> bonusListString = Trinity::Tokenize(fields[18].GetStringView(), ' ', false);
+    SetContext(ItemContext(fields[19].GetUInt8()));
+
+    std::vector<std::string_view> bonusListString = Trinity::Tokenize(fields[20].GetStringView(), ' ', false);
     std::vector<uint32> bonusListIDs;
     bonusListIDs.reserve(bonusListString.size());
     for (std::string_view token : bonusListString)
@@ -786,10 +790,6 @@ bool Item::LoadFromDB(ObjectGuid::LowType guid, ObjectGuid ownerGuid, Field* fie
             bonusListIDs.push_back(*bonusListID);
     SetBonuses(std::move(bonusListIDs));
 
-    // load charges after bonuses, they can add more item effects
-    std::vector<std::string_view> tokens = Trinity::Tokenize(fields[6].GetStringView(), ' ', false);
-    for (uint8 i = 0; i < 6 && i < _bonusData.EffectCount && i < tokens.size(); ++i)
-        SetSpellCharges(i, Trinity::StringTo<int32>(tokens[i]).value_or(0));
 
     SetModifier(ITEM_MODIFIER_TRANSMOG_APPEARANCE_ALL_SPECS, fields[21].GetUInt32());
     SetModifier(ITEM_MODIFIER_TRANSMOG_APPEARANCE_SPEC_1, fields[22].GetUInt32());
@@ -808,20 +808,20 @@ bool Item::LoadFromDB(ObjectGuid::LowType guid, ObjectGuid ownerGuid, Field* fie
     memset(gemData, 0, sizeof(gemData));
     for (uint32 i = 0; i < MAX_GEM_SOCKETS; ++i)
     {
-        gemData[i].ItemId = fields[37 + i * gemFields].GetUInt32();
-        std::vector<std::string_view> gemBonusListIDs = Trinity::Tokenize(fields[38 + i * gemFields].GetStringView(), ' ', false);
+        gemData[i].ItemId = fields[31 + i * gemFields].GetUInt32();
+        std::vector<std::string_view> gemBonusListIDs = Trinity::Tokenize(fields[32 + i * gemFields].GetStringView(), ' ', false);
         uint32 b = 0;
         for (std::string_view token : gemBonusListIDs)
             if (Optional<uint16> bonusListID = Trinity::StringTo<uint16>(token))
                 gemData[i].BonusListIDs[b++] = *bonusListID;
 
-        gemData[i].Context = fields[39 + i * gemFields].GetUInt8();
+        gemData[i].Context = fields[33 + i * gemFields].GetUInt8();
         if (gemData[i].ItemId)
-            SetGem(i, &gemData[i], fields[40 + i * gemFields].GetUInt32());
+            SetGem(i, &gemData[i], fields[34 + i * gemFields].GetUInt32());
     }
 
-    SetModifier(ITEM_MODIFIER_TIMEWALKER_LEVEL, fields[49].GetUInt32());
-    SetModifier(ITEM_MODIFIER_ARTIFACT_KNOWLEDGE_LEVEL, fields[50].GetUInt32());
+    SetModifier(ITEM_MODIFIER_TIMEWALKER_LEVEL, fields[43].GetUInt32());
+    SetModifier(ITEM_MODIFIER_ARTIFACT_KNOWLEDGE_LEVEL, fields[44].GetUInt32());
 
     // Enchants must be loaded after all other bonus/scaling data
     std::vector<std::string_view> enchantmentTokens = Trinity::Tokenize(fields[8].GetStringView(), ' ', false);
@@ -835,7 +835,6 @@ bool Item::LoadFromDB(ObjectGuid::LowType guid, ObjectGuid ownerGuid, Field* fie
         }
     }
     m_randomBonusListId = fields[9].GetUInt32();
-
     // Remove bind flag for items vs BIND_NONE set
     if (IsSoulBound() && GetBonding() == BIND_NONE)
     {
@@ -851,6 +850,7 @@ bool Item::LoadFromDB(ObjectGuid::LowType guid, ObjectGuid ownerGuid, Field* fie
         stmt->setUInt32(index++, GetUInt32Value(ITEM_FIELD_FLAGS));
         stmt->setUInt32(index++, GetUInt32Value(ITEM_FIELD_DURABILITY));
         stmt->setUInt32(index++, GetModifier(ITEM_MODIFIER_UPGRADE_ID));
+        stmt->setUInt64(index++, guid);
         CharacterDatabase.Execute(stmt);
     }
 
@@ -1019,6 +1019,7 @@ void Item::SetItemRandomBonusList(ItemRandomBonusListId bonusListId)
 
     AddBonuses(bonusListId);
 }
+
 
 void Item::SetState(ItemUpdateState state, Player* forplayer)
 {

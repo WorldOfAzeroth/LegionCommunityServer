@@ -148,8 +148,12 @@ uint64 const MAX_MONEY_AMOUNT = 99999999999ULL;
 
 Player::Player(WorldSession* session) : Unit(true), m_sceneMgr(this)
 {
+
     m_objectType |= TYPEMASK_PLAYER;
     m_objectTypeId = TYPEID_PLAYER;
+
+    m_valuesCount = PLAYER_END;
+    _dynamicValuesCount = PLAYER_DYNAMIC_END;
 
     m_session = session;
 
@@ -187,6 +191,8 @@ Player::Player(WorldSession* session) : Unit(true), m_sceneMgr(this)
     SetGroupInvite(nullptr);
     m_groupUpdateMask = 0;
     m_bPassOnGroupLoot = false;
+
+    duel = nullptr;
 
     m_GuildIdInvited = UI64LIT(0);
     m_ArenaTeamIdInvited = 0;
@@ -486,7 +492,20 @@ bool Player::Create(ObjectGuid::LowType guidlow, WorldPackets::Character::Charac
     SetRestState(REST_TYPE_XP, (GetSession()->IsARecruiter() || GetSession()->GetRecruiterId() != 0) ? REST_STATE_RAF_LINKED : REST_STATE_NOT_RAF_LINKED);
     SetRestState(REST_TYPE_HONOR, REST_STATE_NOT_RAF_LINKED);
     SetNativeGender(Gender(createInfo->Sex));
+    SetByteValue(PLAYER_BYTES_4, PLAYER_BYTES_4_OFFSET_ARENA_FACTION, 0);
     SetInventorySlotCount(INVENTORY_DEFAULT_SIZE);
+
+    SetGuidValue(OBJECT_FIELD_DATA, ObjectGuid::Empty);
+    SetUInt32Value(PLAYER_GUILDRANK, 0);
+    SetGuildLevel(0);
+    SetUInt32Value(PLAYER_GUILD_TIMESTAMP, 0);
+
+    for (int i = 0; i < KNOWN_TITLES_SIZE; ++i)
+        SetUInt64Value(PLAYER__FIELD_KNOWN_TITLES + i, 0);  // 0=disabled
+    SetUInt32Value(PLAYER_CHOSEN_TITLE, 0);
+
+    SetUInt32Value(PLAYER_FIELD_KILLS, 0);
+    SetUInt32Value(PLAYER_FIELD_LIFETIME_HONORABLE_KILLS, 0);
 
     // set starting level
     SetLevel(GetStartLevel(createInfo->Race, createInfo->Class, createInfo->TemplateSet));
@@ -530,6 +549,45 @@ bool Player::Create(ObjectGuid::LowType guidlow, WorldPackets::Character::Charac
     }
 
     // original items
+    if (CharStartOutfitEntry const* oEntry = sDB2Manager.GetCharStartOutfitEntry(createInfo->Race, createInfo->Class, createInfo->Sex))
+    {
+        for (int j = 0; j < MAX_OUTFIT_ITEMS; ++j)
+        {
+            if (oEntry->ItemID[j] <= 0)
+                continue;
+
+            uint32 itemId = oEntry->ItemID[j];
+
+            // just skip, reported in ObjectMgr::LoadItemTemplates
+            ItemTemplate const* iProto = sObjectMgr->GetItemTemplate(itemId);
+            if (!iProto)
+                continue;
+
+            // BuyCount by default
+            uint32 count = iProto->GetBuyCount();
+
+            // special amount for food/drink
+            if (iProto->GetClass() == ITEM_CLASS_CONSUMABLE && iProto->GetSubClass() == ITEM_SUBCLASS_FOOD_DRINK)
+            {
+                if (iProto->Effects.size() >= 1)
+                {
+                    switch (iProto->Effects[0]->SpellCategoryID)
+                    {
+                        case SPELL_CATEGORY_FOOD:                                // food
+                            count = GetClass() == CLASS_DEATH_KNIGHT ? 10 : 4;
+                            break;
+                        case SPELL_CATEGORY_DRINK:                                // drink
+                            count = 2;
+                            break;
+                    }
+                }
+                if (iProto->GetMaxStackSize() < count)
+                    count = iProto->GetMaxStackSize();
+            }
+            StoreNewItemInBestSlots(itemId, count, ItemContext::NONE);
+        }
+    }
+
     for (PlayerCreateInfoItem initialItem : info->item)
         StoreNewItemInBestSlots(initialItem.item_id, initialItem.item_amount, info->itemContext);
 
@@ -16555,7 +16613,6 @@ bool Player::LoadFromDB(ObjectGuid guid, CharacterDatabaseQueryHolder const& hol
         float orientation;
         std::string taximask;
         time_t createTime;
-        PlayerCreateMode createMode;
         uint8 cinematic;
         uint32 totaltime;
         uint32 leveltime;
@@ -16600,7 +16657,6 @@ bool Player::LoadFromDB(ObjectGuid guid, CharacterDatabaseQueryHolder const& hol
         uint32 prestige;
         PlayerRestState honorRestState;
         float honorRestBonus;
-        uint8 numRespecs;
 
         PlayerLoadData(Field* fields)
         {
@@ -16634,7 +16690,6 @@ bool Player::LoadFromDB(ObjectGuid guid, CharacterDatabaseQueryHolder const& hol
             orientation = fields[i++].GetFloat();
             taximask = fields[i++].GetString();
             createTime = fields[i++].GetInt64();
-            createMode = PlayerCreateMode(fields[i++].GetInt8());
             cinematic = fields[i++].GetUInt8();
             totaltime = fields[i++].GetUInt32();
             leveltime = fields[i++].GetUInt32();
@@ -16680,7 +16735,6 @@ bool Player::LoadFromDB(ObjectGuid guid, CharacterDatabaseQueryHolder const& hol
             prestige = fields[i++].GetUInt32();
             honorRestState = PlayerRestState(fields[i++].GetUInt8());
             honorRestBonus = fields[i++].GetFloat();
-            numRespecs = fields[i++].GetUInt8();
         }
 
     } fields(result->Fetch());
@@ -17136,7 +17190,6 @@ bool Player::LoadFromDB(ObjectGuid guid, CharacterDatabaseQueryHolder const& hol
     _LoadSkills(holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_SKILLS));
     UpdateSkillsForLevel(); //update skills after load, to make sure they are correctly update at player load
 
-    SetNumRespecs(fields.numRespecs);
     SetPrimarySpecialization(fields.primarySpecialization);
     SetActiveTalentGroup(fields.activeTalentGroup);
     ChrSpecializationEntry const* primarySpec = sChrSpecializationStore.LookupEntry(GetPrimarySpecialization());
@@ -17630,19 +17683,19 @@ void Player::LoadCorpse(PreparedQueryResult result)
 
 void Player::_LoadInventory(PreparedQueryResult result, PreparedQueryResult artifactsResult, uint32 timeDiff)
 {
-    //           0          1            2                3      4         5        6      7             8                 9          10          11    12
-    // SELECT guid, itemEntry, creatorGuid, giftCreatorGuid, count, duration, charges, flags, enchantments, randomPropertyId, durability, playedTime, text,
-    //                        13                  14              15                  16       17            18
-    //        battlePetSpeciesId, battlePetBreedData, battlePetLevel, battlePetDisplayId, context, bonusListIDs,
-    //                                    19                           20                           21                           22                           23
+    //           0          1            2                3      4         5        6      7             8                   9                10          11          12    13
+    // SELECT guid, itemEntry, creatorGuid, giftCreatorGuid, count, duration, charges, flags, enchantments, randomPropertyType, randomPropertyId, durability, playedTime, text,
+    //               14                  15                  16              17                  18       19            20
+    //        upgradeId, battlePetSpeciesId, battlePetBreedData, battlePetLevel, battlePetDisplayId, context, bonusListIDs,
+    //                                   21                            22                           23                           24                           25
     //        itemModifiedAppearanceAllSpecs, itemModifiedAppearanceSpec1, itemModifiedAppearanceSpec2, itemModifiedAppearanceSpec3, itemModifiedAppearanceSpec4,
-    //                                  24                         25                         26                         27                         28
+    //                                  26                        27                          28                         29                         30
     //        spellItemEnchantmentAllSpecs, spellItemEnchantmentSpec1, spellItemEnchantmentSpec2, spellItemEnchantmentSpec3, spellItemEnchantmentSpec4,
-    //                29           30           31                32          33           34           35                36          37           38           39                40
+    //                31           32           33                34          35           36           37                38          39           40           41                42
     //        gemItemId1, gemBonuses1, gemContext1, gemScalingLevel1, gemItemId2, gemBonuses2, gemContext2, gemScalingLevel2, gemItemId3, gemBonuses3, gemContext3, gemScalingLevel3
-    //                       41                      42
+    //                       43                      44
     //        fixedScalingLevel, artifactKnowledgeLevel FROM item_instance
-    //         43    44
+    //         45    46
     //        bag, slot
     // FROM character_inventory ci
     // JOIN item_instance ii ON ci.item = ii.guid
@@ -17661,6 +17714,38 @@ void Player::_LoadInventory(PreparedQueryResult result, PreparedQueryResult arti
     std::unordered_map<ObjectGuid::LowType, ItemAdditionalLoadInfo> additionalData;
     ItemAdditionalLoadInfo::Init(&additionalData, artifactsResult);
 
+    //                 0     1                       2                 3                   4                 5
+    // SELECT a.itemGuid, a.xp, a.artifactAppearanceId, a.artifactTierId, ap.artifactPowerId, ap.purchasedRank FROM item_instance_artifact_powers ap LEFT JOIN item_instance_artifact a ON ap.itemGuid = a.itemGuid INNER JOIN character_inventory ci ON ci.item = ap.guid WHERE ci.guid = ?
+    std::unordered_map<ObjectGuid, std::tuple<uint64, uint32, uint32, std::vector<ItemDynamicFieldArtifactPowers>>> artifactData;
+    if (artifactsResult)
+    {
+        do
+        {
+            Field* fields = artifactsResult->Fetch();
+            auto& artifactDataEntry = artifactData[ObjectGuid::Create<HighGuid::Item>(fields[0].GetUInt64())];
+            std::get<0>(artifactDataEntry) = fields[1].GetUInt64();
+            std::get<1>(artifactDataEntry) = fields[2].GetUInt32();
+            std::get<2>(artifactDataEntry) = fields[3].GetUInt32();
+            ItemDynamicFieldArtifactPowers artifactPowerData;
+            artifactPowerData.ArtifactPowerId = fields[4].GetUInt32();
+            artifactPowerData.PurchasedRank = fields[5].GetUInt8();
+            if (ArtifactPowerEntry const* artifactPower = sArtifactPowerStore.LookupEntry(artifactPowerData.ArtifactPowerId))
+            {
+                uint32 maxRank = artifactPower->MaxPurchasableRank;
+                // allow ARTIFACT_POWER_FLAG_FINAL to overflow maxrank here - needs to be handled in Item::CheckArtifactUnlock (will refund artifact power)
+                if (artifactPower->Flags & ARTIFACT_POWER_FLAG_MAX_RANK_WITH_TIER && artifactPower->Tier < std::get<2>(artifactDataEntry))
+                    maxRank += std::get<2>(artifactDataEntry) - artifactPower->Tier;
+
+                if (artifactPowerData.PurchasedRank > maxRank)
+                    artifactPowerData.PurchasedRank = maxRank;
+
+                artifactPowerData.CurrentRankWithBonus = (artifactPower->Flags & ARTIFACT_POWER_FLAG_FIRST) == ARTIFACT_POWER_FLAG_FIRST ? 1 : 0;
+
+                std::get<3>(artifactDataEntry).push_back(artifactPowerData);
+            }
+
+        } while (artifactsResult->NextRow());
+    }
     if (result)
     {
         uint32 zoneId = GetZoneId();
@@ -17677,8 +17762,8 @@ void Player::_LoadInventory(PreparedQueryResult result, PreparedQueryResult arti
             Field* fields = result->Fetch();
             if (Item* item = _LoadItem(trans, zoneId, timeDiff, fields))
             {
-                ObjectGuid bagGuid = fields[51].GetUInt64() ? ObjectGuid::Create<HighGuid::Item>(fields[51].GetUInt64()) : ObjectGuid::Empty;
-                uint8 slot = fields[52].GetUInt8();
+                ObjectGuid bagGuid = fields[45].GetUInt64() ? ObjectGuid::Create<HighGuid::Item>(fields[45].GetUInt64()) : ObjectGuid::Empty;
+                uint8 slot = fields[46].GetUInt8();
 
                 GetSession()->GetCollectionMgr()->CheckHeirloomUpgrades(item);
                 GetSession()->GetCollectionMgr()->AddItemAppearance(item);
@@ -18823,6 +18908,7 @@ void Player::SaveToDB(LoginDatabaseTransaction loginTransaction, CharacterDataba
         stmt->setUInt16(index++, (uint16)m_ExtraFlags);
         stmt->setUInt32(index++, 0); // summonedPetNumber
         stmt->setUInt16(index++, (uint16)m_atLoginFlags);
+        stmt->setUInt16(index++, GetZoneId());
         stmt->setInt64(index++, m_deathExpireTime);
 
         ss.str("");
@@ -18888,6 +18974,8 @@ void Player::SaveToDB(LoginDatabaseTransaction loginTransaction, CharacterDataba
         stmt->setString(index++, ss.str());
 
         stmt->setUInt8(index++, GetByteValue(PLAYER_FIELD_BYTES, PLAYER_FIELD_BYTES_OFFSET_ACTION_BAR_TOGGLES));
+        stmt->setUInt32(index++, m_grantableLevels);
+        stmt->setUInt32(index++, realm.Build);
     }
     else
     {
@@ -18960,7 +19048,6 @@ void Player::SaveToDB(LoginDatabaseTransaction loginTransaction, CharacterDataba
         //save, but in tavern/city
         stmt->setUInt32(index++, GetTalentResetCost());
         stmt->setInt64(index++, GetTalentResetTime());
-        stmt->setUInt8(index++, GetNumRespecs());
         stmt->setUInt32(index++, GetPrimarySpecialization());
         stmt->setUInt16(index++, (uint16)m_ExtraFlags);
         if (PetStable const* petStable = GetPetStable())
@@ -19034,6 +19121,7 @@ void Player::SaveToDB(LoginDatabaseTransaction loginTransaction, CharacterDataba
 
         stmt->setString(index++, ss.str());
         stmt->setUInt8(index++, GetByteValue(PLAYER_FIELD_BYTES, PLAYER_FIELD_BYTES_OFFSET_ACTION_BAR_TOGGLES));
+        stmt->setUInt32(index++, m_grantableLevels);
 
         stmt->setUInt8(index++, IsInWorld() && !GetSession()->PlayerLogout() ? 1 : 0);
         stmt->setUInt32(index++, GetUInt32Value(PLAYER_FIELD_HONOR));
@@ -19041,6 +19129,7 @@ void Player::SaveToDB(LoginDatabaseTransaction loginTransaction, CharacterDataba
         stmt->setUInt32(index++, GetPrestigeLevel());
         stmt->setUInt8(index++, uint8(GetUInt32Value(uint16(PLAYER_FIELD_REST_INFO) + REST_STATE_HONOR)));
         stmt->setFloat(index++, finiteAlways(_restMgr->GetRestBonus(REST_TYPE_HONOR)));
+        stmt->setUInt32(index++, realm.Build);
 
         // Index
         stmt->setUInt64(index, GetGUID().GetCounter());
@@ -19399,12 +19488,15 @@ void Player::_SaveVoidStorage(CharacterDatabaseTransaction trans)
             stmt->setUInt64(4, _voidStorageItems[i]->CreatorGuid.GetCounter());
             stmt->setUInt32(5, _voidStorageItems[i]->RandomBonusListId);
             stmt->setUInt32(6, _voidStorageItems[i]->FixedScalingLevel);
-            stmt->setUInt32(7, _voidStorageItems[i]->ArtifactKnowledgeLevel);
-            stmt->setUInt8(8, AsUnderlyingType(_voidStorageItems[i]->Context));
+            stmt->setUInt32(7, _voidStorageItems[i]->ItemSuffixFactor);
+            stmt->setUInt32(8, _voidStorageItems[i]->ItemUpgradeId);
+            stmt->setUInt32(9, _voidStorageItems[i]->FixedScalingLevel);
+            stmt->setUInt32(10, _voidStorageItems[i]->ArtifactKnowledgeLevel);
+            stmt->setUInt8(11, AsUnderlyingType(_voidStorageItems[i]->Context));
             std::ostringstream bonusListIDs;
             for (int32 bonusListID : _voidStorageItems[i]->BonusListIDs)
                 bonusListIDs << bonusListID << ' ';
-            stmt->setString(9, bonusListIDs.str());
+            stmt->setString(12, bonusListIDs.str());
         }
 
         trans->Append(stmt);
