@@ -242,7 +242,7 @@ bool AreaTrigger::CreateServer(Map* map, AreaTriggerTemplate const* areaTriggerT
     Relocate(position.spawnPoint);
     if (!IsPositionValid())
     {
-        TC_LOG_ERROR("entities.areatrigger", "AreaTriggerServer (id %u) not created. Invalid coordinates (X: %f Y: %f)",
+        TC_LOG_ERROR("entities.areatrigger", "AreaTriggerServer (id {}) not created. Invalid coordinates (X: {} Y: {})",
             areaTriggerTemplate->Id.Id, GetPositionX(), GetPositionY());
         return false;
     }

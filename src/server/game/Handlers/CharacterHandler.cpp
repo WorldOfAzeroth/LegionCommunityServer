@@ -317,11 +317,11 @@ void WorldSession::HandleCharEnum(PreparedQueryResult const&  result)
 
             WorldPackets::Character::EnumCharactersResult::CharacterInfo& charInfo = charEnum.Characters.back();
 
-            TC_LOG_INFO("network", "Loading char guid %s from account %u.", charInfo.Guid.ToString().c_str(), GetAccountId());
+            TC_LOG_INFO("network", "Loading char guid {} from account {}.", charInfo.Guid.ToString(), GetAccountId());
 
             if (!Player::ValidateAppearance(charInfo.Race, charInfo.Class, charInfo.Sex, charInfo.HairStyle, charInfo.HairColor, charInfo.Face, charInfo.FacialHair, charInfo.Skin, charInfo.CustomDisplay))
             {
-                TC_LOG_ERROR("entities.player.loading", "Player %s has wrong Appearance values (Hair/Skin/Color), forcing recustomize", charInfo.Guid.ToString().c_str());
+                TC_LOG_ERROR("entities.player.loading", "Player {} has wrong Appearance values (Hair/Skin/Color), forcing recustomize", charInfo.Guid.ToString());
 
                 // Make sure customization always works properly - send all zeroes instead
                 charInfo.Skin = 0, charInfo.Face = 0, charInfo.HairStyle = 0, charInfo.HairColor = 0, charInfo.FacialHair = 0;
@@ -504,7 +504,7 @@ void WorldSession::HandleCharCreateOpcode(WorldPackets::Character::CreateCharact
     uint8 classExpansionRequirement = sObjectMgr->GetClassExpansionRequirement(charCreate.CreateInfo->Class);
     if (classExpansionRequirement > GetAccountExpansion())
     {
-        TC_LOG_ERROR("entities.player.cheat", "Expansion %u account:[%d] tried to Create character with expansion %u class (%u)",
+        TC_LOG_ERROR("entities.player.cheat", "Expansion {} account:[{}] tried to Create character with expansion {} class ({})",
             GetAccountExpansion(), GetAccountId(), classExpansionRequirement, charCreate.CreateInfo->Class);
         SendCharCreate(CHAR_CREATE_EXPANSION_CLASS);
         return;
@@ -743,7 +743,7 @@ void WorldSession::HandleCharCreateOpcode(WorldPackets::Character::CreateCharact
 
             SendCharCreate(CHAR_CREATE_SUCCESS);
 
-            TC_LOG_INFO("entities.player.character", "Account: %u (IP: %s) Create Character: %s %s", GetAccountId(), GetRemoteAddress().c_str(), createInfo->Name.c_str(), newChar.GetGUID().ToString().c_str());
+            TC_LOG_INFO("entities.player.character", "Account: {} (IP: {}) Create Character: %s %s", GetAccountId(), GetRemoteAddress(), createInfo->Name, newChar.GetGUID().ToString());
             sScriptMgr->OnPlayerCreate(&newChar);
             sCharacterCache->AddCharacterCacheEntry(newChar.GetGUID(), GetAccountId(), newChar.GetName(), newChar.GetByteValue(PLAYER_BYTES_3, PLAYER_BYTES_3_OFFSET_GENDER), newChar.GetRace(), newChar.GetClass(), newChar.GetLevel(), false);
 

@@ -24,7 +24,6 @@
 #include "vmapexport.h"
 #include "VMapDefinitions.h"
 #include <CascLib.h>
-#include <algorithm>
 #include <cstdio>
 
 bool ExtractSingleModel(std::string& fname)
@@ -82,9 +81,13 @@ void ExtractGameobjectModels()
 
     DB2CascFileSource source(CascStorage, "DBFilesClient\\GameObjectDisplayInfo.db2");
     DB2FileLoader db2;
-    if (!db2.Load(&source, GameobjectDisplayInfoLoadInfo::Instance()))
+    try
     {
-        printf("Fatal error: Invalid GameObjectDisplayInfo.db2 file format!\n");
+        db2.Load(&source, GameobjectDisplayInfoLoadInfo::Instance());
+    }
+    catch (std::exception const& e)
+    {
+        printf("Fatal error: Invalid GameObjectDisplayInfo.db2 file format!\n%s\n", e.what());
         exit(1);
     }
 

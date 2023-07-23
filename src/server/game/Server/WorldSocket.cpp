@@ -161,18 +161,28 @@ void WorldSocket::InitializeHandler(boost::system::error_code error, std::size_t
                 return;
             }
 
-            ByteBuffer buffer(std::move(_packetBuffer));
-            std::string initializer = buffer.ReadString(ClientConnectionInitialize.length());
-            if (initializer != ClientConnectionInitialize)
+            try
             {
-                CloseSocket();
-                return;
-            }
+                ByteBuffer buffer(std::move(_packetBuffer));
+                std::string initializer = buffer.ReadString(ClientConnectionInitialize.length());
+                if (initializer != ClientConnectionInitialize)
+                {
+                    CloseSocket();
+                    return;
+                }
 
-            uint8 terminator;
-            buffer >> terminator;
-            if (terminator != '\n')
+                uint8 terminator;
+                buffer >> terminator;
+                if (terminator != '\n')
+                {
+                    CloseSocket();
+                    return;
+                }
+            }
+            catch (ByteBufferException const& ex)
             {
+                TC_LOG_ERROR("network", "WorldSocket::InitializeHandler ByteBufferException {} occured while parsing initial packet from {}",
+                    ex.what(), GetRemoteIpAddress().to_string());
                 CloseSocket();
                 return;
             }
@@ -187,7 +197,7 @@ void WorldSocket::InitializeHandler(boost::system::error_code error, std::size_t
             if (z_res != Z_OK)
             {
                 CloseSocket();
-                TC_LOG_ERROR("network", "Can't initialize packet compression (zlib: deflateInit) Error code: %i (%s)", z_res, zError(z_res));
+                TC_LOG_ERROR("network", "Can't initialize packet compression (zlib: deflateInit) Error code: {} ({})", z_res, zError(z_res));
                 return;
             }
 
@@ -821,7 +831,7 @@ void WorldSocket::HandleAuthSessionCallback(std::shared_ptr<WorldPackets::Auth::
         return;
     }
 
-    TC_LOG_DEBUG("network", "WorldSocket::HandleAuthSession: Client '%s' authenticated successfully from %s.", authSession->RealmJoinTicket.c_str(), address.c_str());
+    TC_LOG_DEBUG("network", "WorldSocket::HandleAuthSession: Client '{}' authenticated successfully from {}.", authSession->RealmJoinTicket, address);
 
     // Update the last_ip in the database as it was successful for login
     stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_LAST_IP);

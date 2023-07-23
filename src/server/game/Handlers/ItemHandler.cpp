@@ -655,7 +655,7 @@ void WorldSession::SendListInventory(ObjectGuid vendorGuid)
 
             if (!sConditionMgr->IsObjectMeetingVendorItemConditions(vendor->GetEntry(), vendorItem->item, _player, vendor))
             {
-                TC_LOG_DEBUG("condition", "SendListInventory: conditions not met for creature entry %u item %u", vendor->GetEntry(), vendorItem->item);
+                TC_LOG_DEBUG("condition", "SendListInventory: conditions not met for creature entry {} item {}", vendor->GetEntry(), vendorItem->item);
                 continue;
             }
 
@@ -1299,7 +1299,7 @@ void WorldSession::HandleRemoveNewItem(WorldPackets::Item::RemoveNewItem& remove
     Item* item = _player->GetItemByGuid(removeNewItem.ItemGuid);
     if (!item)
     {
-        TC_LOG_DEBUG("network", "WorldSession::HandleRemoveNewItem: Item (%s) not found for %s!", removeNewItem.ItemGuid.ToString().c_str(), GetPlayerInfo().c_str());
+        TC_LOG_DEBUG("network", "WorldSession::HandleRemoveNewItem: Item ({}) not found for {}!", removeNewItem.ItemGuid.ToString(), GetPlayerInfo());
         return;
     }
 

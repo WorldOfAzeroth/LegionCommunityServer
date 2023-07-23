@@ -82,8 +82,6 @@ struct TC_COMMON_API DB2FileSource
     // Returns current read position in file
     virtual int64 GetPosition() const = 0;
 
-    virtual bool SetPosition(int64 position) = 0;
-
     virtual int64 GetFileSize() const = 0;
 
     virtual char const* GetFileName() const = 0;

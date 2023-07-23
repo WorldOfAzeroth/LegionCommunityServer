@@ -117,7 +117,7 @@ bool WDTFile::init(uint32 mapId)
                     }
                     else
                     {
-                        std::string fileName = Trinity::StringFormat("FILE%08X.xxx", mapObjDef.Id);
+                        std::string fileName = Trinity::StringFormat("FILE{:08X}.xxx", mapObjDef.Id);
                         ExtractSingleWmo(fileName);
                         MapObject::Extract(mapObjDef, fileName.c_str(), true, mapId, mapId, dirfile, nullptr);
                         Doodad::ExtractSet(WmoDoodads[fileName], mapObjDef, true, mapId, mapId, dirfile, nullptr);

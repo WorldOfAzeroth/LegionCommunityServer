@@ -25,10 +25,8 @@
 #include "VMapDefinitions.h"
 #include "vmapexport.h"
 #include "wdtfile.h"
-#include <algorithm>
 #include <CascLib.h>
 #include <boost/filesystem/operations.hpp>
-#include <fstream>
 #include <map>
 #include <unordered_map>
 #include <unordered_set>
@@ -369,24 +367,14 @@ static bool RetardCheck()
     return true;
 }
 
-//xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-// Main
-//
-// The program must be run with two command line arguments
-//
-// Arg1 - The source MPQ name (for testing reading and file find)
-// Arg2 - Listfile name
-//
-
 int main(int argc, char ** argv)
 {
     Trinity::Banner::Show("VMAP data extractor", [](char const* text) { printf("%s\n", text); }, nullptr);
 
     bool success = true;
-    const char *versionString = "V4.06 2018_02";
 
     // Use command line arguments, when some
-    if (!processArgv(argc, argv, versionString))
+    if (!processArgv(argc, argv, VMAP::VMAP_MAGIC))
         return 1;
 
     if (!RetardCheck())
@@ -407,11 +395,11 @@ int main(int argc, char ** argv)
         }
     }
 
-    printf("Extract %s. Beginning work ....\n\n", versionString);
+    printf("Extract %s. Beginning work ....\n", VMAP::VMAP_MAGIC);
     //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     // Create the working directory
     if (mkdir(szWorkDirWmo
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__DragonFly__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
                     , 0711
 #endif
                     ))
@@ -438,7 +426,7 @@ int main(int argc, char ** argv)
             continue;
         }
 
-        printf("Detected client build: %u\n\n", build);
+        printf("Detected client build %u for locale %s\n\n", build, localeNames[i]);
         break;
     }
 
@@ -459,9 +447,13 @@ int main(int argc, char ** argv)
 
         DB2CascFileSource source(CascStorage, "DBFilesClient\\Map.db2");
         DB2FileLoader db2;
-        if (!db2.Load(&source, MapLoadInfo::Instance()))
+        try
         {
-            printf("Fatal error: Invalid Map.db2 file format! %s\n", CASC::HumanReadableCASCError(GetLastError()));
+            db2.Load(&source, MapLoadInfo::Instance());
+        }
+        catch (std::exception const& e)
+        {
+            printf("Fatal error: Invalid Map.db2 file format! %s\n%s\n",  CASC::HumanReadableCASCError(GetLastError()), e.what());
             exit(1);
         }
 

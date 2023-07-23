@@ -2787,13 +2787,13 @@ bool Player::AddTalent(TalentEntry const* talent, uint8 spec, bool learning)
     SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(talent->SpellID, DIFFICULTY_NONE);
     if (!spellInfo)
     {
-        TC_LOG_ERROR("spells", "Player::AddTalent: Spell (ID: %u) does not exist.", talent->SpellID);
+        TC_LOG_ERROR("spells", "Player::AddTalent: Spell (ID: {}) does not exist.", talent->SpellID);
         return false;
     }
 
     if (!SpellMgr::IsSpellValid(spellInfo, this, false))
     {
-        TC_LOG_ERROR("spells", "Player::AddTalent: Spell (ID: %u) is invalid", talent->SpellID);
+        TC_LOG_ERROR("spells", "Player::AddTalent: Spell (ID: {}) is invalid", talent->SpellID);
         return false;
     }
 
@@ -2867,12 +2867,12 @@ bool Player::AddSpell(uint32 spellId, bool active, bool learning, bool dependent
         // do character spell book cleanup (all characters)
         if (!IsInWorld() && !learning)                       // spell load case
         {
-            TC_LOG_ERROR("spells", "Player::AddSpell: Spell (ID: %u) does not exist. deleting for all characters in `character_spell`.", spellId);
+            TC_LOG_ERROR("spells", "Player::AddSpell: Spell (ID: {}) does not exist. deleting for all characters in `character_spell`.", spellId);
 
             DeleteSpellFromAllPlayers(spellId);
         }
         else
-            TC_LOG_ERROR("spells", "Player::AddSpell: Spell (ID: %u) does not exist", spellId);
+            TC_LOG_ERROR("spells", "Player::AddSpell: Spell (ID: {}) does not exist", spellId);
 
         return false;
     }
@@ -2882,12 +2882,12 @@ bool Player::AddSpell(uint32 spellId, bool active, bool learning, bool dependent
         // do character spell book cleanup (all characters)
         if (!IsInWorld() && !learning)                       // spell load case
         {
-            TC_LOG_ERROR("spells", "Player::AddSpell: Spell (ID: %u) is invalid. deleting for all characters in `character_spell`.", spellId);
+            TC_LOG_ERROR("spells", "Player::AddSpell: Spell (ID: {}) is invalid. deleting for all characters in `character_spell`.", spellId);
 
             DeleteSpellFromAllPlayers(spellId);
         }
         else
-            TC_LOG_ERROR("spells", "Player::AddSpell: Spell (ID: %u) is invalid", spellId);
+            TC_LOG_ERROR("spells", "Player::AddSpell: Spell (ID: {}) is invalid", spellId);
 
         return false;
     }
@@ -4716,7 +4716,7 @@ void Player::CleanupChannels()
             if (ch->IsConstant())
                 cMgr->LeftChannel(ch->GetChannelId(), ch->GetZoneEntry());
     }
-    TC_LOG_DEBUG("chat.system", "Player::CleanupChannels: Channels of player '%s' (%s) cleaned up.", GetName().c_str(), GetGUID().ToString().c_str());
+    TC_LOG_DEBUG("chat.system", "Player::CleanupChannels: Channels of player '{}' ({}) cleaned up.", GetName(), GetGUID().ToString());
 }
 
 void Player::UpdateLocalChannels(uint32 newZone)
@@ -4809,8 +4809,8 @@ void Player::HandleBaseModFlatValue(BaseModGroup modGroup, float amount, bool ap
 {
     if (modGroup >= BASEMOD_END)
     {
-        TC_LOG_ERROR("spells", "Player::HandleBaseModValue: Invalid BaseModGroup/BaseModType (%u/%u) for player '%s' (%s)",
-            modGroup, FLAT_MOD, GetName().c_str(), GetGUID().ToString().c_str());
+        TC_LOG_ERROR("spells", "Player::HandleBaseModValue: Invalid BaseModGroup/BaseModType ({}/{}) for player '{}' ({})",
+            modGroup, FLAT_MOD, GetName(), GetGUID().ToString());
         return;
     }
 
@@ -4822,8 +4822,8 @@ void Player::ApplyBaseModPctValue(BaseModGroup modGroup, float pct)
 {
     if (modGroup >= BASEMOD_END)
     {
-        TC_LOG_ERROR("spells", "Player::HandleBaseModValue: Invalid BaseModGroup/BaseModType (%u/%u) for player '%s' (%s)",
-            modGroup, FLAT_MOD, GetName().c_str(), GetGUID().ToString().c_str());
+        TC_LOG_ERROR("spells", "Player::HandleBaseModValue: Invalid BaseModGroup/BaseModType ({}/{}) for player '{}' ({})",
+            modGroup, FLAT_MOD, GetName(), GetGUID().ToString());
         return;
     }
 
@@ -4922,8 +4922,8 @@ float Player::GetBaseModValue(BaseModGroup modGroup, BaseModType modType) const
 {
     if (modGroup >= BASEMOD_END || modType >= MOD_END)
     {
-        TC_LOG_ERROR("spells", "Player::GetBaseModValue: Invalid BaseModGroup/BaseModType (%u/%u) for player '%s' (%s)",
-            modGroup, modType, GetName().c_str(), GetGUID().ToString().c_str());
+        TC_LOG_ERROR("spells", "Player::GetBaseModValue: Invalid BaseModGroup/BaseModType ({}/{}) for player '{}' ({})",
+            modGroup, modType, GetName(), GetGUID().ToString());
         return 0.0f;
     }
 
@@ -4934,8 +4934,8 @@ float Player::GetTotalBaseModValue(BaseModGroup modGroup) const
 {
     if (modGroup >= BASEMOD_END)
     {
-        TC_LOG_ERROR("spells", "Player::GetTotalBaseModValue: Invalid BaseModGroup (%u) for player '%s' (%s)",
-            modGroup, GetName().c_str(), GetGUID().ToString().c_str());
+        TC_LOG_ERROR("spells", "Player::GetTotalBaseModValue: Invalid BaseModGroup ({}) for player '{}' ({})",
+            modGroup, GetName(), GetGUID().ToString());
         return 0.0f;
     }
 
@@ -5645,15 +5645,15 @@ void Player::SetSkill(uint32 id, uint16 step, uint16 newVal, uint16 maxVal)
 
         if (!skillSlot)
         {
-            TC_LOG_ERROR("misc", "Tried to add skill %u but player %s (%s) cannot have additional skills", id, GetName().c_str(), GetGUID().ToString().c_str());
+            TC_LOG_ERROR("misc", "Tried to add skill {} but player {} ({}) cannot have additional skills", id, GetName(), GetGUID().ToString());
             return;
         }
 
         SkillLineEntry const* skillEntry = sSkillLineStore.LookupEntry(id);
         if (!skillEntry)
         {
-            TC_LOG_ERROR("misc", "Player::SetSkill: Skill (SkillID: %u) not found in SkillLineStore for player '%s' (%s)",
-                id, GetName().c_str(), GetGUID().ToString().c_str());
+            TC_LOG_ERROR("misc", "Player::SetSkill: Skill (SkillID: {}) not found in SkillLineStore for player '{}' ({})",
+                id, GetName(), GetGUID().ToString());
             return;
         }
 
@@ -7310,8 +7310,8 @@ void Player::DuelComplete(DuelCompleteType type)
     duel->State = DUEL_STATE_COMPLETED;
     opponent->duel->State = DUEL_STATE_COMPLETED;
 
-    TC_LOG_DEBUG("entities.unit", "Player::DuelComplete: Player '%s' (%s), Opponent: '%s' (%s)",
-        GetName().c_str(), GetGUID().ToString().c_str(), opponent->GetName().c_str(), opponent->GetGUID().ToString().c_str());
+    TC_LOG_DEBUG("entities.unit", "Player::DuelComplete: Player '{}' ({}), Opponent: '{}' ({})",
+        GetName(), GetGUID().ToString(), opponent->GetName(), opponent->GetGUID().ToString());
 
     WorldPackets::Duel::DuelComplete duelCompleted;
     duelCompleted.Started = type != DUEL_INTERRUPTED;
@@ -8509,8 +8509,8 @@ void Player::SendLoot(Loot& loot, bool aeLooting)
     if (!GetLootGUID().IsEmpty() && !aeLooting)
         m_session->DoLootReleaseAll();
 
-    TC_LOG_DEBUG("loot", "Player::SendLoot: Player: '%s' (%s), Loot: %s",
-        GetName().c_str(), GetGUID().ToString().c_str(), loot.GetOwnerGUID().ToString().c_str());
+    TC_LOG_DEBUG("loot", "Player::SendLoot: Player: '{}' ({}), Loot: {}",
+        GetName(), GetGUID().ToString(), loot.GetOwnerGUID().ToString());
 
     if (!loot.GetOwnerGUID().IsItem() && !aeLooting)
         SetLootGUID(loot.GetOwnerGUID());
@@ -8574,7 +8574,7 @@ void Player::SendInitWorldStates(uint32 zoneId, uint32 areaId)
 {
     uint32 mapId = GetMapId();
 
-    TC_LOG_DEBUG("network", "Player::SendInitWorldStates: Sending SMSG_INIT_WORLD_STATES for Map: %u, Zone: %u", mapId, zoneId);
+    TC_LOG_DEBUG("network", "Player::SendInitWorldStates: Sending SMSG_INIT_WORLD_STATES for Map: {}, Zone: {}", mapId, zoneId);
 
     WorldPackets::WorldState::InitWorldStates packet;
     packet.MapID = mapId;
@@ -14755,8 +14755,8 @@ bool Player::SatisfyQuestMinLevel(Quest const* qInfo, bool msg) const
         if (msg)
         {
             SendCanTakeQuestResponse(QUEST_ERR_FAILED_LOW_LEVEL);
-            TC_LOG_DEBUG("misc", "Player::SatisfyQuestMinLevel: Sent QUEST_ERR_FAILED_LOW_LEVEL (QuestID: %u) because player '%s' (%s) doesn't have the required (min) level.",
-                qInfo->GetQuestId(), GetName().c_str(), GetGUID().ToString().c_str());
+            TC_LOG_DEBUG("misc", "Player::SatisfyQuestMinLevel: Sent QUEST_ERR_FAILED_LOW_LEVEL (QuestID: {}) because player '{}' ({}) doesn't have the required (min) level.",
+                qInfo->GetQuestId(), GetName(), GetGUID().ToString());
         }
         return false;
     }
@@ -19990,18 +19990,18 @@ void Player::outDebugValues() const
     if (!sLog->ShouldLog("entities.unit", LOG_LEVEL_DEBUG))
         return;
 
-    TC_LOG_DEBUG("entities.unit", "HP is: \t\t\t" UI64FMTD "\t\tMP is: \t\t\t%u", GetMaxHealth(), GetMaxPower(POWER_MANA));
-    TC_LOG_DEBUG("entities.unit", "AGILITY is: \t\t%f\t\tSTRENGTH is: \t\t%f", GetStat(STAT_AGILITY), GetStat(STAT_STRENGTH));
-    TC_LOG_DEBUG("entities.unit", "INTELLECT is: \t\t%f", GetStat(STAT_INTELLECT));
-    TC_LOG_DEBUG("entities.unit", "STAMINA is: \t\t%f", GetStat(STAT_STAMINA));
-    TC_LOG_DEBUG("entities.unit", "Armor is: \t\t%u\t\tBlock is: \t\t%f", GetArmor(), GetFloatValue(PLAYER_BLOCK_PERCENTAGE));
-    TC_LOG_DEBUG("entities.unit", "HolyRes is: \t\t%u\t\tFireRes is: \t\t%u", GetResistance(SPELL_SCHOOL_MASK_HOLY), GetResistance(SPELL_SCHOOL_MASK_FIRE));
-    TC_LOG_DEBUG("entities.unit", "NatureRes is: \t\t%u\t\tFrostRes is: \t\t%u", GetResistance(SPELL_SCHOOL_MASK_NATURE), GetResistance(SPELL_SCHOOL_MASK_FROST));
-    TC_LOG_DEBUG("entities.unit", "ShadowRes is: \t\t%u\t\tArcaneRes is: \t\t%u", GetResistance(SPELL_SCHOOL_MASK_SHADOW), GetResistance(SPELL_SCHOOL_MASK_ARCANE));
-    TC_LOG_DEBUG("entities.unit", "MIN_DAMAGE is: \t\t%f\tMAX_DAMAGE is: \t\t%f", GetFloatValue(UNIT_FIELD_MINDAMAGE), GetFloatValue(UNIT_FIELD_MAXDAMAGE));
-    TC_LOG_DEBUG("entities.unit", "MIN_OFFHAND_DAMAGE is: \t%f\tMAX_OFFHAND_DAMAGE is: \t%f", GetFloatValue(UNIT_FIELD_MINOFFHANDDAMAGE), GetFloatValue(UNIT_FIELD_MAXOFFHANDDAMAGE));
-    TC_LOG_DEBUG("entities.unit", "MIN_RANGED_DAMAGE is: \t%f\tMAX_RANGED_DAMAGE is: \t%f", GetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE), GetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE));
-    TC_LOG_DEBUG("entities.unit", "ATTACK_TIME is: \t%u\t\tRANGE_ATTACK_TIME is: \t%u", GetBaseAttackTime(BASE_ATTACK), GetBaseAttackTime(RANGED_ATTACK));
+    TC_LOG_DEBUG("entities.unit", "HP is: \t\t\t{}\t\tMP is: \t\t\t{}", GetMaxHealth(), GetMaxPower(POWER_MANA));
+    TC_LOG_DEBUG("entities.unit", "AGILITY is: \t\t{}\t\tSTRENGTH is: \t\t{}", GetStat(STAT_AGILITY), GetStat(STAT_STRENGTH));
+    TC_LOG_DEBUG("entities.unit", "INTELLECT is: \t\t{}", GetStat(STAT_INTELLECT));
+    TC_LOG_DEBUG("entities.unit", "STAMINA is: \t\t{}", GetStat(STAT_STAMINA));
+    TC_LOG_DEBUG("entities.unit", "Armor is: \t\t{}\t\tBlock is: \t\t{}", GetArmor(), GetFloatValue(PLAYER_BLOCK_PERCENTAGE));
+    TC_LOG_DEBUG("entities.unit", "HolyRes is: \t\t{}\t\tFireRes is: \t\t{}", GetResistance(SPELL_SCHOOL_MASK_HOLY), GetResistance(SPELL_SCHOOL_MASK_FIRE));
+    TC_LOG_DEBUG("entities.unit", "NatureRes is: \t\t{}\t\tFrostRes is: \t\t{}", GetResistance(SPELL_SCHOOL_MASK_NATURE), GetResistance(SPELL_SCHOOL_MASK_FROST));
+    TC_LOG_DEBUG("entities.unit", "ShadowRes is: \t\t{}\t\tArcaneRes is: \t\t{}", GetResistance(SPELL_SCHOOL_MASK_SHADOW), GetResistance(SPELL_SCHOOL_MASK_ARCANE));
+    TC_LOG_DEBUG("entities.unit", "MIN_DAMAGE is: \t\t{}\tMAX_DAMAGE is: \t\t{}", GetFloatValue(UNIT_FIELD_MINDAMAGE), GetFloatValue(UNIT_FIELD_MAXDAMAGE));
+    TC_LOG_DEBUG("entities.unit", "MIN_OFFHAND_DAMAGE is: \t{}\tMAX_OFFHAND_DAMAGE is: \t{}", GetFloatValue(UNIT_FIELD_MINOFFHANDDAMAGE), GetFloatValue(UNIT_FIELD_MAXOFFHANDDAMAGE));
+    TC_LOG_DEBUG("entities.unit", "MIN_RANGED_DAMAGE is: \t{}\tMAX_RANGED_DAMAGE is: \t{}", GetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE), GetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE));
+    TC_LOG_DEBUG("entities.unit", "ATTACK_TIME is: \t{}\t\tRANGE_ATTACK_TIME is: \t{}", GetBaseAttackTime(BASE_ATTACK), GetBaseAttackTime(RANGED_ATTACK));
 }
 
 /*********************************************************/
@@ -20321,8 +20321,8 @@ void Player::RemovePet(Pet* pet, PetSaveMode mode, bool returnreagent)
 
     if (pet)
     {
-        TC_LOG_DEBUG("entities.pet", "Player::RemovePet: Player '%s' (%s), Pet (Entry: %u, Mode: %u, ReturnReagent: %u)",
-            GetName().c_str(), GetGUID().ToString().c_str(), pet->GetEntry(), mode, returnreagent);
+        TC_LOG_DEBUG("entities.pet", "Player::RemovePet: Player '{}' ({}), Pet (Entry: {}, Mode: {}, ReturnReagent: {})",
+            GetName(), GetGUID().ToString(), pet->GetEntry(), mode, returnreagent);
 
         if (pet->m_removed)
             return;
@@ -20592,7 +20592,7 @@ void Player::Whisper(uint32 textId, Player* target, bool /*isBossWhisper = false
     BroadcastTextEntry const* bct = sBroadcastTextStore.LookupEntry(textId);
     if (!bct)
     {
-        TC_LOG_ERROR("entities.unit", "WorldObject::Whisper: `broadcast_text` was not %u found", textId);
+        TC_LOG_ERROR("entities.unit", "WorldObject::Whisper: `broadcast_text` was not {} found", textId);
         return;
     }
 
@@ -20735,8 +20735,8 @@ void Player::VehicleSpellInitialize()
 
         if (!sConditionMgr->IsObjectMeetingVehicleSpellConditions(vehicle->GetEntry(), spellId, this, vehicle))
         {
-            TC_LOG_DEBUG("condition", "Player::VehicleSpellInitialize: Player '%s' (%s) doesn't meet conditions for vehicle (Entry: %u, Spell: %u)",
-                GetName().c_str(), GetGUID().ToString().c_str(), vehicle->ToCreature()->GetEntry(), spellId);
+            TC_LOG_DEBUG("condition", "Player::VehicleSpellInitialize: Player '{}' ({}) doesn't meet conditions for vehicle (Entry: {}, Spell: {})",
+                GetName(), GetGUID().ToString(), vehicle->ToCreature()->GetEntry(), spellId);
             continue;
         }
 
@@ -21445,7 +21445,7 @@ void Player::ContinueTaxiFlight() const
     if (!sourceNode)
         return;
 
-    TC_LOG_DEBUG("entities.unit", "Player::ContinueTaxiFlight: Restart %s taxi flight", GetGUID().ToString().c_str());
+    TC_LOG_DEBUG("entities.unit", "Player::ContinueTaxiFlight: Restart {} taxi flight", GetGUID().ToString());
 
     uint32 mountDisplayId = sObjectMgr->GetTaxiMountDisplayId(sourceNode, GetTeam(), true);
     if (!mountDisplayId)
@@ -21626,8 +21626,8 @@ bool Player::BuyCurrencyFromVendorSlot(ObjectGuid vendorGuid, uint32 vendorSlot,
     Creature* creature = GetNPCIfCanInteractWith(vendorGuid, UNIT_NPC_FLAG_VENDOR, UNIT_NPC_FLAG_2_NONE);
     if (!creature)
     {
-        TC_LOG_DEBUG("network", "Player::BuyCurrencyFromVendorSlot: Vendor (%s) not found or player '%s' (%s) can't interact with him.",
-            vendorGuid.ToString().c_str(), GetName().c_str(), GetGUID().ToString().c_str());
+        TC_LOG_DEBUG("network", "Player::BuyCurrencyFromVendorSlot: Vendor ({}) not found or player '{}' ({}) can't interact with him.",
+            vendorGuid.ToString(), GetName(), GetGUID().ToString());
         SendBuyError(BUY_ERR_DISTANCE_TOO_FAR, nullptr, currency, 0);
         return false;
     }
@@ -21794,16 +21794,16 @@ bool Player::BuyItemFromVendorSlot(ObjectGuid vendorguid, uint32 vendorslot, uin
     Creature* creature = GetNPCIfCanInteractWith(vendorguid, UNIT_NPC_FLAG_VENDOR, UNIT_NPC_FLAG_2_NONE);
     if (!creature)
     {
-        TC_LOG_DEBUG("network", "Player::BuyItemFromVendorSlot: Vendor (%s) not found or player '%s' (%s) can't interact with him.",
-            vendorguid.ToString().c_str(), GetName().c_str(), GetGUID().ToString().c_str());
+        TC_LOG_DEBUG("network", "Player::BuyItemFromVendorSlot: Vendor ({}) not found or player '{}' ({}) can't interact with him.",
+            vendorguid.ToString(), GetName(), GetGUID().ToString());
         SendBuyError(BUY_ERR_DISTANCE_TOO_FAR, nullptr, item, 0);
         return false;
     }
 
     if (!sConditionMgr->IsObjectMeetingVendorItemConditions(creature->GetEntry(), item, this, creature))
     {
-        TC_LOG_DEBUG("condition", "Player::BuyItemFromVendorSlot: Player '%s' (%s) doesn't meed conditions for creature (Entry: %u, Item: %u)",
-            GetName().c_str(), GetGUID().ToString().c_str(), creature->GetEntry(), item);
+        TC_LOG_DEBUG("condition", "Player::BuyItemFromVendorSlot: Player '{}' ({}) doesn't meed conditions for creature (Entry: {}, Item: {})",
+            GetName(), GetGUID().ToString(), creature->GetEntry(), item);
         SendBuyError(BUY_ERR_CANT_FIND_ITEM, creature, item, 0);
         return false;
     }
@@ -22031,8 +22031,8 @@ void Player::UpdateHomebindTime(uint32 time)
         m_HomebindTimer = 60000;
         // send message to player
         SendRaidGroupOnlyMessage(RAID_GROUP_ERR_REQUIREMENTS_UNMATCH, m_HomebindTimer);
-        TC_LOG_DEBUG("maps", "Player::UpdateHomebindTime: Player '%s' (%s) will be teleported to homebind in 60 seconds",
-            GetName().c_str(), GetGUID().ToString().c_str());
+        TC_LOG_DEBUG("maps", "Player::UpdateHomebindTime: Player '{}' ({}) will be teleported to homebind in 60 seconds",
+            GetName(), GetGUID().ToString());
     }
 }
 
@@ -25170,7 +25170,7 @@ void Player::HandleFall(MovementInfo const& movementInfo)
 {
     // calculate total z distance of the fall
     float z_diff = m_lastFallZ - movementInfo.pos.GetPositionZ();
-    //TC_LOG_DEBUG("misc", "zDiff = %f", z_diff);
+    //TC_LOG_DEBUG("misc", "zDiff = {}", z_diff);
 
     //Players with low fall distance, Feather Fall or physical immunity (charges used) are ignored
     // 14.57 can be calculated by resolving damageperc formula below to 0
@@ -25480,13 +25480,13 @@ bool Player::AddPvpTalent(PvpTalentEntry const* talent, uint8 activeTalentGroup,
     SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(talent->SpellID, DIFFICULTY_NONE);
     if (!spellInfo)
     {
-        TC_LOG_ERROR("spells", "Player::AddPvpTalent: Spell (ID: %u) does not exist.", talent->SpellID);
+        TC_LOG_ERROR("spells", "Player::AddTalent: Spell (ID: {}) does not exist.", talent->SpellID);
         return false;
     }
 
     if (!SpellMgr::IsSpellValid(spellInfo, this, false))
     {
-        TC_LOG_ERROR("spells", "Player::AddPvpTalent: Spell (ID: %u) is invalid", talent->SpellID);
+        TC_LOG_ERROR("spells", "Player::AddTalent: Spell (ID: {}) is invalid", talent->SpellID);
         return false;
     }
 
@@ -26998,7 +26998,7 @@ Pet* Player::SummonPet(uint32 entry, Optional<PetSaveMode> slot, float x, float 
     pet->Relocate(x, y, z, ang);
     if (!pet->IsPositionValid())
     {
-        TC_LOG_ERROR("misc", "Player::SummonPet: Pet (%s, Entry: %d) not summoned. Suggested coordinates aren't valid (X: %f Y: %f)", pet->GetGUID().ToString().c_str(), pet->GetEntry(), pet->GetPositionX(), pet->GetPositionY());
+        TC_LOG_ERROR("misc", "Player::SummonPet: Pet ({}, Entry: {}) not summoned. Suggested coordinates aren't valid (X: {} Y: {})", pet->GetGUID().ToString(), pet->GetEntry(), pet->GetPositionX(), pet->GetPositionY());
         delete pet;
         return nullptr;
     }
@@ -27007,7 +27007,7 @@ Pet* Player::SummonPet(uint32 entry, Optional<PetSaveMode> slot, float x, float 
     uint32 pet_number = sObjectMgr->GeneratePetNumber();
     if (!pet->Create(map->GenerateLowGuid<HighGuid::Pet>(), map, entry, pet_number))
     {
-        TC_LOG_ERROR("misc", "Player::SummonPet: No such creature entry %u", entry);
+        TC_LOG_ERROR("misc", "Player::SummonPet: No such creature entry {}", entry);
         delete pet;
         return nullptr;
     }

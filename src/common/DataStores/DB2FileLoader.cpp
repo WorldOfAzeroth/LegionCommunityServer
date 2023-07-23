@@ -462,7 +462,7 @@ char* DB2FileLoaderRegularImpl::AutoProduceStrings(char** indexTable, uint32 ind
             }
         }
 
-        TC_LOG_ERROR("", "Attempted to load %s which has locales %s as %s. Check if you placed your localized db2 files in correct directory.", _fileName, str.str().c_str(), localeNames[locale]);
+        TC_LOG_ERROR("", "Attempted to load {} which has locales {} as {}. Check if you placed your localized db2 files in correct directory.", _fileName, str.str(), localeNames[locale]);
         return nullptr;
     }
 
@@ -937,7 +937,7 @@ char* DB2FileLoaderSparseImpl::AutoProduceData(uint32& maxId, char**& indexTable
 char* DB2FileLoaderSparseImpl::AutoProduceStrings(char** indexTable, uint32 indexTableSize, uint32 locale)
 {
     if (_loadInfo->Meta->FieldCount != _header->FieldCount)
-        throw DB2FileLoadException(Trinity::StringFormat("Found unsupported parent index in sparse db2 %s", _fileName));
+        throw DB2FileLoadException(Trinity::StringFormat("Found unsupported parent index in sparse db2 {}", _fileName));
 
     if (!(_header->Locale & (1 << locale)))
     {
@@ -952,7 +952,7 @@ char* DB2FileLoaderSparseImpl::AutoProduceStrings(char** indexTable, uint32 inde
             }
         }
 
-        TC_LOG_ERROR("", "Attempted to load %s which has locales %s as %s. Check if you placed your localized db2 files in correct directory.", _fileName, str.str().c_str(), localeNames[locale]);
+        TC_LOG_ERROR("", "Attempted to load {} which has locales {} as {}. Check if you placed your localized db2 files in correct directory.", _fileName, str.str(), localeNames[locale]);
         return nullptr;
     }
 

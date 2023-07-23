@@ -255,8 +255,8 @@ void WorldSession::SendLfgUpdateStatus(lfg::LfgUpdateData const& updateData, boo
             break;
     }
 
-    TC_LOG_DEBUG("lfg", "SMSG_LFG_UPDATE_STATUS %s updatetype: %u, party %s",
-        GetPlayerInfo().c_str(), updateData.updateType, party ? "true" : "false");
+    TC_LOG_DEBUG("lfg", "SMSG_LFG_UPDATE_STATUS {} updatetype: {}, party {}",
+        GetPlayerInfo(), updateData.updateType, party ? "true" : "false");
 
     WorldPackets::LFG::LFGUpdateStatus lfgUpdateStatus;
     if (WorldPackets::LFG::RideTicket const* ticket = sLFGMgr->GetTicket(_player->GetGUID()))
@@ -281,8 +281,8 @@ void WorldSession::SendLfgUpdateStatus(lfg::LfgUpdateData const& updateData, boo
 
 void WorldSession::SendLfgRoleChosen(ObjectGuid guid, uint8 roles)
 {
-    TC_LOG_DEBUG("lfg", "SMSG_LFG_ROLE_CHOSEN %s guid: %s roles: %u",
-        GetPlayerInfo().c_str(), guid.ToString().c_str(), roles);
+    TC_LOG_DEBUG("lfg", "SMSG_LFG_ROLE_CHOSEN {} guid: {} roles: {}",
+        GetPlayerInfo(), guid.ToString(), roles);
 
     WorldPackets::LFG::RoleChosen roleChosen;
     roleChosen.Player = guid;
@@ -299,7 +299,7 @@ void WorldSession::SendLfgRoleCheckUpdate(lfg::LfgRoleCheck const& roleCheck)
     else
         dungeons = roleCheck.dungeons;
 
-    TC_LOG_DEBUG("lfg", "SMSG_LFG_ROLE_CHECK_UPDATE %s", GetPlayerInfo().c_str());
+    TC_LOG_DEBUG("lfg", "SMSG_LFG_ROLE_CHECK_UPDATE {}", GetPlayerInfo());
     WorldPackets::LFG::LFGRoleCheckUpdate lfgRoleCheckUpdate;
     lfgRoleCheckUpdate.PartyIndex = 127;
     lfgRoleCheckUpdate.RoleCheckStatus = roleCheck.state;
@@ -330,8 +330,8 @@ void WorldSession::SendLfgRoleCheckUpdate(lfg::LfgRoleCheck const& roleCheck)
 
 void WorldSession::SendLfgJoinResult(lfg::LfgJoinResultData const& joinData)
 {
-    TC_LOG_DEBUG("lfg", "SMSG_LFG_JOIN_RESULT %s checkResult: %u checkValue: %u",
-        GetPlayerInfo().c_str(), joinData.result, joinData.state);
+    TC_LOG_DEBUG("lfg", "SMSG_LFG_JOIN_RESULT {} checkResult: {} checkValue: {}",
+        GetPlayerInfo(), joinData.result, joinData.state);
 
     WorldPackets::LFG::LFGJoinResult lfgJoinResult;
     if (WorldPackets::LFG::RideTicket const* ticket = sLFGMgr->GetTicket(GetPlayer()->GetGUID()))
@@ -348,8 +348,8 @@ void WorldSession::SendLfgJoinResult(lfg::LfgJoinResultData const& joinData)
 
         for (lfg::LfgLockMap::const_iterator itr = it->second.begin(); itr != it->second.end(); ++itr)
         {
-            TC_LOG_TRACE("lfg", "SendLfgJoinResult:: %s DungeonID: %u Lock status: %u Required itemLevel: %u Current itemLevel: %f",
-                it->first.ToString().c_str(), (itr->first & 0x00FFFFFF), itr->second.lockStatus, itr->second.requiredItemLevel, itr->second.currentItemLevel);
+            TC_LOG_TRACE("lfg", "SendLfgJoinResult:: {} DungeonID: {} Lock status: {} Required itemLevel: {} Current itemLevel: {}",
+                it->first.ToString(), (itr->first & 0x00FFFFFF), itr->second.lockStatus, itr->second.requiredItemLevel, itr->second.currentItemLevel);
 
             blackList.Slots.emplace_back(itr->first, itr->second.lockStatus, itr->second.requiredItemLevel, itr->second.currentItemLevel);
         }
@@ -360,10 +360,10 @@ void WorldSession::SendLfgJoinResult(lfg::LfgJoinResultData const& joinData)
 
 void WorldSession::SendLfgQueueStatus(lfg::LfgQueueStatusData const& queueData)
 {
-    TC_LOG_DEBUG("lfg", "SMSG_LFG_QUEUE_STATUS %s state: %s, dungeon: %u, waitTime: %d, "
-        "avgWaitTime: %d, waitTimeTanks: %d, waitTimeHealer: %d, waitTimeDps: %d, "
-        "queuedTime: %u, tanks: %u, healers: %u, dps: %u",
-        GetPlayerInfo().c_str(), lfg::GetStateString(sLFGMgr->GetState(GetPlayer()->GetGUID())).c_str(), queueData.dungeonId, queueData.waitTime, queueData.waitTimeAvg,
+    TC_LOG_DEBUG("lfg", "SMSG_LFG_QUEUE_STATUS {} state: {}, dungeon: {}, waitTime: {}, "
+        "avgWaitTime: {}, waitTimeTanks: {}, waitTimeHealer: {}, waitTimeDps: {}, "
+        "queuedTime: {}, tanks: {}, healers: {}, dps: {}",
+        GetPlayerInfo(), lfg::GetStateString(sLFGMgr->GetState(GetPlayer()->GetGUID())), queueData.dungeonId, queueData.waitTime, queueData.waitTimeAvg,
         queueData.waitTimeTank, queueData.waitTimeHealer, queueData.waitTimeDps,
         queueData.queuedTime, queueData.tanks, queueData.healers, queueData.dps);
 
@@ -388,8 +388,8 @@ void WorldSession::SendLfgPlayerReward(lfg::LfgPlayerRewardData const& rewardDat
     if (!rewardData.rdungeonEntry || !rewardData.sdungeonEntry || !rewardData.quest)
         return;
 
-    TC_LOG_DEBUG("lfg", "SMSG_LFG_PLAYER_REWARD %s rdungeonEntry: %u, sdungeonEntry: %u, done: %u",
-        GetPlayerInfo().c_str(), rewardData.rdungeonEntry, rewardData.sdungeonEntry, rewardData.done);
+    TC_LOG_DEBUG("lfg", "SMSG_LFG_PLAYER_REWARD {} rdungeonEntry: {}, sdungeonEntry: {}, done: {}",
+        GetPlayerInfo(), rewardData.rdungeonEntry, rewardData.sdungeonEntry, rewardData.done);
 
     WorldPackets::LFG::LFGPlayerReward lfgPlayerReward;
     lfgPlayerReward.QueuedSlot = rewardData.rdungeonEntry;
@@ -423,12 +423,12 @@ void WorldSession::SendLfgBootProposalUpdate(lfg::LfgPlayerBoot const& boot)
                 ++agreeNum;
         }
     }
-    TC_LOG_DEBUG("lfg", "SMSG_LFG_BOOT_PROPOSAL_UPDATE %s inProgress: %u - "
-        "didVote: %u - agree: %u - victim: %s votes: %u - agrees: %u - left: %u - "
-        "needed: %u - reason %s",
-        GetPlayerInfo().c_str(), uint8(boot.inProgress), uint8(playerVote != lfg::LFG_ANSWER_PENDING),
-        uint8(playerVote == lfg::LFG_ANSWER_AGREE), boot.victim.ToString().c_str(), votesNum, agreeNum,
-        secsleft, lfg::LFG_GROUP_KICK_VOTES_NEEDED, boot.reason.c_str());
+    TC_LOG_DEBUG("lfg", "SMSG_LFG_BOOT_PROPOSAL_UPDATE {} inProgress: {} - "
+        "didVote: {} - agree: {} - victim: {} votes: {} - agrees: {} - left: {} - "
+        "needed: {} - reason {}",
+        GetPlayerInfo(), uint8(boot.inProgress), uint8(playerVote != lfg::LFG_ANSWER_PENDING),
+        uint8(playerVote == lfg::LFG_ANSWER_AGREE), boot.victim.ToString(), votesNum, agreeNum,
+        secsleft, lfg::LFG_GROUP_KICK_VOTES_NEEDED, boot.reason);
 
     WorldPackets::LFG::LfgBootPlayer lfgBootPlayer;
     lfgBootPlayer.Info.VoteInProgress = boot.inProgress;
@@ -451,8 +451,8 @@ void WorldSession::SendLfgUpdateProposal(lfg::LfgProposal const& proposal)
     bool silent = !proposal.isNew && gguid == proposal.group;
     uint32 dungeonEntry = proposal.dungeonId;
 
-    TC_LOG_DEBUG("lfg", "SMSG_LFG_PROPOSAL_UPDATE %s state: %u",
-        GetPlayerInfo().c_str(), proposal.state);
+    TC_LOG_DEBUG("lfg", "SMSG_LFG_PROPOSAL_UPDATE {} state: {}",
+        GetPlayerInfo(), proposal.state);
 
     // show random dungeon if player selected random dungeon and it's not lfg group
     if (!silent)
@@ -491,20 +491,20 @@ void WorldSession::SendLfgUpdateProposal(lfg::LfgProposal const& proposal)
 
 void WorldSession::SendLfgDisabled()
 {
-    TC_LOG_DEBUG("lfg", "SMSG_LFG_DISABLED %s", GetPlayerInfo().c_str());
+    TC_LOG_DEBUG("lfg", "SMSG_LFG_DISABLED {}", GetPlayerInfo());
     SendPacket(WorldPackets::LFG::LFGDisabled().Write());
 }
 
 void WorldSession::SendLfgOfferContinue(uint32 dungeonEntry)
 {
-    TC_LOG_DEBUG("lfg", "SMSG_LFG_OFFER_CONTINUE %s dungeon entry: %u",
-        GetPlayerInfo().c_str(), dungeonEntry);
+    TC_LOG_DEBUG("lfg", "SMSG_LFG_OFFER_CONTINUE {} dungeon entry: {}",
+        GetPlayerInfo(), dungeonEntry);
     SendPacket(WorldPackets::LFG::LFGOfferContinue(sLFGMgr->GetLFGDungeonEntry(dungeonEntry)).Write());
 }
 
 void WorldSession::SendLfgTeleportError(lfg::LfgTeleportResult err)
 {
-    TC_LOG_DEBUG("lfg", "SMSG_LFG_TELEPORT_DENIED %s reason: %u",
-        GetPlayerInfo().c_str(), err);
+    TC_LOG_DEBUG("lfg", "SMSG_LFG_TELEPORT_DENIED {} reason: {}",
+        GetPlayerInfo(), err);
     SendPacket(WorldPackets::LFG::LFGTeleportDenied(err).Write());
 }

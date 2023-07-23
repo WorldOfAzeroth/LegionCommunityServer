@@ -3564,7 +3564,7 @@ void CriteriaMgr::LoadCriteriaModifiersTree()
         if (ModifierTreeNode* parentNode = Trinity::Containers::MapGetValuePtr(_criteriaModifiers, itr->second->Entry->Parent))
             parentNode->Children.push_back(itr->second);
 
-    TC_LOG_INFO("server.loading", ">> Loaded %u criteria modifiers in %u ms", uint32(_criteriaModifiers.size()), GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded {} criteria modifiers in {} ms", uint32(_criteriaModifiers.size()), GetMSTimeDiffToNow(oldMSTime));
 }
 
 template<typename T>
