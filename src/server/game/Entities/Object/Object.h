@@ -34,6 +34,7 @@
 #include "UpdateFields.h"
 #include <list>
 #include <unordered_map>
+#include <memory>
 
 class AreaTrigger;
 class Conversation;

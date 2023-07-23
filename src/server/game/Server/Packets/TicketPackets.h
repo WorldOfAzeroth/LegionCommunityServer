@@ -113,71 +113,69 @@ namespace WorldPackets
             SupportTicketHeader Header;
             std::string Note;
         };
+        struct SupportTicketChatLine
+        {
+            explicit SupportTicketChatLine(ByteBuffer& data);
+            SupportTicketChatLine(uint32 timestamp, std::string const& text);
 
+            uint32 Timestamp = 0;
+            std::string Text;
+        };
+
+        struct SupportTicketChatLog
+        {
+            std::vector<SupportTicketChatLine> Lines;
+            Optional<uint32> ReportLineIndex;
+        };
+
+        struct SupportTicketMailInfo
+        {
+            int32 MailID = 0;
+            std::string MailSubject;
+            std::string MailBody;
+        };
+
+        struct SupportTicketCalendarEventInfo
+        {
+            uint64 EventID;
+            uint64 InviteID;
+            std::string EventTitle;
+        };
+
+        struct SupportTicketPetInfo
+        {
+            ObjectGuid PetID;
+            std::string PetName;
+        };
+
+        struct SupportTicketGuildInfo
+        {
+            ObjectGuid GuildID;
+            std::string GuildName;
+        };
+
+        struct SupportTicketLFGListSearchResult
+        {
+            WorldPackets::LFG::RideTicket RideTicket;
+            uint32 GroupFinderActivityID = 0;
+            ObjectGuid LastTitleAuthorGuid;
+            ObjectGuid LastDescriptionAuthorGuid;
+            ObjectGuid LastVoiceChatAuthorGuid;
+            ObjectGuid ListingCreatorGuid;
+            ObjectGuid Unknown735;
+            std::string Title;
+            std::string Description;
+            std::string VoiceChat;
+        };
+
+        struct SupportTicketLFGListApplicant
+        {
+            WorldPackets::LFG::RideTicket RideTicket;
+            std::string Comment;
+        };
         class SupportTicketSubmitComplaint final : public ClientPacket
         {
         public:
-            struct SupportTicketChatLine
-            {
-                SupportTicketChatLine(ByteBuffer& data);
-                SupportTicketChatLine(uint32 timestamp, std::string const& text);
-
-                uint32 Timestamp = 0;
-                std::string Text;
-            };
-
-            struct SupportTicketChatLog
-            {
-                std::vector<SupportTicketChatLine> Lines;
-                Optional<uint32> ReportLineIndex;
-            };
-
-            struct SupportTicketMailInfo
-            {
-                int32 MailID = 0;
-                std::string MailSubject;
-                std::string MailBody;
-            };
-
-            struct SupportTicketCalendarEventInfo
-            {
-                uint64 EventID;
-                uint64 InviteID;
-                std::string EventTitle;
-            };
-
-            struct SupportTicketPetInfo
-            {
-                ObjectGuid PetID;
-                std::string PetName;
-            };
-
-            struct SupportTicketGuildInfo
-            {
-                ObjectGuid GuildID;
-                std::string GuildName;
-            };
-
-            struct SupportTicketLFGListSearchResult
-            {
-                WorldPackets::LFG::RideTicket RideTicket;
-                uint32 GroupFinderActivityID = 0;
-                ObjectGuid LastTitleAuthorGuid;
-                ObjectGuid LastDescriptionAuthorGuid;
-                ObjectGuid LastVoiceChatAuthorGuid;
-                ObjectGuid ListingCreatorGuid;
-                ObjectGuid Unknown735;
-                std::string Title;
-                std::string Description;
-                std::string VoiceChat;
-            };
-
-            struct SupportTicketLFGListApplicant
-            {
-                WorldPackets::LFG::RideTicket RideTicket;
-                std::string Comment;
-            };
-
             SupportTicketSubmitComplaint(WorldPacket&& packet) : ClientPacket(CMSG_SUPPORT_TICKET_SUBMIT_COMPLAINT, std::move(packet)) { }
 
             void Read() override;

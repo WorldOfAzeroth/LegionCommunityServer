@@ -27,7 +27,6 @@ EndScriptData */
 #include "ChatCommand.h"
 #include "Containers.h"
 #include "DB2Stores.h"
-#include "Language.h"
 #include "MapManager.h"
 #include "ObjectMgr.h"
 #include "PhasingHandler.h"

@@ -20,40 +20,7 @@
 
 #include "Define.h"
 #include <array>
-#include <memory>
 #include <string>
-#include <utility>
-
-#if TRINITY_PLATFORM == TRINITY_PLATFORM_WINDOWS
-#  if TRINITY_COMPILER == TRINITY_COMPILER_INTEL
-#    if !defined(BOOST_ASIO_HAS_MOVE)
-#      define BOOST_ASIO_HAS_MOVE
-#    endif // !defined(BOOST_ASIO_HAS_MOVE)
-#  endif // if TRINITY_COMPILER == TRINITY_COMPILER_INTEL
-#else
-#  include <sys/types.h>
-#  include <sys/ioctl.h>
-#  include <sys/socket.h>
-#  include <netinet/in.h>
-#  include <unistd.h>
-#  include <netdb.h>
-#  include <cstdlib>
-#endif
-
-#if TRINITY_COMPILER == TRINITY_COMPILER_MICROSOFT
-
-#define atoll _atoi64
-#define llabs _abs64
-
-#else
-
-#define stricmp strcasecmp
-#define strnicmp strncasecmp
-
-#endif
-
-inline unsigned long atoul(char const* str) { return strtoul(str, nullptr, 10); }
-inline unsigned long long atoull(char const* str) { return strtoull(str, nullptr, 10); }
 
 #define STRINGIZE(a) #a
 
@@ -98,7 +65,6 @@ enum LocaleConstant : uint8
 const uint8 OLD_TOTAL_LOCALES = 9; /// @todo convert in simple system
 #define DEFAULT_LOCALE LOCALE_enUS
 
-#define MAX_LOCALES 11
 
 TC_COMMON_API extern char const* localeNames[TOTAL_LOCALES];
 
@@ -122,15 +88,6 @@ struct TC_COMMON_API LocalizedString
 };
 
 #pragma pack(pop)
-
-// we always use stdlib std::max/std::min, undefine some not C++ standard defines (Win API and some other platforms)
-#ifdef max
-#undef max
-#endif
-
-#ifdef min
-#undef min
-#endif
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
