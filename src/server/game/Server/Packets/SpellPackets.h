@@ -306,6 +306,9 @@ namespace WorldPackets
 
         struct SpellMissStatus
         {
+            SpellMissStatus() { }
+            SpellMissStatus(uint8 reason, uint8 reflectStatus) : Reason(reason), ReflectStatus(reflectStatus) { }
+
             uint8 Reason = 0;
             uint8 ReflectStatus = 0;
         };

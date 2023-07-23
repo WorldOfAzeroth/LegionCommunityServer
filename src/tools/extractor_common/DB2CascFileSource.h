@@ -20,6 +20,7 @@
 
 #include "DB2FileLoader.h"
 #include "CascHandles.h"
+#include <memory>
 #include <string>
 
 struct DB2CascFileSource : public DB2FileSource
@@ -27,8 +28,8 @@ struct DB2CascFileSource : public DB2FileSource
     DB2CascFileSource(CASC::StorageHandle const& storage, std::string fileName);
     bool IsOpen() const override;
     bool Read(void* buffer, std::size_t numBytes) override;
-    std::size_t GetPosition() const override;
-    std::size_t GetFileSize() const override;
+    int64 GetPosition() const override;
+    int64 GetFileSize() const override;
     char const* GetFileName() const override;
 
 private:
