@@ -1339,8 +1339,8 @@ void ScriptMgr::FillSpellSummary()
     UnitAI::FillAISpellInfo();
 }
 
-template<typename T, typename F, typename O>
-void CreateSpellOrAuraScripts(uint32 spellId, std::vector<T*>& scriptVector, F&& extractor, O* objectInvoker)
+template<typename T, typename O>
+void CreateSpellOrAuraScripts(uint32 spellId, std::vector<T*>& scriptVector, T*(SpellScriptLoader::*extractor)() const, O* objectInvoker)
 {
     SpellScriptsBounds bounds = sObjectMgr->GetSpellScriptsBounds(spellId);
     for (auto itr = bounds.first; itr != bounds.second; ++itr)
@@ -1353,11 +1353,11 @@ void CreateSpellOrAuraScripts(uint32 spellId, std::vector<T*>& scriptVector, F&&
         if (!tmpscript)
             continue;
 
-        T* script = (*tmpscript.*extractor)();
+        T* script = (tmpscript->*extractor)();
         if (!script)
             continue;
 
-        script->_Init(&tmpscript->GetName(), spellId);
+        script->_Init(tmpscript->GetName(), spellId);
         if (!script->_Load(objectInvoker))
         {
             delete script;
