@@ -239,7 +239,7 @@ WorldPacket CreatureTemplate::BuildQueryData(LocaleConstant loc) const
     return queryTemp.Move();
 }
 
-CreatureLevelScaling const* CreatureTemplate::GetLevelScaling(Difficulty difficulty) const
+CreatureLevelScaling const* CreatureTemplate::GetLevelScaling(Difficulty /*difficulty*/) const
 {
     if (scalingStore.has_value())
         return &*scalingStore;
