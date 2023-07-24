@@ -837,6 +837,17 @@ bool Unit::HasBreakableByDamageCrowdControlAura(Unit* excludeCasterChannel) cons
 
         duel_hasEnded = true;
     }
+    else if (victim->IsCreature() && damageTaken >= health && victim->ToCreature()->HasFlag(CREATURE_STATIC_FLAG_UNKILLABLE))
+    {
+        damageTaken = health - 1;
+
+        // If we had damage (aka health was not 1 already) trigger OnHealthDepleted
+        if (damageTaken > 0)
+        {
+            if (CreatureAI* victimAI = victim->ToCreature()->AI())
+                victimAI->OnHealthDepleted(attacker, false);
+        }
+    }
     else if (victim->IsVehicle() && damageTaken >= (health-1) && victim->GetCharmer() && victim->GetCharmer()->GetTypeId() == TYPEID_PLAYER)
     {
         Player* victimRider = victim->GetCharmer()->ToPlayer();
@@ -10753,7 +10764,10 @@ void Unit::SetMeleeAnimKitId(uint16 animKitId)
 
         // Call creature just died function
         if (CreatureAI* ai = creature->AI())
+        {
+            ai->OnHealthDepleted(attacker, true);
             ai->JustDied(attacker);
+        }
 
         if (TempSummon * summon = creature->ToTempSummon())
         {
