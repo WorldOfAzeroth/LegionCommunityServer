@@ -1724,6 +1724,7 @@ CREATE TABLE `characters` (
   `orientation` float NOT NULL DEFAULT '0',
   `taximask` text NOT NULL,
   `online` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `createTime` bigint(20) NOT NULL DEFAULT '0',
   `cinematic` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `totaltime` int(10) unsigned NOT NULL DEFAULT '0',
   `leveltime` int(10) unsigned NOT NULL DEFAULT '0',

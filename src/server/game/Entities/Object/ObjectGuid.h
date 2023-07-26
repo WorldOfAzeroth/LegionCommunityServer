@@ -260,7 +260,7 @@ class TC_GAME_API ObjectGuid
         void Clear() { std::fill(std::begin(_data), std::end(_data), UI64LIT(0)); }
 
         HighGuid GetHigh() const { return HighGuid((_data[1] >> 58) & 0x3F); }
-        uint32 GetRealmId() const { return uint32((_data[1] >> 42) & 0xFFFF); }
+        uint32 GetRealmId() const { return uint32((_data[1] >> 42) & 0x1FFF); }
         uint32 GetMapId() const { return uint32((_data[1] >> 29) & 0x1FFF); }
         uint32 GetEntry() const { return uint32((_data[1] >> 6) & 0x7FFFFF); }
         uint32 GetSubType() const { return uint32(_data[1] & 0x3F); }

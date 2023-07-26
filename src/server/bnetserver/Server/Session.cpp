@@ -465,13 +465,25 @@ uint32 Battlenet::Session::HandleProcessClientRequest(game_utilities::v1::Client
 
     Attribute const* command = nullptr;
     std::unordered_map<std::string, Variant const*> params;
+    auto removeSuffix = [](std::string const& string) -> std::string
+    {
+        size_t pos = string.rfind('_');
+        if (pos != std::string::npos)
+            return string.substr(0, pos);
+
+        return string;
+    };
 
     for (int32 i = 0; i < request->attribute_size(); ++i)
     {
         Attribute const& attr = request->attribute(i);
-        params[attr.name()] = &attr.value();
         if (strstr(attr.name().c_str(), "Command_") == attr.name().c_str())
+        {
             command = &attr;
+            params[removeSuffix(attr.name())] = &attr.value();
+        }
+        else
+            params[attr.name()] = &attr.value();
     }
 
     if (!command)
@@ -480,7 +492,7 @@ uint32 Battlenet::Session::HandleProcessClientRequest(game_utilities::v1::Client
         return ERROR_RPC_MALFORMED_REQUEST;
     }
 
-    auto itr = ClientRequestHandlers.find(command->name());
+    auto itr = ClientRequestHandlers.find(removeSuffix(command->name()));
     if (itr == ClientRequestHandlers.end())
     {
         TC_LOG_ERROR("session.rpc", "{} sent ClientRequest with unknown command {}.", GetClientInfo(), removeSuffix(command->name()));
