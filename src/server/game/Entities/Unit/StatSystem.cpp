@@ -498,11 +498,11 @@ void Player::UpdateCritPercentage(WeaponAttackType attType)
             SetStatFloatValue(PLAYER_OFFHAND_CRIT_PERCENTAGE, applyCritLimit(GetBaseModValue(OFFHAND_CRIT_PERCENTAGE, FLAT_MOD) + GetBaseModValue(OFFHAND_CRIT_PERCENTAGE, PCT_MOD) + GetRatingBonusValue(CR_CRIT_MELEE)));
             break;
         case RANGED_ATTACK:
-            SetStatFloatValue(RANGED_CRIT_PERCENTAGE, applyCritLimit(GetBaseModValue(RANGED_CRIT_PERCENTAGE, FLAT_MOD) + GetBaseModValue(RANGED_CRIT_PERCENTAGE, PCT_MOD) + GetRatingBonusValue(CR_CRIT_RANGED)));
+            SetStatFloatValue(PLAYER_RANGED_CRIT_PERCENTAGE, applyCritLimit(GetBaseModValue(RANGED_CRIT_PERCENTAGE, FLAT_MOD) + GetBaseModValue(RANGED_CRIT_PERCENTAGE, PCT_MOD) + GetRatingBonusValue(CR_CRIT_RANGED)));
             break;
         case BASE_ATTACK:
         default:
-            SetStatFloatValue(CRIT_PERCENTAGE, applyCritLimit(GetBaseModValue(CRIT_PERCENTAGE, FLAT_MOD) + GetBaseModValue(CRIT_PERCENTAGE, PCT_MOD) + GetRatingBonusValue(CR_CRIT_MELEE)));
+            SetStatFloatValue(PLAYER_CRIT_PERCENTAGE, applyCritLimit(GetBaseModValue(CRIT_PERCENTAGE, FLAT_MOD) + GetBaseModValue(CRIT_PERCENTAGE, PCT_MOD) + GetRatingBonusValue(CR_CRIT_MELEE)));
             break;
     }
 }
