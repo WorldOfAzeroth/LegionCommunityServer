@@ -47,7 +47,7 @@ struct AchievementEntry
 struct Achievement_CategoryEntry
 {
     LocalizedString Name;
-    uint16 Parent;
+    int16 Parent;
     uint8 UiOrder;
     int32 ID;
 };

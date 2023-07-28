@@ -1478,7 +1478,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         */
         void ModifyCurrency(uint32 id, int32 count, bool printLog = true, bool ignoreMultipliers = false);
 
-        void SetInvSlot(uint32 slot, ObjectGuid guid) { SetGuidValue(PLAYER_FIELD_INV_SLOT_HEAD + slot, guid); }
+        void SetInvSlot(uint32 slot, ObjectGuid guid) { SetGuidValue(PLAYER_FIELD_INV_SLOT_HEAD + (slot * 4), guid); }
 
         void ApplyEquipCooldown(Item* pItem);
         void QuickEquipItem(uint16 pos, Item* pItem);
@@ -2041,7 +2041,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void UpdateAttackPowerAndDamage(bool ranged = false) override;
         void ApplySpellPowerBonus(int32 amount, bool apply);
         void UpdateSpellDamageAndHealingBonus();
-        void ApplyModDamageDonePos(SpellSchools school, int32 mod, bool apply) { ApplyModInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + school, mod, apply); }
+        void ApplyModDamageDonePos(SpellSchools school, int32 mod, bool apply) { ApplyModInt32Value(AsUnderlyingType(PLAYER_FIELD_MOD_DAMAGE_DONE_POS) + school, mod, apply); }
         void ApplyModDamageDoneNeg(SpellSchools school, int32 mod, bool apply) { ApplyModInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_NEG + school, mod, apply); }
         void ApplyModDamageDonePercent(SpellSchools school, float pct, bool apply) { ApplyPercentModFloatValue(PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + school, float(pct), apply); }
         void SetModDamageDonePercent(uint8 school, float pct) { SetFloatValue(PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + school, pct); }
@@ -2175,17 +2175,24 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         uint16 GetPureSkillValue(uint32 skill) const;       // skill value
         int16 GetSkillPermBonusValue(uint32 skill) const;
         int16 GetSkillTempBonusValue(uint32 skill) const;
-        uint16 GetSkillStep(uint32 skill) const;            // 0...6
+        uint16 GetSkillStepValue(uint32 skill) const;            // 0...6
         bool HasSkill(uint32 skill) const;
         void LearnSkillRewardedSpells(uint32 skillId, uint32 skillValue, Races race);
         int32 FindProfessionSlotFor(uint32 skillId) const;
-        void SetSkillLineId(uint32 pos, uint16 skillLineId) { SetUInt16Value(PLAYER_SKILL_LINEID + (pos / 2), pos & 1, skillLineId); }
-        void SetSkillStep(uint32 pos, uint16 step) { SetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_STEP_OFFSET + (pos / 2), pos & 1, step); };
-        void SetSkillRank(uint32 pos, uint16 rank) { SetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_RANK_OFFSET + (pos / 2), pos & 1, rank); }
-        void SetSkillStartingRank(uint32 pos, uint16 starting) { SetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SUBSKILL_START_RANK_OFFSET + (pos / 2), pos & 1, starting); }
-        void SetSkillMaxRank(uint32 pos, uint16 max) { SetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_MAX_RANK_OFFSET + (pos / 2), pos & 1, max); }
-        void SetSkillTempBonus(uint32 pos, uint16 bonus) { SetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_TEMP_BONUS_OFFSET + (pos / 2), pos & 1, bonus); }
-        void SetSkillPermBonus(uint32 pos, uint16 bonus) { SetUInt16Value(uint16(PLAYER_SKILL_LINEID) + SKILL_PERM_BONUS_OFFSET + (pos / 2), pos & 1, bonus); }
+        void SetSkillLineId(uint32 pos, uint16 skillLineId) { SetUInt16Value(AsUnderlyingType(PLAYER_SKILL_LINEID) + SKILL_ID_OFFSET + (pos / 2), pos & 1, skillLineId); }
+        void SetSkillStep(uint32 pos, uint16 step) { SetUInt16Value(AsUnderlyingType(PLAYER_SKILL_LINEID) + SKILL_STEP_OFFSET + (pos / 2), pos & 1, step); };
+        void SetSkillRank(uint32 pos, uint16 rank) { SetUInt16Value(AsUnderlyingType(PLAYER_SKILL_LINEID) + SKILL_RANK_OFFSET + (pos / 2), pos & 1, rank); }
+        void SetSkillStartingRank(uint32 pos, uint16 starting) { SetUInt16Value(AsUnderlyingType(PLAYER_SKILL_LINEID) + SUBSKILL_START_RANK_OFFSET + (pos / 2), pos & 1, starting); }
+        void SetSkillMaxRank(uint32 pos, uint16 max) { SetUInt16Value(AsUnderlyingType(PLAYER_SKILL_LINEID) + SKILL_MAX_RANK_OFFSET + (pos / 2), pos & 1, max); }
+        void SetSkillTempBonus(uint32 pos, uint16 bonus) { SetUInt16Value(AsUnderlyingType(PLAYER_SKILL_LINEID) + SKILL_TEMP_BONUS_OFFSET + (pos / 2), pos & 1, bonus); }
+        void SetSkillPermBonus(uint32 pos, uint16 bonus) { SetUInt16Value(AsUnderlyingType(PLAYER_SKILL_LINEID) + SKILL_PERM_BONUS_OFFSET + (pos / 2), pos & 1, bonus); }
+        uint16 GetSkillLineId(uint32 pos) const { return GetUInt16Value(AsUnderlyingType(PLAYER_SKILL_LINEID) + SKILL_ID_OFFSET + (pos / 2), pos & 1); }
+        uint16 GetSkillStep(uint32 pos) const { return GetUInt16Value(AsUnderlyingType(PLAYER_SKILL_LINEID) + SKILL_STEP_OFFSET + (pos / 2), pos & 1); };
+        uint16 GetSkillRank(uint32 pos) const { return GetUInt16Value(AsUnderlyingType(PLAYER_SKILL_LINEID) + SKILL_RANK_OFFSET + (pos / 2), pos & 1); }
+        uint16 GetSkillStartingRank(uint32 pos) { return GetUInt16Value(AsUnderlyingType(PLAYER_SKILL_LINEID) + SUBSKILL_START_RANK_OFFSET + (pos / 2), pos & 1); }
+        uint16 GetSkillMaxRank(uint32 pos) const { return GetUInt16Value(AsUnderlyingType(PLAYER_SKILL_LINEID) + SKILL_MAX_RANK_OFFSET + (pos / 2), pos & 1); }
+        uint16 GetSkillTempBonus(uint32 pos) const { return GetUInt16Value(AsUnderlyingType(PLAYER_SKILL_LINEID) + SKILL_TEMP_BONUS_OFFSET + (pos / 2), pos & 1); }
+        uint16 GetSkillPermBonus(uint32 pos) const { return GetUInt16Value(AsUnderlyingType(PLAYER_SKILL_LINEID) + SKILL_PERM_BONUS_OFFSET + (pos / 2), pos & 1); }
 
         WorldLocation& GetTeleportDest() { return m_teleport_dest; }
         Optional<uint32> GetTeleportDestInstanceId() const { return m_teleport_instanceId; }

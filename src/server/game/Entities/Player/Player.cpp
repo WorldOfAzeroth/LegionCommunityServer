@@ -5085,7 +5085,7 @@ float Player::GetRatingMultiplier(CombatRating cr) const
 
 float Player::GetRatingBonusValue(CombatRating cr) const
 {
-    float baseResult = float(GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + cr)) * GetRatingMultiplier(cr);
+    float baseResult = float(GetUInt32Value(AsUnderlyingType(PLAYER_FIELD_COMBAT_RATING_1) + cr)) * GetRatingMultiplier(cr);
     if (cr != CR_RESILIENCE_PLAYER_DAMAGE)
         return baseResult;
     return float(1.0f - pow(0.99f, baseResult)) * 100.0f;
@@ -5136,8 +5136,8 @@ void Player::UpdateRating(CombatRating cr)
     if (amount < 0)
         amount = 0;
 
-    uint32 oldRating = GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + cr);
-    SetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + cr, uint32(amount));
+    uint32 oldRating = GetUInt32Value(AsUnderlyingType(PLAYER_FIELD_COMBAT_RATING_1) + cr);
+    SetUInt32Value(AsUnderlyingType(PLAYER_FIELD_COMBAT_RATING_1) + cr, uint32(amount));
 
     bool affectStats = CanModifyStats();
 
@@ -5442,11 +5442,8 @@ bool Player::UpdateSkillPro(uint16 skillId, int32 chance, uint32 step)
     if (itr == mSkillStatus.end() || itr->second.uState == SKILL_DELETED)
         return false;
 
-    uint16 field = itr->second.pos / 2;
-    uint8 offset = itr->second.pos & 1; // itr->second.pos % 2
-
-    uint16 value = GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_RANK_OFFSET + field, offset);
-    uint16 max = GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_MAX_RANK_OFFSET + field, offset);
+    uint16 value = GetSkillRank(itr->second.pos);
+    uint16 max = GetSkillMaxRank(itr->second.pos);
 
     if (!max || !value || value >= max)
         return false;
@@ -5485,15 +5482,18 @@ bool Player::UpdateSkillPro(uint16 skillId, int32 chance, uint32 step)
 void Player::ModifySkillBonus(uint32 skillid, int32 val, bool talent)
 {
     SkillStatusMap::const_iterator itr = mSkillStatus.find(skillid);
-    if (itr == mSkillStatus.end() || itr->second.uState == SKILL_DELETED)
+    if (itr == mSkillStatus.end() || itr->second.uState == SKILL_DELETED || !GetSkillRank(itr->second.pos))
         return;
 
-    uint16 field = itr->second.pos / 2 + (talent ? PLAYER_SKILL_LINEID + SKILL_PERM_BONUS_OFFSET : PLAYER_SKILL_LINEID + SKILL_TEMP_BONUS_OFFSET);
-    uint8 offset = itr->second.pos & 1; // itr->second.pos % 2
+    if (talent)
+        SetSkillPermBonus(itr->second.pos, GetSkillPermBonus(itr->second.pos) + val);
+    else
+        SetSkillTempBonus(itr->second.pos, GetSkillTempBonus(itr->second.pos) + val);
 
-    uint16 bonus = GetUInt16Value(field, offset);
-
-    SetUInt16Value(field, offset, bonus + val);
+    // Apply/Remove bonus to child skill lines
+    if (std::vector<SkillLineEntry const*> const* childSkillLines = sDB2Manager.GetSkillLinesForParentSkill(skillid))
+        for (SkillLineEntry const* childSkillLine : *childSkillLines)
+            ModifySkillBonus(childSkillLine->ID, val, talent);
 }
 
 void Player::UpdateSkillsForLevel()
@@ -5511,9 +5511,6 @@ void Player::UpdateSkillsForLevel()
         if (!rcEntry)
             continue;
 
-        uint16 field = itr->second.pos / 2;
-        uint8 offset = itr->second.pos & 1; // itr->second.pos % 2
-
         if (GetSkillRangeType(rcEntry) == SKILL_RANGE_LEVEL)
         {
             if (rcEntry->Flags & SKILL_FLAG_ALWAYS_MAX_VALUE)
@@ -5525,7 +5522,7 @@ void Player::UpdateSkillsForLevel()
         }
 
         // Update level dependent skillline spells
-        LearnSkillRewardedSpells(rcEntry->SkillID, GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_RANK_OFFSET + field, offset), Races(GetRace()));
+        LearnSkillRewardedSpells(rcEntry->SkillID, GetSkillRank(itr->second.pos), Races(GetRace()));
     }
 }
 
@@ -5558,9 +5555,7 @@ void Player::SetSkill(uint32 id, uint16 step, uint16 newVal, uint16 maxVal)
     // Handle already stored skills
     if (itr != mSkillStatus.end())
     {
-        uint16 field = itr->second.pos / 2;
-        uint8 offset = itr->second.pos & 1; // itr->second.pos % 2
-        currVal = GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_RANK_OFFSET + field, offset);
+        currVal = GetSkillRank(itr->second.pos);
         if (newVal)
         {
             // if skill value is going down, update enchantments before setting the new value
@@ -5636,7 +5631,7 @@ void Player::SetSkill(uint32 id, uint16 step, uint16 newVal, uint16 maxVal)
         // Find a free skill slot
         for (uint32 i = 0; i < PLAYER_MAX_SKILLS; ++i)
         {
-            if (!GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_ID_OFFSET + (i / 2), (i & 1)))
+            if (!GetSkillLineId(i))
             {
                 skillSlot = i;
                 break;
@@ -5712,7 +5707,7 @@ bool Player::HasSkill(uint32 skill) const
     return (itr != mSkillStatus.end() && itr->second.uState != SKILL_DELETED);
 }
 
-uint16 Player::GetSkillStep(uint32 skill) const
+uint16 Player::GetSkillStepValue(uint32 skill) const
 {
     if (!skill)
         return 0;
@@ -5721,7 +5716,7 @@ uint16 Player::GetSkillStep(uint32 skill) const
     if (itr == mSkillStatus.end() || itr->second.uState == SKILL_DELETED)
         return 0;
 
-    return GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_STEP_OFFSET + itr->second.pos / 2, itr->second.pos & 1);
+    return GetSkillStep(itr->second.pos);
 }
 
 uint16 Player::GetSkillValue(uint32 skill) const
@@ -5733,12 +5728,9 @@ uint16 Player::GetSkillValue(uint32 skill) const
     if (itr == mSkillStatus.end() || itr->second.uState == SKILL_DELETED)
         return 0;
 
-    uint16 field = itr->second.pos / 2;
-    uint8 offset = itr->second.pos & 1;
-
-    int32 result = int32(GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_RANK_OFFSET + field, offset));
-    result += int32(GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_TEMP_BONUS_OFFSET + field, offset));
-    result += int32(GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_PERM_BONUS_OFFSET + field, offset));
+    int32 result = int32(GetSkillRank(itr->second.pos));
+    result += int32(GetSkillTempBonus(itr->second.pos));
+    result += int32(GetSkillPermBonus(itr->second.pos));
     return result < 0 ? 0 : result;
 }
 
@@ -5751,12 +5743,9 @@ uint16 Player::GetMaxSkillValue(uint32 skill) const
     if (itr == mSkillStatus.end() || itr->second.uState == SKILL_DELETED)
         return 0;
 
-    uint16 field = itr->second.pos / 2;
-    uint8 offset = itr->second.pos & 1;
-
-    int32 result = int32(GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_MAX_RANK_OFFSET + field, offset));
-    result += int32(GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_TEMP_BONUS_OFFSET + field, offset));
-    result += int32(GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_PERM_BONUS_OFFSET + field, offset));
+    int32 result = int32(GetSkillMaxRank(itr->second.pos));
+    result += int32(GetSkillTempBonus(itr->second.pos));
+    result += int32(GetSkillPermBonus(itr->second.pos));
     return result < 0 ? 0 : result;
 }
 
@@ -5772,7 +5761,7 @@ uint16 Player::GetPureMaxSkillValue(uint32 skill) const
     uint16 field = itr->second.pos / 2;
     uint8 offset = itr->second.pos & 1;
 
-    return GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_MAX_RANK_OFFSET + field, offset);
+    return GetSkillMaxRank(itr->second.pos);
 }
 
 uint16 Player::GetBaseSkillValue(uint32 skill) const
@@ -5784,11 +5773,8 @@ uint16 Player::GetBaseSkillValue(uint32 skill) const
     if (itr == mSkillStatus.end() || itr->second.uState == SKILL_DELETED)
         return 0;
 
-    uint16 field = itr->second.pos / 2;
-    uint8 offset = itr->second.pos & 1;
-
-    int32 result = int32(GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_RANK_OFFSET + field, offset));
-    result += int32(GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_PERM_BONUS_OFFSET + field, offset));
+    int32 result = int32(GetSkillRank(itr->second.pos));
+    result += int32(GetSkillPermBonus(itr->second.pos));
     return result < 0 ? 0 : result;
 }
 
@@ -5801,10 +5787,7 @@ uint16 Player::GetPureSkillValue(uint32 skill) const
     if (itr == mSkillStatus.end() || itr->second.uState == SKILL_DELETED)
         return 0;
 
-    uint16 field = itr->second.pos / 2;
-    uint8 offset = itr->second.pos & 1;
-
-    return GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_RANK_OFFSET + field, offset);
+    return GetSkillRank(itr->second.pos);
 }
 
 int16 Player::GetSkillPermBonusValue(uint32 skill) const
@@ -5816,10 +5799,7 @@ int16 Player::GetSkillPermBonusValue(uint32 skill) const
     if (itr == mSkillStatus.end() || itr->second.uState == SKILL_DELETED)
         return 0;
 
-    uint16 field = itr->second.pos / 2;
-    uint8 offset = itr->second.pos & 1;
-
-    return GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_PERM_BONUS_OFFSET + field, offset);
+    return GetSkillPermBonus(itr->second.pos);
 }
 
 int16 Player::GetSkillTempBonusValue(uint32 skill) const
@@ -5831,10 +5811,7 @@ int16 Player::GetSkillTempBonusValue(uint32 skill) const
     if (itr == mSkillStatus.end() || itr->second.uState == SKILL_DELETED)
         return 0;
 
-    uint16 field = itr->second.pos / 2;
-    uint8 offset = itr->second.pos & 1;
-
-    return GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_TEMP_BONUS_OFFSET + field, offset);
+    return GetSkillTempBonus(itr->second.pos);
 }
 
 void Player::SendActionButtons(uint32 state) const
@@ -8021,7 +7998,7 @@ void Player::ApplyArtifactPowerRank(Item* artifact, ArtifactPowerRankEntry const
             args.SetCastItem(artifact);
             if (artifactPowerRank->AuraPointsOverride)
                 for (SpellEffectInfo const& spellEffectInfo : spellInfo->GetEffects())
-                    args.AddSpellMod(SpellValueMod(SPELLVALUE_BASE_POINT0 + spellEffectInfo.EffectIndex), artifactPowerRank->AuraPointsOverride);
+                    args.AddSpellMod(SpellValueMod(AsUnderlyingType(SPELLVALUE_BASE_POINT0) + spellEffectInfo.EffectIndex), artifactPowerRank->AuraPointsOverride);
 
             CastSpell(this, artifactPowerRank->SpellID, args);
         }
@@ -8217,7 +8194,7 @@ void Player::CastItemCombatSpell(DamageInfo const& damageInfo, Item* item, ItemT
 
                     for (SpellEffectInfo const& spellEffectInfo : spellInfo->GetEffects())
                         if (spellEffectInfo.IsEffect())
-                            args.AddSpellMod(static_cast<SpellValueMod>(uint8(SPELLVALUE_BASE_POINT0) + spellEffectInfo.EffectIndex), CalculatePct(spellEffectInfo.CalcValue(this), effectPct));
+                            args.AddSpellMod(static_cast<SpellValueMod>(AsUnderlyingType(SPELLVALUE_BASE_POINT0) + spellEffectInfo.EffectIndex), CalculatePct(spellEffectInfo.CalcValue(this), effectPct));
                 }
                 CastSpell(target, spellInfo->Id, args);
             }
@@ -19830,10 +19807,8 @@ void Player::_SaveSkills(CharacterDatabaseTransaction trans)
             continue;
         }
 
-        uint16 field = itr->second.pos / 2;
-        uint8 offset = itr->second.pos & 1;
-        uint16 value = GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_RANK_OFFSET + field, offset);
-        uint16 max = GetUInt16Value(PLAYER_SKILL_LINEID + SKILL_MAX_RANK_OFFSET + field, offset);
+        uint16 value = GetSkillRank(itr->second.pos);
+        uint16 max = GetSkillMaxRank(itr->second.pos);
 
         switch (itr->second.uState)
         {
@@ -19980,7 +19955,7 @@ void Player::_SaveStats(CharacterDatabaseTransaction trans) const
     stmt->setUInt32(index++, GetUInt32Value(UNIT_FIELD_ATTACK_POWER));
     stmt->setUInt32(index++, GetUInt32Value(UNIT_FIELD_RANGED_ATTACK_POWER));
     stmt->setUInt32(index++, GetBaseSpellPowerBonus());
-    stmt->setUInt32(index, GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + CR_RESILIENCE_PLAYER_DAMAGE));
+    stmt->setUInt32(index, GetUInt32Value(AsUnderlyingType(PLAYER_FIELD_COMBAT_RATING_1) + CR_RESILIENCE_PLAYER_DAMAGE));
 
     trans->Append(stmt);
 }
@@ -26196,6 +26171,10 @@ void Player::ActivateTalentGroup(ChrSpecializationEntry const* spec)
         if (!talentInfo)
             continue;
 
+        // learn only talents for character class (or x-class talents)
+        if (talentInfo->ClassID != GetClass())
+            continue;
+
         SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(talentInfo->SpellID, DIFFICULTY_NONE);
         if (!spellInfo)
             continue;
@@ -26248,10 +26227,15 @@ void Player::ActivateTalentGroup(ChrSpecializationEntry const* spec)
         if (!talentInfo)
             continue;
 
+        // learn only talents for character class (or x-class talents)
+        if (talentInfo->ClassID != GetClass())
+            continue;
+
         if (!talentInfo->SpellID)
             continue;
 
-        AddPvpTalent(talentInfo, GetActiveTalentGroup(), true);
+        if (HasPvpTalent(talentInfo->ID, GetActiveTalentGroup()))
+            AddPvpTalent(talentInfo, GetActiveTalentGroup(), true);
     }
 
     LearnSpecializationSpells();

@@ -414,7 +414,7 @@ public:
         HandleLearnSkillRecipesHelper(target, skillId);
 
         uint16 maxLevel = target->GetPureMaxSkillValue(skillId);
-        target->SetSkill(skillId, target->GetSkillStep(skillId), maxLevel, maxLevel);
+        target->SetSkill(skillId, target->GetSkillStepValue(skillId), maxLevel, maxLevel);
         handler->PSendSysMessage(LANG_COMMAND_LEARN_ALL_RECIPES, name);
         return true;
     }

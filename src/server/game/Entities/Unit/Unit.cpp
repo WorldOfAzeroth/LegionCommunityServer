@@ -4954,8 +4954,8 @@ void Unit::UpdateStatBuffMod(Stats stat)
 
 void Unit::UpdateStatBuffModForClient(Stats stat)
 {
-    ApplyPercentModFloatValue(UNIT_FIELD_POSSTAT + stat, m_floatStatPosBuff[stat], true);
-    ApplyPercentModFloatValue(UNIT_FIELD_POSSTAT + stat, m_floatStatNegBuff[stat], true);
+    ApplyPercentModFloatValue(AsUnderlyingType(UNIT_FIELD_POSSTAT) + stat, m_floatStatPosBuff[stat], true);
+    ApplyPercentModFloatValue(AsUnderlyingType(UNIT_FIELD_POSSTAT) + stat, m_floatStatNegBuff[stat], true);
 }
 
 void Unit::_RegisterDynObject(DynamicObject* dynObj)
@@ -10234,10 +10234,10 @@ void Unit::UpdateAttackTimeField(WeaponAttackType att)
     {
         case BASE_ATTACK:
         case OFF_ATTACK:
-            SetUInt32Value(UNIT_FIELD_BASEATTACKTIME + att, uint32(m_baseAttackSpeed[att] * m_modAttackSpeedPct[att]));
+            SetUInt32Value(AsUnderlyingType(UNIT_FIELD_BASEATTACKTIME) + att, uint32(m_baseAttackSpeed[att] * m_modAttackSpeedPct[att]));
             break;
         case RANGED_ATTACK:
-            SetUInt32Value(UNIT_FIELD_BASEATTACKTIME + att, uint32(m_baseAttackSpeed[RANGED_ATTACK] * m_modAttackSpeedPct[RANGED_ATTACK]));
+            SetUInt32Value(AsUnderlyingType(UNIT_FIELD_BASEATTACKTIME) + att, uint32(m_baseAttackSpeed[RANGED_ATTACK] * m_modAttackSpeedPct[RANGED_ATTACK]));
             break;
         default:
             break;;
