@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -71,6 +71,7 @@ inline uint32 LoadGameTable(std::vector<std::string>& errors, GameTable<T>& stor
     std::string line;
     while (std::getline(stream, line))
     {
+        RemoveCRLF(line); // file extracted from client will always have CRLF line endings, on linux opening file in text mode will not work, manually erase \r
         std::vector<std::string_view> values = Trinity::Tokenize(line, '\t', true);
         if (values.empty())
             break;
@@ -95,7 +96,7 @@ inline uint32 LoadGameTable(std::vector<std::string>& errors, GameTable<T>& stor
         data.emplace_back();
         float* row = reinterpret_cast<float*>(&data.back());
         for (auto itr = values.begin() + 1; itr != end; ++itr)
-            *row++ = Trinity::StringTo<float>(itr->data(), 10).value_or(0.0f);
+            *row++ = Trinity::StringTo<float>(*itr, 10).value_or(0.0f);
     }
 
     storage.SetData(std::move(data));

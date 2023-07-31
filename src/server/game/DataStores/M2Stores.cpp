@@ -145,7 +145,6 @@ bool readCamera(M2Camera const* cam, uint32 buffSize, M2Header const* header, Ci
 
                 float x = lastTarget.locations.GetPositionX();
                 float y = lastTarget.locations.GetPositionY();
-                float z = lastTarget.locations.GetPositionZ();
 
                 // Now, the timestamps for target cam and position can be different. So, if they differ we interpolate
                 if (lastTarget.timeStamp != posTimestamps[i])
@@ -154,10 +153,8 @@ bool readCamera(M2Camera const* cam, uint32 buffSize, M2Header const* header, Ci
                     uint32 timeDiffThis = posTimestamps[i] - lastTarget.timeStamp;
                     float xDiff = nextTarget.locations.GetPositionX() - lastTarget.locations.GetPositionX();
                     float yDiff = nextTarget.locations.GetPositionY() - lastTarget.locations.GetPositionY();
-                    float zDiff = nextTarget.locations.GetPositionZ() - lastTarget.locations.GetPositionZ();
                     x = lastTarget.locations.GetPositionX() + (xDiff * (float(timeDiffThis) / float(timeDiffTarget)));
                     y = lastTarget.locations.GetPositionY() + (yDiff * (float(timeDiffThis) / float(timeDiffTarget)));
-                    z = lastTarget.locations.GetPositionZ() + (zDiff * (float(timeDiffThis) / float(timeDiffTarget)));
                 }
                 float xDiff = x - thisCam.locations.GetPositionX();
                 float yDiff = y - thisCam.locations.GetPositionY();
