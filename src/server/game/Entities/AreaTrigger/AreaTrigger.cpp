@@ -32,13 +32,11 @@
 #include "ObjectMgr.h"
 #include "PhasingHandler.h"
 #include "Player.h"
-#include "ScriptMgr.h"
 #include "SpellInfo.h"
 #include "SpellMgr.h"
 #include "Spline.h"
 #include "Transport.h"
 #include "Unit.h"
-#include "UpdateData.h"
 
 AreaTrigger::AreaTrigger() : WorldObject(false), MapObject(), _spawnId(0), _aurEff(nullptr), _maxSearchRadius(0.0f),
     _duration(0), _totalDuration(0), _timeSinceCreated(0), _previousCheckOrientation(std::numeric_limits<float>::infinity()),
@@ -256,7 +254,14 @@ bool AreaTrigger::CreateServer(Map* map, AreaTriggerTemplate const* areaTriggerT
     SetObjectScale(1.0f);
 
     SetFloatValue(AREATRIGGER_BOUNDS_RADIUS_2D, GetMaxSearchRadius());
-    SetUInt32Value(AREATRIGGER_DECAL_PROPERTIES_ID, GetCreateProperties()->DecalPropertiesId);
+    SetUInt32Value(AREATRIGGER_DECAL_PROPERTIES_ID, 24);
+
+    float tmp = 1.0000001f;
+    uint32 tmp2;
+    memcpy(&tmp2, &tmp, sizeof(tmp));
+
+    SetUInt32Value(AREATRIGGER_EXTRA_SCALE_CURVE, tmp2);
+    SetUInt32Value(AREATRIGGER_OVERRIDE_SCALE_CURVE, true);
 
     _shape = position.Shape;
     _maxSearchRadius = _shape.GetMaxSearchRadius();
