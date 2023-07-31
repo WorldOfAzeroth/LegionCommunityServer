@@ -3406,8 +3406,12 @@ void ObjectMgr::LoadItemTemplates()
         for (auto& specs : itemTemplate.Specializations)
             if (specs.count() == 0)
                 specs.set();
-
     }
+
+    // Load item effects (spells)
+    for (ItemEffectEntry const* effectEntry : sItemEffectStore)
+        if (ItemTemplate* item = Trinity::Containers::MapGetValuePtr(_itemTemplateStore, effectEntry->ParentItemID))
+            item->Effects.push_back(effectEntry);
 
     TC_LOG_INFO("server.loading", ">> Loaded {} item templates in {} ms", _itemTemplateStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
