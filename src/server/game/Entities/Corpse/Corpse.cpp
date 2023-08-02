@@ -16,7 +16,6 @@
  */
 
 #include "CharacterCache.h"
-#include "Common.h"
 #include "Corpse.h"
 #include "DatabaseEnv.h"
 #include "DB2Stores.h"
