@@ -1876,7 +1876,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
 
         TalentLearnResult LearnPvpTalent(uint32 talentID, int32* spellOnCooldown);
         bool AddPvpTalent(PvpTalentEntry const* talent, uint8 activeTalentGroup, bool learning);
-        void RemovePvpTalent(PvpTalentEntry const* talent, uint8 activeTalentGroup);
+        void RemovePvpTalent(PvpTalentEntry const* talent);
         void TogglePvpTalents(bool enable);
         bool HasPvpTalent(uint32 talentID, uint8 activeTalentGroup) const;
         void EnablePvpRules(bool dueToCombat = false);

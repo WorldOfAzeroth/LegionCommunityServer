@@ -3538,7 +3538,7 @@ void Player::ResetPvpTalents()
         PvpTalentEntry const* talentInfo = sPvpTalentStore.LookupEntry(talentId);
         if (!talentInfo)
             continue;
-        RemovePvpTalent(talentInfo, GetPrimarySpecialization());
+        RemovePvpTalent(talentInfo);
     }
 }
 
@@ -4320,6 +4320,8 @@ Corpse* Player::CreateCorpse()
     // prevent the existence of 2 corpses for one player
     SpawnCorpseBones();
 
+    uint32 _cfb1, _cfb2;
+
     Corpse* corpse = new Corpse((m_ExtraFlags & PLAYER_EXTRA_PVP_DEATH) ? CORPSE_RESURRECTABLE_PVP : CORPSE_RESURRECTABLE_PVE);
     SetPvPDeath(false);
 
@@ -4330,6 +4332,18 @@ Corpse* Player::CreateCorpse()
     }
 
     _corpseLocation.WorldRelocate(*this);
+
+    uint8 skin = GetByteValue(PLAYER_BYTES, PLAYER_BYTES_OFFSET_SKIN_ID);
+    uint8 face = GetByteValue(PLAYER_BYTES, PLAYER_BYTES_OFFSET_FACE_ID);
+    uint8 hairstyle = GetByteValue(PLAYER_BYTES, PLAYER_BYTES_OFFSET_HAIR_STYLE_ID);
+    uint8 haircolor = GetByteValue(PLAYER_BYTES, PLAYER_BYTES_OFFSET_HAIR_COLOR_ID);
+    uint8 facialhair = GetByteValue(PLAYER_BYTES_2, PLAYER_BYTES_2_OFFSET_FACIAL_STYLE);
+
+    _cfb1 = ((0x00) | (GetRace() << 8) | (GetByteValue(PLAYER_BYTES_3, PLAYER_BYTES_3_OFFSET_GENDER) << 16) | (skin << 24));
+    _cfb2 = ((face) | (hairstyle << 8) | (haircolor << 16) | (facialhair << 24));
+
+    corpse->SetUInt32Value(CORPSE_FIELD_BYTES_1, _cfb1);
+    corpse->SetUInt32Value(CORPSE_FIELD_BYTES_2, _cfb2);
 
     uint32 flags = 0;
     if (HasPvpFlag(UNIT_BYTE2_FLAG_PVP))
@@ -25395,7 +25409,7 @@ TalentLearnResult Player::LearnPvpTalent(uint32 talentID, int32* spellOnCooldown
                 return TALENT_FAILED_CANT_REMOVE_TALENT;
             }
 
-            RemovePvpTalent(talent, GetPrimarySpecialization());
+            RemovePvpTalent(talent);
         }
     }
 
@@ -25463,7 +25477,7 @@ bool Player::AddPvpTalent(PvpTalentEntry const* talent, uint8 activeTalentGroup,
 
 }
 
-void Player::RemovePvpTalent(PvpTalentEntry const* talent, uint8 activeTalentGroup)
+void Player::RemovePvpTalent(PvpTalentEntry const* talent)
 {
     SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(talent->SpellID, DIFFICULTY_NONE);
     if (!spellInfo)
