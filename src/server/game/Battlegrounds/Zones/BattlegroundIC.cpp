@@ -137,8 +137,11 @@ void BattlegroundIC::PostUpdateImpl(uint32 diff)
                         if (siege->IsAlive())
                         {
                             if (siege->HasUnitFlag(UNIT_FLAG_UNINTERACTIBLE | UNIT_FLAG_CANT_SWIM | UNIT_FLAG_IMMUNE_TO_PC))
+                            {
                                 // following sniffs the vehicle always has UNIT_FLAG_CANNOT_SWIM
-                                siege->RemoveUnitFlag(UNIT_FLAG_UNINTERACTIBLE | UNIT_FLAG_IMMUNE_TO_PC);
+                                siege->SetUninteractible(false);
+                                siege->SetImmuneToPC(false);
+                            }
                             else
                                 siege->SetHealth(siege->GetMaxHealth());
                         }
@@ -427,8 +430,6 @@ void BattlegroundIC::EventPlayerClickedOnFlag(Player* player, GameObject* target
                 nodePoint[i].timer = BANNER_STATE_CHANGE_TIME; // 1 minute for last change (real faction banner)
                 nodePoint[i].needChange = true;
 
-                RelocateDeadPlayers(BgCreatures[BG_IC_NPC_SPIRIT_GUIDE_1 + uint32(nodePoint[i].nodeType) - 2]);
-
                 // if we are here means that the point has been lost, or it is the first capture
 
                 if (nodePoint[i].nodeType != NODE_TYPE_REFINERY && nodePoint[i].nodeType != NODE_TYPE_QUARRY)
@@ -563,7 +564,7 @@ void BattlegroundIC::HandleContestedNodes(ICNodePoint* node)
         for (Creature* cannon : cannons)
         {
             cannon->GetVehicleKit()->RemoveAllPassengers();
-            cannon->SetUnitFlag(UNIT_FLAG_UNINTERACTIBLE);
+            cannon->SetUninteractible(true);
         }
     }
     else if (node->nodeType == NODE_TYPE_WORKSHOP)
@@ -595,7 +596,7 @@ void BattlegroundIC::HandleCapturedNodes(ICNodePoint* node, bool recapture)
                     gunshipHorde->GetCreatureListWithEntryInGrid(cannons, NPC_HORDE_GUNSHIP_CANNON, 150.0f);
 
                 for (Creature* cannon : cannons)
-                    cannon->RemoveUnitFlag(UNIT_FLAG_UNINTERACTIBLE);
+                    cannon->SetUninteractible(false);
 
                 for (uint8 u = 0; u < MAX_HANGAR_TELEPORTERS_SPAWNS; ++u)
                 {
@@ -750,7 +751,8 @@ void BattlegroundIC::HandleCapturedNodes(ICNodePoint* node, bool recapture)
 
                         if (Creature* siegeEngine = GetBGCreature(siegeType))
                         {
-                            siegeEngine->SetUnitFlag(UNIT_FLAG_UNINTERACTIBLE | UNIT_FLAG_CANT_SWIM);
+                            siegeEngine->SetUnitFlag(UNIT_FLAG_CANT_SWIM);
+                            siegeEngine->SetUninteractible(true);
                             siegeEngine->SetImmuneToPC(true);
                             siegeEngine->SetFaction(BG_IC_Factions[(node->faction == TEAM_ALLIANCE ? 0 : 1)]);
                         }

@@ -528,7 +528,7 @@ class CreatureGameObjectAreaTriggerScriptRegistrySwapHooks
 
     static void LoadResetScript(AreaTrigger* at)
     {
-        at->AI()->OnCreate();
+        at->AI()->OnCreate(nullptr);
     }
 
     static Creature* GetEntityFromMap(std::common_type<Creature>, Map* map, ObjectGuid const& guid)

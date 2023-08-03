@@ -5457,8 +5457,14 @@ bool Unit::Attack(Unit* victim, bool meleeAttack)
 
     Creature* creature = ToCreature();
     // creatures cannot attack while evading
-    if (creature && creature->IsInEvadeMode())
-        return false;
+    if (creature)
+    {
+        if (creature->IsInEvadeMode())
+            return false;
+
+        if (!creature->CanMelee())
+            meleeAttack = false;
+    }
 
     // nobody can attack GM in GM-mode
     if (victim->GetTypeId() == TYPEID_PLAYER)
@@ -7767,8 +7773,8 @@ bool Unit::IsServiceProvider() const
     return HasNpcFlag(
         UNIT_NPC_FLAG_VENDOR | UNIT_NPC_FLAG_TRAINER | UNIT_NPC_FLAG_FLIGHTMASTER |
         UNIT_NPC_FLAG_PETITIONER | UNIT_NPC_FLAG_BATTLEMASTER | UNIT_NPC_FLAG_BANKER |
-        UNIT_NPC_FLAG_INNKEEPER | UNIT_NPC_FLAG_SPIRITHEALER |
-        UNIT_NPC_FLAG_SPIRITGUIDE | UNIT_NPC_FLAG_TABARDDESIGNER | UNIT_NPC_FLAG_AUCTIONEER);
+        UNIT_NPC_FLAG_INNKEEPER | UNIT_NPC_FLAG_SPIRIT_HEALER |
+        UNIT_NPC_FLAG_AREA_SPIRIT_HEALER | UNIT_NPC_FLAG_TABARDDESIGNER | UNIT_NPC_FLAG_AUCTIONEER);
 }
 
 void Unit::EngageWithTarget(Unit* enemy)
@@ -7841,6 +7847,22 @@ void Unit::SetImmuneToNPC(bool apply, bool keepCombat)
         RemoveUnitFlag(UNIT_FLAG_IMMUNE_TO_NPC);
 }
 
+void Unit::SetUninteractible(bool apply)
+{
+    if (apply)
+        SetUnitFlag(UNIT_FLAG_UNINTERACTIBLE);
+    else
+        RemoveUnitFlag(UNIT_FLAG_UNINTERACTIBLE);
+}
+
+void Unit::SetCannotTurn(bool apply)
+{
+    if (apply)
+        SetUnitFlag2(UNIT_FLAG2_CANNOT_TURN);
+    else
+        RemoveUnitFlag2(UNIT_FLAG2_CANNOT_TURN);
+}
+
 bool Unit::IsThreatened() const
 {
     return !m_threatManager.IsThreatListEmpty();
@@ -7851,7 +7873,7 @@ bool Unit::isTargetableForAttack(bool checkFakeDeath) const
     if (!IsAlive())
         return false;
 
-    if (HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_UNINTERACTIBLE))
+    if (HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE) || IsUninteractible())
         return false;
 
     if (GetTypeId() == TYPEID_PLAYER && ToPlayer()->IsGameMaster())
@@ -9247,6 +9269,12 @@ void Unit::RemoveFromWorld()
 
     if (IsInWorld())
     {
+        if (IsAreaSpiritHealer())
+        {
+            if (Creature* creature = ToCreature())
+                creature->SummonGraveyardTeleporter();
+        }
+
         m_duringRemoveFromWorld = true;
         if (UnitAI* ai = GetAI())
             ai->OnDespawn();
@@ -10498,9 +10526,14 @@ void Unit::SetMeleeAnimKitId(uint16 animKitId)
 
     std::vector<Player*> tappers;
     if (isRewardAllowed && creature)
+    {
         for (ObjectGuid tapperGuid : creature->GetTapList())
             if (Player* tapper = ObjectAccessor::GetPlayer(*creature, tapperGuid))
                 tappers.push_back(tapper);
+
+        if (!creature->CanHaveLoot())
+            isRewardAllowed = false;
+    }
 
     // Exploit fix
     if (creature && creature->IsPet() && creature->GetOwnerGUID().IsPlayer())
@@ -10689,7 +10722,7 @@ void Unit::SetMeleeAnimKitId(uint16 animKitId)
             else
                 creature->AllLootRemovedFromCorpse();
 
-            if (LootTemplates_Skinning.HaveLootFor(creature->GetCreatureTemplate()->SkinLootId))
+            if (creature->CanHaveLoot() && LootTemplates_Skinning.HaveLootFor(creature->GetCreatureTemplate()->SkinLootId))
             {
                 creature->SetDynamicFlag(UNIT_DYNFLAG_CAN_SKIN);
                 creature->SetUnitFlag(UNIT_FLAG_SKINNABLE);
@@ -11712,10 +11745,27 @@ uint32 Unit::GetCombatRatingDamageReduction(CombatRating cr, float rate, float c
 
 uint32 Unit::GetModelForForm(ShapeshiftForm form, uint32 spellId) const
 {
-    if (GetTypeId() == TYPEID_PLAYER)
+    // Hardcoded cases
+    switch (spellId)
+    {
+        case 7090: // Bear Form
+            return 29414;
+        case 35200: // Roc Form
+            return 4877;
+        case 24858: // Moonkin Form
+        {
+            if (HasAura(114301)) // Glyph of Stars
+                return 0;
+            break;
+        }
+        default:
+            break;
+    }
+
+    if (Player const* player = ToPlayer())
     {
         if (Aura* artifactAura = GetAura(ARTIFACTS_ALL_WEAPONS_GENERAL_WEAPON_EQUIPPED_PASSIVE))
-            if (Item* artifact = ToPlayer()->GetItemByGuid(artifactAura->GetCastItemGUID()))
+            if (Item* artifact = player->GetItemByGuid(artifactAura->GetCastItemGUID()))
                 if (ArtifactAppearanceEntry const* artifactAppearance = sArtifactAppearanceStore.LookupEntry(artifact->GetModifier(ITEM_MODIFIER_ARTIFACT_APPEARANCE_ID)))
                     if (ShapeshiftForm(artifactAppearance->OverrideShapeshiftFormID) == form)
                         return artifactAppearance->OverrideShapeshiftDisplayID;

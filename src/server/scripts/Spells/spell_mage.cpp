@@ -91,19 +91,10 @@ enum MageSpells
     SPELL_MAGE_TOUCH_OF_THE_MAGI_EXPLODE         = 210833,
 };
 
-enum MiscSpells
-{
-    SPELL_HUNTER_INSANITY                        = 95809,
-    SPELL_SHAMAN_EXHAUSTION                      = 57723,
-    SPELL_SHAMAN_SATED                           = 57724
-};
-
 // 110909 - Alter Time Aura
 // 342246 - Alter Time Aura
 class spell_mage_alter_time_aura : public AuraScript
 {
-    PrepareAuraScript(spell_mage_alter_time_aura);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo
@@ -153,8 +144,6 @@ private:
 // 342247 - Alter Time Active
 class spell_mage_alter_time_active : public SpellScript
 {
-    PrepareSpellScript(spell_mage_alter_time_active);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo
@@ -180,12 +169,10 @@ class spell_mage_alter_time_active : public SpellScript
 // 44425 - Arcane Barrage
 class spell_mage_arcane_barrage : public SpellScript
 {
-    PrepareSpellScript(spell_mage_arcane_barrage);
-
     bool Validate(SpellInfo const* spellInfo) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_ARCANE_BARRAGE_R3, SPELL_MAGE_ARCANE_BARRAGE_ENERGIZE })
-            && spellInfo->GetEffects().size() > EFFECT_1;
+            && ValidateSpellEffect({ { spellInfo->Id, EFFECT_1 } });
     }
 
     void ConsumeArcaneCharges()
@@ -222,8 +209,6 @@ class spell_mage_arcane_barrage : public SpellScript
 // 195302 - Arcane Charge
 class spell_mage_arcane_charge_clear : public SpellScript
 {
-    PrepareSpellScript(spell_mage_arcane_charge_clear);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_ARCANE_CHARGE });
@@ -243,14 +228,12 @@ class spell_mage_arcane_charge_clear : public SpellScript
 // 1449 - Arcane Explosion
 class spell_mage_arcane_explosion : public SpellScript
 {
-    PrepareSpellScript(spell_mage_arcane_explosion);
-
     bool Validate(SpellInfo const* spellInfo) override
     {
         if (!ValidateSpellInfo({ SPELL_MAGE_ARCANE_MAGE, SPELL_MAGE_REVERBERATE }))
             return false;
 
-        if (spellInfo->GetEffects().size() <= EFFECT_1)
+        if (!ValidateSpellEffect({ { spellInfo->Id, EFFECT_1 } }))
             return false;
 
         return spellInfo->GetEffect(EFFECT_1).IsEffect(SPELL_EFFECT_SCHOOL_DAMAGE);
@@ -292,8 +275,6 @@ class spell_mage_arcane_explosion : public SpellScript
 // 235313 - Blazing Barrier
 class spell_mage_blazing_barrier : public AuraScript
 {
-    PrepareAuraScript(spell_mage_blazing_barrier);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_BLAZING_BARRIER_TRIGGER });
@@ -351,8 +332,6 @@ private:
 // 190357 - Blizzard (Damage)
 class spell_mage_blizzard_damage : public SpellScript
 {
-    PrepareSpellScript(spell_mage_blizzard_damage);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_BLIZZARD_SLOW });
@@ -372,8 +351,6 @@ class spell_mage_blizzard_damage : public SpellScript
 // 198063 - Burning Determination
 class spell_mage_burning_determination : public AuraScript
 {
-    PrepareAuraScript(spell_mage_burning_determination);
-
     bool CheckProc(ProcEventInfo& eventInfo)
     {
         if (SpellInfo const* spellInfo = eventInfo.GetSpellInfo())
@@ -392,8 +369,6 @@ class spell_mage_burning_determination : public AuraScript
 // 86949 - Cauterize
 class spell_mage_cauterize : public SpellScript
 {
-    PrepareSpellScript(spell_mage_cauterize);
-
     void SuppressSpeedBuff(SpellEffIndex effIndex)
     {
         PreventHitDefaultEffect(effIndex);
@@ -407,11 +382,9 @@ class spell_mage_cauterize : public SpellScript
 
 class spell_mage_cauterize_AuraScript : public AuraScript
 {
-    PrepareAuraScript(spell_mage_cauterize_AuraScript);
-
     bool Validate(SpellInfo const* spellInfo) override
     {
-        return spellInfo->GetEffects().size() > EFFECT_2 && ValidateSpellInfo
+        return ValidateSpellEffect({ { spellInfo->Id, EFFECT_2 } }) && ValidateSpellInfo
         ({
             SPELL_MAGE_CAUTERIZE_DOT,
             SPELL_MAGE_CAUTERIZED,
@@ -447,8 +420,6 @@ class spell_mage_cauterize_AuraScript : public AuraScript
 // 235219 - Cold Snap
 class spell_mage_cold_snap : public SpellScript
 {
-    PrepareSpellScript(spell_mage_cold_snap);
-
     static uint32 constexpr SpellsToReset[] =
     {
         SPELL_MAGE_CONE_OF_COLD,
@@ -504,8 +475,6 @@ private:
 // 153595 - Comet Storm (launch)
 class spell_mage_comet_storm : public SpellScript
 {
-    PrepareSpellScript(spell_mage_comet_storm);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_COMET_STORM_VISUAL });
@@ -525,8 +494,6 @@ class spell_mage_comet_storm : public SpellScript
 // 228601 - Comet Storm (damage)
 class spell_mage_comet_storm_damage : public SpellScript
 {
-    PrepareSpellScript(spell_mage_comet_storm_damage);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_COMET_STORM_DAMAGE });
@@ -547,8 +514,6 @@ class spell_mage_comet_storm_damage : public SpellScript
 // 120 - Cone of Cold
 class spell_mage_cone_of_cold : public SpellScript
 {
-    PrepareSpellScript(spell_mage_cone_of_cold);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_CONE_OF_COLD_SLOW });
@@ -568,8 +533,6 @@ class spell_mage_cone_of_cold : public SpellScript
 // 190336 - Conjure Refreshment
 class spell_mage_conjure_refreshment : public SpellScript
 {
-    PrepareSpellScript(spell_mage_conjure_refreshment);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo
@@ -600,8 +563,6 @@ class spell_mage_conjure_refreshment : public SpellScript
 // 112965 - Fingers of Frost
 class spell_mage_fingers_of_frost : public AuraScript
 {
-    PrepareAuraScript(spell_mage_fingers_of_frost);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_FINGERS_OF_FROST });
@@ -637,8 +598,6 @@ class spell_mage_fingers_of_frost : public AuraScript
 // 11366 - Pyroblast
 class spell_mage_firestarter : public SpellScript
 {
-    PrepareSpellScript(spell_mage_firestarter);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_FIRESTARTER });
@@ -660,8 +619,6 @@ class spell_mage_firestarter : public SpellScript
 // 321712 - Pyroblast
 class spell_mage_firestarter_dots : public AuraScript
 {
-    PrepareAuraScript(spell_mage_firestarter_dots);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_FIRESTARTER });
@@ -683,13 +640,11 @@ class spell_mage_firestarter_dots : public AuraScript
 // 205029 - Flame On
 class spell_mage_flame_on : public AuraScript
 {
-   PrepareAuraScript(spell_mage_flame_on);
-
    bool Validate(SpellInfo const* spellInfo) override
    {
        return ValidateSpellInfo({ SPELL_MAGE_FIRE_BLAST })
            && sSpellCategoryStore.HasRecord(sSpellMgr->AssertSpellInfo(SPELL_MAGE_FIRE_BLAST, DIFFICULTY_NONE)->ChargeCategoryId)
-           && spellInfo->GetEffects().size() > EFFECT_2;
+           && ValidateSpellEffect({ { spellInfo->Id, EFFECT_2 } });
    }
 
    void CalculateAmount(AuraEffect const* /*aurEff*/, int32& amount, bool& canBeRecalculated)
@@ -707,8 +662,6 @@ class spell_mage_flame_on : public AuraScript
 // 116 - Frostbolt
 class spell_mage_frostbolt : public SpellScript
 {
-    PrepareSpellScript(spell_mage_frostbolt);
-
     bool Validate(SpellInfo const* /*spell*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_CHILLED });
@@ -729,8 +682,6 @@ class spell_mage_frostbolt : public SpellScript
 // 11426 - Ice Barrier
 class spell_mage_ice_barrier : public AuraScript
 {
-    PrepareAuraScript(spell_mage_ice_barrier);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo
@@ -765,8 +716,6 @@ class spell_mage_ice_barrier : public AuraScript
 // 45438 - Ice Block
 class spell_mage_ice_block : public SpellScript
 {
-    PrepareSpellScript(spell_mage_ice_block);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_EVERWARM_SOCKS });
@@ -795,8 +744,6 @@ class spell_mage_ice_block : public SpellScript
 // Ice Lance - 30455
 class spell_mage_ice_lance : public SpellScript
 {
-    PrepareSpellScript(spell_mage_ice_lance);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo
@@ -855,8 +802,6 @@ class spell_mage_ice_lance : public SpellScript
 // 228598 - Ice Lance
 class spell_mage_ice_lance_damage : public SpellScript
 {
-    PrepareSpellScript(spell_mage_ice_lance_damage);
-
     void ApplyDamageMultiplier(SpellEffIndex /*effIndex*/)
     {
         SpellValue const* spellValue = GetSpellValue();
@@ -878,8 +823,6 @@ class spell_mage_ice_lance_damage : public SpellScript
 // 12846 - Ignite
 class spell_mage_ignite : public AuraScript
 {
-    PrepareAuraScript(spell_mage_ignite);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_IGNITE });
@@ -916,8 +859,6 @@ class spell_mage_ignite : public AuraScript
 // 61062 - Improved Mana Gems
 class spell_mage_imp_mana_gems : public AuraScript
 {
-    PrepareAuraScript(spell_mage_imp_mana_gems);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_MANA_SURGE });
@@ -938,8 +879,6 @@ class spell_mage_imp_mana_gems : public AuraScript
 // 1463 - Incanter's Flow
 class spell_mage_incanters_flow : public AuraScript
 {
-    PrepareAuraScript(spell_mage_incanters_flow);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_INCANTERS_FLOW });
@@ -980,8 +919,6 @@ private:
 // 44457 - Living Bomb
 class spell_mage_living_bomb : public SpellScript
 {
-    PrepareSpellScript(spell_mage_living_bomb);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_LIVING_BOMB_PERIODIC });
@@ -1002,8 +939,6 @@ class spell_mage_living_bomb : public SpellScript
 // 44461 - Living Bomb
 class spell_mage_living_bomb_explosion : public SpellScript
 {
-    PrepareSpellScript(spell_mage_living_bomb_explosion);
-
     bool Validate(SpellInfo const* spellInfo) override
     {
         return spellInfo->NeedsExplicitUnitTarget() && ValidateSpellInfo({ SPELL_MAGE_LIVING_BOMB_PERIODIC });
@@ -1030,8 +965,6 @@ class spell_mage_living_bomb_explosion : public SpellScript
 // 217694 - Living Bomb
 class spell_mage_living_bomb_periodic : public AuraScript
 {
-    PrepareAuraScript(spell_mage_living_bomb_periodic);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_LIVING_BOMB_EXPLOSION });
@@ -1061,8 +994,6 @@ enum SilvermoonPolymorph
 // 32826 - Polymorph (Visual)
 class spell_mage_polymorph_visual : public SpellScript
 {
-    PrepareSpellScript(spell_mage_polymorph_visual);
-
     static const uint32 PolymorhForms[6];
 
     bool Validate(SpellInfo const* /*spellInfo*/) override
@@ -1097,13 +1028,16 @@ uint32 const spell_mage_polymorph_visual::PolymorhForms[6] =
 // 235450 - Prismatic Barrier
 class spell_mage_prismatic_barrier : public AuraScript
 {
-    PrepareAuraScript(spell_mage_prismatic_barrier);
+    bool Validate(SpellInfo const* spellInfo) override
+    {
+        return ValidateSpellEffect({ { spellInfo->Id, EFFECT_5 } });
+    }
 
     void CalculateAmount(AuraEffect const* /*aurEff*/, int32& amount, bool& canBeRecalculated)
     {
         canBeRecalculated = false;
         if (Unit* caster = GetCaster())
-            amount += int32(caster->SpellBaseHealingBonusDone(GetSpellInfo()->GetSchoolMask()) * 7.0f);
+            amount = int32(CalculatePct(caster->GetMaxHealth(), GetEffectInfo(EFFECT_5).CalcValue(caster)));
     }
 
     void Register() override
@@ -1115,8 +1049,6 @@ class spell_mage_prismatic_barrier : public AuraScript
 // 205021 - Ray of Frost
 class spell_mage_ray_of_frost : public SpellScript
 {
-    PrepareSpellScript(spell_mage_ray_of_frost);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo ({ SPELL_MAGE_RAY_OF_FROST_FINGERS_OF_FROST });
@@ -1136,8 +1068,6 @@ class spell_mage_ray_of_frost : public SpellScript
 
 class spell_mage_ray_of_frost_aura : public AuraScript
 {
-    PrepareAuraScript(spell_mage_ray_of_frost_aura);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo ({ SPELL_MAGE_RAY_OF_FROST_BONUS, SPELL_MAGE_RAY_OF_FROST_FINGERS_OF_FROST });
@@ -1168,12 +1098,10 @@ class spell_mage_ray_of_frost_aura : public AuraScript
 // 136511 - Ring of Frost
 class spell_mage_ring_of_frost : public AuraScript
 {
-    PrepareAuraScript(spell_mage_ring_of_frost);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_RING_OF_FROST_SUMMON, SPELL_MAGE_RING_OF_FROST_FREEZE })
-            && !sSpellMgr->AssertSpellInfo(SPELL_MAGE_RING_OF_FROST_SUMMON, DIFFICULTY_NONE)->GetEffects().empty();
+            && ValidateSpellEffect({ { SPELL_MAGE_RING_OF_FROST_SUMMON, EFFECT_0 } });
     }
 
     void HandleEffectPeriodic(AuraEffect const* /*aurEff*/)
@@ -1225,18 +1153,16 @@ private:
 // 82691 - Ring of Frost (freeze efect)
 class spell_mage_ring_of_frost_freeze : public SpellScript
 {
-    PrepareSpellScript(spell_mage_ring_of_frost_freeze);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_RING_OF_FROST_SUMMON, SPELL_MAGE_RING_OF_FROST_FREEZE })
-            && !sSpellMgr->AssertSpellInfo(SPELL_MAGE_RING_OF_FROST_SUMMON, DIFFICULTY_NONE)->GetEffects().empty();
+            && ValidateSpellEffect({ { SPELL_MAGE_RING_OF_FROST_SUMMON, EFFECT_0 } });
     }
 
     void FilterTargets(std::list<WorldObject*>& targets)
     {
         WorldLocation const* dest = GetExplTargetDest();
-        float outRadius = sSpellMgr->AssertSpellInfo(SPELL_MAGE_RING_OF_FROST_SUMMON, GetCastDifficulty())->GetEffect(EFFECT_0).CalcRadius();
+        float outRadius = sSpellMgr->AssertSpellInfo(SPELL_MAGE_RING_OF_FROST_SUMMON, GetCastDifficulty())->GetEffect(EFFECT_0).CalcRadius(nullptr, SpellTargetIndex::TargetB);
         float inRadius = 6.5f;
 
         targets.remove_if([dest, outRadius, inRadius](WorldObject* target)
@@ -1256,8 +1182,6 @@ class spell_mage_ring_of_frost_freeze : public SpellScript
 
 class spell_mage_ring_of_frost_freeze_AuraScript : public AuraScript
 {
-    PrepareAuraScript(spell_mage_ring_of_frost_freeze_AuraScript);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_RING_OF_FROST_DUMMY });
@@ -1279,8 +1203,6 @@ class spell_mage_ring_of_frost_freeze_AuraScript : public AuraScript
 // 157980 - Supernova
 class spell_mage_supernova : public SpellScript
 {
-    PrepareSpellScript(spell_mage_supernova);
-
     void HandleDamage(SpellEffIndex /*effIndex*/)
     {
         if (GetExplTargetUnit() == GetHitUnit())
@@ -1297,49 +1219,9 @@ class spell_mage_supernova : public SpellScript
     }
 };
 
-// 80353 - Time Warp
-class spell_mage_time_warp : public SpellScript
-{
-    PrepareSpellScript(spell_mage_time_warp);
-
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo(
-        {
-            SPELL_MAGE_TEMPORAL_DISPLACEMENT,
-            SPELL_HUNTER_INSANITY,
-            SPELL_SHAMAN_EXHAUSTION,
-            SPELL_SHAMAN_SATED,
-            SPELL_PET_NETHERWINDS_FATIGUED
-        });
-    }
-
-    void RemoveInvalidTargets(std::list<WorldObject*>& targets)
-    {
-        targets.remove_if(Trinity::UnitAuraCheck(true, SPELL_MAGE_TEMPORAL_DISPLACEMENT));
-        targets.remove_if(Trinity::UnitAuraCheck(true, SPELL_HUNTER_INSANITY));
-        targets.remove_if(Trinity::UnitAuraCheck(true, SPELL_SHAMAN_EXHAUSTION));
-        targets.remove_if(Trinity::UnitAuraCheck(true, SPELL_SHAMAN_SATED));
-    }
-
-    void ApplyDebuff()
-    {
-        if (Unit* target = GetHitUnit())
-            target->CastSpell(target, SPELL_MAGE_TEMPORAL_DISPLACEMENT, true);
-    }
-
-    void Register() override
-    {
-        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_mage_time_warp::RemoveInvalidTargets, EFFECT_ALL, TARGET_UNIT_CASTER_AREA_RAID);
-        AfterHit += SpellHitFn(spell_mage_time_warp::ApplyDebuff);
-    }
-};
-
 // 210824 - Touch of the Magi (Aura)
 class spell_mage_touch_of_the_magi_aura : public AuraScript
 {
-    PrepareAuraScript(spell_mage_touch_of_the_magi_aura);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_TOUCH_OF_THE_MAGI_EXPLODE });
@@ -1379,8 +1261,6 @@ class spell_mage_touch_of_the_magi_aura : public AuraScript
 // 33395 Water Elemental's Freeze
 class spell_mage_water_elemental_freeze : public SpellScript
 {
-    PrepareSpellScript(spell_mage_water_elemental_freeze);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MAGE_FINGERS_OF_FROST });
@@ -1439,7 +1319,6 @@ void AddSC_mage_spell_scripts()
     RegisterSpellScript(spell_mage_ring_of_frost);
     RegisterSpellAndAuraScriptPair(spell_mage_ring_of_frost_freeze, spell_mage_ring_of_frost_freeze_AuraScript);
     RegisterSpellScript(spell_mage_supernova);
-    RegisterSpellScript(spell_mage_time_warp);
     RegisterSpellScript(spell_mage_touch_of_the_magi_aura);
     RegisterSpellScript(spell_mage_water_elemental_freeze);
 }

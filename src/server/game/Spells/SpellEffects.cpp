@@ -2945,7 +2945,7 @@ void Spell::EffectScriptEffect()
                 case 45151:
                 {
                     //Workaround for Range ... should be global for every ScriptEffect
-                    float radius = effectInfo->CalcRadius();
+                    float radius = effectInfo->CalcRadius(nullptr, SpellTargetIndex::TargetB);
                     if (unitTarget && unitTarget->GetTypeId() == TYPEID_PLAYER && unitTarget->GetDistance(m_caster) >= radius && !unitTarget->HasAura(46394) && unitTarget != m_caster)
                         unitTarget->CastSpell(unitTarget, 46394, this);
 
@@ -4231,7 +4231,7 @@ void Spell::EffectTransmitted()
     if (m_targets.HasDst())
         destTarget->GetPosition(fx, fy, fz, fo);
     //FIXME: this can be better check for most objects but still hack
-    else if (effectInfo->HasRadius() && m_spellInfo->Speed == 0)
+    else if (effectInfo->HasRadius(SpellTargetIndex::TargetA) && m_spellInfo->Speed == 0)
     {
         float dis = effectInfo->CalcRadius(unitCaster);
         unitCaster->GetClosePoint(fx, fy, fz, DEFAULT_PLAYER_BOUNDING_RADIUS, dis);
@@ -4395,26 +4395,29 @@ void Spell::EffectSkill()
     TC_LOG_DEBUG("spells", "WORLD: SkillEFFECT");
 }
 
-/* There is currently no need for this effect. We handle it in Battleground.cpp
-   If we would handle the resurrection here, the spiritguide would instantly disappear as the
-   player revives, and so we wouldn't see the spirit heal visual effect on the npc.
-   This is why we use a half sec delay between the visual effect and the resurrection itself */
 void Spell::EffectSpiritHeal()
 {
+    Unit* caster = GetCaster()->ToUnit();
+    if (effectHandleMode == SPELL_EFFECT_HANDLE_HIT)
+        caster->CastSpell(nullptr, SPELL_RESURRECTION_VISUAL, true);
+
     if (effectHandleMode != SPELL_EFFECT_HANDLE_HIT_TARGET)
         return;
 
-    /*
-    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
-        return;
-    if (!unitTarget->IsInWorld())
-        return;
+    if (Player* playerTarget = unitTarget->ToPlayer())
+    {
+        if (!playerTarget->IsInWorld())
+            return;
 
-    //m_spellInfo->Effects[i].BasePoints; == 99 (percent?)
-    //unitTarget->ToPlayer()->setResurrect(m_caster->GetGUID(), unitTarget->GetPositionX(), unitTarget->GetPositionY(), unitTarget->GetPositionZ(), unitTarget->GetMaxHealth(), unitTarget->GetMaxPower(POWER_MANA));
-    unitTarget->ToPlayer()->ResurrectPlayer(1.0f);
-    unitTarget->ToPlayer()->SpawnCorpseBones();
-    */
+        // skip if player does not want to live
+        if (!playerTarget->CanAcceptAreaSpiritHealFrom(caster))
+            return;
+
+        playerTarget->ResurrectPlayer(1.0f);
+        playerTarget->CastSpell(playerTarget, SPELL_PET_SUMMONED, true);
+        playerTarget->CastSpell(playerTarget, SPELL_SPIRIT_HEAL_MANA, true);
+        playerTarget->SpawnCorpseBones(false);
+    }
 }
 
 // remove insignia spell effect
@@ -5117,7 +5120,7 @@ void Spell::EffectCreateAreaTrigger()
 
     int32 duration = GetSpellInfo()->CalcDuration(GetCaster());
 
-    AreaTrigger::CreateAreaTrigger(effectInfo->MiscValue, unitCaster, nullptr, GetSpellInfo(), destTarget->GetPosition(), duration, m_SpellVisual, m_castId);
+    AreaTrigger::CreateAreaTrigger(effectInfo->MiscValue, unitCaster, nullptr, GetSpellInfo(), destTarget->GetPosition(), duration, m_SpellVisual, this);
 }
 
 void Spell::EffectRemoveTalent()

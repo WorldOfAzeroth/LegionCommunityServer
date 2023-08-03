@@ -361,7 +361,7 @@ void WorldSession::HandleLeaveGroupOpcode(WorldPackets::Party::LeaveGroup& /*pac
     }
 }
 
-void WorldSession::HandleSetLootMethodOpcode(WorldPackets::Party::SetLootMethod& packet)
+void WorldSession::HandleSetLootMethodOpcode(WorldPackets::Party::SetLootMethod& /*packet*/)
 {
     // not allowed to change
     /*
@@ -543,6 +543,7 @@ void WorldSession::HandleSetPartyAssignment(WorldPackets::Party::SetPartyAssignm
         case GROUP_ASSIGN_MAINTANK:
             group->RemoveUniqueGroupMemberFlag(MEMBER_FLAG_MAINTANK);           // Remove main assist flag from current if any.
             group->SetGroupMemberFlag(packet.Target, packet.Set, MEMBER_FLAG_MAINTANK);
+            break;
         default:
             break;
     }

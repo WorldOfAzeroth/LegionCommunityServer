@@ -146,6 +146,8 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
         using Unit::SetImmuneToNPC;
         void SetImmuneToNPC(bool apply) override { Unit::SetImmuneToNPC(apply, HasReactState(REACT_PASSIVE)); }
 
+        void SetUnkillable(bool unkillable) { _staticFlags.ApplyFlag(CREATURE_STATIC_FLAG_UNKILLABLE, unkillable); }
+
         /// @todo Rename these properly
         bool isCanInteractWithBattleMaster(Player* player, bool msg) const;
         bool CanResetTalents(Player* player) const;
@@ -180,6 +182,9 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
 
         SpellSchoolMask GetMeleeDamageSchoolMask(WeaponAttackType /*attackType*/ = BASE_ATTACK) const override { return m_meleeDamageSchoolMask; }
         void SetMeleeDamageSchool(SpellSchools school) { m_meleeDamageSchoolMask = SpellSchoolMask(1 << school); }
+        bool CanMelee() const { return !_staticFlags.HasFlag(CREATURE_STATIC_FLAG_NO_MELEE); }
+        void SetCanMelee(bool canMelee) { _staticFlags.ApplyFlag(CREATURE_STATIC_FLAG_NO_MELEE, !canMelee); }
+        bool CanIgnoreLineOfSightWhenCastingOnMe() const { return _staticFlags.HasFlag(CREATURE_STATIC_FLAG_4_IGNORE_LOS_WHEN_CASTING_ON_ME); }
 
         bool HasSpell(uint32 spellID) const override;
 
@@ -227,6 +232,8 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
         virtual void SaveToDB(uint32 mapid, std::vector<Difficulty> const& spawnDifficulties);
         static bool DeleteFromDB(ObjectGuid::LowType spawnId);
 
+        bool CanHaveLoot() const { return !_staticFlags.HasFlag(CREATURE_STATIC_FLAG_NO_LOOT); }
+        void SetCanHaveLoot(bool canHaveLoot) { _staticFlags.ApplyFlag(CREATURE_STATIC_FLAG_NO_LOOT, !canHaveLoot); }
         std::unique_ptr<Loot> m_loot;
         std::unordered_map<ObjectGuid, std::unique_ptr<Loot>> m_personalLoot;
         void StartPickPocketRefillTimer();
@@ -302,8 +309,8 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
         bool hasQuest(uint32 quest_id) const override;
         bool hasInvolvedQuest(uint32 quest_id)  const override;
 
-        bool CanRegenerateHealth() const { return !_regenerateHealthLock && _regenerateHealth; }
-        void SetRegenerateHealth(bool value) { _regenerateHealthLock = !value; }
+        bool CanRegenerateHealth() const { return !_staticFlags.HasFlag(CREATURE_STATIC_FLAG_5_NO_HEALTH_REGEN) && _regenerateHealth; }
+        void SetRegenerateHealth(bool value) { _staticFlags.ApplyFlag(CREATURE_STATIC_FLAG_5_NO_HEALTH_REGEN, !value); }
         virtual uint8 GetPetAutoSpellSize() const { return MAX_SPELL_CHARM; }
         virtual uint32 GetPetAutoSpellOnPos(uint8 pos) const;
         float GetPetChaseDistance() const;
@@ -390,6 +397,23 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
 
         void ExitVehicle(Position const* exitPosition = nullptr) override;
 
+        bool HasFlag(CreatureStaticFlags flag) const { return _staticFlags.HasFlag(flag); }
+        bool HasFlag(CreatureStaticFlags2 flag) const { return _staticFlags.HasFlag(flag); }
+        bool HasFlag(CreatureStaticFlags3 flag) const { return _staticFlags.HasFlag(flag); }
+        bool HasFlag(CreatureStaticFlags4 flag) const { return _staticFlags.HasFlag(flag); }
+        bool HasFlag(CreatureStaticFlags5 flag) const { return _staticFlags.HasFlag(flag); }
+        bool HasFlag(CreatureStaticFlags6 flag) const { return _staticFlags.HasFlag(flag); }
+        bool HasFlag(CreatureStaticFlags7 flag) const { return _staticFlags.HasFlag(flag); }
+        bool HasFlag(CreatureStaticFlags8 flag) const { return _staticFlags.HasFlag(flag); }
+
+        uint32 GetGossipMenuId() const;
+        void SetGossipMenuId(uint32 gossipMenuId);
+
+        uint32 GetTrainerId() const;
+        void SetTrainerId(Optional<uint32> trainerId);
+
+        void SummonGraveyardTeleporter();
+
     protected:
         bool CreateFromProto(ObjectGuid::LowType guidlow, uint32 entry, CreatureData const* data = nullptr, uint32 vehId = 0);
         bool InitEntry(uint32 entry, CreatureData const* data = nullptr);
@@ -470,11 +494,15 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
         time_t _lastDamagedTime; // Part of Evade mechanics
         CreatureTextRepeatGroup m_textRepeat;
 
+        CreatureStaticFlagsHolder _staticFlags;
+
         // Regenerate health
         bool _regenerateHealth; // Set on creation
-        bool _regenerateHealthLock; // Dynamically set
 
         bool _isMissingCanSwimFlagOutOfCombat;
+
+        uint32 _gossipMenuId;
+        Optional<uint32> _trainerId;
 };
 
 class TC_GAME_API AssistDelayEvent : public BasicEvent

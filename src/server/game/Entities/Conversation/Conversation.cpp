@@ -235,6 +235,7 @@ void Conversation::AddActor(int32 actorId, uint32 actorIdx, ObjectGuid const& ac
 {
     UF::ConversationActor actorField;
     actorField.ActorGUID = actorGuid;
+    actorField.Id = actorId;
     actorField.Type = AsUnderlyingType(ConversationActorType::WorldObject);
     SetDynamicStructuredValue(CONVERSATION_DYNAMIC_FIELD_ACTORS, actorIdx, &actorField);
 }

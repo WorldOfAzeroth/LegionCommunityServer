@@ -293,7 +293,7 @@ Creature::Creature(bool isWorldObject): Unit(isWorldObject), MapObject(), m_Play
     m_defaultMovementType(IDLE_MOTION_TYPE), m_spawnId(UI64LIT(0)), m_equipmentId(0), m_originalEquipmentId(0), m_AlreadyCallAssistance(false), m_AlreadySearchedAssistance(false), m_cannotReachTarget(false), m_cannotReachTimer(0),
     m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL), m_originalEntry(0), m_homePosition(), m_transportHomePosition(), m_creatureInfo(nullptr), m_creatureData(nullptr), _waypointPathId(0), _currentWaypointNodeInfo(0, 0),
     m_formation(nullptr), m_triggerJustAppeared(true), m_respawnCompatibilityMode(false), _lastDamagedTime(0),
-    _regenerateHealth(true), _regenerateHealthLock(false), _isMissingCanSwimFlagOutOfCombat(false)
+    _regenerateHealth(true), _isMissingCanSwimFlagOutOfCombat(false)
 {
     m_regenTimer = CREATURE_REGEN_INTERVAL;
     m_valuesCount = UNIT_END;
@@ -659,7 +659,7 @@ bool Creature::UpdateEntry(uint32 entry, CreatureData const* data /*= nullptr*/,
 
     // trigger creature is always uninteractible and can not be attacked
     if (IsTrigger())
-        SetUnitFlag(UNIT_FLAG_UNINTERACTIBLE);
+        SetUninteractible(true);
 
     InitializeReactState();
 
@@ -691,6 +691,9 @@ void Creature::Update(uint32 diff)
 {
     if (IsAIEnabled() && m_triggerJustAppeared && m_deathState != DEAD)
     {
+        if (IsAreaSpiritHealer() && !IsAreaSpiritHealerIndividual())
+            CastSpell(nullptr, SPELL_SPIRIT_HEAL_CHANNEL_AOE, false);
+
         if (m_respawnCompatibilityMode && m_vehicleKit)
             m_vehicleKit->Reset();
         m_triggerJustAppeared = false;
@@ -1121,7 +1124,7 @@ bool Creature::Create(ObjectGuid::LowType guidlow, Map* map, uint32 entry, Posit
 
     LastUsedScriptID = GetScriptId();
 
-    if (IsSpiritHealer() || IsSpiritGuide() || (GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_GHOST_VISIBILITY))
+    if (IsSpiritHealer() || IsAreaSpiritHealer() || (GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_GHOST_VISIBILITY))
     {
         m_serverSideVisibility.SetValue(SERVERSIDE_VISIBILITY_GHOST, GHOST_VISIBILITY_GHOST);
         m_serverSideVisibilityDetect.SetValue(SERVERSIDE_VISIBILITY_GHOST, GHOST_VISIBILITY_GHOST);
@@ -1843,7 +1846,7 @@ void Creature::LoadEquipment(int8 id, bool force /*= true*/)
 
 void Creature::SetSpawnHealth()
 {
-    if (_regenerateHealthLock)
+    if (_staticFlags.HasFlag(CREATURE_STATIC_FLAG_5_NO_HEALTH_REGEN))
         return;
 
     uint32 curhealth;
@@ -2478,7 +2481,7 @@ bool Creature::CanAssistTo(Unit const* u, Unit const* enemy, bool checkfaction /
     if (IsCivilian())
         return false;
 
-    if (HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_UNINTERACTIBLE) || IsImmuneToNPC())
+    if (HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE) || IsImmuneToNPC() || IsUninteractible())
         return false;
 
     // skip fighting creature
@@ -3493,4 +3496,46 @@ void Creature::ExitVehicle(Position const* /*exitPosition*/)
     // if the creature exits a vehicle, set it's home position to the
     // exited position so it won't run away (home) and evade if it's hostile
     SetHomePosition(GetPosition());
+}
+
+uint32 Creature::GetGossipMenuId() const
+{
+    return _gossipMenuId;
+}
+
+void Creature::SetGossipMenuId(uint32 gossipMenuId)
+{
+    _gossipMenuId = gossipMenuId;
+}
+
+uint32 Creature::GetTrainerId() const
+{
+    if (_trainerId)
+        return *_trainerId;
+
+    return sObjectMgr->GetCreatureDefaultTrainer(GetEntry());
+}
+
+void Creature::SetTrainerId(Optional<uint32> trainerId)
+{
+    _trainerId = trainerId;
+}
+
+enum AreaSpiritHealerData
+{
+    NPC_ALLIANCE_GRAVEYARD_TELEPORT     = 26350,
+    NPC_HORDE_GRAVEYARD_TELEPORT        = 26351
+};
+
+void Creature::SummonGraveyardTeleporter()
+{
+    if (!IsAreaSpiritHealer())
+        return;
+
+    uint32 npcEntry = GetFaction() == FACTION_ALLIANCE_GENERIC ? NPC_ALLIANCE_GRAVEYARD_TELEPORT : NPC_HORDE_GRAVEYARD_TELEPORT;
+
+    // maybe NPC is summoned with these spells:
+    // ID - 24237 Summon Alliance Graveyard Teleporter (SERVERSIDE)
+    // ID - 46894 Summon Horde Graveyard Teleporter (SERVERSIDE)
+    SummonCreature(npcEntry, GetPosition(), TEMPSUMMON_TIMED_DESPAWN, 1s, 0, 0);
 }

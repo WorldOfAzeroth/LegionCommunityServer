@@ -1095,14 +1095,15 @@ class TC_GAME_API Unit : public WorldObject
         bool IsBattleMaster()   const { return HasNpcFlag(UNIT_NPC_FLAG_BATTLEMASTER); }
         bool IsBanker()         const { return HasNpcFlag(UNIT_NPC_FLAG_BANKER); }
         bool IsInnkeeper()      const { return HasNpcFlag(UNIT_NPC_FLAG_INNKEEPER); }
-        bool IsSpiritHealer()   const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITHEALER); }
-        bool IsSpiritGuide()    const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITGUIDE); }
+        bool IsSpiritHealer()   const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRIT_HEALER); }
+        bool IsAreaSpiritHealer() const { return HasNpcFlag(UNIT_NPC_FLAG_AREA_SPIRIT_HEALER); }
         bool IsTabardDesigner() const { return HasNpcFlag(UNIT_NPC_FLAG_TABARDDESIGNER); }
         bool IsAuctioner()      const { return HasNpcFlag(UNIT_NPC_FLAG_AUCTIONEER); }
         bool IsArmorer()        const { return HasNpcFlag(UNIT_NPC_FLAG_REPAIR); }
         bool IsWildBattlePet()  const { return HasNpcFlag(UNIT_NPC_FLAG_WILD_BATTLE_PET); }
         bool IsServiceProvider() const;
-        bool IsSpiritService() const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRITHEALER | UNIT_NPC_FLAG_SPIRITGUIDE); }
+        bool IsSpiritService() const { return HasNpcFlag(UNIT_NPC_FLAG_SPIRIT_HEALER | UNIT_NPC_FLAG_AREA_SPIRIT_HEALER); }
+        bool IsAreaSpiritHealerIndividual() const { return HasNpcFlag2(UNIT_NPC_FLAG_2_AREA_SPIRIT_HEALER_INDIVIDUAL); }
         bool IsCritter() const { return GetCreatureType() == CREATURE_TYPE_CRITTER; }
 
         bool IsInFlight()  const { return HasUnitState(UNIT_STATE_IN_FLIGHT); }
@@ -1129,6 +1130,12 @@ class TC_GAME_API Unit : public WorldObject
         bool IsImmuneToNPC() const { return HasUnitFlag(UNIT_FLAG_IMMUNE_TO_NPC); }
         void SetImmuneToNPC(bool apply, bool keepCombat);
         virtual void SetImmuneToNPC(bool apply) { SetImmuneToNPC(apply, false); }
+
+        bool IsUninteractible() const { return HasUnitFlag(UNIT_FLAG_UNINTERACTIBLE); }
+        void SetUninteractible(bool apply);
+
+        bool CannotTurn() const { return HasUnitFlag2(UNIT_FLAG2_CANNOT_TURN); }
+        void SetCannotTurn(bool apply);
 
         bool IsInCombat() const { return HasUnitFlag(UNIT_FLAG_IN_COMBAT); }
         bool IsInCombatWith(Unit const* who) const { return who && m_combatManager.IsInCombatWith(who); }

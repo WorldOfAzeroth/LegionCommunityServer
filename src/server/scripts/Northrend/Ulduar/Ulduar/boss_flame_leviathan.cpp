@@ -250,7 +250,8 @@ class boss_flame_leviathan : public CreatureScript
 
                 DoCast(SPELL_INVIS_AND_STEALTH_DETECT);
 
-                me->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_UNINTERACTIBLE | UNIT_FLAG_STUNNED);
+                me->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_STUNNED);
+                me->SetUninteractible(true);
                 me->SetReactState(REACT_PASSIVE);
             }
 
@@ -571,7 +572,8 @@ class boss_flame_leviathan : public CreatureScript
                 if (id != ACTION_MOVE_TO_CENTER_POSITION)
                     return;
                 me->SetReactState(REACT_AGGRESSIVE);
-                me->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_UNINTERACTIBLE | UNIT_FLAG_STUNNED);
+                me->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_STUNNED);
+                me->SetUninteractible(false);
             }
 
             private:
@@ -645,10 +647,10 @@ class boss_flame_leviathan_seat : public CreatureScript
                         if (Creature* device = devicePassenger->ToCreature())
                         {
                             device->SetNpcFlag(UNIT_NPC_FLAG_SPELLCLICK);
-                            device->RemoveUnitFlag(UNIT_FLAG_UNINTERACTIBLE);
+                            device->SetUninteractible(false);
                         }
 
-                    me->SetUnitFlag(UNIT_FLAG_UNINTERACTIBLE);
+                    me->SetUninteractible(true);
                 }
                 else if (seatId == SEAT_TURRET)
                 {
@@ -774,7 +776,7 @@ class boss_flame_leviathan_overload_device : public CreatureScript
                 if (me->GetVehicle())
                 {
                     me->RemoveNpcFlag(UNIT_NPC_FLAG_SPELLCLICK);
-                    me->SetUnitFlag(UNIT_FLAG_UNINTERACTIBLE);
+                    me->SetUninteractible(true);
 
                     if (Unit* player = me->GetVehicle()->GetPassenger(SEAT_PLAYER))
                     {
@@ -901,7 +903,7 @@ class npc_pool_of_tar : public CreatureScript
         {
             npc_pool_of_tarAI(Creature* creature) : ScriptedAI(creature)
             {
-                me->RemoveUnitFlag(UNIT_FLAG_UNINTERACTIBLE);
+                me->SetUninteractible(false);
                 me->SetReactState(REACT_PASSIVE);
                 me->CastSpell(me, SPELL_TAR_PASSIVE, true);
             }
@@ -970,7 +972,7 @@ class npc_thorims_hammer : public CreatureScript
         {
             npc_thorims_hammerAI(Creature* creature) : ScriptedAI(creature)
             {
-                me->SetUnitFlag(UNIT_FLAG_UNINTERACTIBLE);
+                me->SetUninteractible(true);
                 me->CastSpell(me, AURA_DUMMY_BLUE, true);
             }
 
@@ -1009,7 +1011,8 @@ public:
         npc_mimirons_infernoAI(Creature* creature) : EscortAI(creature)
         {
             Initialize();
-            me->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_UNINTERACTIBLE);
+            me->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+            me->SetUninteractible(true);
             me->CastSpell(me, AURA_DUMMY_YELLOW, true);
             me->SetReactState(REACT_PASSIVE);
         }
@@ -1066,7 +1069,7 @@ class npc_hodirs_fury : public CreatureScript
         {
             npc_hodirs_furyAI(Creature* creature) : ScriptedAI(creature)
             {
-                me->SetUnitFlag(UNIT_FLAG_UNINTERACTIBLE);
+                me->SetUninteractible(true);
                 me->CastSpell(me, AURA_DUMMY_GREEN, true);
             }
 
@@ -1426,8 +1429,6 @@ class achievement_unbroken : public AchievementCriteriaScript
 // 62399 - Overload Circuit
 class spell_overload_circuit : public AuraScript
 {
-    PrepareAuraScript(spell_overload_circuit);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_SYSTEMS_SHUTDOWN });
@@ -1452,8 +1453,6 @@ class spell_overload_circuit : public AuraScript
 // 62292 - Blaze
 class spell_tar_blaze : public AuraScript
 {
-    PrepareAuraScript(spell_tar_blaze);
-
     bool Validate(SpellInfo const* spellInfo) override
     {
         return !spellInfo->GetEffects().empty() && ValidateSpellInfo({ spellInfo->GetEffect(EFFECT_0).TriggerSpell });
@@ -1484,8 +1483,6 @@ class spell_load_into_catapult : public SpellScriptLoader
 
         class spell_load_into_catapult_AuraScript : public AuraScript
         {
-            PrepareAuraScript(spell_load_into_catapult_AuraScript);
-
             void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
             {
                 Unit* owner = GetOwner()->ToUnit();
@@ -1530,8 +1527,6 @@ class spell_auto_repair : public SpellScriptLoader
 
         class spell_auto_repair_SpellScript : public SpellScript
         {
-            PrepareSpellScript(spell_auto_repair_SpellScript);
-
             void CheckCooldownForTarget(SpellMissInfo missInfo)
             {
                 if (missInfo != SPELL_MISS_NONE)
@@ -1595,8 +1590,6 @@ class spell_systems_shutdown : public SpellScriptLoader
 
         class spell_systems_shutdown_AuraScript : public AuraScript
         {
-            PrepareAuraScript(spell_systems_shutdown_AuraScript);
-
             void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
             {
                 Creature* owner = GetOwner()->ToCreature();
@@ -1678,8 +1671,6 @@ class spell_pursue : public SpellScriptLoader
 
         class spell_pursue_SpellScript : public SpellScript
         {
-            PrepareSpellScript(spell_pursue_SpellScript);
-
         private:
             // EFFECT #0 - select target
             void FilterTargets(std::list<WorldObject*>& targets)
@@ -1726,7 +1717,6 @@ class spell_vehicle_throw_passenger : public SpellScriptLoader
 
         class spell_vehicle_throw_passenger_SpellScript : public SpellScript
         {
-            PrepareSpellScript(spell_vehicle_throw_passenger_SpellScript);
             void HandleScript(SpellEffIndex /*effIndex*/)
             {
                 Spell* baseSpell = GetSpell();

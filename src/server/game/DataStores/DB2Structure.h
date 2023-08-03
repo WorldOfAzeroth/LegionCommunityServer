@@ -1282,7 +1282,7 @@ struct GarrSiteLevelPlotInstEntry
 struct GemPropertiesEntry
 {
     uint32 ID;
-    uint32 Type;
+    int32 Type;
     uint16 EnchantId;
     uint16 MinItemLevel;
 };

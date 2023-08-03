@@ -51,6 +51,7 @@ enum PaladinSpells
     SPELL_PALADIN_CONSECRATION                   = 26573,
     SPELL_PALADIN_CONSECRATION_DAMAGE            = 81297,
     SPELL_PALADIN_CONSECRATION_PROTECTION_AURA   = 188370,
+    SPELL_PALADIN_CRUSADING_STRIKES_ENERGIZE     = 406834,
     SPELL_PALADIN_DIVINE_PURPOSE_TRIGGERED       = 223819,
     SPELL_PALADIN_DIVINE_STEED_HUMAN             = 221883,
     SPELL_PALADIN_DIVINE_STEED_DWARF             = 276111,
@@ -59,6 +60,7 @@ enum PaladinSpells
     SPELL_PALADIN_DIVINE_STEED_BLOODELF          = 221886,
     SPELL_PALADIN_DIVINE_STEED_TAUREN            = 221885,
     SPELL_PALADIN_DIVINE_STEED_ZANDALARI_TROLL   = 294133,
+    SPELL_PALADIN_DIVINE_STEED_LF_DRAENEI        = 363608,
     SPELL_PALADIN_DIVINE_STORM_DAMAGE            = 224239,
     SPELL_PALADIN_ENDURING_LIGHT                 = 40471,
     SPELL_PALADIN_ENDURING_JUDGEMENT             = 40472,
@@ -97,6 +99,7 @@ enum PaladinSpells
     SPELL_PALADIN_RIGHTEOUS_DEFENSE_TAUNT        = 31790,
     SPELL_PALADIN_RIGHTEOUS_VERDICT_AURA         = 267611,
     SPELL_PALADIN_SEAL_OF_RIGHTEOUSNESS          = 25742,
+    SPELL_PALADIN_SHIELD_OF_VENGEANCE_DAMAGE     = 184689,
     SPELL_PALADIN_TEMPLAR_VERDICT_DAMAGE         = 224266,
     SPELL_PALADIN_ZEAL_AURA                      = 269571
 };
@@ -125,8 +128,6 @@ enum PaladinSpellVisual
 // 267344 - Art of War
 class spell_pal_art_of_war : public AuraScript
 {
-    PrepareAuraScript(spell_pal_art_of_war);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_PALADIN_ART_OF_WAR_TRIGGERED, SPELL_PALADIN_BLADE_OF_JUSTICE });
@@ -164,7 +165,7 @@ struct areatrigger_pal_ashen_hallow : AreaTriggerAI
         }
     }
 
-    void OnCreate() override
+    void OnCreate(Spell const* /*creatingSpell*/) override
     {
         RefreshPeriod();
         _refreshTimer = _period;
@@ -214,8 +215,6 @@ class spell_pal_ardent_defender : public SpellScriptLoader
 
         class spell_pal_ardent_defender_AuraScript : public AuraScript
         {
-            PrepareAuraScript(spell_pal_ardent_defender_AuraScript);
-
             uint32 _absorbPct = 0;
             uint32 _healPct = 0;
 
@@ -290,12 +289,10 @@ class spell_pal_ardent_defender : public SpellScriptLoader
 // 248033 - Awakening
 class spell_pal_awakening : public AuraScript
 {
-    PrepareAuraScript(spell_pal_awakening);
-
     bool Validate(SpellInfo const* spellInfo) override
     {
         return ValidateSpellInfo({ SPELL_PALADIN_AVENGING_WRATH })
-            && spellInfo->GetEffects().size() >= EFFECT_1;
+            && ValidateSpellEffect({ { spellInfo->Id, EFFECT_1 } });
     }
 
     bool CheckProc(AuraEffect const* aurEff, ProcEventInfo& /*eventInfo*/)
@@ -316,7 +313,7 @@ class spell_pal_awakening : public AuraScript
         }
         else
             GetTarget()->CastSpell(GetTarget(), SPELL_PALADIN_AVENGING_WRATH,
-                CastSpellExtraArgs(TriggerCastFlags(TRIGGERED_IGNORE_CAST_IN_PROGRESS | TRIGGERED_IGNORE_SPELL_AND_CATEGORY_CD))
+                CastSpellExtraArgs(TRIGGERED_IGNORE_CAST_IN_PROGRESS | TRIGGERED_IGNORE_SPELL_AND_CATEGORY_CD)
                     .SetTriggeringSpell(eventInfo.GetProcSpell())
                     .AddSpellMod(SPELLVALUE_DURATION, extraDuration.count()));
     }
@@ -332,8 +329,6 @@ class spell_pal_awakening : public AuraScript
 // 204018 - Blessing of Spellwarding
 class spell_pal_blessing_of_protection : public SpellScript
 {
-    PrepareSpellScript(spell_pal_blessing_of_protection);
-
     bool Validate(SpellInfo const* spellInfo) override
     {
         return ValidateSpellInfo(
@@ -372,8 +367,6 @@ class spell_pal_blessing_of_protection : public SpellScript
 // 115750 - Blinding Light
 class spell_pal_blinding_light : public SpellScript
 {
-    PrepareSpellScript(spell_pal_blinding_light);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_PALADIN_BLINDING_LIGHT_EFFECT });
@@ -394,8 +387,6 @@ class spell_pal_blinding_light : public SpellScript
 // 26573 - Consecration
 class spell_pal_consecration : public AuraScript
 {
-    PrepareAuraScript(spell_pal_consecration);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo
@@ -452,8 +443,6 @@ struct areatrigger_pal_consecration : AreaTriggerAI
 // 196926 - Crusader Might
 class spell_pal_crusader_might : public AuraScript
 {
-    PrepareAuraScript(spell_pal_crusader_might);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_PALADIN_HOLY_SHOCK });
@@ -470,11 +459,34 @@ class spell_pal_crusader_might : public AuraScript
     }
 };
 
+// 406833 - Crusading Strikes
+class spell_pal_crusading_strikes : public AuraScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_PALADIN_CRUSADING_STRIKES_ENERGIZE });
+    }
+
+    void HandleEffectProc(AuraEffect const* aurEff, AuraEffectHandleModes /*mode*/)
+    {
+        if (GetStackAmount() == 2)
+        {
+            GetTarget()->CastSpell(GetTarget(), SPELL_PALADIN_CRUSADING_STRIKES_ENERGIZE, aurEff);
+
+            // this spell has weird proc order dependency set up in db2 data so we do removal manually
+            Remove();
+        }
+    }
+
+    void Register() override
+    {
+        AfterEffectApply += AuraEffectApplyFn(spell_pal_crusading_strikes::HandleEffectProc, EFFECT_0, SPELL_AURA_PROC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL_OR_REAPPLY_MASK);
+    }
+};
+
 // 223817 - Divine Purpose
 class spell_pal_divine_purpose : public AuraScript
 {
-    PrepareAuraScript(spell_pal_divine_purpose);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_PALADIN_DIVINE_PURPOSE_TRIGGERED });
@@ -508,8 +520,6 @@ class spell_pal_divine_purpose : public AuraScript
 // 642 - Divine Shield
 class spell_pal_divine_shield : public SpellScript
 {
-    PrepareSpellScript(spell_pal_divine_shield);
-
     bool Validate(SpellInfo const* spellInfo) override
     {
         return ValidateSpellInfo(
@@ -554,8 +564,6 @@ class spell_pal_divine_shield : public SpellScript
 // 190784 - Divine Steed
 class spell_pal_divine_steed : public SpellScript
 {
-    PrepareSpellScript(spell_pal_divine_steed);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo(
@@ -566,7 +574,8 @@ class spell_pal_divine_steed : public SpellScript
             SPELL_PALADIN_DIVINE_STEED_DARK_IRON_DWARF,
             SPELL_PALADIN_DIVINE_STEED_BLOODELF,
             SPELL_PALADIN_DIVINE_STEED_TAUREN,
-            SPELL_PALADIN_DIVINE_STEED_ZANDALARI_TROLL
+            SPELL_PALADIN_DIVINE_STEED_ZANDALARI_TROLL,
+            SPELL_PALADIN_DIVINE_STEED_LF_DRAENEI
         });
     }
 
@@ -584,8 +593,10 @@ class spell_pal_divine_steed : public SpellScript
                 spellId = SPELL_PALADIN_DIVINE_STEED_DWARF;
                 break;
             case RACE_DRAENEI:
-            case RACE_LIGHTFORGED_DRAENEI:
                 spellId = SPELL_PALADIN_DIVINE_STEED_DRAENEI;
+                break;
+            case RACE_LIGHTFORGED_DRAENEI:
+                spellId = SPELL_PALADIN_DIVINE_STEED_LF_DRAENEI;
                 break;
             case RACE_DARK_IRON_DWARF:
                 spellId = SPELL_PALADIN_DIVINE_STEED_DARK_IRON_DWARF;
@@ -615,8 +626,6 @@ class spell_pal_divine_steed : public SpellScript
 // 53385 - Divine Storm
 class spell_pal_divine_storm : public SpellScript
 {
-    PrepareSpellScript(spell_pal_divine_storm);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return sSpellVisualKitStore.HasRecord(PALADIN_VISUAL_KIT_DIVINE_STORM);
@@ -636,8 +645,6 @@ class spell_pal_divine_storm : public SpellScript
 // 205191 - Eye for an Eye
 class spell_pal_eye_for_an_eye : public AuraScript
 {
-    PrepareAuraScript(spell_pal_eye_for_an_eye);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_PALADIN_EYE_FOR_AN_EYE_TRIGGERED });
@@ -657,8 +664,6 @@ class spell_pal_eye_for_an_eye : public AuraScript
 // 234299 - Fist of Justice
 class spell_pal_fist_of_justice : public AuraScript
 {
-    PrepareAuraScript(spell_pal_fist_of_justice);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_PALADIN_HAMMER_OF_JUSTICE });
@@ -689,8 +694,6 @@ class spell_pal_fist_of_justice : public AuraScript
 // -85043 - Grand Crusader
 class spell_pal_grand_crusader : public AuraScript
 {
-    PrepareAuraScript(spell_pal_grand_crusader);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_PALADIN_AVENGERS_SHIELD });
@@ -716,8 +719,6 @@ class spell_pal_grand_crusader : public AuraScript
 // 54968 - Glyph of Holy Light
 class spell_pal_glyph_of_holy_light : public SpellScript
 {
-    PrepareSpellScript(spell_pal_glyph_of_holy_light);
-
     void FilterTargets(std::list<WorldObject*>& targets)
     {
         uint32 const maxTargets = GetSpellInfo()->MaxAffectedTargets;
@@ -738,8 +739,6 @@ class spell_pal_glyph_of_holy_light : public SpellScript
 // 53595 - Hammer of the Righteous
 struct spell_pal_hammer_of_the_righteous : public SpellScript
 {
-    PrepareSpellScript(spell_pal_hammer_of_the_righteous);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo
@@ -764,8 +763,6 @@ struct spell_pal_hammer_of_the_righteous : public SpellScript
 // 6940 - Hand of Sacrifice
 class spell_pal_hand_of_sacrifice : public AuraScript
 {
-    PrepareAuraScript(spell_pal_hand_of_sacrifice);
-
 public:
     spell_pal_hand_of_sacrifice()
     {
@@ -804,8 +801,6 @@ private:
 // 54149 - Infusion of Light
 class spell_pal_infusion_of_light : public AuraScript
 {
-    PrepareAuraScript(spell_pal_infusion_of_light);
-
     static constexpr flag128 HolyLightSpellClassMask = { 0, 0, 0x400 };
 
     bool Validate(SpellInfo const* /*spellInfo*/) override
@@ -842,8 +837,6 @@ class spell_pal_infusion_of_light : public AuraScript
 // 327193 - Moment of Glory
 class spell_pal_moment_of_glory : public SpellScript
 {
-    PrepareSpellScript(spell_pal_moment_of_glory);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_PALADIN_AVENGERS_SHIELD });
@@ -863,8 +856,6 @@ class spell_pal_moment_of_glory : public SpellScript
 // 20271/275779/275773 - Judgement (Retribution/Protection/Holy)
 class spell_pal_judgment : public SpellScript
 {
-    PrepareSpellScript(spell_pal_judgment);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo
@@ -896,8 +887,6 @@ class spell_pal_judgment : public SpellScript
 // 114165 - Holy Prism
 class spell_pal_holy_prism : public SpellScript
 {
-    PrepareSpellScript(spell_pal_holy_prism);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo ({ SPELL_PALADIN_HOLY_PRISM_TARGET_ALLY, SPELL_PALADIN_HOLY_PRISM_TARGET_ENEMY, SPELL_PALADIN_HOLY_PRISM_TARGET_BEAM_VISUAL });
@@ -923,8 +912,6 @@ class spell_pal_holy_prism : public SpellScript
 // 114871 - Holy Prism (Heal)
 class spell_pal_holy_prism_selector : public SpellScript
 {
-    PrepareSpellScript(spell_pal_holy_prism_selector);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo ({ SPELL_PALADIN_HOLY_PRISM_TARGET_ALLY, SPELL_PALADIN_HOLY_PRISM_AREA_BEAM_VISUAL });
@@ -985,8 +972,6 @@ private:
 // 20473 - Holy Shock
 class spell_pal_holy_shock : public SpellScript
 {
-    PrepareSpellScript(spell_pal_holy_shock);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo
@@ -1041,8 +1026,6 @@ class spell_pal_holy_shock : public SpellScript
 // 25912 - Holy Shock
 class spell_pal_holy_shock_damage_visual : public SpellScript
 {
-    PrepareSpellScript(spell_pal_holy_shock_damage_visual);
-
     bool Validate(SpellInfo const*) override
     {
         return sSpellVisualStore.HasRecord(PALADIN_VISUAL_SPELL_HOLY_SHOCK_DAMAGE)
@@ -1063,8 +1046,6 @@ class spell_pal_holy_shock_damage_visual : public SpellScript
 // 25914 - Holy Shock
 class spell_pal_holy_shock_heal_visual : public SpellScript
 {
-    PrepareSpellScript(spell_pal_holy_shock_heal_visual);
-
     bool Validate(SpellInfo const*) override
     {
         return sSpellVisualStore.HasRecord(PALADIN_VISUAL_SPELL_HOLY_SHOCK_HEAL)
@@ -1085,8 +1066,6 @@ class spell_pal_holy_shock_heal_visual : public SpellScript
 // 37705 - Healing Discount
 class spell_pal_item_healing_discount : public AuraScript
 {
-    PrepareAuraScript(spell_pal_item_healing_discount);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_PALADIN_ITEM_HEALING_TRANCE });
@@ -1107,8 +1086,6 @@ class spell_pal_item_healing_discount : public AuraScript
 // 40470 - Paladin Tier 6 Trinket
 class spell_pal_item_t6_trinket : public AuraScript
 {
-    PrepareAuraScript(spell_pal_item_t6_trinket);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo(
@@ -1156,8 +1133,6 @@ class spell_pal_item_t6_trinket : public AuraScript
 // 633 - Lay on Hands
 class spell_pal_lay_on_hands : public SpellScript
 {
-    PrepareSpellScript(spell_pal_lay_on_hands);
-
     bool Validate(SpellInfo const* spellInfo) override
     {
         return ValidateSpellInfo(
@@ -1196,8 +1171,6 @@ class spell_pal_lay_on_hands : public SpellScript
 // 53651 - Light's Beacon - Beacon of Light
 class spell_pal_light_s_beacon : public AuraScript
 {
-    PrepareAuraScript(spell_pal_light_s_beacon);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_PALADIN_BEACON_OF_LIGHT, SPELL_PALADIN_BEACON_OF_LIGHT_HEAL });
@@ -1250,8 +1223,6 @@ class spell_pal_light_s_beacon : public AuraScript
 // 122773 - Light's Hammer
 class spell_pal_light_hammer_init_summon : public SpellScript
 {
-    PrepareSpellScript(spell_pal_light_hammer_init_summon);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo
@@ -1284,8 +1255,6 @@ class spell_pal_light_hammer_init_summon : public SpellScript
 // 114918 - Light's Hammer (Periodic)
 class spell_pal_light_hammer_periodic : public AuraScript
 {
-    PrepareAuraScript(spell_pal_light_hammer_periodic);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo
@@ -1314,8 +1283,6 @@ class spell_pal_light_hammer_periodic : public AuraScript
 // 204074 - Righteous Protector
 class spell_pal_righteous_protector : public AuraScript
 {
-    PrepareAuraScript(spell_pal_righteous_protector);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_PALADIN_AVENGING_WRATH, SPELL_PALADIN_GUARDIAN_OF_ANCIENT_KINGS });
@@ -1351,8 +1318,6 @@ class spell_pal_righteous_protector : public AuraScript
 // 267610 - Righteous Verdict
 class spell_pal_righteous_verdict : public AuraScript
 {
-    PrepareAuraScript(spell_pal_righteous_verdict);
-
     bool Validate(SpellInfo const* /*spellEntry*/) override
     {
         return ValidateSpellInfo({ SPELL_PALADIN_RIGHTEOUS_VERDICT_AURA });
@@ -1372,8 +1337,6 @@ class spell_pal_righteous_verdict : public AuraScript
 // 85804 - Selfless Healer
 class spell_pal_selfless_healer : public AuraScript
 {
-    PrepareAuraScript(spell_pal_selfless_healer);
-
     bool CheckEffectProc(AuraEffect const* /*aurEff*/, ProcEventInfo& eventInfo)
     {
         if (Spell const* procSpell = eventInfo.GetProcSpell())
@@ -1388,11 +1351,41 @@ class spell_pal_selfless_healer : public AuraScript
     }
 };
 
+// 184662 - Shield of Vengeance
+class spell_pal_shield_of_vengeance : public AuraScript
+{
+    bool Validate(SpellInfo const* spellInfo) override
+    {
+        return ValidateSpellInfo({ SPELL_PALADIN_SHIELD_OF_VENGEANCE_DAMAGE }) && ValidateSpellEffect({ { spellInfo->Id, EFFECT_1 } });
+    }
+
+    void CalculateAmount(AuraEffect const* /*aurEff*/, int32& amount, bool& /*canBeRecalculated*/)
+    {
+        amount = CalculatePct(GetUnitOwner()->GetMaxHealth(), GetEffectInfo(EFFECT_1).CalcValue());
+        if (Player const* player = GetUnitOwner()->ToPlayer())
+            AddPct(amount, player->GetRatingBonusValue(CR_VERSATILITY_DAMAGE_DONE) + player->GetTotalAuraModifier(SPELL_AURA_MOD_VERSATILITY));
+
+        _initialAmount = amount;
+    }
+
+    void HandleRemove(AuraEffect const* aurEff, AuraEffectHandleModes /*mode*/)
+    {
+        GetTarget()->CastSpell(GetTarget(), SPELL_PALADIN_SHIELD_OF_VENGEANCE_DAMAGE,
+            CastSpellExtraArgs(TRIGGERED_FULL_MASK).AddSpellMod(SPELLVALUE_BASE_POINT0, _initialAmount - aurEff->GetAmount()));
+    }
+
+    void Register() override
+    {
+        DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_pal_shield_of_vengeance::CalculateAmount, EFFECT_0, SPELL_AURA_SCHOOL_ABSORB);
+        OnEffectRemove += AuraEffectApplyFn(spell_pal_shield_of_vengeance::HandleRemove, EFFECT_0, SPELL_AURA_SCHOOL_ABSORB, AURA_EFFECT_HANDLE_REAL);
+    }
+
+    int32 _initialAmount = 0;
+};
+
 // 85256 - Templar's Verdict
 class spell_pal_templar_s_verdict : public SpellScript
 {
-    PrepareSpellScript(spell_pal_templar_s_verdict);
-
     bool Validate(SpellInfo const* /*spellEntry*/) override
     {
         return ValidateSpellInfo({ SPELL_PALADIN_TEMPLAR_VERDICT_DAMAGE });
@@ -1412,8 +1405,6 @@ class spell_pal_templar_s_verdict : public SpellScript
 // 28789 - Holy Power
 class spell_pal_t3_6p_bonus : public AuraScript
 {
-    PrepareAuraScript(spell_pal_t3_6p_bonus);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo(
@@ -1468,8 +1459,6 @@ class spell_pal_t3_6p_bonus : public AuraScript
 // 64890 - Item - Paladin T8 Holy 2P Bonus
 class spell_pal_t8_2p_bonus : public AuraScript
 {
-    PrepareAuraScript(spell_pal_t8_2p_bonus);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_PALADIN_HOLY_MENDING });
@@ -1506,8 +1495,6 @@ class spell_pal_t8_2p_bonus : public AuraScript
 // 269569 - Zeal
 class spell_pal_zeal : public AuraScript
 {
-    PrepareAuraScript(spell_pal_zeal);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_PALADIN_ZEAL_AURA });
@@ -1536,6 +1523,7 @@ void AddSC_paladin_spell_scripts()
     RegisterSpellScript(spell_pal_blessing_of_protection);
     RegisterSpellScript(spell_pal_blinding_light);
     RegisterSpellScript(spell_pal_crusader_might);
+    RegisterSpellScript(spell_pal_crusading_strikes);
     RegisterSpellScript(spell_pal_consecration);
     RegisterAreaTriggerAI(areatrigger_pal_consecration);
     RegisterSpellScript(spell_pal_divine_purpose);
@@ -1565,6 +1553,7 @@ void AddSC_paladin_spell_scripts()
     RegisterSpellScript(spell_pal_righteous_protector);
     RegisterSpellScript(spell_pal_righteous_verdict);
     RegisterSpellScript(spell_pal_selfless_healer);
+    RegisterSpellScript(spell_pal_shield_of_vengeance);
     RegisterSpellScript(spell_pal_templar_s_verdict);
     RegisterSpellScript(spell_pal_t3_6p_bonus);
     RegisterSpellScript(spell_pal_t8_2p_bonus);

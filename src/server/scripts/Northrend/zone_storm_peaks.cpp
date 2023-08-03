@@ -838,8 +838,6 @@ private:
 // 61319 - Jokkum Scriptcast
 class spell_jokkum_scriptcast : public AuraScript
 {
-    PrepareAuraScript(spell_jokkum_scriptcast);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_JOKKUM_SUMMON });
@@ -860,8 +858,6 @@ class spell_jokkum_scriptcast : public AuraScript
 // 56650 - Player Cast Veranus Summon
 class spell_veranus_summon : public AuraScript
 {
-    PrepareAuraScript(spell_veranus_summon);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_SUMMON_VERANUS_AND_THORIM });
@@ -887,8 +883,6 @@ enum CloseRift
 // 56763 - Close Rift
 class spell_close_rift : public AuraScript
 {
-    PrepareAuraScript(spell_close_rift);
-
     bool Validate(SpellInfo const* /*spell*/) override
     {
         return ValidateSpellInfo({ SPELL_DESPAWN_RIFT });
@@ -912,8 +906,6 @@ private:
 // 56689 - Grip
 class spell_grip : public AuraScript
 {
-    PrepareAuraScript(spell_grip);
-
     void DummyTick(AuraEffect const* /*aurEff*/)
     {
         ++_tickNumber;
@@ -970,8 +962,6 @@ class spell_grip : public AuraScript
 // 60533 - Grab On
 class spell_grab_on : public SpellScript
 {
-   PrepareSpellScript(spell_grab_on);
-
     void HandleScript(SpellEffIndex /*effIndex*/)
     {
         if (Aura* grip = GetCaster()->GetAura(SPELL_GRIP, GetCaster()->GetGUID()))
@@ -989,8 +979,6 @@ class spell_grab_on : public SpellScript
 template <int8 StacksToLose>
 class spell_loosen_grip : public SpellScript
 {
-   PrepareSpellScript(spell_loosen_grip);
-
     void HandleScript(SpellEffIndex /*effIndex*/)
     {
         if (Aura* grip = GetCaster()->GetAura(SPELL_GRIP))
@@ -1006,8 +994,6 @@ class spell_loosen_grip : public SpellScript
 // 60596 - Low Health Trigger
 class spell_low_health_trigger : public SpellScript
 {
-    PrepareSpellScript(spell_low_health_trigger);
-
     bool Validate(SpellInfo const* spellInfo) override
     {
         return ValidateSpellInfo({ static_cast<uint32>(spellInfo->GetEffect(EFFECT_0).CalcValue()) });
@@ -1028,8 +1014,6 @@ class spell_low_health_trigger : public SpellScript
 // 60864 - Jaws of Death
 class spell_jaws_of_death_claw_swipe_pct_damage : public SpellScript
 {
-    PrepareSpellScript(spell_jaws_of_death_claw_swipe_pct_damage);
-
     void HandleDamage(SpellEffIndex /*effIndex*/)
     {
         SetEffectValue(static_cast<int32>(GetHitUnit()->CountPctFromMaxHealth(GetEffectValue())));
@@ -1044,8 +1028,6 @@ class spell_jaws_of_death_claw_swipe_pct_damage : public SpellScript
 // 56705 - Claw Swipe
 class spell_claw_swipe_check : public AuraScript
 {
-    PrepareAuraScript(spell_claw_swipe_check);
-
     void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
         GetTarget()->GetAI()->DoAction(ACTION_CLAW_SWIPE_WARN);
@@ -1078,8 +1060,6 @@ class spell_claw_swipe_check : public AuraScript
 // 60587 - Fatal Strike
 class spell_fatal_strike : public SpellScript
 {
-    PrepareSpellScript(spell_fatal_strike);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_FATAL_STRIKE_DAMAGE });
@@ -1109,8 +1089,6 @@ class spell_fatal_strike : public SpellScript
 // 56672 - Player Mount Wyrm
 class spell_player_mount_wyrm : public AuraScript
 {
-    PrepareAuraScript(spell_player_mount_wyrm);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_FIGHT_WYRM });
@@ -1134,8 +1112,6 @@ class spell_player_mount_wyrm : public AuraScript
 // 55693 - Remove Collapsing Cave Aura
 class spell_storm_peaks_remove_collapsing_cave_aura : public SpellScript
 {
-    PrepareSpellScript(spell_storm_peaks_remove_collapsing_cave_aura);
-
     bool Validate(SpellInfo const* spellInfo) override
     {
         return ValidateSpellInfo({ uint32(spellInfo->GetEffect(EFFECT_0).CalcValue()) });
@@ -1166,8 +1142,6 @@ enum MountingHodirsHelm
 // 56278 - Read Pronouncement
 class spell_storm_peaks_read_pronouncement : public AuraScript
 {
-    PrepareAuraScript(spell_storm_peaks_read_pronouncement);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return sBroadcastTextStore.HasRecord(TEXT_PRONOUNCEMENT_1) &&
@@ -1205,8 +1179,6 @@ enum JormuttarIsSooFat
 // 56565 - Bear Flank Master
 class spell_storm_peaks_bear_flank_master : public SpellScript
 {
-    PrepareSpellScript(spell_storm_peaks_bear_flank_master);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_CREATE_BEAR_FLANK, SPELL_BEAR_FLANK_FAIL });
@@ -1226,8 +1198,6 @@ class spell_storm_peaks_bear_flank_master : public SpellScript
 // 56569 - Bear Flank Fail
 class spell_storm_peaks_bear_flank_fail : public AuraScript
 {
-    PrepareAuraScript(spell_storm_peaks_bear_flank_fail);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return sBroadcastTextStore.HasRecord(TEXT_CARVE_FAIL);
@@ -1263,8 +1233,6 @@ enum AmpleInspiration
 // 54581 - Mammoth Explosion Spell Spawner
 class spell_storm_peaks_mammoth_explosion_master : public SpellScript
 {
-    PrepareSpellScript(spell_storm_peaks_mammoth_explosion_master);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo(
@@ -1301,8 +1269,6 @@ class spell_storm_peaks_mammoth_explosion_master : public SpellScript
 // 54892 - Unstable Explosive Detonation
 class spell_storm_peaks_unstable_explosive_detonation : public SpellScript
 {
-    PrepareSpellScript(spell_storm_peaks_unstable_explosive_detonation);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return sObjectMgr->GetItemTemplate(ITEM_EXPLOSIVE_DEVICE);
@@ -1332,8 +1298,6 @@ enum MendingFences
 // 55512 - Call of Earth
 class spell_storm_peaks_call_of_earth : public SpellScript
 {
-    PrepareSpellScript(spell_storm_peaks_call_of_earth);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_SUMMON_EARTHEN });

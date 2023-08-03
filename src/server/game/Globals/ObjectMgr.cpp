@@ -3806,8 +3806,8 @@ void ObjectMgr::LoadPlayerInfo()
     // Load playercreate
     {
         uint32 oldMSTime = getMSTime();
-        //                                                0     1      2    3        4          5           6
-        QueryResult result = WorldDatabase.Query("SELECT race, class, map, zone, position_x, position_y, position_z, orientation FROM playercreateinfo");
+        //                                                0     1      2       3           4           5           6
+        QueryResult result = WorldDatabase.Query("SELECT race, class, map, position_x, position_y, position_z, orientation FROM playercreateinfo");
 
         if (!result)
         {
@@ -3825,11 +3825,10 @@ void ObjectMgr::LoadPlayerInfo()
                 uint32 current_race  = fields[0].GetUInt8();
                 uint32 current_class = fields[1].GetUInt8();
                 uint32 mapId         = fields[2].GetUInt16();
-                uint32 areaId        = fields[3].GetUInt32(); // zone
-                float  positionX     = fields[4].GetFloat();
-                float  positionY     = fields[5].GetFloat();
-                float  positionZ     = fields[6].GetFloat();
-                float  orientation   = fields[7].GetFloat();
+                float  positionX     = fields[3].GetFloat();
+                float  positionY     = fields[4].GetFloat();
+                float  positionZ     = fields[5].GetFloat();
+                float  orientation   = fields[6].GetFloat();
 
                 const ChrRacesEntry *pRacesEntry = sChrRacesStore.LookupEntry(current_race);
                 if (!pRacesEntry)

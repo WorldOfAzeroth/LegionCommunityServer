@@ -381,8 +381,6 @@ public:
 // 67751 - Ghoul Explode
 class spell_black_knight_ghoul_explode : public SpellScript
 {
-    PrepareSpellScript(spell_black_knight_ghoul_explode);
-
     bool Validate(SpellInfo const* spellInfo) override
     {
         return ValidateSpellInfo({ uint32(spellInfo->GetEffect(EFFECT_0).CalcValue()) });
@@ -403,8 +401,6 @@ class spell_black_knight_ghoul_explode : public SpellScript
 // 67889 - Ghoul Explode
 class spell_black_knight_ghoul_explode_risen_ghoul : public SpellScript
 {
-    PrepareSpellScript(spell_black_knight_ghoul_explode_risen_ghoul);
-
     bool Validate(SpellInfo const* spellInfo) override
     {
         return ValidateSpellInfo({ uint32(spellInfo->GetEffect(EFFECT_1).CalcValue()) });

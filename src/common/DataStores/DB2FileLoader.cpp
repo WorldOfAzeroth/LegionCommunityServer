@@ -847,13 +847,11 @@ char* DB2FileLoaderSparseImpl::AutoProduceData(uint32& maxId, char**& indexTable
 
     uint32 offsetCount = _header->MaxId - _header->MinId + 1;
     uint32 records = 0;
-    uint32 expandedDataSize = 0;
     for (uint32 i = 0; i < offsetCount; ++i)
     {
         if (_catalog[i].FileOffset && _catalog[i].RecordSize)
         {
             ++records;
-            expandedDataSize += _catalog[i].RecordSize;
         }
     }
 
@@ -1385,7 +1383,7 @@ void DB2FileLoader::Load(DB2FileSource* source, DB2FileLoadInfo const* loadInfo)
             _header.CommonDataSize +
             _header.ParentLookupDataSize;
 
-        if (source->GetFileSize() != expectedFileSize)
+        if (source->GetFileSize() != int64(expectedFileSize))
             throw DB2FileLoadException(Trinity::StringFormat("{} failed size consistency check, expected {}, got {}", source->GetFileName(), expectedFileSize, source->GetFileSize()));
     }
 

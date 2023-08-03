@@ -747,8 +747,8 @@ void Spell::SelectSpellTargets()
         if (implicitTargetMask & (TARGET_FLAG_GAMEOBJECT | TARGET_FLAG_GAMEOBJECT_ITEM))
             m_targets.SetTargetFlag(TARGET_FLAG_GAMEOBJECT);
 
-        SelectEffectImplicitTargets(spellEffectInfo, spellEffectInfo.TargetA, processedAreaEffectsMask);
-        SelectEffectImplicitTargets(spellEffectInfo, spellEffectInfo.TargetB, processedAreaEffectsMask);
+        SelectEffectImplicitTargets(spellEffectInfo, spellEffectInfo.TargetA, SpellTargetIndex::TargetA, processedAreaEffectsMask);
+        SelectEffectImplicitTargets(spellEffectInfo, spellEffectInfo.TargetB, SpellTargetIndex::TargetB, processedAreaEffectsMask);
 
         // Select targets of effect based on effect type
         // those are used when no valid target could be added for spell effect based on spell target type
@@ -852,7 +852,7 @@ void Spell::RecalculateDelayMomentForDst()
     m_caster->m_Events.ModifyEventTime(_spellEvent, Milliseconds(GetDelayStart() + m_delayMoment));
 }
 
-void Spell::SelectEffectImplicitTargets(SpellEffectInfo const& spellEffectInfo, SpellImplicitTargetInfo const& targetType, uint32& processedEffectMask)
+void Spell::SelectEffectImplicitTargets(SpellEffectInfo const& spellEffectInfo, SpellImplicitTargetInfo const& targetType, SpellTargetIndex targetIndex, uint32& processedEffectMask)
 {
     if (!targetType.GetTarget())
         return;
@@ -878,7 +878,8 @@ void Spell::SelectEffectImplicitTargets(SpellEffectInfo const& spellEffectInfo, 
                     spellEffectInfo.TargetA.GetTarget() == effects[j].TargetA.GetTarget() &&
                     spellEffectInfo.TargetB.GetTarget() == effects[j].TargetB.GetTarget() &&
                     spellEffectInfo.ImplicitTargetConditions == effects[j].ImplicitTargetConditions &&
-                    spellEffectInfo.CalcRadius(m_caster) == effects[j].CalcRadius(m_caster) &&
+                    spellEffectInfo.CalcRadius(m_caster, SpellTargetIndex::TargetA) == effects[j].CalcRadius(m_caster, SpellTargetIndex::TargetA) &&
+                    spellEffectInfo.CalcRadius(m_caster, SpellTargetIndex::TargetB) == effects[j].CalcRadius(m_caster, SpellTargetIndex::TargetB) &&
                     CheckScriptEffectImplicitTargets(spellEffectInfo.EffectIndex, j))
                 {
                     effectMask |= 1 << j;
@@ -897,13 +898,13 @@ void Spell::SelectEffectImplicitTargets(SpellEffectInfo const& spellEffectInfo, 
             SelectImplicitChannelTargets(spellEffectInfo, targetType);
             break;
         case TARGET_SELECT_CATEGORY_NEARBY:
-            SelectImplicitNearbyTargets(spellEffectInfo, targetType, effectMask);
+            SelectImplicitNearbyTargets(spellEffectInfo, targetType, targetIndex, effectMask);
             break;
         case TARGET_SELECT_CATEGORY_CONE:
-            SelectImplicitConeTargets(spellEffectInfo, targetType, effectMask);
+            SelectImplicitConeTargets(spellEffectInfo, targetType, targetIndex, effectMask);
             break;
         case TARGET_SELECT_CATEGORY_AREA:
-            SelectImplicitAreaTargets(spellEffectInfo, targetType, effectMask);
+            SelectImplicitAreaTargets(spellEffectInfo, targetType, targetIndex, effectMask);
             break;
         case TARGET_SELECT_CATEGORY_TRAJ:
             // just in case there is no dest, explanation in SelectImplicitDestDestTargets
@@ -912,7 +913,7 @@ void Spell::SelectEffectImplicitTargets(SpellEffectInfo const& spellEffectInfo, 
             SelectImplicitTrajTargets(spellEffectInfo, targetType);
             break;
         case TARGET_SELECT_CATEGORY_LINE:
-            SelectImplicitLineTargets(spellEffectInfo, targetType, effectMask);
+            SelectImplicitLineTargets(spellEffectInfo, targetType, targetIndex, effectMask);
             break;
         case TARGET_SELECT_CATEGORY_DEFAULT:
             switch (targetType.GetObjectType())
@@ -932,13 +933,13 @@ void Spell::SelectEffectImplicitTargets(SpellEffectInfo const& spellEffectInfo, 
                      switch (targetType.GetReferenceType())
                      {
                          case TARGET_REFERENCE_TYPE_CASTER:
-                             SelectImplicitCasterDestTargets(spellEffectInfo, targetType);
+                             SelectImplicitCasterDestTargets(spellEffectInfo, targetType, targetIndex);
                              break;
                          case TARGET_REFERENCE_TYPE_TARGET:
-                             SelectImplicitTargetDestTargets(spellEffectInfo, targetType);
+                             SelectImplicitTargetDestTargets(spellEffectInfo, targetType, targetIndex);
                              break;
                          case TARGET_REFERENCE_TYPE_DEST:
-                             SelectImplicitDestDestTargets(spellEffectInfo, targetType);
+                             SelectImplicitDestDestTargets(spellEffectInfo, targetType, targetIndex);
                              break;
                          default:
                              ABORT_MSG("Spell::SelectEffectImplicitTargets: received not implemented select target reference type for TARGET_TYPE_OBJECT_DEST");
@@ -1041,7 +1042,7 @@ void Spell::SelectImplicitChannelTargets(SpellEffectInfo const& spellEffectInfo,
     }
 }
 
-void Spell::SelectImplicitNearbyTargets(SpellEffectInfo const& spellEffectInfo, SpellImplicitTargetInfo const& targetType, uint32 effMask)
+void Spell::SelectImplicitNearbyTargets(SpellEffectInfo const& spellEffectInfo, SpellImplicitTargetInfo const& targetType, SpellTargetIndex targetIndex, uint32 effMask)
 {
     if (targetType.GetReferenceType() != TARGET_REFERENCE_TYPE_CASTER)
     {
@@ -1110,6 +1111,25 @@ void Spell::SelectImplicitNearbyTargets(SpellEffectInfo const& spellEffectInfo, 
                     }
                     return;
                 }
+                if (targetType.GetTarget() == TARGET_DEST_NEARBY_ENTRY_OR_DB)
+                {
+                    if (SpellTargetPosition const* st = sSpellMgr->GetSpellTargetPosition(m_spellInfo->Id, spellEffectInfo.EffectIndex))
+                    {
+                        SpellDestination dest(*m_caster);
+                        if (st->target_mapId == m_caster->GetMapId() && m_caster->IsInDist(st->target_X, st->target_Y, st->target_Z, range))
+                            dest = SpellDestination(st->target_X, st->target_Y, st->target_Z, st->target_Orientation);
+                        else
+                        {
+                            float randomRadius = spellEffectInfo.CalcRadius(m_caster, targetIndex);
+                            if (randomRadius > 0.0f)
+                                m_caster->MovePositionToFirstCollision(dest._position, randomRadius, targetType.CalcDirectionAngle());
+                        }
+
+                        CallScriptDestinationTargetSelectHandlers(dest, spellEffectInfo.EffectIndex, targetType);
+                        m_targets.SetDst(dest);
+                        return;
+                    }
+                }
                 break;
             default:
                 break;
@@ -1117,6 +1137,22 @@ void Spell::SelectImplicitNearbyTargets(SpellEffectInfo const& spellEffectInfo, 
     }
 
     WorldObject* target = SearchNearbyTarget(range, targetType.GetObjectType(), targetType.GetCheckType(), condList);
+    float randomRadius = 0.0f;
+    switch (targetType.GetTarget())
+    {
+        case TARGET_DEST_NEARBY_ENTRY_OR_DB:
+            // if we are here then there was no db target
+            if (!target)
+            {
+                target = m_caster;
+                // radius is only meant to be randomized when using caster fallback
+                randomRadius = spellEffectInfo.CalcRadius(m_caster, targetIndex);
+            }
+            break;
+        default:
+            break;
+    }
+
     if (!target)
     {
         TC_LOG_DEBUG("spells", "Spell::SelectImplicitNearbyTargets: cannot find nearby target for spell ID {}, effect {}", m_spellInfo->Id, uint32(spellEffectInfo.EffectIndex));
@@ -1187,7 +1223,7 @@ void Spell::SelectImplicitNearbyTargets(SpellEffectInfo const& spellEffectInfo, 
     SelectImplicitChainTargets(spellEffectInfo, targetType, target, effMask);
 }
 
-void Spell::SelectImplicitConeTargets(SpellEffectInfo const& spellEffectInfo, SpellImplicitTargetInfo const& targetType, uint32 effMask)
+void Spell::SelectImplicitConeTargets(SpellEffectInfo const& spellEffectInfo, SpellImplicitTargetInfo const& targetType, SpellTargetIndex targetIndex, uint32 effMask)
 {
     Position coneSrc(*m_caster);
     float coneAngle = m_spellInfo->ConeAngle;
@@ -1217,7 +1253,7 @@ void Spell::SelectImplicitConeTargets(SpellEffectInfo const& spellEffectInfo, Sp
     SpellTargetObjectTypes objectType = targetType.GetObjectType();
     SpellTargetCheckTypes selectionType = targetType.GetCheckType();
     ConditionContainer* condList = spellEffectInfo.ImplicitTargetConditions;
-    float radius = spellEffectInfo.CalcRadius(m_caster) * m_spellValue->RadiusMod;
+    float radius = spellEffectInfo.CalcRadius(m_caster, targetIndex) * m_spellValue->RadiusMod;
 
     if (uint32 containerTypeMask = GetSearcherTypeMask(objectType, condList))
     {
@@ -1247,7 +1283,7 @@ void Spell::SelectImplicitConeTargets(SpellEffectInfo const& spellEffectInfo, Sp
     }
 }
 
-void Spell::SelectImplicitAreaTargets(SpellEffectInfo const& spellEffectInfo, SpellImplicitTargetInfo const& targetType, uint32 effMask)
+void Spell::SelectImplicitAreaTargets(SpellEffectInfo const& spellEffectInfo, SpellImplicitTargetInfo const& targetType, SpellTargetIndex targetIndex, uint32 effMask)
 {
     WorldObject* referer = nullptr;
     switch (targetType.GetReferenceType())
@@ -1302,7 +1338,7 @@ void Spell::SelectImplicitAreaTargets(SpellEffectInfo const& spellEffectInfo, Sp
              return;
     }
 
-    float radius = spellEffectInfo.CalcRadius(m_caster) * m_spellValue->RadiusMod;
+    float radius = spellEffectInfo.CalcRadius(m_caster, targetIndex) * m_spellValue->RadiusMod;
     std::list<WorldObject*> targets;
     switch (targetType.GetTarget())
     {
@@ -1371,7 +1407,7 @@ void Spell::SelectImplicitAreaTargets(SpellEffectInfo const& spellEffectInfo, Sp
     }
 }
 
-void Spell::SelectImplicitCasterDestTargets(SpellEffectInfo const& spellEffectInfo, SpellImplicitTargetInfo const& targetType)
+void Spell::SelectImplicitCasterDestTargets(SpellEffectInfo const& spellEffectInfo, SpellImplicitTargetInfo const& targetType, SpellTargetIndex targetIndex)
 {
     SpellDestination dest(*m_caster);
 
@@ -1440,7 +1476,7 @@ void Spell::SelectImplicitCasterDestTargets(SpellEffectInfo const& spellEffectIn
             if (!unitCaster)
                 break;
 
-            float dist = spellEffectInfo.CalcRadius(unitCaster);
+            float dist = spellEffectInfo.CalcRadius(unitCaster, targetIndex);
             float angle = targetType.CalcDirectionAngle();
             if (targetType.GetTarget() == TARGET_DEST_CASTER_MOVEMENT_DIRECTION)
             {
@@ -1496,7 +1532,7 @@ void Spell::SelectImplicitCasterDestTargets(SpellEffectInfo const& spellEffectIn
             break;
         default:
         {
-            float dist = spellEffectInfo.CalcRadius(m_caster);
+            float dist = spellEffectInfo.CalcRadius(m_caster, targetIndex);
             float angle = targetType.CalcDirectionAngle();
             float objSize = m_caster->GetCombatReach();
 
@@ -1515,7 +1551,7 @@ void Spell::SelectImplicitCasterDestTargets(SpellEffectInfo const& spellEffectIn
                 case TARGET_DEST_CASTER_BACK_RIGHT:
                 {
                     static float const DefaultTotemDistance = 3.0f;
-                    if (!spellEffectInfo.HasRadius() && !spellEffectInfo.HasMaxRadius())
+                    if (!spellEffectInfo.HasRadius(targetIndex))
                         dist = DefaultTotemDistance;
                     break;
                 }
@@ -1541,7 +1577,7 @@ void Spell::SelectImplicitCasterDestTargets(SpellEffectInfo const& spellEffectIn
     m_targets.SetDst(dest);
 }
 
-void Spell::SelectImplicitTargetDestTargets(SpellEffectInfo const& spellEffectInfo, SpellImplicitTargetInfo const& targetType)
+void Spell::SelectImplicitTargetDestTargets(SpellEffectInfo const& spellEffectInfo, SpellImplicitTargetInfo const& targetType, SpellTargetIndex targetIndex)
 {
     ASSERT(m_targets.GetObjectTarget() && "Spell::SelectImplicitTargetDestTargets - no explicit object target available!");
     WorldObject* target = m_targets.GetObjectTarget();
@@ -1557,7 +1593,7 @@ void Spell::SelectImplicitTargetDestTargets(SpellEffectInfo const& spellEffectIn
         default:
         {
             float angle = targetType.CalcDirectionAngle();
-            float dist = spellEffectInfo.CalcRadius(nullptr);
+            float dist = spellEffectInfo.CalcRadius(nullptr, targetIndex);
             if (targetType.GetTarget() == TARGET_DEST_TARGET_RANDOM)
                 dist *= float(rand_norm());
 
@@ -1576,7 +1612,7 @@ void Spell::SelectImplicitTargetDestTargets(SpellEffectInfo const& spellEffectIn
     m_targets.SetDst(dest);
 }
 
-void Spell::SelectImplicitDestDestTargets(SpellEffectInfo const& spellEffectInfo, SpellImplicitTargetInfo const& targetType)
+void Spell::SelectImplicitDestDestTargets(SpellEffectInfo const& spellEffectInfo, SpellImplicitTargetInfo const& targetType, SpellTargetIndex targetIndex)
 {
     // set destination to caster if no dest provided
     // can only happen if previous destination target could not be set for some reason
@@ -1596,10 +1632,22 @@ void Spell::SelectImplicitDestDestTargets(SpellEffectInfo const& spellEffectInfo
         case TARGET_DEST_DEST_GROUND:
             dest._position.m_positionZ = m_caster->GetMapHeight(dest._position.GetPositionX(), dest._position.GetPositionY(), dest._position.GetPositionZ());
             break;
+        case TARGET_DEST_DEST_TARGET_TOWARDS_CASTER:
+        {
+            float dist = spellEffectInfo.CalcRadius(m_caster, targetIndex);
+            Position pos = dest._position;
+            float angle = pos.GetAbsoluteAngle(m_caster) - m_caster->GetOrientation();
+
+            m_caster->MovePositionToFirstCollision(pos, dist, angle);
+            pos.SetOrientation(m_caster->GetAbsoluteAngle(dest._position));
+
+            dest.Relocate(pos);
+            break;
+        }
         default:
         {
             float angle = targetType.CalcDirectionAngle();
-            float dist = spellEffectInfo.CalcRadius(m_caster);
+            float dist = spellEffectInfo.CalcRadius(m_caster, targetIndex);
             if (targetType.GetTarget() == TARGET_DEST_DEST_RANDOM)
                 dist *= float(rand_norm());
 
@@ -1835,7 +1883,7 @@ void Spell::SelectImplicitTrajTargets(SpellEffectInfo const& spellEffectInfo, Sp
     }
 }
 
-void Spell::SelectImplicitLineTargets(SpellEffectInfo const& spellEffectInfo, SpellImplicitTargetInfo const& targetType, uint32 effMask)
+void Spell::SelectImplicitLineTargets(SpellEffectInfo const& spellEffectInfo, SpellImplicitTargetInfo const& targetType, SpellTargetIndex targetIndex, uint32 effMask)
 {
     std::list<WorldObject*> targets;
     SpellTargetObjectTypes objectType = targetType.GetObjectType();
@@ -1861,7 +1909,7 @@ void Spell::SelectImplicitLineTargets(SpellEffectInfo const& spellEffectInfo, Sp
     }
 
     ConditionContainer* condList = spellEffectInfo.ImplicitTargetConditions;
-    float radius = spellEffectInfo.CalcRadius(m_caster) * m_spellValue->RadiusMod;
+    float radius = spellEffectInfo.CalcRadius(m_caster, targetIndex) * m_spellValue->RadiusMod;
 
     if (uint32 containerTypeMask = GetSearcherTypeMask(objectType, condList))
     {
@@ -2154,7 +2202,7 @@ void Spell::SearchChainTargets(std::list<WorldObject*>& targets, uint32 chainTar
                 if (Unit* unit = (*itr)->ToUnit())
                 {
                     uint32 deficit = unit->GetMaxHealth() - unit->GetHealth();
-                    if ((deficit > maxHPDeficit || foundItr == tempTargets.end()) && chainSource->IsWithinDist(unit, jumpRadius) && chainSource->IsWithinLOSInMap(unit, LINEOFSIGHT_ALL_CHECKS, VMAP::ModelIgnoreFlags::M2))
+                    if ((deficit > maxHPDeficit || foundItr == tempTargets.end()) && chainSource->IsWithinDist(unit, jumpRadius) && IsWithinLOS(chainSource, unit, false, VMAP::ModelIgnoreFlags::M2))
                     {
                         foundItr = itr;
                         maxHPDeficit = deficit;
@@ -2169,10 +2217,10 @@ void Spell::SearchChainTargets(std::list<WorldObject*>& targets, uint32 chainTar
             {
                 if (foundItr == tempTargets.end())
                 {
-                    if (chainSource->IsWithinDist(*itr, jumpRadius) && chainSource->IsWithinLOSInMap(*itr, LINEOFSIGHT_ALL_CHECKS, VMAP::ModelIgnoreFlags::M2))
+                    if (chainSource->IsWithinDist(*itr, jumpRadius) && IsWithinLOS(chainSource, *itr, false, VMAP::ModelIgnoreFlags::M2))
                         foundItr = itr;
                 }
-                else if (chainSource->GetDistanceOrder(*itr, *foundItr) && chainSource->IsWithinLOSInMap(*itr, LINEOFSIGHT_ALL_CHECKS, VMAP::ModelIgnoreFlags::M2))
+                else if (chainSource->GetDistanceOrder(*itr, *foundItr) && IsWithinLOS(chainSource, *itr, false, VMAP::ModelIgnoreFlags::M2))
                     foundItr = itr;
             }
         }
@@ -5640,7 +5688,7 @@ SpellCastResult Spell::CheckCast(bool strict, int32* param1 /*= nullptr*/, int32
                     if (DynamicObject* dynObj = m_caster->ToUnit()->GetDynObject(m_triggeredByAuraSpell->Id))
                         losTarget = dynObj;
 
-                if (!m_spellInfo->HasAttribute(SPELL_ATTR2_IGNORE_LINE_OF_SIGHT) && !DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->Id, nullptr, SPELL_DISABLE_LOS) && !target->IsWithinLOSInMap(losTarget, LINEOFSIGHT_ALL_CHECKS, VMAP::ModelIgnoreFlags::M2))
+                if (!IsWithinLOS(losTarget, target, true, VMAP::ModelIgnoreFlags::M2))
                     return SPELL_FAILED_LINE_OF_SIGHT;
             }
         }
@@ -5648,13 +5696,8 @@ SpellCastResult Spell::CheckCast(bool strict, int32* param1 /*= nullptr*/, int32
 
     // Check for line of sight for spells with dest
     if (m_targets.HasDst())
-    {
-        float x, y, z;
-        m_targets.GetDstPos()->GetPosition(x, y, z);
-
-        if (!m_spellInfo->HasAttribute(SPELL_ATTR2_IGNORE_LINE_OF_SIGHT) && !DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->Id, nullptr, SPELL_DISABLE_LOS) && !m_caster->IsWithinLOS(x, y, z, LINEOFSIGHT_ALL_CHECKS, VMAP::ModelIgnoreFlags::M2))
+        if (!IsWithinLOS(m_caster, *m_targets.GetDstPos(), VMAP::ModelIgnoreFlags::M2))
             return SPELL_FAILED_LINE_OF_SIGHT;
-    }
 
     // check pet presence
     if (Unit* unitCaster = m_caster->ToUnit())
@@ -5936,7 +5979,7 @@ SpellCastResult Spell::CheckCast(bool strict, int32* param1 /*= nullptr*/, int32
                         return SPELL_FAILED_DONT_REPORT;
 
                     // first we must check to see if the target is in LoS. A path can usually be built but LoS matters for charge spells
-                    if (!target->IsWithinLOSInMap(unitCaster)) //Do full LoS/Path check. Don't exclude m2
+                    if (!IsWithinLOS(unitCaster, target, true, VMAP::ModelIgnoreFlags::Nothing)) //Do full LoS/Path check. Don't exclude m2
                         return SPELL_FAILED_LINE_OF_SIGHT;
 
                     float objSize = target->GetCombatReach();
@@ -6105,7 +6148,7 @@ SpellCastResult Spell::CheckCast(bool strict, int32* param1 /*= nullptr*/, int32
                     {
                         if (strict)                         //starting cast, trigger pet stun (cast by pet so it doesn't attack player)
                             if (Pet* pet = unitCaster->ToPlayer()->GetPet())
-                                pet->CastSpell(pet, 32752, CastSpellExtraArgs(TRIGGERED_FULL_MASK)
+                                pet->CastSpell(pet, PET_SUMMONING_DISORIENTATION, CastSpellExtraArgs(TRIGGERED_FULL_MASK)
                                     .SetOriginalCaster(pet->GetGUID())
                                     .SetTriggeringSpell(this));
                     }
@@ -7805,7 +7848,7 @@ bool Spell::CheckEffectTarget(Unit const* target, SpellEffectInfo const& spellEf
         {
             if (!m_targets.GetCorpseTargetGUID())
             {
-                if (target->IsWithinLOSInMap(m_caster, LINEOFSIGHT_ALL_CHECKS, VMAP::ModelIgnoreFlags::M2) && target->HasUnitFlag(UNIT_FLAG_SKINNABLE))
+                if (IsWithinLOS(m_caster, target, true, VMAP::ModelIgnoreFlags::M2) && target->HasUnitFlag(UNIT_FLAG_SKINNABLE))
                     return true;
 
                 return false;
@@ -7821,7 +7864,7 @@ bool Spell::CheckEffectTarget(Unit const* target, SpellEffectInfo const& spellEf
             if (!corpse->HasDynamicFlag(CORPSE_DYNFLAG_LOOTABLE))
                 return false;
 
-            if (!corpse->IsWithinLOSInMap(m_caster, LINEOFSIGHT_ALL_CHECKS, VMAP::ModelIgnoreFlags::M2))
+            if (!IsWithinLOS(m_caster, corpse, true, VMAP::ModelIgnoreFlags::M2))
                 return false;
 
             break;
@@ -7836,12 +7879,13 @@ bool Spell::CheckEffectTarget(Unit const* target, SpellEffectInfo const& spellEf
                     caster = m_caster->GetMap()->GetGameObject(m_originalCasterGUID);
                 if (!caster)
                     caster = m_caster;
-                if (target != m_caster && !target->IsWithinLOSInMap(caster, LINEOFSIGHT_ALL_CHECKS, VMAP::ModelIgnoreFlags::M2))
+
+                if (target != m_caster && !IsWithinLOS(caster, target, true, VMAP::ModelIgnoreFlags::M2))
                     return false;
             }
 
             if (losPosition)
-                if (!target->IsWithinLOS(losPosition->GetPositionX(), losPosition->GetPositionY(), losPosition->GetPositionZ(), LINEOFSIGHT_ALL_CHECKS, VMAP::ModelIgnoreFlags::M2))
+                if (!IsWithinLOS(target, *losPosition, VMAP::ModelIgnoreFlags::M2))
                     return false;
         }
     }

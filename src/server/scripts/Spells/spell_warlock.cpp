@@ -26,6 +26,7 @@
 #include "Creature.h"
 #include "GameObject.h"
 #include "ObjectAccessor.h"
+#include "Pet.h"
 #include "Player.h"
 #include "Random.h"
 #include "SpellAuraEffects.h"
@@ -63,6 +64,12 @@ enum WarlockSpells
     SPELL_WARLOCK_UNSTABLE_AFFLICTION_DISPEL        = 31117,
     SPELL_WARLOCK_SHADOWFLAME                       = 37378,
     SPELL_WARLOCK_FLAMESHADOW                       = 37379,
+    SPELL_WARLOCK_SUMMON_SUCCUBUS                   = 712,
+    SPELL_WARLOCK_SUMMON_INCUBUS                    = 365349,
+    SPELL_WARLOCK_STRENGTHEN_PACT_SUCCUBUS          = 366323,
+    SPELL_WARLOCK_STRENGTHEN_PACT_INCUBUS           = 366325,
+    SPELL_WARLOCK_SUCCUBUS_PACT                     = 365360,
+    SPELL_WARLOCK_INCUBUS_PACT                      = 365355
 };
 
 enum MiscSpells
@@ -74,8 +81,6 @@ enum MiscSpells
 // 710 - Banish
 class spell_warl_banish : public SpellScript
 {
-    PrepareSpellScript(spell_warl_banish);
-
 public:
     spell_warl_banish() {}
 
@@ -99,11 +104,54 @@ private:
     }
 };
 
+// 111400 - Burning Rush
+class spell_warl_burning_rush : public SpellScript
+{
+    bool Validate(SpellInfo const* spellInfo) override
+    {
+        return ValidateSpellEffect({ { spellInfo->Id, EFFECT_1 } });
+    }
+
+    SpellCastResult CheckApplyAura()
+    {
+        Unit* caster = GetCaster();
+
+        if (caster->GetHealthPct() <= float(GetEffectInfo(EFFECT_1).CalcValue(caster)))
+        {
+            SetCustomCastResultMessage(SPELL_CUSTOM_ERROR_YOU_DONT_HAVE_ENOUGH_HEALTH);
+            return SPELL_FAILED_CUSTOM_ERROR;
+        }
+
+        return SPELL_CAST_OK;
+    }
+
+    void Register() override
+    {
+        OnCheckCast += SpellCheckCastFn(spell_warl_burning_rush::CheckApplyAura);
+    }
+};
+
+// 111400 - Burning Rush
+class spell_warl_burning_rush_aura : public AuraScript
+{
+    void PeriodicTick(AuraEffect const* aurEff)
+    {
+        if (GetTarget()->GetHealthPct() <= float(aurEff->GetAmount()))
+        {
+            PreventDefaultAction();
+            Remove();
+        }
+    }
+
+    void Register() override
+    {
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_warl_burning_rush_aura::PeriodicTick, EFFECT_1, SPELL_AURA_PERIODIC_DAMAGE_PERCENT);
+    }
+};
+
 // 116858 - Chaos Bolt
 class spell_warl_chaos_bolt : public SpellScript
 {
-    PrepareSpellScript(spell_warl_chaos_bolt);
-
     bool Load() override
     {
         return GetCaster()->GetTypeId() == TYPEID_PLAYER;
@@ -129,8 +177,6 @@ class spell_warl_chaos_bolt : public SpellScript
 // 77220 - Mastery: Chaotic Energies
 class spell_warl_chaotic_energies : public AuraScript
 {
-    PrepareAuraScript(spell_warl_chaotic_energies);
-
     void HandleAbsorb(AuraEffect* /*aurEff*/, DamageInfo& dmgInfo, uint32& absorbAmount)
     {
         AuraEffect const* effect1 = GetEffect(EFFECT_1);
@@ -157,8 +203,6 @@ class spell_warl_chaotic_energies : public AuraScript
 // 6201 - Create Healthstone
 class spell_warl_create_healthstone : public SpellScript
 {
-    PrepareSpellScript(spell_warl_create_healthstone);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_WARLOCK_CREATE_HEALTHSTONE });
@@ -183,8 +227,6 @@ class spell_warl_create_healthstone : public SpellScript
 // 48018 - Demonic Circle: Summon
 class spell_warl_demonic_circle_summon : public AuraScript
 {
-    PrepareAuraScript(spell_warl_demonic_circle_summon);
-
     void HandleRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes mode)
     {
         // If effect is removed by expire remove the summoned demonic circle too.
@@ -224,8 +266,6 @@ class spell_warl_demonic_circle_summon : public AuraScript
 // 48020 - Demonic Circle: Teleport
 class spell_warl_demonic_circle_teleport : public AuraScript
 {
-    PrepareAuraScript(spell_warl_demonic_circle_teleport);
-
     void HandleTeleport(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
         if (Player* player = GetTarget()->ToPlayer())
@@ -247,12 +287,10 @@ class spell_warl_demonic_circle_teleport : public AuraScript
 // 67518, 19505 - Devour Magic
 class spell_warl_devour_magic : public SpellScript
 {
-    PrepareSpellScript(spell_warl_devour_magic);
-
     bool Validate(SpellInfo const* spellInfo) override
     {
         return ValidateSpellInfo({ SPELL_WARLOCK_GLYPH_OF_DEMON_TRAINING, SPELL_WARLOCK_DEVOUR_MAGIC_HEAL })
-            && spellInfo->GetEffects().size() > EFFECT_1;
+            && ValidateSpellEffect({ { spellInfo->Id, EFFECT_1 } });
     }
 
     void OnSuccessfulDispel(SpellEffIndex /*effIndex*/)
@@ -279,8 +317,6 @@ class spell_warl_devour_magic : public SpellScript
 // 198590 - Drain Soul
 class spell_warl_drain_soul : public AuraScript
 {
-    PrepareAuraScript(spell_warl_drain_soul);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo ({ SPELL_WARLOCK_DRAIN_SOUL_ENERGIZE });
@@ -304,8 +340,6 @@ class spell_warl_drain_soul : public AuraScript
 // 48181 - Haunt
 class spell_warl_haunt : public SpellScript
 {
-    PrepareSpellScript(spell_warl_haunt);
-
     void HandleAfterHit()
     {
         if (Aura* aura = GetHitAura())
@@ -322,8 +356,6 @@ class spell_warl_haunt : public SpellScript
 // 755 - Health Funnel
 class spell_warl_health_funnel : public AuraScript
 {
-    PrepareAuraScript(spell_warl_health_funnel);
-
     void ApplyEffect(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
         Unit* caster = GetCaster();
@@ -373,8 +405,6 @@ class spell_warl_health_funnel : public AuraScript
 // 6262 - Healthstone
 class spell_warl_healthstone_heal : public SpellScript
 {
-    PrepareSpellScript(spell_warl_healthstone_heal);
-
     void HandleOnHit()
     {
         int32 heal = int32(CalculatePct(GetCaster()->GetCreateHealth(), GetHitHeal()));
@@ -390,8 +420,6 @@ class spell_warl_healthstone_heal : public SpellScript
 // 348 - Immolate
 class spell_warl_immolate : public SpellScript
 {
-    PrepareSpellScript(spell_warl_immolate);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_WARLOCK_IMMOLATE_PERIODIC});
@@ -408,11 +436,73 @@ class spell_warl_immolate : public SpellScript
     }
 };
 
+// 366330 - Random Sayaad
+class spell_warl_random_sayaad : public SpellScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo
+        ({
+            SPELL_WARLOCK_SUCCUBUS_PACT,
+            SPELL_WARLOCK_INCUBUS_PACT
+        });
+    }
+
+    void HandleDummy(SpellEffIndex /*effIndex*/)
+    {
+        Unit* caster = GetCaster();
+
+        caster->RemoveAurasDueToSpell(SPELL_WARLOCK_SUCCUBUS_PACT);
+        caster->RemoveAurasDueToSpell(SPELL_WARLOCK_INCUBUS_PACT);
+
+        Player* player = GetCaster()->ToPlayer();
+        if (!player)
+            return;
+
+        if (Pet* pet = player->GetPet())
+        {
+            if (pet->IsPetSayaad())
+                pet->DespawnOrUnsummon();
+        }
+    }
+
+    void Register() override
+    {
+        OnEffectHit += SpellEffectFn(spell_warl_random_sayaad::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
+// 366323 - Strengthen Pact - Succubus
+// 366325 - Strengthen Pact - Incubus
+// 366222 - Summon Sayaad
+class spell_warl_sayaad_precast_disorientation : public SpellScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ PET_SUMMONING_DISORIENTATION });
+    }
+
+    // Note: this is a special case in which the warlock's minion pet must also cast Summon Disorientation at the beginning since this is only handled by SPELL_EFFECT_SUMMON_PET in Spell::CheckCast.
+    void OnPrecast() override
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (!player)
+            return;
+
+        if (Pet* pet = player->GetPet())
+            pet->CastSpell(pet, PET_SUMMONING_DISORIENTATION, CastSpellExtraArgs(TRIGGERED_FULL_MASK)
+                .SetOriginalCaster(pet->GetGUID())
+                .SetTriggeringSpell(GetSpell()));
+    }
+
+    void Register() override
+    {
+    }
+};
+
 // 6358 - Seduction (Special Ability)
 class spell_warl_seduction : public SpellScript
 {
-    PrepareSpellScript(spell_warl_seduction);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_WARLOCK_GLYPH_OF_SUCCUBUS, SPELL_PRIEST_SHADOW_WORD_DEATH });
@@ -441,8 +531,6 @@ class spell_warl_seduction : public SpellScript
 // 27285 - Seed of Corruption
 class spell_warl_seed_of_corruption : public SpellScript
 {
-    PrepareSpellScript(spell_warl_seed_of_corruption);
-
     void FilterTargets(std::list<WorldObject*>& targets)
     {
         if (GetExplTargetUnit())
@@ -458,8 +546,6 @@ class spell_warl_seed_of_corruption : public SpellScript
 // 27243 - Seed of Corruption
 class spell_warl_seed_of_corruption_dummy : public AuraScript
 {
-    PrepareAuraScript(spell_warl_seed_of_corruption_dummy);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_WARLOCK_SEED_OF_CORRUPTION_DAMAGE });
@@ -514,8 +600,6 @@ class spell_warl_seed_of_corruption_dummy : public AuraScript
 // Monster spells, triggered only on amount drop (not on death)
 class spell_warl_seed_of_corruption_generic : public AuraScript
 {
-    PrepareAuraScript(spell_warl_seed_of_corruption_generic);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_WARLOCK_SEED_OF_CORRUPTION_GENERIC });
@@ -553,8 +637,6 @@ class spell_warl_seed_of_corruption_generic : public AuraScript
 // 686 - Shadow Bolt
 class spell_warl_shadow_bolt : public SpellScript
 {
-    PrepareSpellScript(spell_warl_shadow_bolt);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo ({ SPELL_WARLOCK_SHADOW_BOLT_ENERGIZE });
@@ -574,8 +656,6 @@ class spell_warl_shadow_bolt : public SpellScript
 // 86121 - Soul Swap
 class spell_warl_soul_swap : public SpellScript
 {
-    PrepareSpellScript(spell_warl_soul_swap);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo(
@@ -601,8 +681,6 @@ class spell_warl_soul_swap : public SpellScript
 // 86211 - Soul Swap Override - Also acts as a dot container
 class spell_warl_soul_swap_override : public AuraScript
 {
-    PrepareAuraScript(spell_warl_soul_swap_override);
-
     //! Forced to, pure virtual functions must have a body when linking
     void Register() override { }
 
@@ -620,8 +698,6 @@ private:
 //! Soul Swap Copy Spells - 92795 - Simply copies spell IDs.
 class spell_warl_soul_swap_dot_marker : public SpellScript
 {
-    PrepareSpellScript(spell_warl_soul_swap_dot_marker);
-
     void HandleHit(SpellEffIndex /*effIndex*/)
     {
         Unit* swapVictim = GetCaster();
@@ -659,8 +735,6 @@ class spell_warl_soul_swap_dot_marker : public SpellScript
 // 86213 - Soul Swap Exhale
 class spell_warl_soul_swap_exhale : public SpellScript
 {
-    PrepareSpellScript(spell_warl_soul_swap_exhale);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_WARLOCK_SOUL_SWAP_MOD_COST, SPELL_WARLOCK_SOUL_SWAP_OVERRIDE });
@@ -724,8 +798,6 @@ class spell_warl_soul_swap_exhale : public SpellScript
 // 29858 - Soulshatter
 class spell_warl_soulshatter : public SpellScript
 {
-    PrepareSpellScript(spell_warl_soulshatter);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_WARLOCK_SOULSHATTER_EFFECT });
@@ -745,13 +817,86 @@ class spell_warl_soulshatter : public SpellScript
     }
 };
 
+// 366323 - Strengthen Pact - Succubus
+class spell_warl_strengthen_pact_succubus : public SpellScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo
+        ({
+            SPELL_WARLOCK_SUCCUBUS_PACT,
+            SPELL_WARLOCK_SUMMON_SUCCUBUS
+        });
+    }
+
+    void HandleDummy(SpellEffIndex /*effIndex*/)
+    {
+        Unit* caster = GetCaster();
+
+        caster->CastSpell(nullptr, SPELL_WARLOCK_SUCCUBUS_PACT, TRIGGERED_FULL_MASK);
+        caster->CastSpell(nullptr, SPELL_WARLOCK_SUMMON_SUCCUBUS, TRIGGERED_FULL_MASK);
+    }
+
+    void Register() override
+    {
+        OnEffectHit += SpellEffectFn(spell_warl_strengthen_pact_succubus::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
+// 366325 - Strengthen Pact - Incubus
+class spell_warl_strengthen_pact_incubus : public SpellScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo
+        ({
+            SPELL_WARLOCK_INCUBUS_PACT,
+            SPELL_WARLOCK_SUMMON_INCUBUS
+        });
+    }
+
+    void HandleDummy(SpellEffIndex /*effIndex*/)
+    {
+        Unit* caster = GetCaster();
+
+        caster->CastSpell(nullptr, SPELL_WARLOCK_INCUBUS_PACT, TRIGGERED_FULL_MASK);
+        caster->CastSpell(nullptr, SPELL_WARLOCK_SUMMON_INCUBUS, TRIGGERED_FULL_MASK);
+    }
+
+    void Register() override
+    {
+        OnEffectHit += SpellEffectFn(spell_warl_strengthen_pact_incubus::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
+// 366222 - Summon Sayaad
+class spell_warl_summon_sayaad : public SpellScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo
+        ({
+            SPELL_WARLOCK_SUMMON_SUCCUBUS,
+            SPELL_WARLOCK_SUMMON_INCUBUS
+        });
+    }
+
+    void HandleDummy(SpellEffIndex /*effIndex*/)
+    {
+        GetCaster()->CastSpell(nullptr, roll_chance_i(50) ? SPELL_WARLOCK_SUMMON_SUCCUBUS : SPELL_WARLOCK_SUMMON_INCUBUS, TRIGGERED_FULL_MASK);
+    }
+
+    void Register() override
+    {
+        OnEffectHit += SpellEffectFn(spell_warl_summon_sayaad::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
 // 37377 - Shadowflame
 // 39437 - Shadowflame Hellfire and RoF
 template <uint32 Trigger>
 class spell_warl_t4_2p_bonus : public AuraScript
 {
-    PrepareAuraScript(spell_warl_t4_2p_bonus);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ Trigger });
@@ -773,8 +918,6 @@ class spell_warl_t4_2p_bonus : public AuraScript
 // 30108, 34438, 34439, 35183 - Unstable Affliction
 class spell_warl_unstable_affliction : public AuraScript
 {
-    PrepareAuraScript(spell_warl_unstable_affliction);
-
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_WARLOCK_UNSTABLE_AFFLICTION_DISPEL });
@@ -811,8 +954,6 @@ class spell_warl_unstable_affliction : public AuraScript
 /// Updated 7.1.5
 class spell_warl_rain_of_fire : public AuraScript
 {
-    PrepareAuraScript(spell_warl_rain_of_fire);
-
     void HandleDummyTick(AuraEffect const* /*aurEff*/)
     {
         std::vector<AreaTrigger*> rainOfFireAreaTriggers = GetTarget()->GetAreaTriggers(SPELL_WARLOCK_RAIN_OF_FIRE);
@@ -839,6 +980,7 @@ class spell_warl_rain_of_fire : public AuraScript
 void AddSC_warlock_spell_scripts()
 {
     RegisterSpellScript(spell_warl_banish);
+    RegisterSpellAndAuraScriptPair(spell_warl_burning_rush, spell_warl_burning_rush_aura);
     RegisterSpellScript(spell_warl_chaos_bolt);
     RegisterSpellScript(spell_warl_chaotic_energies);
     RegisterSpellScript(spell_warl_create_healthstone);
@@ -850,6 +992,8 @@ void AddSC_warlock_spell_scripts()
     RegisterSpellScript(spell_warl_health_funnel);
     RegisterSpellScript(spell_warl_healthstone_heal);
     RegisterSpellScript(spell_warl_immolate);
+    RegisterSpellScript(spell_warl_random_sayaad);
+    RegisterSpellScript(spell_warl_sayaad_precast_disorientation);
     RegisterSpellScript(spell_warl_seduction);
     RegisterSpellScript(spell_warl_seed_of_corruption);
     RegisterSpellScript(spell_warl_seed_of_corruption_dummy);
@@ -860,6 +1004,9 @@ void AddSC_warlock_spell_scripts()
     RegisterSpellScript(spell_warl_soul_swap_exhale);
     RegisterSpellScript(spell_warl_soul_swap_override);
     RegisterSpellScript(spell_warl_soulshatter);
+    RegisterSpellScript(spell_warl_strengthen_pact_succubus);
+    RegisterSpellScript(spell_warl_strengthen_pact_incubus);
+    RegisterSpellScript(spell_warl_summon_sayaad);
     RegisterSpellScriptWithArgs(spell_warl_t4_2p_bonus<SPELL_WARLOCK_FLAMESHADOW>, "spell_warl_t4_2p_bonus_shadow");
     RegisterSpellScriptWithArgs(spell_warl_t4_2p_bonus<SPELL_WARLOCK_SHADOWFLAME>, "spell_warl_t4_2p_bonus_fire");
     RegisterSpellScript(spell_warl_unstable_affliction);

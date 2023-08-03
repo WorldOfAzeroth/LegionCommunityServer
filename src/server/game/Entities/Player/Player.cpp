@@ -4187,6 +4187,8 @@ void Player::BuildPlayerRepop()
 
 void Player::ResurrectPlayer(float restore_percent, bool applySickness)
 {
+    SetAreaSpiritHealer(nullptr);
+
     WorldPackets::Misc::DeathReleaseLoc packet;
     packet.MapID = -1;
     SendDirectMessage(packet.Write());
@@ -14493,6 +14495,7 @@ void Player::RewardQuest(Quest const* quest, LootItemType rewardType, uint32 rew
         if (moneyRew > 0)
             UpdateCriteria(CriteriaType::MoneyEarnedFromQuesting, uint32(moneyRew));
 
+        SendDisplayToast(0, DisplayToastType::Money, false, moneyRew, DisplayToastMethod::QuestComplete, quest_id);
     }
 
     // honor reward
@@ -22601,7 +22604,7 @@ void Player::UpdateTriggerVisibility()
         {
             Creature* creature = GetMap()->GetCreature(*itr);
             // Update fields of triggers, transformed units or uninteractible units (values dependent on GM state)
-            if (!creature || (!creature->IsTrigger() && !creature->HasAuraType(SPELL_AURA_TRANSFORM) && !creature->HasUnitFlag(UNIT_FLAG_UNINTERACTIBLE)))
+            if (!creature || (!creature->IsTrigger() && !creature->HasAuraType(SPELL_AURA_TRANSFORM) && !creature->IsUninteractible()))
                 continue;
 
             creature->SetFieldNotifyFlag(UF_FLAG_PUBLIC);
@@ -27724,4 +27727,68 @@ std::string Player::GetDebugInfo() const
     std::stringstream sstr;
     sstr << Unit::GetDebugInfo();
     return sstr.str();
+}
+
+void Player::SetAreaSpiritHealer(Creature* creature)
+{
+    if (!creature)
+    {
+        _areaSpiritHealerGUID = ObjectGuid::Empty;
+        RemoveAurasDueToSpell(SPELL_WAITING_FOR_RESURRECT);
+        return;
+    }
+
+    if (!creature->IsAreaSpiritHealer())
+        return;
+
+    _areaSpiritHealerGUID = creature->GetGUID();
+    CastSpell(nullptr, SPELL_WAITING_FOR_RESURRECT);
+}
+
+void Player::SendAreaSpiritHealerTime(Unit* spiritHealer) const
+{
+    int32 timeLeft = 0;
+    if (Spell* spell = spiritHealer->GetCurrentSpell(CURRENT_CHANNELED_SPELL))
+        timeLeft = spell->GetTimer();
+
+    SendAreaSpiritHealerTime(spiritHealer->GetGUID(), timeLeft);
+}
+
+void Player::SendAreaSpiritHealerTime(ObjectGuid const& spiritHealerGUID, int32 timeLeft) const
+{
+    WorldPackets::Battleground::AreaSpiritHealerTime areaSpiritHealerTime;
+    areaSpiritHealerTime.HealerGuid = spiritHealerGUID;
+    areaSpiritHealerTime.TimeLeft = timeLeft;
+    SendDirectMessage(areaSpiritHealerTime.Write());
+}
+
+void Player::SendDisplayToast(uint32 entry, DisplayToastType type, bool isBonusRoll, uint32 quantity, DisplayToastMethod method, uint32 questId, Item* item /*= nullptr*/) const
+{
+    WorldPackets::Misc::DisplayToast displayToast;
+    displayToast.Quantity = quantity;
+    displayToast.DisplayToastMethod = method;
+    displayToast.QuestID = questId;
+    displayToast.Type = type;
+
+    switch (type)
+    {
+        case DisplayToastType::NewItem:
+        {
+            if (!item)
+                return;
+
+            displayToast.BonusRoll = isBonusRoll;
+            displayToast.Item.Initialize(item);
+            displayToast.LootSpec = 0; // loot spec that was selected when loot was generated (not at loot time)
+            displayToast.Gender = GetNativeGender();
+            break;
+        }
+        case DisplayToastType::NewCurrency:
+            displayToast.CurrencyID = entry;
+            break;
+        default:
+            break;
+    }
+
+    SendDirectMessage(displayToast.Write());
 }

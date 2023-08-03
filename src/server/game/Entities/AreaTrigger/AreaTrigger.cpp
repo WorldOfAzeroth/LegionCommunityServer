@@ -92,7 +92,7 @@ void AreaTrigger::RemoveFromWorld()
     }
 }
 
-bool AreaTrigger::Create(uint32 areaTriggerCreatePropertiesId, Unit* caster, Unit* target, SpellInfo const* spell, Position const& pos, int32 duration, uint32 spellXSpellVisualId, ObjectGuid const& castId, AuraEffect const* aurEff)
+bool AreaTrigger::Create(uint32 areaTriggerCreatePropertiesId, Unit* caster, Unit* target, SpellInfo const* spellInfo, Position const& pos, int32 duration, uint32 spellXSpellVisualId, Spell const* spell, AuraEffect const* aurEff)
 {
     _targetGuid = target ? target->GetGUID() : ObjectGuid::Empty;
     _aurEff = aurEff;
@@ -127,9 +127,9 @@ bool AreaTrigger::Create(uint32 areaTriggerCreatePropertiesId, Unit* caster, Uni
     _maxSearchRadius = GetCreateProperties()->GetMaxSearchRadius();
 
     SetGuidValue(AREATRIGGER_CASTER, caster->GetGUID());
-    SetGuidValue(AREATRIGGER_CREATING_EFFECT_GUID, castId);
-    SetUInt32Value(AREATRIGGER_SPELLID, spell->Id);
-    SetUInt32Value(AREATRIGGER_SPELL_FOR_VISUALS, spell->Id);
+    SetGuidValue(AREATRIGGER_CREATING_EFFECT_GUID, caster->GetGUID());
+    SetUInt32Value(AREATRIGGER_SPELLID, spellInfo->Id);
+    SetUInt32Value(AREATRIGGER_SPELL_FOR_VISUALS, spellInfo->Id);
     SetUInt32Value(AREATRIGGER_SPELL_X_SPELL_VISUAL_ID, spellXSpellVisualId);
     SetUInt32Value(AREATRIGGER_TIME_TO_TARGET_SCALE, GetCreateProperties()->TimeToTargetScale != 0 ? GetCreateProperties()->TimeToTargetScale : GetUInt32Value(AREATRIGGER_DURATION));
     SetFloatValue(AREATRIGGER_BOUNDS_RADIUS_2D, GetMaxSearchRadius());
@@ -197,15 +197,15 @@ bool AreaTrigger::Create(uint32 areaTriggerCreatePropertiesId, Unit* caster, Uni
 
     caster->_RegisterAreaTrigger(this);
 
-    _ai->OnCreate();
+    _ai->OnCreate(spell);
 
     return true;
 }
 
-AreaTrigger* AreaTrigger::CreateAreaTrigger(uint32 areaTriggerCreatePropertiesId, Unit* caster, Unit* target, SpellInfo const* spell, Position const& pos, int32 duration, uint32 spellVisual, ObjectGuid const& castId /*= ObjectGuid::Empty*/, AuraEffect const* aurEff /*= nullptr*/)
+AreaTrigger* AreaTrigger::CreateAreaTrigger(uint32 areaTriggerCreatePropertiesId, Unit* caster, Unit* target, SpellInfo const* spellInfo, Position const& pos, int32 duration, uint32 spellVisual, Spell const* spell /*= nullptr*/, AuraEffect const* aurEff /*= nullptr*/)
 {
     AreaTrigger* at = new AreaTrigger();
-    if (!at->Create(areaTriggerCreatePropertiesId, caster, target, spell, pos, duration, spellVisual, castId, aurEff))
+    if (!at->Create(areaTriggerCreatePropertiesId, caster, target, spellInfo, pos, duration, spellVisual, spell, aurEff))
     {
         delete at;
         return nullptr;
@@ -273,7 +273,7 @@ bool AreaTrigger::CreateServer(Map* map, AreaTriggerTemplate const* areaTriggerT
 
     AI_Initialize();
 
-    _ai->OnCreate();
+    _ai->OnCreate(nullptr);
 
     return true;
 }

@@ -743,10 +743,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         }
         case SMART_ACTION_AUTO_ATTACK:
         {
-            if (!IsSmart())
-                break;
-
-            ENSURE_AI(SmartAI, me->AI())->SetAutoAttack(e.action.autoAttack.attack != 0);
+            me->SetCanMelee(e.action.autoAttack.attack != 0);
             TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction:: SMART_ACTION_AUTO_ATTACK: Creature: {} bool on = {}",
                 me->GetGUID().ToString(), e.action.autoAttack.attack);
             break;
@@ -2438,10 +2435,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
             {
                 if (IsUnit(target))
                 {
-                    if (e.action.setUninteractible.uninteractible)
-                        target->ToUnit()->SetUnitFlag(UNIT_FLAG_UNINTERACTIBLE);
-                    else
-                        target->ToUnit()->RemoveUnitFlag(UNIT_FLAG_UNINTERACTIBLE);
+                    target->ToUnit()->SetUninteractible(e.action.setUninteractible.uninteractible != 0);
                 }
             }
             break;
