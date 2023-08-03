@@ -5611,9 +5611,9 @@ void Player::SetSkill(uint32 id, uint16 step, uint16 newVal, uint16 maxVal)
                     SetSkill(childSkillLine->ID, 0, 0, 0);
 
             // Clear profession lines
-            if (GetUInt32Value(PLAYER_PROFESSION_SKILL_LINE_1) == int32(id))
+            if (GetUInt32Value(PLAYER_PROFESSION_SKILL_LINE_1) == id)
                 SetUInt32Value(PLAYER_PROFESSION_SKILL_LINE_1, 0);
-            else if (GetUInt32Value(PLAYER_PROFESSION_SKILL_LINE_1 + 1) == int32(id))
+            else if (GetUInt32Value(PLAYER_PROFESSION_SKILL_LINE_1 + 1) == id)
                 SetUInt32Value(PLAYER_PROFESSION_SKILL_LINE_1 + 1, 0);
         }
     }
@@ -25377,15 +25377,15 @@ TalentLearnResult Player::LearnPvpTalent(uint32 talentID, int32* spellOnCooldown
     if (!talentInfo)
         return TALENT_FAILED_UNKNOWN;
 
-    if (talentInfo->SpecID != int32(GetPrimarySpecialization()))
+    if (talentInfo->SpecID && talentInfo->SpecID != int32(GetPrimarySpecialization()))
         return TALENT_FAILED_UNKNOWN;
 
     // prevent learn talent for different class (cheating)
-    if (talentInfo->ClassID != GetClass())
+    if (talentInfo->ClassID && talentInfo->ClassID != GetClass())
         return TALENT_FAILED_UNKNOWN;
 
     // check if we have enough talent points
-    if (talentInfo->TierID >= GetUInt32Value(PLAYER_FIELD_MAX_TALENT_TIERS))
+    if (talentInfo->TierID >= int32(GetUInt32Value(PLAYER_FIELD_MAX_TALENT_TIERS)))
         return TALENT_FAILED_UNKNOWN;
 
     if (!GetPrestigeLevel())
