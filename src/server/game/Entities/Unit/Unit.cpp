@@ -7774,9 +7774,6 @@ MountCapabilityEntry const* Unit::GetMountCapability(uint32 mountType) const
         if (mountCapability->ReqSpellKnownID && !HasSpell(mountCapability->ReqSpellKnownID))
             continue;
 
-        if (mountCapability->ReqRidingSkill && !HasSpell(mountCapability->ReqRidingSkill))
-            continue;
-
         return mountCapability;
     }
 

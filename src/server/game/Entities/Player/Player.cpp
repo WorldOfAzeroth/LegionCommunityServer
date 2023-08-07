@@ -3698,7 +3698,6 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
     }
 
     LoginDatabaseTransaction loginTransaction = LoginDatabase.BeginTransaction();
-    LoginDatabasePreparedStatement* loginStmt = nullptr;
 
     CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
     if (ObjectGuid::LowType guildId = sCharacterCache->GetCharacterGuildIdByGuid(playerguid))
@@ -5492,7 +5491,6 @@ void Player::ModifySkillBonus(uint32 skillid, int32 val, bool talent)
 
 void Player::UpdateSkillsForLevel()
 {
-    Races race = Races(GetRace());
     uint32 maxSkill = GetMaxSkillValueForLevel();
 
     for (SkillStatusMap::iterator itr = mSkillStatus.begin(); itr != mSkillStatus.end(); ++itr)
@@ -6148,11 +6146,6 @@ ReputationRank Player::GetReputationRank(uint32 faction) const
 // Calculate total reputation percent player gain with quest/creature level
 int32 Player::CalculateReputationGain(ReputationSource source, uint32 creatureOrQuestLevel, int32 rep, int32 faction, bool noQuestBonus)
 {
-    bool noBonuses = false;
-    if (FactionEntry const* factionEntry = sFactionStore.LookupEntry(faction))
-        if (FriendshipReputationEntry const* friendshipReputation = sFriendshipReputationStore.LookupEntry(factionEntry->FriendshipRepID))
-            noBonuses = true;
-
     float percent = 100.0f;
 
     float repMod = noQuestBonus ? 0.0f : float(GetTotalAuraModifier(SPELL_AURA_MOD_REPUTATION_GAIN));
@@ -16235,7 +16228,7 @@ void Player::SendQuestConfirmAccept(Quest const* quest, Player* receiver) const
     receiver->SendDirectMessage(packet.Write());
 }
 
-void Player::SendPushToPartyResponse(Player const* player, QuestPushReason reason, Quest const* quest /*= nullptr*/) const
+void Player::SendPushToPartyResponse(Player const* player, QuestPushReason reason) const
 {
     if (player)
     {

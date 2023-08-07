@@ -3505,7 +3505,6 @@ void GameObject::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* t
         return;
 
     bool forcedFlags = GetGoType() == GAMEOBJECT_TYPE_CHEST && GetGOInfo()->chest.usegrouplootrules && HasLootRecipient();
-    bool targetIsGM = target->IsGameMaster();
 
     std::size_t blockCount = UpdateMask::GetBlockCount(m_valuesCount);
 
