@@ -36,7 +36,6 @@ enum WarriorSpells
 {
     SPELL_WARRIOR_BLADESTORM_PERIODIC_WHIRLWIND     = 50622,
     SPELL_WARRIOR_BLOODTHIRST_HEAL                  = 117313,
-    SPELL_WARRIOR_CHARGE                            = 34846,
     SPELL_WARRIOR_CHARGE_EFFECT                     = 218104,
     SPELL_WARRIOR_CHARGE_EFFECT_BLAZING_TRAIL       = 198337,
     SPELL_WARRIOR_CHARGE_PAUSE_RAGE_DECAY           = 109128,
@@ -48,15 +47,13 @@ enum WarriorSpells
     SPELL_WARRIOR_EXECUTE                           = 20647,
     SPELL_WARRIOR_FUELED_BY_VIOLENCE_HEAL           = 383104,
     SPELL_WARRIOR_GLYPH_OF_THE_BLAZING_TRAIL        = 123779,
-    SPELL_WARRIOR_GLYPH_OF_HEROIC_LEAP              = 159708,
-    SPELL_WARRIOR_GLYPH_OF_HEROIC_LEAP_BUFF         = 133278,
-    SPELL_WARRIOR_HEROIC_LEAP_JUMP                  = 178368,
+    SPELL_WARRIOR_HEROIC_LEAP_JUMP                  = 162052,
     SPELL_WARRIOR_IGNORE_PAIN                       = 190456,
     SPELL_WARRIOR_IN_FOR_THE_KILL                   = 248621,
     SPELL_WARRIOR_IN_FOR_THE_KILL_HASTE             = 248622,
     SPELL_WARRIOR_IMPENDING_VICTORY                 = 202168,
     SPELL_WARRIOR_IMPENDING_VICTORY_HEAL            = 202166,
-    SPELL_WARRIOR_IMPROVED_HEROIC_LEAP              = 157449,
+    SPELL_WARRIOR_IMPROVED_HEROIC_LEAP              = 222355,
     SPELL_WARRIOR_MORTAL_STRIKE                     = 12294,
     SPELL_WARRIOR_MORTAL_WOUNDS                     = 213667,
     SPELL_WARRIOR_RALLYING_CRY                      = 97463,
@@ -262,65 +259,6 @@ private:
     bool _bonusHaste = false;
 };
 
-// 389306 - Critical Thinking
-class spell_warr_critical_thinking : public AuraScript
-{
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo({ SPELL_WARRIOR_CRITICAL_THINKING_ENERGIZE });
-    }
-
-    void HandleProc(AuraEffect* aurEff, ProcEventInfo& eventInfo)
-    {
-        if (Optional<int32> rageCost = eventInfo.GetProcSpell()->GetPowerTypeCostAmount(POWER_RAGE))
-            GetTarget()->CastSpell(nullptr, SPELL_WARRIOR_CRITICAL_THINKING_ENERGIZE, CastSpellExtraArgs(TRIGGERED_FULL_MASK)
-                .AddSpellBP0(CalculatePct(*rageCost, aurEff->GetAmount())));
-    }
-
-    void Register() override
-    {
-        AfterEffectProc += AuraEffectProcFn(spell_warr_critical_thinking::HandleProc, EFFECT_1, SPELL_AURA_DUMMY);
-    }
-};
-
-// 383103  - Fueled by Violence
-class spell_warr_fueled_by_violence : public AuraScript
-{
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo({ SPELL_WARRIOR_FUELED_BY_VIOLENCE_HEAL });
-    }
-
-    void HandleProc(ProcEventInfo& eventInfo)
-    {
-        PreventDefaultAction();
-
-        _nextHealAmount += CalculatePct(eventInfo.GetDamageInfo()->GetDamage(), GetEffectInfo(EFFECT_0).CalcValue(GetTarget()));
-    }
-
-    void HandlePeriodic(AuraEffect const* /*aurEff*/)
-    {
-        if (_nextHealAmount == 0)
-            return;
-
-        Unit* target = GetTarget();
-        CastSpellExtraArgs args(TRIGGERED_FULL_MASK);
-        args.AddSpellBP0(_nextHealAmount);
-
-        target->CastSpell(target, SPELL_WARRIOR_FUELED_BY_VIOLENCE_HEAL, args);
-        _nextHealAmount = 0;
-    }
-
-    void Register() override
-    {
-        OnProc += AuraProcFn(spell_warr_fueled_by_violence::HandleProc);
-        OnEffectPeriodic += AuraEffectPeriodicFn(spell_warr_fueled_by_violence::HandlePeriodic, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY);
-    }
-
-private:
-    uint32 _nextHealAmount = 0;
-};
-
 // 6544 - Heroic leap
 class spell_warr_heroic_leap : public SpellScript
 {
@@ -371,33 +309,6 @@ class spell_warr_heroic_leap : public SpellScript
     }
 };
 
-// Heroic Leap (triggered by Heroic Leap (6544)) - 178368
-class spell_warr_heroic_leap_jump : public SpellScript
-{
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo(
-        {
-            SPELL_WARRIOR_GLYPH_OF_HEROIC_LEAP,
-            SPELL_WARRIOR_GLYPH_OF_HEROIC_LEAP_BUFF,
-            SPELL_WARRIOR_IMPROVED_HEROIC_LEAP,
-            SPELL_WARRIOR_TAUNT
-        });
-    }
-
-    void AfterJump(SpellEffIndex /*effIndex*/)
-    {
-        if (GetCaster()->HasAura(SPELL_WARRIOR_GLYPH_OF_HEROIC_LEAP))
-            GetCaster()->CastSpell(GetCaster(), SPELL_WARRIOR_GLYPH_OF_HEROIC_LEAP_BUFF, true);
-        if (GetCaster()->HasAura(SPELL_WARRIOR_IMPROVED_HEROIC_LEAP))
-            GetCaster()->GetSpellHistory()->ResetCooldown(SPELL_WARRIOR_TAUNT, true);
-    }
-
-    void Register() override
-    {
-        OnEffectHit += SpellEffectFn(spell_warr_heroic_leap_jump::AfterJump, EFFECT_1, SPELL_EFFECT_JUMP_DEST);
-    }
-};
 
 // 202168 - Impending Victory
 class spell_warr_impending_victory : public SpellScript
@@ -769,10 +680,7 @@ void AddSC_warrior_spell_scripts()
     RegisterSpellScript(spell_warr_charge_drop_fire_periodic);
     RegisterSpellScript(spell_warr_charge_effect);
     RegisterSpellScript(spell_warr_colossus_smash);
-    RegisterSpellScript(spell_warr_critical_thinking);
-    RegisterSpellScript(spell_warr_fueled_by_violence);
     RegisterSpellScript(spell_warr_heroic_leap);
-    RegisterSpellScript(spell_warr_heroic_leap_jump);
     RegisterSpellScript(spell_warr_impending_victory);
     RegisterSpellScript(spell_warr_intimidating_shout);
     RegisterSpellScript(spell_warr_item_t10_prot_4p_bonus);

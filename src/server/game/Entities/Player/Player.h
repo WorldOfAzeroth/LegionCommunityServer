@@ -670,11 +670,10 @@ enum QuestSlotOffsets
 {
     QUEST_ID_OFFSET              = 0,
     QUEST_STATE_OFFSET           = 1,
-    QUEST_END_TIME_OFFSET        = 2,
+    QUEST_COUNTS_OFFSET          = 2,
     QUEST_ACCEPTED_TIME_OFFSET   = 3,
     QUEST_OBJECTIVE_FLAGS_OFFSET = 4,
-    QUEST_COUNTS_OFFSET = 2,
-    QUEST_TIME_OFFSET   = 14
+    QUEST_END_TIME_OFFSET        = 14
 };
 
 #define MAX_QUEST_COUNTS 24
@@ -2877,7 +2876,6 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         /***                   SAVE SYSTEM                     ***/
         /*********************************************************/
 
-        void _SaveCustomizations(CharacterDatabaseTransaction trans);
         void _SaveActions(CharacterDatabaseTransaction trans);
         void _SaveAuras(CharacterDatabaseTransaction trans);
         void _SaveInventory(CharacterDatabaseTransaction trans);

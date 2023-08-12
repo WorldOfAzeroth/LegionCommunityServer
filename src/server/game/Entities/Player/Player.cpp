@@ -14567,14 +14567,15 @@ void Player::RewardQuest(Quest const* quest, LootItemType rewardType, uint32 rew
     {
         for (uint32 displaySpellId : quest->RewardDisplaySpell)
         {
+            if(displaySpellId > 0) {
+                SpellInfo const* spellInfo = sSpellMgr->AssertSpellInfo(displaySpellId, GetMap()->GetDifficultyID());
+                Unit* caster = this;
+                if (questGiver && questGiver->isType(TYPEMASK_UNIT) && !quest->HasFlag(QUEST_FLAGS_PLAYER_CAST_ON_COMPLETE) && !spellInfo->HasTargetType(TARGET_UNIT_CASTER))
+                    if (Unit* unit = questGiver->ToUnit())
+                        caster = unit;
 
-            SpellInfo const* spellInfo = sSpellMgr->AssertSpellInfo(displaySpellId, GetMap()->GetDifficultyID());
-            Unit* caster = this;
-            if (questGiver && questGiver->isType(TYPEMASK_UNIT) && !quest->HasFlag(QUEST_FLAGS_PLAYER_CAST_ON_COMPLETE) && !spellInfo->HasTargetType(TARGET_UNIT_CASTER))
-                if (Unit* unit = questGiver->ToUnit())
-                    caster = unit;
-
-            caster->CastSpell(this, spellInfo->Id, CastSpellExtraArgs(TRIGGERED_FULL_MASK).SetCastDifficulty(spellInfo->Difficulty));
+                caster->CastSpell(this, spellInfo->Id, CastSpellExtraArgs(TRIGGERED_FULL_MASK).SetCastDifficulty(spellInfo->Difficulty));
+            }
         }
     }
 

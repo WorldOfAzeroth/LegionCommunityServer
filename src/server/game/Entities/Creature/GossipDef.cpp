@@ -16,7 +16,6 @@
  */
 
 #include "GossipDef.h"
-#include "Containers.h"
 #include "Creature.h"
 #include "DB2Stores.h"
 #include "Log.h"

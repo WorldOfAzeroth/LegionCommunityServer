@@ -303,7 +303,7 @@ void WorldSession::HandleQuestgiverChooseRewardOpcode(WorldPackets::Quest::Quest
                 {
                     for (QuestPackageItemEntry const* questPackageItem : *questPackageItems)
                     {
-                        if (uint32(questPackageItem->ItemID) != packet.ItemChoiceID)
+                        if (questPackageItem->ItemID != packet.ItemChoiceID)
                             continue;
 
                         itemValid = true;

@@ -470,8 +470,10 @@ WorldPacket Quest::BuildQueryData(LocaleConstant loc, Player* player) const
 
     response.Info.QuestID = GetQuestId();
     response.Info.QuestType = GetQuestType();
+    response.Info.QuestLevel = GetQuestLevel();
     response.Info.QuestMaxScalingLevel = GetQuestMaxScalingLevel();
     response.Info.QuestPackageID = GetQuestPackageID();
+    response.Info.QuestMinLevel = GetMinLevel();
     response.Info.QuestSortID = GetZoneOrSort();
     response.Info.QuestInfoID = GetQuestInfoID();
     response.Info.SuggestedGroupNum = GetSuggestedPlayers();

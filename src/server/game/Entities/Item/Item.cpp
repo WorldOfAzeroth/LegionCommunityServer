@@ -1432,7 +1432,7 @@ uint8 Item::GetGemCountWithID(uint32 GemID) const
     auto gems = GetDynamicStructuredValues<ItemDynamicFieldGems>(ITEM_DYNAMIC_FIELD_GEMS);
     return uint8(std::count_if(gems.begin(), gems.end(), [GemID](ItemDynamicFieldGems const& gemData)
     {
-        return gemData.ItemId == int32(GemID);
+        return gemData.ItemId == GemID;
     }));
 }
 
