@@ -362,8 +362,8 @@ ByteBuffer& operator<<(ByteBuffer& data, QuestPOIData const& questPOIData)
 
         for (QuestPOIBlobPoint const& questPOIBlobPoint : questPOIBlobData.Points)
         {
-            data << int16(questPOIBlobPoint.X);
-            data << int16(questPOIBlobPoint.Y);
+            data << int32(questPOIBlobPoint.X);
+            data << int32(questPOIBlobPoint.Y);
         }
 
         data.WriteBit(questPOIBlobData.AlwaysAllowMergingBlobs);
