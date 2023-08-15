@@ -21,6 +21,7 @@
 #include "Define.h"
 #include "ObjectGuid.h"
 
+class AreaTrigger;
 class Creature;
 class GameObject;
 class Player;
@@ -72,6 +73,9 @@ class TC_GAME_API ZoneScript
 
         virtual void OnGameObjectCreate(GameObject* ) { }
         virtual void OnGameObjectRemove(GameObject* ) { }
+
+        virtual void OnAreaTriggerCreate([[maybe_unused]] AreaTrigger* areaTrigger) { }
+        virtual void OnAreaTriggerRemove([[maybe_unused]] AreaTrigger* areaTrigger) { }
 
         virtual void OnUnitDeath(Unit*) { }
 
