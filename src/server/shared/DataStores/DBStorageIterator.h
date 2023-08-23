@@ -39,7 +39,6 @@ public:
     T const* operator*() { return _index[_pos]; }
 
     bool operator==(DBStorageIterator const& right) const { /*ASSERT(_index == right._index, "Iterator belongs to a different container")*/ return _pos == right._pos; }
-    bool operator!=(DBStorageIterator const& right) const { return !(*this == right); }
 
     DBStorageIterator& operator++()
     {
