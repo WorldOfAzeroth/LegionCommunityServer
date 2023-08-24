@@ -405,6 +405,9 @@ class TC_GAME_API GameObject : public WorldObject, public GridObject<GameObject>
         void AssaultCapturePoint(Player* player);
         void UpdateCapturePoint();
         bool CanInteractWithCapturePoint(Player const* target) const;
+        FlagState GetFlagState() const;
+        ObjectGuid const& GetFlagCarrierGUID() const;
+        time_t GetFlagTakenFromBaseTime() const;
 
         GuidUnorderedSet const* GetInsidePlayers() const;
 
