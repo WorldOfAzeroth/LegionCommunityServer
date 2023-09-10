@@ -240,6 +240,8 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petEntry, uint32 petnumber, bool c
         return false;
     }
 
+    owner->SetTemporaryUnsummonedPetNumber(0);
+
     Map* map = owner->GetMap();
     ObjectGuid::LowType guid = map->GenerateLowGuid<HighGuid::Pet>();
 
@@ -363,9 +365,6 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petEntry, uint32 petnumber, bool c
 
         uint32 newPetIndex = std::distance(petStable->ActivePets.begin(), activePetItr);
 
-        // Check that we either have no pet (unsummoned by player) or it matches temporarily unsummoned pet by server (for example on flying mount)
-        ASSERT(!petStable->CurrentPetIndex || petStable->CurrentPetIndex == newPetIndex);
-
         petStable->SetCurrentActivePetIndex(newPetIndex);
     }
 
@@ -434,6 +433,9 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petEntry, uint32 petnumber, bool c
                     m_declinedname->name[i] = fields[i].GetString();
             }
         }
+
+        if (owner->IsMounted())
+            owner->DisablePetControlsOnMount(REACT_PASSIVE, COMMAND_FOLLOW);
 
         // must be after SetMinion (owner guid check)
         LoadTemplateImmunities();
@@ -504,7 +506,7 @@ void Pet::SavePetToDB(PetSaveMode mode)
         std::string actionBar = GenerateActionBarData();
 
         ASSERT(owner->GetPetStable()->GetCurrentPet() && owner->GetPetStable()->GetCurrentPet()->PetNumber == m_charmInfo->GetPetNumber());
-        FillPetInfo(owner->GetPetStable()->GetCurrentPet());
+        FillPetInfo(owner->GetPetStable()->GetCurrentPet(), owner->GetTemporaryPetReactState());
 
         stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_PET);
         stmt->setUInt32(0, m_charmInfo->GetPetNumber());
@@ -536,7 +538,7 @@ void Pet::SavePetToDB(PetSaveMode mode)
     }
 }
 
-void Pet::FillPetInfo(PetStable::PetInfo* petInfo) const
+void Pet::FillPetInfo(PetStable::PetInfo* petInfo, Optional<ReactStates> forcedReactState /*= {}*/) const
 {
     petInfo->PetNumber = m_charmInfo->GetPetNumber();
     petInfo->CreatureId = GetEntry();
