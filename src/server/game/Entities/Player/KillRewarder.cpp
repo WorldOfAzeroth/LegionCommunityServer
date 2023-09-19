@@ -18,16 +18,15 @@
 #include "KillRewarder.h"
 #include "Creature.h"
 #include "DB2Stores.h"
+#include "FlatSet.h"
 #include "Formulas.h"
 #include "Group.h"
 #include "Guild.h"
 #include "GuildMgr.h"
-#include "InstanceScript.h"
 #include "Pet.h"
 #include "Player.h"
 #include "Scenario.h"
 #include "SpellAuraEffects.h"
-#include <boost/container/flat_set.hpp>
 #include <boost/container/small_vector.hpp>
 
  // == KillRewarder ====================================================
@@ -259,7 +258,7 @@ void KillRewarder::_RewardGroup(Group const* group, Player const* killer)
 
 void KillRewarder::Reward()
 {
-    boost::container::flat_set<Group const*, std::less<>, boost::container::small_vector<Group const*, 3>> processedGroups;
+    Trinity::Containers::FlatSet<Group const*, std::less<>, boost::container::small_vector<Group const*, 3>> processedGroups;
     for (Player* killer : _killers)
     {
         _InitGroupData(killer);
@@ -292,15 +291,14 @@ void KillRewarder::Reward()
     // 7. Credit scenario criterias
     if (Creature* victim = _victim->ToCreature())
     {
-        if (victim->IsDungeonBoss())
-            if (InstanceScript* instance = _victim->GetInstanceScript())
-                instance->UpdateEncounterStateForKilledCreature(_victim->GetEntry(), _victim);
+        if (_killers.begin() != _killers.end())
+        {
+            if (ObjectGuid::LowType guildId = victim->GetMap()->GetOwnerGuildId())
+                if (Guild* guild = sGuildMgr->GetGuildById(guildId))
+                    guild->UpdateCriteria(CriteriaType::KillCreature, victim->GetEntry(), 1, 0, victim, *_killers.begin());
 
-        if (ObjectGuid::LowType guildId = victim->GetMap()->GetOwnerGuildId())
-            if (Guild* guild = sGuildMgr->GetGuildById(guildId))
-                guild->UpdateCriteria(CriteriaType::KillCreature, victim->GetEntry(), 1, 0, victim, *_killers.begin());
-
-        if (Scenario* scenario = victim->GetScenario())
-            scenario->UpdateCriteria(CriteriaType::KillCreature, victim->GetEntry(), 1, 0, victim, *_killers.begin());
+            if (Scenario* scenario = victim->GetScenario())
+                scenario->UpdateCriteria(CriteriaType::KillCreature, victim->GetEntry(), 1, 0, victim, *_killers.begin());
+        }
     }
 }
