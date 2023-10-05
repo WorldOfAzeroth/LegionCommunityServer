@@ -570,6 +570,7 @@ uint32 DB2Manager::LoadStores(std::string const& dataPath, LocaleConstant defaul
     LOAD_DB2(sBattlemasterListStore);
     LOAD_DB2(sBroadcastTextStore);
     LOAD_DB2(sCfgRegionsStore);
+    LOAD_DB2(sCfgCategoriesStore);
     LOAD_DB2(sCharacterFacialHairStylesStore);
     LOAD_DB2(sCharBaseSectionStore);
     LOAD_DB2(sCharSectionsStore);
