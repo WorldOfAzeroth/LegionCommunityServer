@@ -15,8 +15,10 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ScriptMgr.h"
+#include "AreaTrigger.h"
+#include "AreaTriggerAI.h"
 #include "Containers.h"
+#include "Conversation.h"
 #include "CreatureAIImpl.h"
 #include "CreatureGroups.h"
 #include "MotionMaster.h"
@@ -25,6 +27,10 @@
 #include "Player.h"
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
+#include "ScriptedGossip.h"
+#include "SpellScript.h"
+#include "TemporarySummon.h"
+#include "WorldSession.h"
 
 enum COG_Paths
 {
@@ -470,8 +476,8 @@ public:
 
     void OnConversationCreate(Conversation* conversation, Unit* creator) override
     {
-        Creature* mathiasObject = GetClosestCreatureWithOptions(creator, 15.0f, FindCreatureOptions().SetIgnorePhases(true).SetCreatureId(NPC_MATHIAS_SHAW));
-        Creature* vanessaObject = GetClosestCreatureWithOptions(creator, 15.0f, FindCreatureOptions().SetIgnorePhases(true).SetCreatureId(NPC_VANESSA_VANCLEEF));
+        Creature* mathiasObject = GetClosestCreatureWithOptions(creator, 15.0f, { .CreatureId = NPC_MATHIAS_SHAW, .IgnorePhases = true });
+        Creature* vanessaObject = GetClosestCreatureWithOptions(creator, 15.0f, { .CreatureId = NPC_VANESSA_VANCLEEF, .IgnorePhases = true });
         if (!mathiasObject || !vanessaObject)
             return;
 
@@ -583,8 +589,8 @@ public:
 
     void OnConversationCreate(Conversation* conversation, Unit* creator) override
     {
-        Creature* mathiasObject = GetClosestCreatureWithOptions(creator, 15.0f, FindCreatureOptions().SetIgnorePhases(true).SetCreatureId(NPC_MATHIAS_SHAW));
-        Creature* vanessaObject = GetClosestCreatureWithOptions(creator, 15.0f, FindCreatureOptions().SetIgnorePhases(true).SetCreatureId(NPC_VANESSA_VANCLEEF));
+        Creature* mathiasObject = GetClosestCreatureWithOptions(creator, 15.0f, { .CreatureId = NPC_MATHIAS_SHAW, .IgnorePhases = true });
+        Creature* vanessaObject = GetClosestCreatureWithOptions(creator, 15.0f, { .CreatureId = NPC_VANESSA_VANCLEEF, .IgnorePhases = true });
         if (!mathiasObject || !vanessaObject)
             return;
 
@@ -686,8 +692,6 @@ private:
 // 228928 - Stealth
 class spell_stealth_vanessa_human_heritage : public AuraScript
 {
-    PrepareAuraScript(spell_stealth_vanessa_human_heritage);
-
     void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
         GetTarget()->SetDisplayId(DISPLAY_VANESSA_INVISIBLE);
@@ -707,6 +711,7 @@ class spell_stealth_vanessa_human_heritage : public AuraScript
 
 void AddSC_elwynn_forest()
 {
+    // Creature
     RegisterCreatureAI(npc_cameron);
     RegisterCreatureAI(npc_master_mathias_shaw_human_heritage_lions_pride_inn_basement);
     RegisterCreatureAI(npc_vanessa_vancleef_human_heritage_lions_pride_inn_basement);
