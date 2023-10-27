@@ -7843,6 +7843,9 @@ MountCapabilityEntry const* Unit::GetMountCapability(uint32 mountType) const
 
 void Unit::UpdateMountCapability()
 {
+    if (IsLoading())
+        return;
+
     AuraEffectList mounts = GetAuraEffectsByType(SPELL_AURA_MOUNTED);
     for (AuraEffect* aurEff : mounts)
     {
