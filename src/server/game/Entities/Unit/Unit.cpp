@@ -5232,7 +5232,7 @@ void Unit::SendSpellNonMeleeDamageLog(SpellNonMeleeDamage const* log)
 {
     WorldPackets::CombatLog::SpellNonMeleeDamageLog packet;
     packet.Me = log->target->GetGUID();
-    packet.CasterGUID = log->attacker->GetGUID();
+    packet.CasterGUID = log->attacker ? log->attacker->GetGUID() : ObjectGuid::Empty;
     packet.CastID = log->castId;
     packet.SpellID = log->Spell ? log->Spell->Id : 0;
     packet.SpellXSpellVisualID = log->spellXSpellVisualID;
