@@ -18,7 +18,7 @@
 #include "Timezone.h"
 #include "Hash.h"
 #include "MapUtils.h"
-#include "Util.h"
+#include "StringConvert.h"
 #include <boost/locale/date_time_facet.hpp>
 #include <boost/locale/generator.hpp>
 #include <chrono>
