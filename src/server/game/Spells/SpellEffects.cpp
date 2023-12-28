@@ -3719,7 +3719,7 @@ void Spell::EffectSkinning()
         // tied to one of existing expansion fields in creature_template?
 
         // Double chances for elites
-        m_caster->ToPlayer()->UpdateGatherSkill(skill, damage, reqValue, creature->isElite() ? 2 : 1);
+        m_caster->ToPlayer()->UpdateGatherSkill(skill, damage, reqValue, creature->IsElite() ? 2 : 1);
     }
 }
 

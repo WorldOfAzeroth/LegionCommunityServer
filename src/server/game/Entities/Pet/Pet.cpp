@@ -907,7 +907,7 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
         CreatureBaseStats const* stats = sObjectMgr->GetCreatureBaseStats(petlevel, cinfo->unit_class);
         ApplyLevelScaling();
 
-        SetCreateHealth(std::max(GetMaxHealthByLevel(petlevel) * _GetHealthMod(cinfo->rank), 1.0f));
+        SetCreateHealth(std::max(GetMaxHealthByLevel(petlevel) * _GetHealthMod(cinfo->Classification), 1.0f));
         SetCreateMana(stats->BaseMana);
         SetCreateStat(STAT_STRENGTH, 22);
         SetCreateStat(STAT_AGILITY, 22);
