@@ -79,6 +79,7 @@ class TC_GAME_API PathGenerator
         G3D::Vector3 const& GetActualEndPosition() const { return _actualEndPosition; }
 
         Movement::PointsArray const& GetPath() const { return _pathPoints; }
+        float GetPathLength() const;
 
         PathType GetPathType() const { return _type; }
 
@@ -131,7 +132,7 @@ class TC_GAME_API PathGenerator
         void BuildPointPath(float const* startPoint, float const* endPoint);
         void BuildShortcut();
 
-        NavTerrainFlag GetNavTerrain(float x, float y, float z);
+        NavTerrainFlag GetNavTerrain(float x, float y, float z) const;
         void CreateFilter();
         void UpdateFilter();
 
