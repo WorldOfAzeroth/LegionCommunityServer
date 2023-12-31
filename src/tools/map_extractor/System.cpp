@@ -136,8 +136,9 @@ void CreateDir(boost::filesystem::path const& path)
     if (fs::exists(path))
         return;
 
-    if (!fs::create_directory(path))
-        throw new std::runtime_error("Unable to create directory" + path.string());
+    boost::system::error_code err;
+    if (!fs::create_directory(path, err) || err)
+        throw std::runtime_error("Unable to create directory" + path.string());
 }
 
 void Usage(char const* prg)
@@ -183,7 +184,7 @@ void HandleArgs(int argc, char* arg[])
                 break;
             case 'f':
                 if (c + 1 < argc)                            // all ok
-                    CONF_allow_float_to_int = atoi(arg[c++ + 1])!=0;
+                    CONF_allow_float_to_int = atoi(arg[c++ + 1]) != 0;
                 else
                     Usage(arg[0]);
                 break;
@@ -225,7 +226,7 @@ void TryLoadDB2(char const* name, DB2CascFileSource* source, DB2FileLoader* db2,
     }
     catch (std::exception const& e)
     {
-        printf("Fatal error: Invalid %s file format! %s\n", name, CASC::HumanReadableCASCError(GetLastError()));
+        printf("Fatal error: Invalid %s file format! %s\n%s\n", name, CASC::HumanReadableCASCError(GetLastError()), e.what());
         exit(1);
     }
 }
