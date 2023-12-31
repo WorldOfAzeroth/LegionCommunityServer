@@ -27,7 +27,6 @@
 #include "G3DPosition.hpp"
 #include "GridNotifiers.h"
 #include "Log.h"
-#include "MoveSplineInitArgs.h"
 #include "ObjectAccessor.h"
 #include "PathGenerator.h"
 #include "Player.h"

@@ -40,13 +40,10 @@
 #include "Spell.h"
 #include "SpellHistory.h"
 #include "SpellMgr.h"
-#include "ThreatManager.h"
 #include "Unit.h"
 #include "Util.h"
 #include "Vehicle.h"
 #include "Weather.h"
-#include "WorldPacket.h"
-#include "WorldSession.h"
 #include <G3D/g3dmath.h>
 #include <numeric>
 
@@ -661,28 +658,39 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
     }
 
     GetBase()->CallScriptEffectCalcAmountHandlers(this, amount, m_canBeRecalculated);
-    if (!GetSpellEffectInfo().EffectAttributes.HasFlag(SpellEffectAttributes::NoScaleWithStack))
+    if (!GetSpellEffectInfo().EffectAttributes.HasFlag(SpellEffectAttributes::SuppressPointsStacking))
         amount *= GetBase()->GetStackAmount();
 
-    if (caster && GetBase()->GetType() == UNIT_AURA_TYPE)
-    {
-        uint32 stackAmountForBonuses = !GetSpellEffectInfo().EffectAttributes.HasFlag(SpellEffectAttributes::NoScaleWithStack) ? GetBase()->GetStackAmount() : 1;
-
-        switch (GetAuraType())
-        {
-            case SPELL_AURA_PERIODIC_DAMAGE:
-            case SPELL_AURA_PERIODIC_LEECH:
-                _estimatedAmount = caster->SpellDamageBonusDone(GetBase()->GetUnitOwner(), GetSpellInfo(), amount, DOT, GetSpellEffectInfo(), stackAmountForBonuses);
-                break;
-            case SPELL_AURA_PERIODIC_HEAL:
-                _estimatedAmount = caster->SpellHealingBonusDone(GetBase()->GetUnitOwner(), GetSpellInfo(), amount, DOT, GetSpellEffectInfo(), stackAmountForBonuses);
-                break;
-            default:
-                break;
-        }
-    }
+    _estimatedAmount = CalculateEstimatedAmount(caster, amount);
 
     return amount;
+}
+
+Optional<float> AuraEffect::CalculateEstimatedAmount(Unit const* caster, Unit* target, SpellInfo const* spellInfo, SpellEffectInfo const& spellEffectInfo,
+    int32 amount, uint8 stack, AuraEffect const* aurEff)
+{
+    uint32 stackAmountForBonuses = !spellEffectInfo.EffectAttributes.HasFlag(SpellEffectAttributes::SuppressPointsStacking) ? stack : 1;
+
+    switch (spellEffectInfo.ApplyAuraName)
+    {
+        case SPELL_AURA_PERIODIC_DAMAGE:
+        case SPELL_AURA_PERIODIC_LEECH:
+            return caster->SpellDamageBonusDone(target, spellInfo, amount, DOT, spellEffectInfo, stackAmountForBonuses, nullptr, aurEff);
+        case SPELL_AURA_PERIODIC_HEAL:
+            return caster->SpellHealingBonusDone(target, spellInfo, amount, DOT, spellEffectInfo, stackAmountForBonuses, nullptr, aurEff);
+        default:
+            break;
+    }
+
+    return {};
+}
+
+Optional<float> AuraEffect::CalculateEstimatedAmount(Unit const* caster, int32 amount) const
+{
+    if (!caster || GetBase()->GetType() != UNIT_AURA_TYPE)
+        return {};
+
+    return CalculateEstimatedAmount(caster, GetBase()->GetUnitOwner(), GetSpellInfo(), GetSpellEffectInfo(), amount, GetBase()->GetStackAmount(), this);
 }
 
 uint32 AuraEffect::GetTotalTicks() const
@@ -757,6 +765,8 @@ void AuraEffect::CalculatePeriodic(Unit* caster, bool resetPeriodicTimer /*= tru
                 caster->ModSpellDurationTime(m_spellInfo, _period);
             else if (m_spellInfo->HasAttribute(SPELL_ATTR5_SPELL_HASTE_AFFECTS_PERIODIC))
                 _period = int32(_period * caster->GetFloatValue(UNIT_MOD_CAST_SPEED));
+            else if (m_spellInfo->HasAttribute(SPELL_ATTR8_MELEE_HASTE_AFFECTS_PERIODIC))
+                _period = int32(_period * caster->GetFloatValue(UNIT_FIELD_MOD_HASTE));
         }
     }
     else // prevent infinite loop on Update
@@ -873,7 +883,7 @@ void AuraEffect::ChangeAmount(int32 newAmount, bool mark, bool onStackOrReapply,
         HandleEffect(aurApp, handleMask, true, triggeredBy);
     }
 
-    if (GetSpellInfo()->HasAttribute(SPELL_ATTR8_AURA_SEND_AMOUNT) || Aura::EffectTypeNeedsSendingAmount(GetAuraType()))
+    if (GetSpellInfo()->HasAttribute(SPELL_ATTR8_AURA_POINTS_ON_CLIENT) || Aura::EffectTypeNeedsSendingAmount(GetAuraType()))
         GetBase()->SetNeedClientUpdateForTargets();
 }
 
@@ -2142,7 +2152,7 @@ void AuraEffect::HandleFeignDeath(AuraApplication const* aurApp, uint8 mode, boo
 
         // prevent interrupt message
         if (GetCasterGUID() == target->GetGUID() && target->GetCurrentSpell(CURRENT_GENERIC_SPELL))
-            target->FinishSpell(CURRENT_GENERIC_SPELL, false);
+            target->FinishSpell(CURRENT_GENERIC_SPELL, SPELL_FAILED_INTERRUPTED);
         target->InterruptNonMeleeSpells(true);
 
         // stop handling the effect if it was removed by linked event
@@ -5261,7 +5271,7 @@ void AuraEffect::HandlePeriodicDamageAurasTick(Unit* target, Unit* caster) const
 
     CleanDamage cleanDamage = CleanDamage(0, 0, BASE_ATTACK, MELEE_HIT_NORMAL);
 
-    uint32 stackAmountForBonuses = !GetSpellEffectInfo().EffectAttributes.HasFlag(SpellEffectAttributes::NoScaleWithStack) ? GetBase()->GetStackAmount() : 1;
+    uint32 stackAmountForBonuses = !GetSpellEffectInfo().EffectAttributes.HasFlag(SpellEffectAttributes::SuppressPointsStacking) ? GetBase()->GetStackAmount() : 1;
 
     // ignore negative values (can be result apply spellmods to aura damage
     uint32 damage = std::max(GetAmount(), 0);
@@ -5274,16 +5284,10 @@ void AuraEffect::HandlePeriodicDamageAurasTick(Unit* target, Unit* caster) const
         case SPELL_AURA_PERIODIC_DAMAGE:
         {
             if (caster)
-                damage = caster->SpellDamageBonusDone(target, GetSpellInfo(), damage, DOT, GetSpellEffectInfo(), stackAmountForBonuses);
+                damage = caster->SpellDamageBonusDone(target, GetSpellInfo(), damage, DOT, GetSpellEffectInfo(), stackAmountForBonuses, nullptr, this);
             damage = target->SpellDamageBonusTaken(caster, GetSpellInfo(), damage, DOT);
 
-            // There is a Chance to make a Soul Shard when Drain soul does damage
-            if (caster && GetSpellInfo()->SpellFamilyName == SPELLFAMILY_WARLOCK && (GetSpellInfo()->SpellFamilyFlags[0] & 0x00004000))
-            {
-                if (caster->GetTypeId() == TYPEID_PLAYER && caster->ToPlayer()->isHonorOrXPTarget(target))
-                    caster->CastSpell(caster, 95810, this);
-            }
-            else if (GetSpellInfo()->SpellFamilyName == SPELLFAMILY_GENERIC)
+            if (GetSpellInfo()->SpellFamilyName == SPELLFAMILY_GENERIC)
             {
                 switch (GetId())
                 {
@@ -5307,7 +5311,7 @@ void AuraEffect::HandlePeriodicDamageAurasTick(Unit* target, Unit* caster) const
 
             // Add melee damage bonuses (also check for negative)
             if (caster)
-                damage = caster->MeleeDamageBonusDone(target, damage, attackType, DOT, GetSpellInfo());
+                damage = caster->MeleeDamageBonusDone(target, damage, attackType, DOT, GetSpellInfo(), GetSpellEffectInfo().Mechanic, GetSpellInfo()->GetSchoolMask(), nullptr, this);
 
             damage = target->MeleeDamageBonusTaken(caster, damage, attackType, DOT, GetSpellInfo());
             break;
@@ -5335,8 +5339,8 @@ void AuraEffect::HandlePeriodicDamageAurasTick(Unit* target, Unit* caster) const
 
     if (!GetSpellInfo()->HasAttribute(SPELL_ATTR4_IGNORE_DAMAGE_TAKEN_MODIFIERS))
     {
-        if (GetSpellEffectInfo().IsTargetingArea() || GetSpellEffectInfo().IsAreaAuraEffect() || GetSpellEffectInfo().IsEffect(SPELL_EFFECT_PERSISTENT_AREA_AURA) || GetSpellInfo()->HasAttribute(SPELL_ATTR5_TREAT_AS_AREA_EFFECT))
-            damage = target->CalculateAOEAvoidance(damage, m_spellInfo->SchoolMask, GetBase()->GetCasterGUID());
+        if (GetSpellEffectInfo().IsTargetingArea() || GetSpellEffectInfo().IsAreaAuraEffect() || GetSpellEffectInfo().IsEffect(SPELL_EFFECT_PERSISTENT_AREA_AURA) || GetSpellInfo()->HasAttribute(SPELL_ATTR5_TREAT_AS_AREA_EFFECT) || GetSpellInfo()->HasAttribute(SPELL_ATTR7_TREAT_AS_NPC_AOE))
+            damage = target->CalculateAOEAvoidance(damage, m_spellInfo->SchoolMask, (caster && !caster->IsControlledByPlayer()) || GetSpellInfo()->HasAttribute(SPELL_ATTR7_TREAT_AS_NPC_AOE));
     }
 
     int32 dmg = damage;
@@ -5401,13 +5405,13 @@ void AuraEffect::HandlePeriodicHealthLeechAuraTick(Unit* target, Unit* caster) c
 
     CleanDamage cleanDamage = CleanDamage(0, 0, GetSpellInfo()->GetAttackType(), MELEE_HIT_NORMAL);
 
-    uint32 stackAmountForBonuses = !GetSpellEffectInfo().EffectAttributes.HasFlag(SpellEffectAttributes::NoScaleWithStack) ? GetBase()->GetStackAmount() : 1;
+    uint32 stackAmountForBonuses = !GetSpellEffectInfo().EffectAttributes.HasFlag(SpellEffectAttributes::SuppressPointsStacking) ? GetBase()->GetStackAmount() : 1;
 
     // ignore negative values (can be result apply spellmods to aura damage
     uint32 damage = std::max(GetAmount(), 0);
 
     if (caster)
-        damage = caster->SpellDamageBonusDone(target, GetSpellInfo(), damage, DOT, GetSpellEffectInfo(), stackAmountForBonuses);
+        damage = caster->SpellDamageBonusDone(target, GetSpellInfo(), damage, DOT, GetSpellEffectInfo(), stackAmountForBonuses, nullptr, this);
     damage = target->SpellDamageBonusTaken(caster, GetSpellInfo(), damage, DOT);
 
     bool crit = roll_chance_f(GetCritChanceFor(caster, target));
@@ -5424,8 +5428,8 @@ void AuraEffect::HandlePeriodicHealthLeechAuraTick(Unit* target, Unit* caster) c
 
     if (!GetSpellInfo()->HasAttribute(SPELL_ATTR4_IGNORE_DAMAGE_TAKEN_MODIFIERS))
     {
-        if (GetSpellEffectInfo().IsTargetingArea() || GetSpellEffectInfo().IsAreaAuraEffect() || GetSpellEffectInfo().IsEffect(SPELL_EFFECT_PERSISTENT_AREA_AURA) || GetSpellInfo()->HasAttribute(SPELL_ATTR5_TREAT_AS_AREA_EFFECT))
-            damage = target->CalculateAOEAvoidance(damage, m_spellInfo->SchoolMask, GetBase()->GetCasterGUID());
+        if (GetSpellEffectInfo().IsTargetingArea() || GetSpellEffectInfo().IsAreaAuraEffect() || GetSpellEffectInfo().IsEffect(SPELL_EFFECT_PERSISTENT_AREA_AURA) || GetSpellInfo()->HasAttribute(SPELL_ATTR5_TREAT_AS_AREA_EFFECT) || GetSpellInfo()->HasAttribute(SPELL_ATTR7_TREAT_AS_NPC_AOE))
+            damage = target->CalculateAOEAvoidance(damage, m_spellInfo->SchoolMask, (caster && !caster->IsControlledByPlayer()) || GetSpellInfo()->HasAttribute(SPELL_ATTR7_TREAT_AS_NPC_AOE));
     }
 
     int32 dmg = damage;
@@ -5469,7 +5473,7 @@ void AuraEffect::HandlePeriodicHealthLeechAuraTick(Unit* target, Unit* caster) c
 
     float gainMultiplier = GetSpellEffectInfo().CalcValueMultiplier(caster);
 
-    uint32 heal = caster->SpellHealingBonusDone(caster, GetSpellInfo(), uint32(new_damage * gainMultiplier), DOT, GetSpellEffectInfo(), stackAmountForBonuses);
+    uint32 heal = caster->SpellHealingBonusDone(caster, GetSpellInfo(), uint32(new_damage * gainMultiplier), DOT, GetSpellEffectInfo(), stackAmountForBonuses, nullptr, this);
     heal = caster->SpellHealingBonusTaken(caster, GetSpellInfo(), heal, DOT);
 
     HealInfo healInfo(caster, caster, heal, GetSpellInfo(), GetSpellInfo()->GetSchoolMask());
@@ -5526,7 +5530,7 @@ void AuraEffect::HandlePeriodicHealAurasTick(Unit* target, Unit* caster) const
     if (GetBase()->IsPermanent() && target->IsFullHealth())
         return;
 
-    uint32 stackAmountForBonuses = !GetSpellEffectInfo().EffectAttributes.HasFlag(SpellEffectAttributes::NoScaleWithStack) ? GetBase()->GetStackAmount() : 1;
+    uint32 stackAmountForBonuses = !GetSpellEffectInfo().EffectAttributes.HasFlag(SpellEffectAttributes::SuppressPointsStacking) ? GetBase()->GetStackAmount() : 1;
 
     // ignore negative values (can be result apply spellmods to aura damage
     uint32 damage = std::max(GetAmount(), 0);
@@ -5534,7 +5538,7 @@ void AuraEffect::HandlePeriodicHealAurasTick(Unit* target, Unit* caster) const
     if (GetAuraType() == SPELL_AURA_OBS_MOD_HEALTH)
         damage = uint32(target->CountPctFromMaxHealth(damage));
     else if (caster)
-        damage = caster->SpellHealingBonusDone(target, GetSpellInfo(), damage, DOT, GetSpellEffectInfo(), stackAmountForBonuses);
+        damage = caster->SpellHealingBonusDone(target, GetSpellInfo(), damage, DOT, GetSpellEffectInfo(), stackAmountForBonuses, nullptr, this);
 
     damage = target->SpellHealingBonusTaken(caster, GetSpellInfo(), damage, DOT);
 
@@ -5777,6 +5781,8 @@ void AuraEffect::HandleProcTriggerSpellAuraProc(AuraApplication* aurApp, ProcEve
 {
     Unit* triggerCaster = aurApp->GetTarget();
     Unit* triggerTarget = eventInfo.GetProcTarget();
+    if (GetSpellInfo()->HasAttribute(SPELL_ATTR8_TARGET_PROCS_ON_CASTER) && eventInfo.GetTypeMask() & TAKEN_HIT_PROC_FLAG_MASK)
+        triggerTarget = eventInfo.GetActor();
 
     uint32 triggerSpellId = GetSpellEffectInfo().TriggerSpell;
     if (triggerSpellId == 0)
@@ -5798,6 +5804,8 @@ void AuraEffect::HandleProcTriggerSpellWithValueAuraProc(AuraApplication* aurApp
 {
     Unit* triggerCaster = aurApp->GetTarget();
     Unit* triggerTarget = eventInfo.GetProcTarget();
+    if (GetSpellInfo()->HasAttribute(SPELL_ATTR8_TARGET_PROCS_ON_CASTER) && eventInfo.GetTypeMask() & TAKEN_HIT_PROC_FLAG_MASK)
+        triggerTarget = eventInfo.GetActor();
 
     uint32 triggerSpellId = GetSpellEffectInfo().TriggerSpell;
     if (triggerSpellId == 0)
@@ -5829,7 +5837,7 @@ void AuraEffect::HandleProcTriggerDamageAuraProc(AuraApplication* aurApp, ProcEv
     }
 
     SpellNonMeleeDamage damageInfo(target, triggerTarget, GetSpellInfo(), GetBase()->GetSpellVisual(), GetSpellInfo()->SchoolMask, GetBase()->GetCastId());
-    uint32 damage = target->SpellDamageBonusDone(triggerTarget, GetSpellInfo(), GetAmount(), SPELL_DIRECT_DAMAGE, GetSpellEffectInfo());
+    uint32 damage = target->SpellDamageBonusDone(triggerTarget, GetSpellInfo(), GetAmount(), SPELL_DIRECT_DAMAGE, GetSpellEffectInfo(), 1, nullptr, this);
     damage = triggerTarget->SpellDamageBonusTaken(target, GetSpellInfo(), damage, SPELL_DIRECT_DAMAGE);
     target->CalculateSpellDamageTaken(&damageInfo, damage, GetSpellInfo());
     Unit::DealDamageMods(damageInfo.attacker, damageInfo.target, damageInfo.damage, &damageInfo.absorb);

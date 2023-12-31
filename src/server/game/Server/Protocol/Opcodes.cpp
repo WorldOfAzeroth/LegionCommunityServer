@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -248,9 +247,9 @@ void OpcodeTable::Initialize()
     DEFINE_HANDLER(CMSG_CANCEL_GROWTH_AURA,                                 STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleCancelGrowthAuraOpcode);
     DEFINE_HANDLER(CMSG_CANCEL_MASTER_LOOT_ROLL,                            STATUS_UNHANDLED, PROCESS_INPLACE,      &WorldSession::Handle_NULL);
     DEFINE_HANDLER(CMSG_CANCEL_MOD_SPEED_NO_CONTROL_AURAS,                  STATUS_LOGGEDIN,  PROCESS_INPLACE,      &WorldSession::HandleCancelModSpeedNoControlAuras);
-    DEFINE_HANDLER(CMSG_CANCEL_MOUNT_AURA,                                  STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleCancelMountAuraOpcode);
-    DEFINE_HANDLER(CMSG_CANCEL_QUEUED_SPELL,                                STATUS_UNHANDLED, PROCESS_INPLACE,      &WorldSession::Handle_NULL);
-    DEFINE_HANDLER(CMSG_CANCEL_TEMP_ENCHANTMENT,                            STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleCancelTempEnchantmentOpcode);
+    DEFINE_HANDLER(CMSG_CANCEL_MOUNT_AURA,                                  STATUS_LOGGEDIN,  PROCESS_INPLACE,      &WorldSession::HandleCancelMountAuraOpcode);
+    DEFINE_HANDLER(CMSG_CANCEL_QUEUED_SPELL,                                STATUS_LOGGEDIN,  PROCESS_INPLACE,      &WorldSession::HandleCancelQueuedSpellOpcode);
+    DEFINE_HANDLER(CMSG_CANCEL_TEMP_ENCHANTMENT,                            STATUS_LOGGEDIN,  PROCESS_INPLACE,      &WorldSession::HandleCancelTempEnchantmentOpcode);
     DEFINE_HANDLER(CMSG_CANCEL_TRADE,                                       STATUS_LOGGEDIN_OR_RECENTLY_LOGGOUT, PROCESS_THREADUNSAFE, &WorldSession::HandleCancelTradeOpcode);
     DEFINE_HANDLER(CMSG_CAN_DUEL,                                           STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleCanDuel);
     DEFINE_HANDLER(CMSG_CAN_REDEEM_WOW_TOKEN_FOR_BALANCE,                   STATUS_UNHANDLED, PROCESS_THREADUNSAFE, &WorldSession::Handle_NULL);

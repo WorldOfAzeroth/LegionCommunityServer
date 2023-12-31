@@ -57,6 +57,7 @@ struct MapEntry;
 struct QuestPackageItemEntry;
 struct RewardPackEntry;
 struct SkillRaceClassInfoEntry;
+struct SpellCastRequest;
 struct TalentEntry;
 struct TrainerSpell;
 struct TransferAbortParams;
@@ -1810,7 +1811,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void SendRemoveControlBar() const;
         bool HasSpell(uint32 spell) const override;
         bool HasActiveSpell(uint32 spell) const;            // show in spellbook
-        SpellInfo const* GetCastSpellInfo(SpellInfo const* spellInfo) const override;
+        SpellInfo const* GetCastSpellInfo(SpellInfo const* spellInfo, TriggerCastFlags& triggerFlag) const override;
         bool IsSpellFitByClassAndRace(uint32 spell_id) const;
         bool HandlePassiveSpellLearn(SpellInfo const* spellInfo);
 
@@ -3148,6 +3149,19 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
 
         bool _usePvpItemLevels;
         ObjectGuid _areaSpiritHealerGUID;
+
+        // Spell cast request handling
+    public:
+        // Queues up a spell cast request that has been received via packet and processes it whenever possible.
+        void RequestSpellCast(std::unique_ptr<SpellCastRequest> castRequest);
+        void CancelPendingCastRequest();
+        bool CanRequestSpellCast(SpellInfo const* spell, Unit const* castingUnit) const;
+
+    private:
+        std::unique_ptr<SpellCastRequest> _pendingSpellCastRequest;
+        void ExecutePendingSpellCastRequest();
+        bool ProcessItemCast(SpellCastRequest& castRequest, SpellCastTargets const& targets);
+        bool CanExecutePendingSpellCastRequest();
 };
 
 TC_GAME_API void AddItemsSetItem(Player* player, Item const* item);

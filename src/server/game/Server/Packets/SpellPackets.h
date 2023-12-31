@@ -1015,6 +1015,36 @@ namespace WorldPackets
             bool Reverse = false;
             int32 SpellID = 0;
         };
+
+        class TradeSkillSetFavorite final : public ClientPacket
+        {
+        public:
+            TradeSkillSetFavorite(WorldPacket&& packet) : ClientPacket(CMSG_TRADE_SKILL_SET_FAVORITE, std::move(packet)) { }
+
+            void Read() override;
+
+            int32 RecipeID = 0;
+            bool IsFavorite = false;
+        };
+
+        class KeyboundOverride final : public ClientPacket
+        {
+        public:
+            KeyboundOverride(WorldPacket&& packet) : ClientPacket(CMSG_KEYBOUND_OVERRIDE,  std::move(packet)) { }
+
+            void Read() override;
+
+            uint16 OverrideID = 0;
+        };
+
+        class CancelQueuedSpell final : public ClientPacket
+        {
+        public:
+            CancelQueuedSpell(WorldPacket&& packet) : ClientPacket(CMSG_CANCEL_QUEUED_SPELL, std::move(packet)) { }
+
+            void Read() override { }
+        };
+
     }
 }
 

@@ -1338,7 +1338,7 @@ bool SpellInfo::HasTargetType(::Targets target) const
 
 bool SpellInfo::CanBeInterrupted(WorldObject const* interruptCaster, Unit const* interruptTarget, bool ignoreImmunity /*= false*/) const
 {
-    return HasAttribute(SPELL_ATTR7_CAN_ALWAYS_BE_INTERRUPTED)
+    return HasAttribute(SPELL_ATTR7_NO_UI_NOT_INTERRUPTIBLE)
         || HasChannelInterruptFlag(SpellAuraInterruptFlags::Damage | SpellAuraInterruptFlags::EnteringCombat)
         || (interruptTarget->IsPlayer() && InterruptFlags.HasFlag(SpellInterruptFlags::DamageCancelsPlayerOnly))
         || InterruptFlags.HasFlag(SpellInterruptFlags::DamageCancels)
@@ -1940,6 +1940,20 @@ SpellCastResult SpellInfo::CheckLocation(uint32 map_id, uint32 zone_id, uint32 a
             return SPELL_FAILED_NOT_IN_RAID_INSTANCE;
     }
 
+    if (HasAttribute(SPELL_ATTR8_REMOVE_OUTSIDE_DUNGEONS_AND_RAIDS))
+    {
+        MapEntry const* mapEntry = sMapStore.LookupEntry(map_id);
+        if (!mapEntry || !mapEntry->IsDungeon())
+            return SPELL_FAILED_TARGET_NOT_IN_INSTANCE;
+    }
+
+    if (HasAttribute(SPELL_ATTR8_NOT_IN_BATTLEGROUND))
+    {
+        MapEntry const* mapEntry = sMapStore.LookupEntry(map_id);
+        if (!mapEntry || mapEntry->IsBattleground())
+            return SPELL_FAILED_NOT_IN_BATTLEGROUND;
+    }
+
     // DB base check (if non empty then must fit at least single for allow)
     SpellAreaMapBounds saBounds = sSpellMgr->GetSpellAreaMapBounds(Id);
     if (saBounds.first != saBounds.second)
@@ -2061,6 +2075,10 @@ SpellCastResult SpellInfo::CheckTarget(WorldObject const* caster, WorldObject co
 
     Unit const* unitTarget = target->ToUnit();
 
+    if (HasAttribute(SPELL_ATTR8_ONLY_TARGET_IF_SAME_CREATOR))
+        if (caster != target && caster->GetGUID() != target->GetOwnerGUID())
+            return SPELL_FAILED_BAD_TARGETS;
+
     // creature/player specific target checks
     if (unitTarget)
     {
@@ -2111,6 +2129,10 @@ SpellCastResult SpellInfo::CheckTarget(WorldObject const* caster, WorldObject co
                 }
             }
         }
+
+        if (HasAttribute(SPELL_ATTR8_ONLY_TARGET_OWN_SUMMONS))
+            if (!unitTarget->IsSummon() || unitTarget->ToTempSummon()->GetSummonerGUID() != caster->GetGUID())
+                return SPELL_FAILED_BAD_TARGETS;
     }
     // corpse specific target checks
     else if (Corpse const* corpseTarget = target->ToCorpse())
@@ -2202,7 +2224,7 @@ SpellCastResult SpellInfo::CheckTarget(WorldObject const* caster, WorldObject co
         if (HasEffect(SPELL_EFFECT_SELF_RESURRECT) || HasEffect(SPELL_EFFECT_RESURRECT))
             return SPELL_FAILED_TARGET_CANNOT_BE_RESURRECTED;
 
-    if (HasAttribute(SPELL_ATTR8_BATTLE_RESURRECTION))
+    if (HasAttribute(SPELL_ATTR8_ENFORCE_IN_COMBAT_RESSURECTION_LIMIT))
         if (Map* map = caster->GetMap())
             if (InstanceMap* iMap = map->ToInstanceMap())
                 if (InstanceScript* instance = iMap->GetInstanceScript())
@@ -3860,22 +3882,16 @@ Optional<SpellPowerCost> SpellInfo::CalcPowerCost(SpellPowerEntry const* power, 
     // Spell drain all exist power on cast (Only paladin lay of Hands)
     if (HasAttribute(SPELL_ATTR1_USE_ALL_MANA))
     {
+        if (optionalCost)
+            return {};
+
         // If power type - health drain all
         if (power->PowerType == POWER_HEALTH)
-        {
-            SpellPowerCost cost;
-            cost.Power = POWER_HEALTH;
-            cost.Amount = unitCaster->GetHealth();
-            return cost;
-        }
+            return SpellPowerCost{ .Power = POWER_HEALTH, .Amount = int32(unitCaster->GetHealth()) };
+
         // Else drain all power
         if (power->PowerType < MAX_POWERS)
-        {
-            SpellPowerCost cost;
-            cost.Power = Powers(power->PowerType);
-            cost.Amount = unitCaster->GetPower(cost.Power);
-            return cost;
-        }
+            return SpellPowerCost{ .Power = Powers(power->PowerType), .Amount = unitCaster->GetPower(Powers(power->PowerType)) };
 
         TC_LOG_ERROR("spells", "SpellInfo::CalcPowerCost: Unknown power type '{}' in spell {}", power->PowerType, Id);
         return {};
@@ -4059,10 +4075,7 @@ Optional<SpellPowerCost> SpellInfo::CalcPowerCost(SpellPowerEntry const* power, 
     if (initiallyNegative != (powerCost < 0))
         powerCost = 0;
 
-    SpellPowerCost cost;
-    cost.Power = Powers(power->PowerType);
-    cost.Amount = powerCost;
-    return cost;
+    return SpellPowerCost{ .Power = Powers(power->PowerType), .Amount = powerCost };
 }
 
 std::vector<SpellPowerCost> SpellInfo::CalcPowerCost(WorldObject const* caster, SpellSchoolMask schoolMask, Spell* spell) const
@@ -4081,11 +4094,7 @@ std::vector<SpellPowerCost> SpellInfo::CalcPowerCost(WorldObject const* caster, 
             if (itr != costs.end())
                 return *itr;
 
-            SpellPowerCost cost;
-            cost.Power = powerType;
-            cost.Amount = 0;
-            costs.push_back(cost);
-            return costs.back();
+            return costs.emplace_back<SpellPowerCost>({ .Power = powerType, .Amount = 0 });
         };
 
         for (SpellPowerEntry const* power : PowerCosts)
@@ -4421,6 +4430,9 @@ bool _isPositiveEffectImpl(SpellInfo const* spellInfo, SpellEffectInfo const& ef
 
     if (spellInfo->HasAttribute(SPELL_ATTR4_AURA_IS_BUFF))
         return true;
+
+    if (effect.EffectAttributes.HasFlag(SpellEffectAttributes::IsHarmful))
+        return false;
 
     visited.insert({ spellInfo, effect.EffectIndex });
 

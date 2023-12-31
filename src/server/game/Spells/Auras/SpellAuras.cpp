@@ -24,6 +24,7 @@
 #include "Log.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
+#include "PhasingHandler.h"
 #include "Player.h"
 #include "ScriptMgr.h"
 #include "Spell.h"
@@ -146,7 +147,7 @@ void AuraApplication::_InitFlags(Unit* caster, uint32 effMask)
         return effect && (GetEffectsToApply() & (1 << effect->GetEffIndex())) && Aura::EffectTypeNeedsSendingAmount(effect->GetAuraType());
     };
 
-    if (GetBase()->GetSpellInfo()->HasAttribute(SPELL_ATTR8_AURA_SEND_AMOUNT)
+    if (GetBase()->GetSpellInfo()->HasAttribute(SPELL_ATTR8_AURA_POINTS_ON_CLIENT)
         || std::find_if(GetBase()->GetAuraEffects().begin(), GetBase()->GetAuraEffects().end(), std::cref(effectNeedsAmount)) != GetBase()->GetAuraEffects().end())
         _flags |= AFLAG_SCALABLE;
 }
@@ -859,10 +860,10 @@ void Aura::Update(uint32 diff, Unit* caster)
 
 int32 Aura::CalcMaxDuration(Unit* caster) const
 {
-    return Aura::CalcMaxDuration(GetSpellInfo(), caster);
+    return Aura::CalcMaxDuration(GetSpellInfo(), caster, nullptr);
 }
 
-/*static*/ int32 Aura::CalcMaxDuration(SpellInfo const* spellInfo, WorldObject* caster)
+/*static*/ int32 Aura::CalcMaxDuration(SpellInfo const* spellInfo, WorldObject const* caster, std::vector<SpellPowerCost> const* powerCosts)
 {
     Player* modOwner = nullptr;
     int32 maxDuration;
@@ -870,7 +871,7 @@ int32 Aura::CalcMaxDuration(Unit* caster) const
     if (caster)
     {
         modOwner = caster->GetSpellModOwner();
-        maxDuration = caster->CalcSpellDuration(spellInfo);
+        maxDuration = caster->CalcSpellDuration(spellInfo, powerCosts);
     }
     else
         maxDuration = spellInfo->GetDuration();
@@ -924,20 +925,15 @@ void Aura::RefreshDuration(bool withMods)
 void Aura::RefreshTimers(bool resetPeriodicTimer)
 {
     m_maxDuration = CalcMaxDuration();
-    if (m_spellInfo->HasAttribute(SPELL_ATTR8_DONT_RESET_PERIODIC_TIMER))
-    {
-        int32 minPeriod = m_maxDuration;
-        for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
-            if (AuraEffect const* eff = GetEffect(i))
-                if (int32 period = eff->GetPeriod())
-                    minPeriod = std::min(period, minPeriod);
 
-        // If only one tick remaining, roll it over into new duration
-        if (GetDuration() <= minPeriod)
-        {
-            m_maxDuration += GetDuration();
-            resetPeriodicTimer = false;
-        }
+    // Pandemic Mechanic
+    if (m_spellInfo->HasAttribute(SPELL_ATTR13_PERIODIC_REFRESH_EXTENDS_DURATION))
+    {
+        // Pandemic doesn't reset periodic timer
+        resetPeriodicTimer = false;
+
+        int32 pandemicDuration = CalculatePct(m_maxDuration, 30.f);
+        m_maxDuration = std::max(GetDuration(), std::min(pandemicDuration, GetDuration()) + m_maxDuration);
     }
 
     RefreshDuration();
@@ -1803,6 +1799,20 @@ uint32 Aura::GetProcEffectMask(AuraApplication* aurApp, ProcEventInfo& eventInfo
 
         if (GetSpellInfo()->HasAttribute(SPELL_ATTR12_ONLY_PROC_FROM_CLASS_ABILITIES) && !spell->GetSpellInfo()->HasAttribute(SPELL_ATTR13_ALLOW_CLASS_ABILITY_PROCS))
             return 0;
+
+        if (eventInfo.GetTypeMask() & TAKEN_HIT_PROC_FLAG_MASK)
+        {
+            if (spell->GetSpellInfo()->HasAttribute(SPELL_ATTR3_SUPPRESS_TARGET_PROCS)
+                && !GetSpellInfo()->HasAttribute(SPELL_ATTR7_CAN_PROC_FROM_SUPPRESSED_TARGET_PROCS))
+                return 0;
+        }
+        else
+        {
+            if (spell->GetSpellInfo()->HasAttribute(SPELL_ATTR3_SUPPRESS_CASTER_PROCS)
+                && !spell->GetSpellInfo()->HasAttribute(SPELL_ATTR12_ENABLE_PROCS_FROM_SUPPRESSED_CASTER_PROCS)
+                && !GetSpellInfo()->HasAttribute(SPELL_ATTR12_CAN_PROC_FROM_SUPPRESSED_CASTER_PROCS))
+                return 0;
+        }
     }
 
     // check don't break stealth attr present
@@ -2042,7 +2052,7 @@ bool Aura::CallScriptEffectApplyHandlers(AuraEffect const* aurEff, AuraApplicati
     {
         script->_PrepareScriptCall(AURA_SCRIPT_HOOK_EFFECT_APPLY, aurApp);
         for (AuraScript::EffectApplyHandler const& onEffectApply : script->OnEffectApply)
-            if (onEffectApply.IsEffectAffected(m_spellInfo, aurEff->GetEffIndex()) && onEffectApply.GetMode() & mode)
+            if (onEffectApply.IsEffectAffected(m_spellInfo, aurEff->GetEffIndex()))
                 onEffectApply.Call(script, aurEff, mode);
 
         if (!preventDefault)
@@ -2061,7 +2071,7 @@ bool Aura::CallScriptEffectRemoveHandlers(AuraEffect const* aurEff, AuraApplicat
     {
         script->_PrepareScriptCall(AURA_SCRIPT_HOOK_EFFECT_REMOVE, aurApp);
         for (AuraScript::EffectApplyHandler const& onEffectRemove : script->OnEffectRemove)
-            if (onEffectRemove.IsEffectAffected(m_spellInfo, aurEff->GetEffIndex()) && onEffectRemove.GetMode() & mode)
+            if (onEffectRemove.IsEffectAffected(m_spellInfo, aurEff->GetEffIndex()))
                 onEffectRemove.Call(script, aurEff, mode);
 
         if (!preventDefault)
@@ -2078,7 +2088,7 @@ void Aura::CallScriptAfterEffectApplyHandlers(AuraEffect const* aurEff, AuraAppl
     {
         script->_PrepareScriptCall(AURA_SCRIPT_HOOK_EFFECT_AFTER_APPLY, aurApp);
         for (AuraScript::EffectApplyHandler const& afterEffectApply : script->AfterEffectApply)
-            if (afterEffectApply.IsEffectAffected(m_spellInfo, aurEff->GetEffIndex()) && afterEffectApply.GetMode() & mode)
+            if (afterEffectApply.IsEffectAffected(m_spellInfo, aurEff->GetEffIndex()))
                 afterEffectApply.Call(script, aurEff, mode);
 
         script->_FinishScriptCall();
@@ -2091,7 +2101,7 @@ void Aura::CallScriptAfterEffectRemoveHandlers(AuraEffect const* aurEff, AuraApp
     {
         script->_PrepareScriptCall(AURA_SCRIPT_HOOK_EFFECT_AFTER_REMOVE, aurApp);
         for (AuraScript::EffectApplyHandler const& afterEffectRemove : script->AfterEffectRemove)
-            if (afterEffectRemove.IsEffectAffected(m_spellInfo, aurEff->GetEffIndex()) && afterEffectRemove.GetMode() & mode)
+            if (afterEffectRemove.IsEffectAffected(m_spellInfo, aurEff->GetEffIndex()))
                 afterEffectRemove.Call(script, aurEff, mode);
 
         script->_FinishScriptCall();
@@ -2177,6 +2187,19 @@ void Aura::CallScriptEffectCalcCritChanceHandlers(AuraEffect const* aurEff, Aura
         for (AuraScript::EffectCalcCritChanceHandler const& effectCalcCritChance : script->DoEffectCalcCritChance)
             if (effectCalcCritChance.IsEffectAffected(m_spellInfo, aurEff->GetEffIndex()))
                 effectCalcCritChance.Call(script, aurEff, victim, critChance);
+
+        script->_FinishScriptCall();
+    }
+}
+
+void Aura::CallScriptCalcDamageAndHealingHandlers(AuraEffect const* aurEff, AuraApplication const* aurApp, Unit* victim, int32& damageOrHealing, int32& flatMod, float& pctMod)
+{
+    for (AuraScript* script : m_loadedScripts)
+    {
+        script->_PrepareScriptCall(AURA_SCRIPT_HOOK_EFFECT_CALC_DAMAGE_AND_HEALING, aurApp);
+        for (AuraScript::EffectCalcDamageAndHealingHandler const& effectCalcDamageAndHealing : script->DoEffectCalcDamageAndHealing)
+            if (effectCalcDamageAndHealing.IsEffectAffected(m_spellInfo, aurEff->GetEffIndex()))
+                effectCalcDamageAndHealing.Call(script, aurEff, victim, damageOrHealing, flatMod, pctMod);
 
         script->_FinishScriptCall();
     }
@@ -2479,7 +2502,7 @@ void UnitAura::FillTargetMap(std::unordered_map<Unit*, uint32>& targets, Unit* c
         if (GetUnitOwner()->HasUnitState(UNIT_STATE_ISOLATED))
             continue;
 
-        std::vector<Unit*> units;
+        std::vector<WorldObject*> units;
         ConditionContainer* condList = spellEffectInfo.ImplicitTargetConditions;
 
         float radius = spellEffectInfo.CalcRadius(ref);
@@ -2534,16 +2557,20 @@ void UnitAura::FillTargetMap(std::unordered_map<Unit*, uint32>& targets, Unit* c
 
         if (selectionType != TARGET_CHECK_DEFAULT)
         {
-            Trinity::WorldObjectSpellAreaTargetCheck check(radius, GetUnitOwner(), ref, GetUnitOwner(), m_spellInfo, selectionType, condList, TARGET_OBJECT_TYPE_UNIT);
-            Trinity::UnitListSearcher<Trinity::WorldObjectSpellAreaTargetCheck> searcher(GetUnitOwner(), units, check);
-            Cell::VisitAllObjects(GetUnitOwner(), searcher, radius + extraSearchRadius);
+            if (uint32 containerTypeMask = Spell::GetSearcherTypeMask(m_spellInfo, spellEffectInfo, TARGET_OBJECT_TYPE_UNIT, condList))
+            {
+                Trinity::WorldObjectSpellAreaTargetCheck check(radius, GetUnitOwner(), ref, GetUnitOwner(), m_spellInfo, selectionType, condList, TARGET_OBJECT_TYPE_UNIT);
+                Trinity::WorldObjectListSearcher searcher(GetUnitOwner(), units, check, containerTypeMask);
+                searcher.i_phaseShift = &PhasingHandler::GetAlwaysVisiblePhaseShift();
+                Spell::SearchTargets(searcher, containerTypeMask, GetUnitOwner(), GetUnitOwner(), radius + extraSearchRadius);
 
-            // by design WorldObjectSpellAreaTargetCheck allows not-in-world units (for spells) but for auras it is not acceptable
-            units.erase(std::remove_if(units.begin(), units.end(), [this](Unit* unit) { return !unit->IsSelfOrInSameMap(GetUnitOwner()); }), units.end());
+                // by design WorldObjectSpellAreaTargetCheck allows not-in-world units (for spells) but for auras it is not acceptable
+                Trinity::Containers::EraseIf(units, [this](WorldObject const* unit) { return !unit->IsSelfOrInSameMap(GetUnitOwner()); });
+            }
         }
 
-        for (Unit* unit : units)
-            targets[unit] |= 1 << spellEffectInfo.EffectIndex;
+        for (WorldObject* unit : units)
+            targets[static_cast<Unit*>(unit)] |= 1 << spellEffectInfo.EffectIndex;
     }
 }
 

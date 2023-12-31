@@ -252,6 +252,9 @@ bool MoveSplineInitArgs::Validate(Unit* unit) const
     CHECK(path.size() > 1, true);
     CHECK(velocity >= 0.01f, true);
     CHECK(effect_start_time_percent >= 0.f && effect_start_time_percent <= 1.f, true);
+    if(!_checkPathLengths()) {
+        TC_LOG_ERROR("misc.movesplineinitargs", "MoveSplineInitArgs:: _checkPathLengths{}: {} {} {} ,{} {} {}", path.size(),path[0].x,path[0].y,path[0].z,path[1].x,path[1].y,path[1].z);
+    }
     CHECK(_checkPathLengths(), false);
     if (spellEffectExtra)
     {

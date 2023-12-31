@@ -3005,26 +3005,43 @@ double WorldObject::ApplyEffectModifiers(SpellInfo const* spellInfo, uint8 effIn
     return value;
 }
 
-int32 WorldObject::CalcSpellDuration(SpellInfo const* spellInfo) const
+int32 WorldObject::CalcSpellDuration(SpellInfo const* spellInfo, std::vector<SpellPowerCost> const* powerCosts) const
 {
-    int32 comboPoints = 0;
-    int32 maxComboPoints = 5;
-    if (Unit const* unit = ToUnit())
-    {
-        comboPoints = unit->GetPower(POWER_COMBO_POINTS);
-        maxComboPoints = unit->GetMaxPower(POWER_COMBO_POINTS);
-    }
-
     int32 minduration = spellInfo->GetDuration();
+    if (minduration <= 0)
+        return minduration;
+
     int32 maxduration = spellInfo->GetMaxDuration();
+    if (minduration == maxduration)
+        return minduration;
 
-    int32 duration;
-    if (comboPoints && minduration != -1 && minduration != maxduration)
-        duration = minduration + int32((maxduration - minduration) * comboPoints / maxComboPoints);
-    else
-        duration = minduration;
+    Unit const* unit = ToUnit();
+    if (!unit)
+        return minduration;
 
-    return duration;
+    if (!powerCosts)
+        return minduration;
+
+    // we want only baseline cost here
+    auto itr = std::find_if(spellInfo->PowerCosts.begin(), spellInfo->PowerCosts.end(), [=](SpellPowerEntry const* powerEntry)
+    {
+        return powerEntry && powerEntry->PowerType == POWER_COMBO_POINTS && (!powerEntry->RequiredAuraSpellID || unit->HasAura(powerEntry->RequiredAuraSpellID));
+    });
+
+    if (itr == spellInfo->PowerCosts.end())
+        return minduration;
+
+    auto consumedItr = std::find_if(powerCosts->begin(), powerCosts->end(),
+        [](SpellPowerCost const& consumed) { return consumed.Power == POWER_COMBO_POINTS; });
+    if (consumedItr == powerCosts->end())
+        return minduration;
+
+    int32 baseComboCost = (*itr)->ManaCost + (*itr)->OptionalCost;
+    if (PowerTypeEntry const* powerTypeEntry = sDB2Manager.GetPowerTypeEntry(POWER_COMBO_POINTS))
+        baseComboCost += int32(CalculatePct(powerTypeEntry->MaxBasePower, (*itr)->PowerCostPct));
+
+    float durationPerComboPoint = float(maxduration - minduration) / baseComboCost;
+    return minduration + int32(durationPerComboPoint * consumedItr->Amount);
 }
 
 int32 WorldObject::ModSpellDuration(SpellInfo const* spellInfo, WorldObject const* target, int32 duration, bool positive, uint32 effectMask) const
@@ -3034,7 +3051,7 @@ int32 WorldObject::ModSpellDuration(SpellInfo const* spellInfo, WorldObject cons
         return duration;
 
     // some auras are not affected by duration modifiers
-    if (spellInfo->HasAttribute(SPELL_ATTR7_IGNORE_DURATION_MODS))
+    if (spellInfo->HasAttribute(SPELL_ATTR7_NO_TARGET_DURATION_MOD))
         return duration;
 
     // cut duration only of negative effects
@@ -3121,7 +3138,9 @@ void WorldObject::ModSpellDurationTime(SpellInfo const* spellInfo, int32& durati
     if (!spellInfo || duration < 0)
         return;
 
-    if (spellInfo->IsChanneled() && !spellInfo->HasAttribute(SPELL_ATTR5_SPELL_HASTE_AFFECTS_PERIODIC))
+    if (spellInfo->IsChanneled()
+        && !spellInfo->HasAttribute(SPELL_ATTR5_SPELL_HASTE_AFFECTS_PERIODIC)
+        && !spellInfo->HasAttribute(SPELL_ATTR8_MELEE_HASTE_AFFECTS_PERIODIC))
         return;
 
     // called from caster
@@ -3275,7 +3294,7 @@ SpellMissInfo WorldObject::SpellHitResult(Unit* victim, SpellInfo const* spellIn
         reflectchance += victim->GetTotalAuraModifierByMiscMask(SPELL_AURA_REFLECT_SPELLS_SCHOOL, spellInfo->GetSchoolMask());
 
         if (reflectchance > 0 && roll_chance_i(reflectchance))
-            return SPELL_MISS_REFLECT;
+            return spellInfo->HasAttribute(SPELL_ATTR7_REFLECTION_ONLY_DEFENDS) ? SPELL_MISS_DEFLECT : SPELL_MISS_REFLECT;
     }
 
     if (spellInfo->HasAttribute(SPELL_ATTR3_ALWAYS_HIT))
@@ -3796,7 +3815,10 @@ bool WorldObject::IsValidAttackTarget(WorldObject const* target, SpellInfo const
 
     // PvP case - can't attack when attacker or target are in sanctuary
     // however, 13850 client doesn't allow to attack when one of the unit's has sanctuary flag and is pvp
-    if (unitTarget && unitTarget->HasUnitFlag(UNIT_FLAG_PLAYER_CONTROLLED) && unitOrOwner && unitOrOwner->HasUnitFlag(UNIT_FLAG_PLAYER_CONTROLLED) && (unitTarget->IsInSanctuary() || unitOrOwner->IsInSanctuary()))
+    if (unitTarget && unitTarget->HasUnitFlag(UNIT_FLAG_PLAYER_CONTROLLED)
+        && unitOrOwner && unitOrOwner->HasUnitFlag(UNIT_FLAG_PLAYER_CONTROLLED)
+        && (unitTarget->IsInSanctuary() || unitOrOwner->IsInSanctuary())
+        && (!bySpell || bySpell->HasAttribute(SPELL_ATTR8_IGNORE_SANCTUARY)))
         return false;
 
     // additional checks - only PvP case
@@ -3903,7 +3925,7 @@ bool WorldObject::IsValidAssistTarget(WorldObject const* target, SpellInfo const
                 return false;
 
             // can't assist player out of sanctuary from sanctuary if has pvp enabled
-            if (unitTarget->IsPvP())
+            if (unitTarget->IsPvP() && (!bySpell || bySpell->HasAttribute(SPELL_ATTR8_IGNORE_SANCTUARY)))
                 if (unit->IsInSanctuary() && !unitTarget->IsInSanctuary())
                     return false;
         }
