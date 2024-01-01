@@ -505,7 +505,7 @@ TempSummon* Transport::SummonPassenger(uint32 entry, Position const& pos, TempSu
     ///         because the current GameObjectModel cannot be moved without recreating
     summon->AddUnitState(UNIT_STATE_IGNORE_PATHFINDING);
 
-    summon->InitStats(duration);
+    summon->InitStats(summoner, duration);
 
     if (!map->AddToMap<Creature>(summon))
     {
@@ -515,7 +515,7 @@ TempSummon* Transport::SummonPassenger(uint32 entry, Position const& pos, TempSu
 
     _staticPassengers.insert(summon);
 
-    summon->InitSummon();
+    summon->InitSummon(summoner);
     summon->SetTempSummonType(summonType);
 
     return summon;

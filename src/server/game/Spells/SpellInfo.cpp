@@ -123,7 +123,7 @@ float SpellImplicitTargetInfo::CalcDirectionAngle() const
         case TARGET_DIR_FRONT_LEFT:
             return static_cast<float>(M_PI/4);
         case TARGET_DIR_RANDOM:
-            return float(rand_norm())*static_cast<float>(2*M_PI);
+            return rand_norm() * static_cast<float>(2 * M_PI);
         default:
             return 0.0f;
     }
@@ -392,7 +392,7 @@ std::array<SpellImplicitTargetInfo::StaticData, TOTAL_SPELL_TARGETS> SpellImplic
     {TARGET_OBJECT_TYPE_DEST, TARGET_REFERENCE_TYPE_CASTER, TARGET_SELECT_CATEGORY_DEFAULT, TARGET_CHECK_DEFAULT,  TARGET_DIR_RANDOM},      // 149
 } };
 
-SpellEffectInfo::SpellEffectInfo(SpellInfo const* spellInfo): _spellInfo(spellInfo), EffectIndex(EFFECT_0), Effect(SPELL_EFFECT_NONE), ApplyAuraName(AuraType(0)), ApplyAuraPeriod(0),
+SpellEffectInfo::SpellEffectInfo(): _spellInfo(nullptr), EffectIndex(EFFECT_0), Effect(SPELL_EFFECT_NONE), ApplyAuraName(AuraType(0)), ApplyAuraPeriod(0),
     BasePoints(0), RealPointsPerLevel(0), PointsPerResource(0), Amplitude(0), ChainAmplitude(0),
     BonusCoefficient(0), MiscValue(0), MiscValueB(0), Mechanic(MECHANIC_NONE), PositionFacing(0),
     TargetARadiusEntry(nullptr), TargetBRadiusEntry(nullptr), ChainTargets(0), ItemType(0), TriggerSpell(0),
@@ -438,15 +438,10 @@ SpellEffectInfo::SpellEffectInfo(SpellInfo const* spellInfo, SpellEffectEntry co
     _immunityInfo = nullptr;
 }
 
-SpellEffectInfo::SpellEffectInfo(SpellEffectInfo const&) = default;
 SpellEffectInfo::SpellEffectInfo(SpellEffectInfo&&) noexcept = default;
-SpellEffectInfo& SpellEffectInfo::operator=(SpellEffectInfo const&) = default;
 SpellEffectInfo& SpellEffectInfo::operator=(SpellEffectInfo&&) noexcept = default;
 
-SpellEffectInfo::~SpellEffectInfo()
-{
-    delete _immunityInfo;
-}
+SpellEffectInfo::~SpellEffectInfo() = default;
 
 bool SpellEffectInfo::IsEffect() const
 {
@@ -1071,12 +1066,15 @@ SpellInfo::SpellInfo(SpellEntry const* spell, ::Difficulty difficulty, SpellInfo
         if (!spellEffect)
             continue;
 
-        Trinity::Containers::EnsureWritableVectorIndex(_effects, spellEffect->EffectIndex, SpellEffectInfo(this)) = SpellEffectInfo(this, *spellEffect);
+        Trinity::Containers::EnsureWritableVectorIndex(_effects, spellEffect->EffectIndex) = SpellEffectInfo(this, *spellEffect);
     }
 
     // Correct EffectIndex for blank effects
     for (size_t i = 0; i < _effects.size(); ++i)
+    {
+        _effects[i]._spellInfo = this;
         _effects[i].EffectIndex = SpellEffIndex(i);
+    }
 
     _effects.shrink_to_fit();
 
@@ -1255,11 +1253,14 @@ SpellInfo::SpellInfo(SpellEntry const* spell, ::Difficulty difficulty, std::vect
 
     _effects.reserve(32);
     for (SpellEffectEntry const& spellEffect : effects)
-         Trinity::Containers::EnsureWritableVectorIndex(_effects, spellEffect.EffectIndex, SpellEffectInfo(this)) = SpellEffectInfo(this, spellEffect);
+         Trinity::Containers::EnsureWritableVectorIndex(_effects, spellEffect.EffectIndex) = SpellEffectInfo(this, spellEffect);
 
     // Correct EffectIndex for blank effects
     for (size_t i = 0; i < _effects.size(); ++i)
+    {
+        _effects[i]._spellInfo = this;
         _effects[i].EffectIndex = SpellEffIndex(i);
+    }
 
     _effects.shrink_to_fit();
 }
@@ -3450,7 +3451,7 @@ void SpellInfo::_LoadImmunityInfo()
             || !immuneInfo.AuraTypeImmune.empty()
             || !immuneInfo.SpellEffectImmune.empty())
         {
-            effect._immunityInfo = workBuffer.release();
+            effect._immunityInfo = std::move(workBuffer);
             workBuffer = std::make_unique<SpellEffectInfo::ImmunityInfo>();
         }
 
@@ -3492,6 +3493,41 @@ void SpellInfo::_LoadImmunityInfo()
                 _allowedMechanicMask |= (1 << MECHANIC_FEAR);
                 break;
         }
+    }
+}
+
+void SpellInfo::_LoadSqrtTargetLimit(int32 maxTargets, int32 numNonDiminishedTargets, Optional<SpellEffIndex> maxTargetsEffectValueHolder,
+    Optional<SpellEffIndex> numNonDiminishedTargetsEffectValueHolder)
+{
+    SqrtDamageAndHealingDiminishing.MaxTargets = maxTargets;
+    SqrtDamageAndHealingDiminishing.NumNonDiminishedTargets = numNonDiminishedTargets;
+
+    if (maxTargetsEffectValueHolder)
+    {
+        if (maxTargetsEffectValueHolder < GetEffects().size())
+        {
+            SpellEffectInfo const& valueHolder = GetEffect(*maxTargetsEffectValueHolder);
+            int32 expectedValue = valueHolder.CalcBaseValue(nullptr, nullptr, 0, -1);
+            if (maxTargets != expectedValue)
+                TC_LOG_ERROR("spells", "SpellInfo::_LoadSqrtTargetLimit(maxTargets): Spell {} has different value in effect {} than expected, recheck target caps (expected {}, got {})",
+                    Id, AsUnderlyingType(*maxTargetsEffectValueHolder), maxTargets, expectedValue);
+        }
+        else
+            TC_LOG_ERROR("spells", "SpellInfo::_LoadSqrtTargetLimit(maxTargets): Spell {} does not have effect {}", Id, AsUnderlyingType(*maxTargetsEffectValueHolder));
+    }
+
+    if (numNonDiminishedTargetsEffectValueHolder)
+    {
+        if (numNonDiminishedTargetsEffectValueHolder < GetEffects().size())
+        {
+            SpellEffectInfo const& valueHolder = GetEffect(*numNonDiminishedTargetsEffectValueHolder);
+            int32 expectedValue = valueHolder.CalcBaseValue(nullptr, nullptr, 0, -1);
+            if (numNonDiminishedTargets != expectedValue)
+                TC_LOG_ERROR("spells", "SpellInfo::_LoadSqrtTargetLimit(numNonDiminishedTargets): Spell {} has different value in effect {} than expected, recheck target caps (expected {}, got {})",
+                    Id, AsUnderlyingType(*numNonDiminishedTargetsEffectValueHolder), numNonDiminishedTargets, expectedValue);
+        }
+        else
+            TC_LOG_ERROR("spells", "SpellInfo::_LoadSqrtTargetLimit(numNonDiminishedTargets): Spell {} does not have effect {}", Id, AsUnderlyingType(*numNonDiminishedTargetsEffectValueHolder));
     }
 }
 

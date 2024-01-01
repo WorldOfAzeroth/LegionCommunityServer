@@ -807,6 +807,8 @@ class TC_GAME_API Spell
 
         SpellDestination m_destTargets[MAX_SPELL_EFFECTS];
 
+        int32 GetUnitTargetIndexForEffect(ObjectGuid const& target, SpellEffIndex effect) const;
+
         void AddUnitTarget(Unit* target, uint32 effectMask, bool checkIfValid = true, bool implicit = true, Position const* losPosition = nullptr);
         void AddGOTarget(GameObject* target, uint32 effectMask);
         void AddItemTarget(Item* item, uint32 effectMask);
