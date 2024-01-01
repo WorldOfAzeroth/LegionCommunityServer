@@ -48,6 +48,7 @@ enum WarriorSpells
     SPELL_WARRIOR_FUELED_BY_VIOLENCE_HEAL           = 383104,
     SPELL_WARRIOR_GLYPH_OF_THE_BLAZING_TRAIL        = 123779,
     SPELL_WARRIOR_HEROIC_LEAP_JUMP                  = 162052,
+    SPELL_WARRIOR_ENRAGE_AURA                       = 184362,
     SPELL_WARRIOR_IGNORE_PAIN                       = 190456,
     SPELL_WARRIOR_IN_FOR_THE_KILL                   = 248621,
     SPELL_WARRIOR_IN_FOR_THE_KILL_HASTE             = 248622,
