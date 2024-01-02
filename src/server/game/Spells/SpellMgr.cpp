@@ -4540,6 +4540,12 @@ void SpellMgr::LoadSpellInfoCorrections()
         });
     });
 
+    // Raging Blow
+    ApplySpellFix({ 85288 }, [](SpellInfo* spellInfo)
+    {
+        spellInfo->CasterAuraSpell = 0;
+    });
+
     //
     // FIRELANDS SPELLS
     //
