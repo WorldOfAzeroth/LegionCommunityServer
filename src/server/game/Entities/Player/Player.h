@@ -89,6 +89,7 @@ class RestMgr;
 class SpellCastTargets;
 class TradeData;
 
+enum class ChrSpecialization : uint32;
 enum GroupCategory : uint8;
 enum class InstanceResetMethod : uint8;
 enum class InstanceResetResult : uint8;
@@ -1816,11 +1817,12 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void SetTalentResetCost(uint32 cost)  { _specializationInfo.ResetTalentsCost = cost; }
         time_t GetTalentResetTime() const { return _specializationInfo.ResetTalentsTime; }
         void SetTalentResetTime(time_t time_)  { _specializationInfo.ResetTalentsTime = time_; }
-        uint32 GetPrimarySpecialization() const { return GetUInt32Value(PLAYER_FIELD_CURRENT_SPEC_ID); }
+        ChrSpecialization GetPrimarySpecialization() const { return ChrSpecialization(GetUInt32Value(PLAYER_FIELD_CURRENT_SPEC_ID)); }
         void SetPrimarySpecialization(uint32 spec) { SetUInt32Value(PLAYER_FIELD_CURRENT_SPEC_ID, spec); }
         uint8 GetActiveTalentGroup() const { return _specializationInfo.ActiveGroup; }
         void SetActiveTalentGroup(uint8 group){ _specializationInfo.ActiveGroup = group; }
         uint32 GetDefaultSpecId() const;
+        ChrSpecializationEntry const* GetPrimarySpecializationEntry() const;
 
         bool ResetTalents(bool noCost = false);
         void ResetPvpTalents();

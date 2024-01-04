@@ -123,22 +123,15 @@ struct AreaTableEntry
     uint32 UwIntroSound;
 
     // helpers
+    EnumFlag<AreaFlags> GetFlags() const { return static_cast<AreaFlags>(Flags[0]); }
+    EnumFlag<AreaFlags2> GetFlags2() const { return static_cast<AreaFlags2>(Flags[1]); }
+    EnumFlag<AreaMountFlags> GetMountFlags() const { return static_cast<AreaMountFlags>(MountFlags); }
+
     bool IsSanctuary() const
     {
         if (ContinentID == 609)
             return true;
-        return (Flags[0] & AREA_FLAG_SANCTUARY) != 0;
-    }
-
-    bool IsFlyable() const
-    {
-        if (Flags[0] & AREA_FLAG_OUTLAND)
-        {
-            if (!(Flags[0] & AREA_FLAG_NO_FLY_ZONE))
-                return true;
-        }
-
-        return false;
+        return GetFlags().HasFlag(AreaFlags::NoPvP);
     }
 };
 
@@ -554,7 +547,7 @@ struct ChrSpecializationEntry
     LocalizedString Name;
     LocalizedString FemaleName;
     LocalizedString Description;
-    int32 MasterySpellID[MAX_MASTERY_SPELLS];
+    std::array<int32, MAX_MASTERY_SPELLS> MasterySpellID;
     int8 ClassID;
     int8 OrderIndex;
     int8 PetTalentType;
@@ -564,6 +557,9 @@ struct ChrSpecializationEntry
     int32 SpellIconFileID;
     uint32 Flags;
     int32 AnimReplacements;
+
+    EnumFlag<ChrSpecializationFlag> GetFlags() const { return static_cast<ChrSpecializationFlag>(Flags); }
+    ChrSpecializationRole GetRole() const { return static_cast<ChrSpecializationRole>(Role); }
 
     bool IsPetSpecialization() const
     {

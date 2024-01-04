@@ -279,7 +279,7 @@ Stats Player::GetPrimaryStat() const
 {
     uint8 primaryStatPriority = [&]() -> uint8
     {
-        if (ChrSpecializationEntry const* specialization = sChrSpecializationStore.LookupEntry(GetPrimarySpecialization()))
+        if (ChrSpecializationEntry const* specialization = GetPrimarySpecializationEntry())
             return specialization->PrimaryStatPriority;
 
         return sChrClassesStore.AssertEntry(GetClass())->PrimaryStatPriority;
@@ -532,7 +532,7 @@ void Player::UpdateMastery()
     value += GetRatingBonusValue(CR_MASTERY);
     SetFloatValue(PLAYER_MASTERY, value);
 
-    ChrSpecializationEntry const* chrSpec = sChrSpecializationStore.LookupEntry(GetPrimarySpecialization());
+    ChrSpecializationEntry const* chrSpec = GetPrimarySpecializationEntry();
     if (!chrSpec)
         return;
 
