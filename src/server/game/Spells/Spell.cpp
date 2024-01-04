@@ -3433,6 +3433,9 @@ SpellCastResult Spell::prepare(SpellCastTargets const& targets, AuraEffect const
 
     int32 param1 = 0, param2 = 0;
     SpellCastResult result = CheckCast(true, &param1, &param2);
+    if(m_caster->IsPlayer()) {
+        TC_LOG_ERROR("spells", "SpellCastResult:{}-{}",m_spellInfo->Id, result);
+    }
     // target is checked in too many locations and with different results to handle each of them
     // handle just the general SPELL_FAILED_BAD_TARGETS result which is the default result for most DBC target checks
     if (_triggeredCastFlags & TRIGGERED_IGNORE_TARGET_CHECK && result == SPELL_FAILED_BAD_TARGETS)
@@ -3683,6 +3686,8 @@ void Spell::_cast(bool skipCheck)
         {
             cleanupSpell(castResult, &param1, &param2);
             return;
+        } else {
+
         }
 
         // additional check after cast bar completes (must not be in CheckCast)
@@ -5730,9 +5735,6 @@ SpellCastResult Spell::CheckCast(bool strict, int32* param1 /*= nullptr*/, int32
                 return SPELL_FAILED_CASTER_AURASTATE;
             if (m_spellInfo->ExcludeCasterAuraState && unitCaster->HasAuraState(AuraStateType(m_spellInfo->ExcludeCasterAuraState), m_spellInfo, unitCaster))
                 return SPELL_FAILED_CASTER_AURASTATE;
-            if(unitCaster->IsPlayer()) {
-                TC_LOG_ERROR("spells", "CasterAuraSpell:{}-{}", m_spellInfo->CasterAuraSpell, m_spellInfo->CasterAuraSpell && !unitCaster->HasAura(m_spellInfo->CasterAuraSpell));
-            }
 
             // Note: spell 62473 requres casterAuraSpell = triggering spell
             if (m_spellInfo->CasterAuraSpell && !unitCaster->HasAura(m_spellInfo->CasterAuraSpell))
