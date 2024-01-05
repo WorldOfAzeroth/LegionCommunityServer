@@ -43,23 +43,20 @@ enum WarriorSpells
     SPELL_WARRIOR_CHARGE_SLOW_EFFECT                = 236027,
     SPELL_WARRIOR_COLOSSUS_SMASH                    = 167105,
     SPELL_WARRIOR_COLOSSUS_SMASH_AURA               = 208086,
-    SPELL_WARRIOR_CRITICAL_THINKING_ENERGIZE        = 392776,
     SPELL_WARRIOR_EXECUTE                           = 20647,
-    SPELL_WARRIOR_FUELED_BY_VIOLENCE_HEAL           = 383104,
     SPELL_WARRIOR_GLYPH_OF_THE_BLAZING_TRAIL        = 123779,
     SPELL_WARRIOR_HEROIC_LEAP_JUMP                  = 162052,
-    SPELL_WARRIOR_ENRAGE_AURA                       = 184362,
     SPELL_WARRIOR_IGNORE_PAIN                       = 190456,
     SPELL_WARRIOR_IN_FOR_THE_KILL                   = 248621,
     SPELL_WARRIOR_IN_FOR_THE_KILL_HASTE             = 248622,
     SPELL_WARRIOR_IMPENDING_VICTORY                 = 202168,
     SPELL_WARRIOR_IMPENDING_VICTORY_HEAL            = 202166,
-    SPELL_WARRIOR_IMPROVED_HEROIC_LEAP              = 222355,
-    SPELL_WARRIOR_MORTAL_STRIKE                     = 12294,
     SPELL_WARRIOR_MORTAL_WOUNDS                     = 213667,
     SPELL_WARRIOR_RALLYING_CRY                      = 97463,
     SPELL_WARRIOR_SHIELD_BLOCK_AURA                 = 132404,
     SPELL_WARRIOR_SHIELD_CHARGE_EFFECT              = 385953,
+    SPELL_WARRIOR_SHIELD_SLAM                       = 23922,
+    SPELL_WARRIOR_SHIELD_SLAM_MARKER                = 224324,
     SPELL_WARRIOR_SHOCKWAVE                         = 46968,
     SPELL_WARRIOR_SHOCKWAVE_STUN                    = 132168,
     SPELL_WARRIOR_STOICISM                          = 70845,
@@ -260,6 +257,32 @@ private:
     bool _bonusHaste = false;
 };
 
+// 236279 - Devastator
+class spell_warr_devastator : public AuraScript
+{
+    bool Validate(SpellInfo const* spellInfo) override
+    {
+        return ValidateSpellEffect({ { spellInfo->Id, EFFECT_1 } }) && ValidateSpellInfo({ SPELL_WARRIOR_SHIELD_SLAM, SPELL_WARRIOR_SHIELD_SLAM_MARKER });
+    }
+
+    void OnProc(AuraEffect const* /*aurEff*/, ProcEventInfo const& /*eventInfo*/) const
+    {
+        if (GetTarget()->GetSpellHistory()->HasCooldown(SPELL_WARRIOR_SHIELD_SLAM))
+        {
+            if (roll_chance_i(GetEffectInfo(EFFECT_1).CalcValue()))
+            {
+                GetTarget()->GetSpellHistory()->ResetCooldown(SPELL_WARRIOR_SHIELD_SLAM, true);
+                GetTarget()->CastSpell(GetTarget(), SPELL_WARRIOR_SHIELD_SLAM_MARKER, TRIGGERED_IGNORE_CAST_IN_PROGRESS);
+            }
+        }
+    }
+
+    void Register() override
+    {
+        OnEffectProc += AuraEffectProcFn(spell_warr_devastator::OnProc, EFFECT_0, SPELL_AURA_PROC_TRIGGER_SPELL);
+    }
+};
+
 // 6544 - Heroic leap
 class spell_warr_heroic_leap : public SpellScript
 {
@@ -309,7 +332,6 @@ class spell_warr_heroic_leap : public SpellScript
         OnEffectHit += SpellEffectFn(spell_warr_heroic_leap::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
     }
 };
-
 
 // 202168 - Impending Victory
 class spell_warr_impending_victory : public SpellScript
@@ -495,26 +517,26 @@ class spell_warr_shockwave : public SpellScript
 };
 
 // 107570 - Storm Bolt
-    class spell_warr_storm_bolt : public SpellScript
+class spell_warr_storm_bolt : public SpellScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
     {
-        bool Validate(SpellInfo const* /*spellInfo*/) override
-        {
-            return ValidateSpellInfo
-            ({
-                SPELL_WARRIOR_STORM_BOLT_STUN
-            });
-        }
+        return ValidateSpellInfo
+        ({
+            SPELL_WARRIOR_STORM_BOLT_STUN
+        });
+    }
 
-        void HandleOnHit(SpellEffIndex /*effIndex*/)
-        {
-            GetCaster()->CastSpell(GetHitUnit(), SPELL_WARRIOR_STORM_BOLT_STUN, true);
-        }
+    void HandleOnHit(SpellEffIndex /*effIndex*/)
+    {
+        GetCaster()->CastSpell(GetHitUnit(), SPELL_WARRIOR_STORM_BOLT_STUN, true);
+    }
 
-        void Register() override
-        {
-            OnEffectHitTarget += SpellEffectFn(spell_warr_storm_bolt::HandleOnHit, EFFECT_1, SPELL_EFFECT_DUMMY);
-        }
-    };
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_warr_storm_bolt::HandleOnHit, EFFECT_1, SPELL_EFFECT_DUMMY);
+    }
+};
 
 // 52437 - Sudden Death
 class spell_warr_sudden_death : public AuraScript
@@ -636,7 +658,7 @@ class spell_warr_victorious_state : public AuraScript
 
     void HandleOnProc(AuraEffect* /*aurEff*/, ProcEventInfo& procInfo)
     {
-        if (procInfo.GetActor()->GetTypeId() == TYPEID_PLAYER && procInfo.GetActor()->ToPlayer()->GetPrimarySpecialization() == TALENT_SPEC_WARRIOR_FURY)
+        if (procInfo.GetActor()->GetTypeId() == TYPEID_PLAYER && procInfo.GetActor()->ToPlayer()->GetPrimarySpecialization() == ChrSpecialization::WarriorFury)
             PreventDefaultAction();
 
         procInfo.GetActor()->GetSpellHistory()->ResetCooldown(SPELL_WARRIOR_IMPENDING_VICTORY, true);
@@ -681,6 +703,7 @@ void AddSC_warrior_spell_scripts()
     RegisterSpellScript(spell_warr_charge_drop_fire_periodic);
     RegisterSpellScript(spell_warr_charge_effect);
     RegisterSpellScript(spell_warr_colossus_smash);
+    RegisterSpellScript(spell_warr_devastator);
     RegisterSpellScript(spell_warr_heroic_leap);
     RegisterSpellScript(spell_warr_impending_victory);
     RegisterSpellScript(spell_warr_intimidating_shout);
