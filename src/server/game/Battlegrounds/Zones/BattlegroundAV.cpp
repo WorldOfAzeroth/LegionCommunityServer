@@ -25,6 +25,15 @@
 #include "ObjectMgr.h"
 #include "Player.h"
 
+enum AlteracValleyPvpStats
+{
+    PVP_STAT_TOWERS_ASSAULTED       = 61,
+    PVP_STAT_GRAVEYARDS_ASSAULTED   = 63,
+    PVP_STAT_TOWERS_DEFENDED        = 64,
+    PVP_STAT_GRAVEYARDS_DEFENDED    = 65,
+    PVP_STAT_SECONDARY_OBJECTIVES   = 82
+};
+
 BattlegroundAV::BattlegroundAV(BattlegroundTemplate const* battlegroundTemplate) : Battleground(battlegroundTemplate)
 {
     BgObjects.resize(BG_AV_OBJECT_MAX);
@@ -438,14 +447,6 @@ void BattlegroundAV::StartingEventOpenDoors()
     TriggerGameEvent(BG_AV_EVENT_START_BATTLE);
 }
 
-void BattlegroundAV::AddPlayer(Player* player)
-{
-    bool const isInBattleground = IsPlayerInBattleground(player->GetGUID());
-    Battleground::AddPlayer(player);
-    if (!isInBattleground)
-        PlayerScores[player->GetGUID()] = new BattlegroundAVScore(player->GetGUID(), player->GetBGTeam());
-}
-
 void BattlegroundAV::EndBattleground(uint32 winner)
 {
     //calculate bonuskills for both teams:
@@ -523,31 +524,6 @@ void BattlegroundAV::HandleAreaTrigger(Player* player, uint32 trigger, bool ente
             Battleground::HandleAreaTrigger(player, trigger, entered);
             break;
     }
-}
-
-bool BattlegroundAV::UpdatePlayerScore(Player* player, uint32 type, uint32 value, bool doAddHonor)
-{
-    if (!Battleground::UpdatePlayerScore(player, type, value, doAddHonor))
-        return false;
-
-    switch (type)
-    {
-        case SCORE_GRAVEYARDS_ASSAULTED:
-            player->UpdateCriteria(CriteriaType::TrackedWorldStateUIModified, AV_OBJECTIVE_ASSAULT_GRAVEYARD);
-            break;
-        case SCORE_GRAVEYARDS_DEFENDED:
-            player->UpdateCriteria(CriteriaType::TrackedWorldStateUIModified, AV_OBJECTIVE_DEFEND_GRAVEYARD);
-            break;
-        case SCORE_TOWERS_ASSAULTED:
-            player->UpdateCriteria(CriteriaType::TrackedWorldStateUIModified, AV_OBJECTIVE_ASSAULT_TOWER);
-            break;
-        case SCORE_TOWERS_DEFENDED:
-            player->UpdateCriteria(CriteriaType::TrackedWorldStateUIModified, AV_OBJECTIVE_DEFEND_TOWER);
-            break;
-        default:
-            break;
-    }
-    return true;
 }
 
 void BattlegroundAV::EventPlayerDestroyedPoint(BG_AV_Nodes node)
@@ -924,7 +900,7 @@ void BattlegroundAV::EventPlayerDefendsPoint(Player* player, uint32 object)
             herold->AI()->Talk(team == ALLIANCE ? nodeInfo->TextIds.AllianceCapture : nodeInfo->TextIds.HordeCapture);
 
     // update the statistic for the defending player
-    UpdatePlayerScore(player, IsTower(node) ? SCORE_TOWERS_DEFENDED : SCORE_GRAVEYARDS_DEFENDED, 1);
+    UpdatePvpStat(player, IsTower(node) ? PVP_STAT_TOWERS_DEFENDED : PVP_STAT_GRAVEYARDS_DEFENDED, 1);
 }
 
 void BattlegroundAV::EventPlayerAssaultsPoint(Player* player, uint32 object)
@@ -1013,7 +989,7 @@ void BattlegroundAV::EventPlayerAssaultsPoint(Player* player, uint32 object)
             herold->AI()->Talk(team == ALLIANCE ? nodeInfo->TextIds.AllianceAttack : nodeInfo->TextIds.HordeAttack);
 
     // update the statistic for the assaulting player
-    UpdatePlayerScore(player, (IsTower(node)) ? SCORE_TOWERS_ASSAULTED : SCORE_GRAVEYARDS_ASSAULTED, 1);
+    UpdatePvpStat(player, (IsTower(node)) ? PVP_STAT_TOWERS_ASSAULTED : PVP_STAT_GRAVEYARDS_ASSAULTED, 1);
 }
 
 void BattlegroundAV::UpdateNodeWorldState(BG_AV_Nodes node)
@@ -1070,15 +1046,15 @@ WorldSafeLocsEntry const* BattlegroundAV::GetClosestGraveyard(Player* player)
     player->GetPosition(x, y);
 
     uint32 team = GetPlayerTeam(player->GetGUID());
-    WorldSafeLocsEntry const* pGraveyard = sDB2Manager.GetWorldSafeLoc(BG_AV_GraveyardIds[GetTeamIndexByTeamId(team) + 7]);
-    float minDist = (pGraveyard->GetPositionX() - x) * (pGraveyard->GetPositionX() - x) + (pGraveyard->GetPositionY() - y) * (pGraveyard->GetPositionY() - y);
+    WorldSafeLocsEntry const* pGraveyard = sObjectMgr->GetWorldSafeLoc(BG_AV_GraveyardIds[GetTeamIndexByTeamId(team) + 7]);
+    float minDist = (pGraveyard->Loc.GetPositionX() - x) * (pGraveyard->Loc.GetPositionX() - x) + (pGraveyard->Loc.GetPositionY() - y) * (pGraveyard->Loc.GetPositionY() - y);
 
     for (uint8 i = BG_AV_NODES_FIRSTAID_STATION; i <= BG_AV_NODES_FROSTWOLF_HUT; ++i)
         if (m_Nodes[i].Owner == team && m_Nodes[i].State == POINT_CONTROLED)
         {
-            if (WorldSafeLocsEntry const* entry = sDB2Manager.GetWorldSafeLoc(BG_AV_GraveyardIds[i]))
+            if (WorldSafeLocsEntry const* entry = sObjectMgr->GetWorldSafeLoc(BG_AV_GraveyardIds[i]))
             {
-                float dist = (entry->GetPositionX() - x) * (entry->GetPositionX() - x) + (entry->GetPositionY() - y) * (entry->GetPositionY() - y);
+                float dist = (entry->Loc.GetPositionX() - x) * (entry->Loc.GetPositionX() - x) + (entry->Loc.GetPositionY() - y) * (entry->Loc.GetPositionY() - y);
                 if (dist < minDist)
                 {
                     minDist = dist;
@@ -1091,7 +1067,7 @@ WorldSafeLocsEntry const* BattlegroundAV::GetClosestGraveyard(Player* player)
 
 WorldSafeLocsEntry const* BattlegroundAV::GetExploitTeleportLocation(Team team)
 {
-    return sDB2Manager.GetWorldSafeLoc(team == ALLIANCE ? AV_EXPLOIT_TELEPORT_LOCATION_ALLIANCE: AV_EXPLOIT_TELEPORT_LOCATION_HORDE);
+    return sObjectMgr->GetWorldSafeLoc(team == ALLIANCE ? AV_EXPLOIT_TELEPORT_LOCATION_ALLIANCE: AV_EXPLOIT_TELEPORT_LOCATION_HORDE);
 }
 
 bool BattlegroundAV::SetupBattleground()

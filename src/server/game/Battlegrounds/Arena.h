@@ -58,14 +58,14 @@ class TC_GAME_API Arena : public Battleground
     protected:
         Arena(BattlegroundTemplate const* battlegroundTemplate);
 
-        void AddPlayer(Player* player) override;
+        void AddPlayer(Player* player, BattlegroundQueueTypeId queueId) override;
         void RemovePlayer(Player* /*player*/, ObjectGuid /*guid*/, uint32 /*team*/) override;
 
         void UpdateArenaWorldState();
 
         void HandleKillPlayer(Player* player, Player* killer) override;
 
-        void BuildPvPLogDataPacket(WorldPackets::Battleground::PVPLogData& pvpLogData) const override;
+        void BuildPvPLogDataPacket(WorldPackets::Battleground::PVPMatchStatistics& pvpLogData) const override;
 
     private:
         void RemovePlayerAtLeave(ObjectGuid guid, bool transport, bool sendPacket) override;

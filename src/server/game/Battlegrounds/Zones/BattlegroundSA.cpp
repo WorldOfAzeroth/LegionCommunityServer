@@ -16,6 +16,7 @@
  */
 
 #include "BattlegroundSA.h"
+#include "BattlegroundScore.h"
 #include "Creature.h"
 #include "CreatureAI.h"
 #include "DB2Stores.h"
@@ -29,6 +30,12 @@
 #include "Random.h"
 #include "UpdateData.h"
 #include "WorldStateMgr.h"
+
+enum StrandOfTheAncientsPvpStats
+{
+    PVP_STAT_GATES_DESTROYED        = 231,
+    PVP_STAT_DEMOLISHERS_DESTROYED  = 232
+};
 
 BattlegroundSA::BattlegroundSA(BattlegroundTemplate const* battlegroundTemplate) : Battleground(battlegroundTemplate)
 {
@@ -183,7 +190,7 @@ bool BattlegroundSA::ResetObjs()
     //Graveyards
     for (uint8 i = 0; i < BG_SA_MAX_GY; i++)
     {
-        WorldSafeLocsEntry const* sg = sDB2Manager.GetWorldSafeLoc(BG_SA_GYEntries[i]);
+        WorldSafeLocsEntry const* sg = sObjectMgr->GetWorldSafeLoc(BG_SA_GYEntries[i]);
 
         if (!sg)
         {
@@ -194,12 +201,12 @@ bool BattlegroundSA::ResetObjs()
         if (i == BG_SA_BEACH_GY)
         {
             GraveyardStatus[i] = Attackers;
-            AddSpiritGuide(i + BG_SA_MAXNPC, sg->GetPositionX(), sg->GetPositionY(), sg->GetPositionZ(), BG_SA_GYOrientation[i], Attackers);
+            AddSpiritGuide(i + BG_SA_MAXNPC, sg->Loc.GetPositionX(), sg->Loc.GetPositionY(), sg->Loc.GetPositionZ(), BG_SA_GYOrientation[i], Attackers);
         }
         else
         {
             GraveyardStatus[i] = ((Attackers == TEAM_HORDE)? TEAM_ALLIANCE : TEAM_HORDE);
-            if (!AddSpiritGuide(i + BG_SA_MAXNPC, sg->GetPositionX(), sg->GetPositionY(), sg->GetPositionZ(), BG_SA_GYOrientation[i], Attackers == TEAM_HORDE ? TEAM_ALLIANCE : TEAM_HORDE))
+            if (!AddSpiritGuide(i + BG_SA_MAXNPC, sg->Loc.GetPositionX(), sg->Loc.GetPositionY(), sg->Loc.GetPositionZ(), BG_SA_GYOrientation[i], Attackers == TEAM_HORDE ? TEAM_ALLIANCE : TEAM_HORDE))
                 TC_LOG_ERROR("bg.battleground", "SOTA: couldn't spawn GY: {}", i);
         }
     }
@@ -428,12 +435,10 @@ void BattlegroundSA::PostUpdateImpl(uint32 diff)
     }
 }
 
-void BattlegroundSA::AddPlayer(Player* player)
+void BattlegroundSA::AddPlayer(Player* player, BattlegroundQueueTypeId queueId)
 {
     bool const isInBattleground = IsPlayerInBattleground(player->GetGUID());
-    Battleground::AddPlayer(player);
-    if (!isInBattleground)
-        PlayerScores[player->GetGUID()] = new BattlegroundSAScore(player->GetGUID(), player->GetBGTeam());
+    Battleground::AddPlayer(player, queueId);
 
     SendTransportInit(player);
 
@@ -485,15 +490,15 @@ void BattlegroundSA::TeleportToEntrancePosition(Player* player)
             // player->AddUnitMovementFlag(MOVEMENTFLAG_ONTRANSPORT);
 
             if (urand(0, 1))
-                player->TeleportTo(607, 2682.936f, -830.368f, 15.0f, 2.895f, 0);
+                player->TeleportTo(607, 2682.936f, -830.368f, 15.0f, 2.895f);
             else
-                player->TeleportTo(607, 2577.003f, 980.261f, 15.0f, 0.807f, 0);
+                player->TeleportTo(607, 2577.003f, 980.261f, 15.0f, 0.807f);
         }
         else
-            player->TeleportTo(607, 1600.381f, -106.263f, 8.8745f, 3.78f, 0);
+            player->TeleportTo(607, 1600.381f, -106.263f, 8.8745f, 3.78f);
     }
     else
-        player->TeleportTo(607, 1209.7f, -65.16f, 70.1f, 0.0f, 0);
+        player->TeleportTo(607, 1209.7f, -65.16f, 70.1f, 0.0f);
 }
 
 void BattlegroundSA::ProcessEvent(WorldObject* obj, uint32 eventId, WorldObject* invoker /*= nullptr*/)
@@ -565,7 +570,7 @@ void BattlegroundSA::ProcessEvent(WorldObject* obj, uint32 eventId, WorldObject*
                             {
                                 if (Player* player = unit->GetCharmerOrOwnerPlayerOrPlayerItself())
                                 {
-                                    UpdatePlayerScore(player, SCORE_DESTROYED_WALL, 1);
+                                    UpdatePvpStat(player, PVP_STAT_GATES_DESTROYED, 1);
                                     if (rewardHonor)
                                         UpdatePlayerScore(player, SCORE_BONUS_HONOR, GetBonusHonorFromKill(1));
                                 }
@@ -591,7 +596,7 @@ void BattlegroundSA::HandleKillUnit(Creature* creature, Player* killer)
 {
     if (creature->GetEntry() == NPC_DEMOLISHER_SA)
     {
-        UpdatePlayerScore(killer, SCORE_DESTROYED_DEMOLISHER, 1);
+        UpdatePvpStat(killer, PVP_STAT_DEMOLISHERS_DESTROYED, 1);
         int32 worldStateId = Attackers == TEAM_HORDE ? BG_SA_DESTROYED_HORDE_VEHICLES : BG_SA_DESTROYED_ALLIANCE_VEHICLES;
         int32 currentDestroyedVehicles = sWorldStateMgr->GetValue(worldStateId, GetBgMap());
         UpdateWorldState(worldStateId, currentDestroyedVehicles + 1);
@@ -664,16 +669,16 @@ WorldSafeLocsEntry const* BattlegroundSA::GetClosestGraveyard(Player* player)
     else
         safeloc = BG_SA_GYEntries[BG_SA_DEFENDER_LAST_GY];
 
-    closest = sDB2Manager.GetWorldSafeLoc(safeloc);
-    nearest = player->GetExactDistSq(closest->GetPositionX(), closest->GetPositionY(), closest->GetPositionZ());
+    closest = sObjectMgr->GetWorldSafeLoc(safeloc);
+    nearest = player->GetExactDistSq(closest->Loc);
 
     for (uint8 i = BG_SA_RIGHT_CAPTURABLE_GY; i < BG_SA_MAX_GY; i++)
     {
         if (GraveyardStatus[i] != teamId)
             continue;
 
-        ret = sDB2Manager.GetWorldSafeLoc(BG_SA_GYEntries[i]);
-        dist = player->GetExactDistSq(ret->GetPositionX(), ret->GetPositionY(), ret->GetPositionZ());
+        ret = sObjectMgr->GetWorldSafeLoc(BG_SA_GYEntries[i]);
+        dist = player->GetExactDistSq(ret->Loc);
         if (dist < nearest)
         {
             closest = ret;
@@ -759,14 +764,14 @@ void BattlegroundSA::CaptureGraveyard(BG_SA_Graveyards i, Player* Source)
     DelCreature(AsUnderlyingType(BG_SA_MAXNPC) + i);
     TeamId teamId = GetTeamIndexByTeamId(GetPlayerTeam(Source->GetGUID()));
     GraveyardStatus[i] = teamId;
-    WorldSafeLocsEntry const* sg = sDB2Manager.GetWorldSafeLoc(BG_SA_GYEntries[i]);
+    WorldSafeLocsEntry const* sg = sObjectMgr->GetWorldSafeLoc(BG_SA_GYEntries[i]);
     if (!sg)
     {
         TC_LOG_ERROR("bg.battleground", "BattlegroundSA::CaptureGraveyard: non-existant GY entry: {}", BG_SA_GYEntries[i]);
         return;
     }
 
-    AddSpiritGuide(i + AsUnderlyingType(BG_SA_MAXNPC), sg->GetPositionX(), sg->GetPositionY(), sg->GetPositionZ(), BG_SA_GYOrientation[i], GraveyardStatus[i]);
+    AddSpiritGuide(i + AsUnderlyingType(BG_SA_MAXNPC), sg->Loc.GetPositionX(), sg->Loc.GetPositionY(), sg->Loc.GetPositionZ(), BG_SA_GYOrientation[i], GraveyardStatus[i]);
     uint32 npc = 0;
     uint32 flag = 0;
 
@@ -1012,24 +1017,5 @@ bool BattlegroundSA::IsSpellAllowed(uint32 spellId, Player const* /*player*/) co
            break;
     }
 
-    return true;
-}
-
-bool BattlegroundSA::UpdatePlayerScore(Player* player, uint32 type, uint32 value, bool doAddHonor /*= true*/)
-{
-    if (!Battleground::UpdatePlayerScore(player, type, value, doAddHonor))
-        return false;
-
-    switch (type)
-    {
-        case SCORE_DESTROYED_DEMOLISHER:
-            player->UpdateCriteria(CriteriaType::TrackedWorldStateUIModified, BG_SA_DEMOLISHERS_DESTROYED);
-            break;
-        case SCORE_DESTROYED_WALL:
-            player->UpdateCriteria(CriteriaType::TrackedWorldStateUIModified, BG_SA_GATES_DESTROYED);
-            break;
-        default:
-            break;
-    }
     return true;
 }

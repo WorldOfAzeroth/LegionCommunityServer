@@ -366,7 +366,7 @@ void Battlefield::EndBattle(bool endByTimer)
 
 void Battlefield::DoPlaySoundToAll(uint32 soundID)
 {
-    BroadcastPacketToWar(WorldPackets::Misc::PlaySound(ObjectGuid::Empty, soundID).Write());
+    BroadcastPacketToWar(WorldPackets::Misc::PlaySound(ObjectGuid::Empty, soundID, 0).Write());
 }
 
 bool Battlefield::HasPlayer(Player* player) const
@@ -374,7 +374,7 @@ bool Battlefield::HasPlayer(Player* player) const
     return m_players[player->GetTeamId()].find(player->GetGUID()) != m_players[player->GetTeamId()].end();
 }
 
-// Called in WorldSession::HandleBfQueueInviteResponse
+// Called in Battlefield::InvitePlayerToQueue
 void Battlefield::PlayerAcceptInviteToQueue(Player* player)
 {
     // Add player in queue
@@ -396,7 +396,7 @@ void Battlefield::PlayerAskToLeave(Player* player)
     player->TeleportTo(571, 5804.1499f, 624.7710f, 647.7670f, 1.6400f);
 }
 
-// Called in WorldSession::HandleBfEntryInviteResponse
+// Called in Battlefield::InvitePlayerToWar
 void Battlefield::PlayerAcceptInviteToWar(Player* player)
 {
     if (!IsWarTime())
@@ -587,7 +587,7 @@ WorldSafeLocsEntry const* Battlefield::GetClosestGraveyard(Player* player)
     }
 
     if (closestGY)
-        return sDB2Manager.GetWorldSafeLoc(closestGY->GetGraveyardId());
+        return sObjectMgr->GetWorldSafeLoc(closestGY->GetGraveyardId());
 
     return nullptr;
 }
@@ -622,8 +622,8 @@ void BfGraveyard::SetSpirit(Creature* spirit, TeamId team)
 
 float BfGraveyard::GetDistance(Player* player)
 {
-    WorldSafeLocsEntry const* safeLoc = sDB2Manager.GetWorldSafeLoc(m_GraveyardId);
-    return player->GetDistance2d(safeLoc->GetPositionX(), safeLoc->GetPositionY());
+    WorldSafeLocsEntry const* safeLoc = sObjectMgr->GetWorldSafeLoc(m_GraveyardId);
+    return player->GetDistance2d(safeLoc->Loc.GetPositionX(), safeLoc->Loc.GetPositionY());
 }
 
 // For changing graveyard control

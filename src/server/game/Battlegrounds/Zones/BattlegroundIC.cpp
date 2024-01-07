@@ -26,6 +26,12 @@
 #include "UnitAI.h"
 #include "Vehicle.h"
 
+enum IsleOfConquestPvpStats
+{
+    PVP_STAT_BASES_ASSAULTED    = 245,
+    PVP_STAT_BASES_DEFENDED     = 246
+};
+
 BattlegroundIC::BattlegroundIC(BattlegroundTemplate const* battlegroundTemplate) : Battleground(battlegroundTemplate)
 {
     BgObjects.resize(MAX_NORMAL_GAMEOBJECTS_SPAWNS + MAX_AIRSHIPS_SPAWNS + MAX_HANGAR_TELEPORTERS_SPAWNS + MAX_FORTRESS_TELEPORTERS_SPAWNS + MAX_HANGAR_TELEPORTER_EFFECTS_SPAWNS + MAX_FORTRESS_TELEPORTER_EFFECTS_SPAWNS);
@@ -242,12 +248,9 @@ void BattlegroundIC::StartingEventOpenDoors()
         GetBGObject(BG_IC_TeleporterEffects[i].type)->SetGoState(GO_STATE_ACTIVE);
 }
 
-void BattlegroundIC::AddPlayer(Player* player)
+void BattlegroundIC::AddPlayer(Player* player, BattlegroundQueueTypeId queueId)
 {
-    bool const isInBattleground = IsPlayerInBattleground(player->GetGUID());
-    Battleground::AddPlayer(player);
-    if (!isInBattleground)
-        PlayerScores[player->GetGUID()] = new BattlegroundICScore(player->GetGUID(), player->GetBGTeam());
+    Battleground::AddPlayer(player, queueId);
 
     if (nodePoint[NODE_TYPE_QUARRY].nodeState == (GetPlayerTeam(player->GetGUID()) == ALLIANCE ? NODE_STATE_CONTROLLED_A : NODE_STATE_CONTROLLED_H))
         player->CastSpell(player, SPELL_QUARRY, true);
@@ -436,7 +439,7 @@ void BattlegroundIC::EventPlayerClickedOnFlag(Player* player, GameObject* target
                     if (!BgCreatures[BG_IC_NPC_SPIRIT_GUIDE_1 + uint32(nodePoint[i].nodeType) - 2].IsEmpty())
                         DelCreature(BG_IC_NPC_SPIRIT_GUIDE_1 + uint32(nodePoint[i].nodeType) - 2);
 
-                UpdatePlayerScore(player, SCORE_BASES_ASSAULTED, 1);
+                UpdatePvpStat(player, PVP_STAT_BASES_ASSAULTED, 1);
 
                 if (nodePoint[i].faction == TEAM_ALLIANCE)
                     SendBroadcastText(ICNodes[i].TextAssaulted, CHAT_MSG_BG_SYSTEM_ALLIANCE, player);
@@ -456,7 +459,7 @@ void BattlegroundIC::EventPlayerClickedOnFlag(Player* player, GameObject* target
                     SendBroadcastText(ICNodes[i].TextDefended, CHAT_MSG_BG_SYSTEM_HORDE, player);
 
                 HandleCapturedNodes(&nodePoint[i], true);
-                UpdatePlayerScore(player, SCORE_BASES_DEFENDED, 1);
+                UpdatePvpStat(player, PVP_STAT_BASES_DEFENDED, 1);
             }
 
             GameObject* banner = GetBGObject(nodePoint[i].gameobject_type);
@@ -866,10 +869,10 @@ WorldSafeLocsEntry const* BattlegroundIC::GetClosestGraveyard(Player* player)
         float mindist = 999999.0f;
         for (uint8 i = 0; i < nodes.size(); ++i)
         {
-            WorldSafeLocsEntry const*entry = sDB2Manager.GetWorldSafeLoc(BG_IC_GraveyardIds[nodes[i]]);
+            WorldSafeLocsEntry const*entry = sObjectMgr->GetWorldSafeLoc(BG_IC_GraveyardIds[nodes[i]]);
             if (!entry)
                 continue;
-            float dist = (entry->GetPositionX() - player_x) * (entry->GetPositionX() - player_x) + (entry->GetPositionY() - player_y) * (entry->GetPositionY() - player_y);
+            float dist = (entry->Loc.GetPositionX() - player_x) * (entry->Loc.GetPositionX() - player_x) + (entry->Loc.GetPositionY() - player_y) * (entry->Loc.GetPositionY() - player_y);
             if (mindist > dist)
             {
                 mindist = dist;
@@ -880,14 +883,14 @@ WorldSafeLocsEntry const* BattlegroundIC::GetClosestGraveyard(Player* player)
     }
     // If not, place ghost on starting location
     if (!good_entry)
-        good_entry = sDB2Manager.GetWorldSafeLoc(BG_IC_GraveyardIds[uint32(teamIndex) + MAX_NODE_TYPES]);
+        good_entry = sObjectMgr->GetWorldSafeLoc(BG_IC_GraveyardIds[uint32(teamIndex) + MAX_NODE_TYPES]);
 
     return good_entry;
 }
 
 WorldSafeLocsEntry const * BattlegroundIC::GetExploitTeleportLocation(Team team)
 {
-    return sDB2Manager.GetWorldSafeLoc(team == ALLIANCE ? IC_EXPLOIT_TELEPORT_LOCATION_ALLIANCE : IC_EXPLOIT_TELEPORT_LOCATION_HORDE);
+    return sObjectMgr->GetWorldSafeLoc(team == ALLIANCE ? IC_EXPLOIT_TELEPORT_LOCATION_ALLIANCE : IC_EXPLOIT_TELEPORT_LOCATION_HORDE);
 }
 
 bool BattlegroundIC::IsSpellAllowed(uint32 spellId, Player const* player) const

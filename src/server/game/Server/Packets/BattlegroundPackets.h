@@ -88,13 +88,8 @@ namespace WorldPackets
             void Read() override { }
         };
 
-        class PVPLogData final : public ServerPacket
+        struct PVPMatchStatistics
         {
-        public:
-            PVPLogData() : ServerPacket(SMSG_PVP_LOG_DATA, 0) { }
-
-            WorldPacket const* Write() override;
-
             struct RatingData
             {
                 RatingData() { } // work around clang bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=101227
@@ -113,7 +108,7 @@ namespace WorldPackets
                 uint32 ContributionPoints = 0;
             };
 
-            struct PlayerData
+            struct PVPMatchPlayerStatistics
             {
                 ObjectGuid PlayerGUID;
                 uint32 Kills = 0;
@@ -134,9 +129,19 @@ namespace WorldPackets
             };
 
             Optional<uint8> Winner;
-            std::vector<PlayerData> Players;
+            std::vector<PVPMatchPlayerStatistics> Players;
             Optional<RatingData> Ratings;
-            int8 PlayerCount[2] = { };
+            std::array<int8, 2> PlayerCount = { };
+        };
+
+        class PVPMatchStatisticsMessage final : public ServerPacket
+        {
+        public:
+            PVPMatchStatisticsMessage() : ServerPacket(SMSG_PVP_LOG_DATA, 0) { }
+
+            WorldPacket const* Write() override;
+
+            PVPMatchStatistics Data;
         };
 
         struct BattlefieldStatusHeader
@@ -404,10 +409,10 @@ namespace WorldPackets
             void Read() override { }
         };
 
-        class RequestRatedBattlefieldInfo final : public ClientPacket
+        class RequestRatedPvpInfo final : public ClientPacket
         {
         public:
-            RequestRatedBattlefieldInfo(WorldPacket&& packet) : ClientPacket(CMSG_REQUEST_RATED_BATTLEFIELD_INFO, std::move(packet)) { }
+            RequestRatedPvpInfo(WorldPacket&& packet) : ClientPacket(CMSG_REQUEST_RATED_BATTLEFIELD_INFO, std::move(packet)) { }
 
             void Read() override { }
         };
