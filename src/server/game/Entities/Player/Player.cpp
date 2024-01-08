@@ -36,6 +36,7 @@
 #include "CharacterDatabaseCleaner.h"
 #include "CharacterTemplateDataStore.h"
 #include "CharacterPackets.h"
+#include "CharmInfo.h"
 #include "Chat.h"
 #include "ChatPackets.h"
 #include "ChatTextBuilder.h"
@@ -180,7 +181,7 @@ Player::Player(WorldSession* session) : Unit(true), m_sceneMgr(this)
     m_zoneUpdateTimer = 0;
 
     m_areaUpdateId = 0;
-    m_team = 0;
+    m_team = TEAM_OTHER;
 
     m_nextSave = sWorld->getIntConfig(CONFIG_INTERVAL_SAVE);
     m_customizationsChanged = false;
@@ -230,8 +231,6 @@ Player::Player(WorldSession* session) : Unit(true), m_sceneMgr(this)
     m_drunkTimer = 0;
     m_deathTimer = 0;
     m_deathExpireTime = 0;
-
-    m_swingErrorMsg = 0;
 
     for (uint8 j = 0; j < PLAYER_MAX_BATTLEGROUND_QUEUES; ++j)
     {
@@ -1056,78 +1055,7 @@ void Player::Update(uint32 p_time)
 
     m_achievementMgr->UpdateTimedCriteria(Milliseconds(p_time));
 
-    if (HasUnitState(UNIT_STATE_MELEE_ATTACKING) && !HasUnitState(UNIT_STATE_CASTING | UNIT_STATE_CHARGING))
-    {
-        if (Unit* victim = GetVictim())
-        {
-            // default combat reach 10
-            /// @todo add weapon, skill check
-
-            if (isAttackReady(BASE_ATTACK))
-            {
-                if (!IsWithinMeleeRange(victim))
-                {
-                    setAttackTimer(BASE_ATTACK, 100);
-                    if (m_swingErrorMsg != 1)               // send single time (client auto repeat)
-                    {
-                        SendAttackSwingNotInRange();
-                        m_swingErrorMsg = 1;
-                    }
-                }
-                //120 degrees of radiant range, if player is not in boundary radius
-                else if (!IsWithinBoundaryRadius(victim) && !HasInArc(2 * float(M_PI) / 3, victim))
-                {
-                    setAttackTimer(BASE_ATTACK, 100);
-                    if (m_swingErrorMsg != 2)               // send single time (client auto repeat)
-                    {
-                        SendAttackSwingBadFacingAttack();
-                        m_swingErrorMsg = 2;
-                    }
-                }
-                else
-                {
-                    m_swingErrorMsg = 0;                    // reset swing error state
-
-                    // prevent base and off attack in same time, delay attack at 0.2 sec
-                    if (haveOffhandWeapon())
-                        if (getAttackTimer(OFF_ATTACK) < ATTACK_DISPLAY_DELAY)
-                            setAttackTimer(OFF_ATTACK, ATTACK_DISPLAY_DELAY);
-
-                    // do attack
-                    AttackerStateUpdate(victim, BASE_ATTACK);
-                    resetAttackTimer(BASE_ATTACK);
-                }
-            }
-
-            if (!IsInFeralForm() && haveOffhandWeapon() && isAttackReady(OFF_ATTACK))
-            {
-                if (!IsWithinMeleeRange(victim))
-                    setAttackTimer(OFF_ATTACK, 100);
-                else if (!IsWithinBoundaryRadius(victim) && !HasInArc(2 * float(M_PI) / 3, victim))
-                {
-                    setAttackTimer(BASE_ATTACK, 100);
-                }
-                else
-                {
-                    // prevent base and off attack in same time, delay attack at 0.2 sec
-                    if (getAttackTimer(BASE_ATTACK) < ATTACK_DISPLAY_DELAY)
-                        setAttackTimer(BASE_ATTACK, ATTACK_DISPLAY_DELAY);
-
-                    // do attack
-                    AttackerStateUpdate(victim, OFF_ATTACK);
-                    resetAttackTimer(OFF_ATTACK);
-                }
-            }
-
-            /*Unit* owner = victim->GetOwner();
-            Unit* u = owner ? owner : victim;
-            if (u->IsPvP() && (!duel || duel->opponent != u))
-            {
-                UpdatePvP(true);
-                RemoveAurasWithInterruptFlags(SpellAuraInterruptFlags::PvPActive);
-            }*/
-        }
-    }
+    DoMeleeAttackIfReady();
 
     if (HasPlayerFlag(PLAYER_FLAGS_RESTING))
         _restMgr->Update(now);
@@ -6128,7 +6056,7 @@ void Player::CheckAreaExploreAndOutdoor()
     }
 }
 
-uint32 Player::TeamForRace(uint8 race)
+Team Player::TeamForRace(uint8 race)
 {
     if (ChrRacesEntry const* rEntry = sChrRacesStore.LookupEntry(race))
     {
@@ -15563,6 +15491,54 @@ QuestGiverStatus Player::GetQuestDialogStatus(Object const* questgiver) const
     return result;
 }
 
+void Player::SkipQuests(std::vector<uint32> const& questIds)
+{
+    bool updateVisibility = false;
+    for (uint32 const& questId : questIds)
+    {
+        Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+        if (!quest)
+            return;
+
+        uint16 questSlot = FindQuestSlot(questId);
+        QuestStatus oldStatus = GetQuestStatus(questSlot);
+
+        if (questSlot != MAX_QUEST_LOG_SIZE)
+        {
+            if (quest->GetLimitTime())
+                RemoveTimedQuest(questId);
+
+            if (quest->HasFlag(QUEST_FLAGS_FLAGS_PVP))
+            {
+                pvpInfo.IsHostile = pvpInfo.IsInHostileArea || HasPvPForcingQuest();
+                UpdatePvPState();
+            }
+
+            SetQuestSlot(questSlot, 0);
+            TakeQuestSourceItem(questId, true); // remove quest src item from player
+            AbandonQuest(questId); // remove all quest items player received before abandoning quest. Note, this does not remove normal drop items that happen to be quest requirements.
+            RemoveActiveQuest(questId);
+        }
+
+        SetRewardedQuest(questId);
+        SendQuestUpdate(questId);
+
+        if (!updateVisibility && quest->HasFlag(QUEST_FLAGS_UPDATE_PHASESHIFT))
+            updateVisibility = PhasingHandler::OnConditionChange(this, false);
+
+        sScriptMgr->OnQuestStatusChange(this, questId);
+        sScriptMgr->OnQuestStatusChange(this, quest, oldStatus, QUEST_STATUS_REWARDED);
+    }
+
+    SendQuestGiverStatusMultiple();
+
+    // make full db save
+    SaveToDB(false);
+
+    if (updateVisibility)
+        UpdateObjectVisibility();
+}
+
 // not used in Trinity, but used in scripting code
 uint16 Player::GetReqKillOrCastCurrentCount(uint32 quest_id, int32 entry) const
 {
@@ -16218,6 +16194,23 @@ bool Player::IsQuestObjectiveComplete(uint16 slot, Quest const* quest, QuestObje
     return true;
 }
 
+bool Player::IsQuestObjectiveComplete(uint32 questId, uint32 objectiveId) const
+{
+    Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+    if (!quest)
+        return false;
+
+    uint16 slot = FindQuestSlot(questId);
+    if (slot >= MAX_QUEST_LOG_SIZE)
+        return false;
+
+    QuestObjective const* obj = sObjectMgr->GetQuestObjective(objectiveId);
+    if (!obj)
+        return false;
+
+    return IsQuestObjectiveComplete(slot, quest, *obj);
+}
+
 bool Player::IsQuestObjectiveProgressBarComplete(uint16 slot, Quest const* quest) const
 {
     float progress = 0.0f;
@@ -16566,7 +16559,7 @@ void Player::_LoadBGData(PreparedQueryResult result)
     // SELECT instanceId, team, joinX, joinY, joinZ, joinO, joinMapId, taxiStart, taxiEnd, mountSpell, queueTypeId FROM character_battleground_data WHERE guid = ?
 
     m_bgData.bgInstanceID = fields[0].GetUInt32();
-    m_bgData.bgTeam       = fields[1].GetUInt16();
+    m_bgData.bgTeam       = Team(fields[1].GetUInt16());
     m_bgData.joinPos      = WorldLocation(fields[6].GetUInt16(),    // Map
                                           fields[2].GetFloat(),     // X
                                           fields[3].GetFloat(),     // Y
@@ -20196,29 +20189,17 @@ void Player::SavePositionInDB(WorldLocation const& loc, uint16 zoneId, ObjectGui
     CharacterDatabase.ExecuteOrAppend(trans, stmt);
 }
 
-void Player::SendAttackSwingCantAttack() const
-{
-    SendDirectMessage(WorldPackets::Combat::AttackSwingError(WorldPackets::Combat::AttackSwingError::CantAttack).Write());
-}
-
 void Player::SendAttackSwingCancelAttack() const
 {
     SendDirectMessage(WorldPackets::Combat::CancelCombat().Write());
 }
 
-void Player::SendAttackSwingDeadTarget() const
+void Player::SetAttackSwingError(Optional<AttackSwingErr> err)
 {
-    SendDirectMessage(WorldPackets::Combat::AttackSwingError(WorldPackets::Combat::AttackSwingError::DeadTarget).Write());
-}
+    if (err && err != m_swingErrorMsg)
+        SendDirectMessage(WorldPackets::Combat::AttackSwingError(*err).Write());
 
-void Player::SendAttackSwingNotInRange() const
-{
-    SendDirectMessage(WorldPackets::Combat::AttackSwingError(WorldPackets::Combat::AttackSwingError::NotInRange).Write());
-}
-
-void Player::SendAttackSwingBadFacingAttack() const
-{
-    SendDirectMessage(WorldPackets::Combat::AttackSwingError(WorldPackets::Combat::AttackSwingError::BadFacing).Write());
+    m_swingErrorMsg = err;
 }
 
 void Player::SendAutoRepeatCancel(Unit* target)
@@ -22450,13 +22431,13 @@ void Player::SetBattlegroundEntryPoint()
         m_bgData.joinPos.WorldRelocate(m_homebind);
 }
 
-void Player::SetBGTeam(uint32 team)
+void Player::SetBGTeam(Team team)
 {
     m_bgData.bgTeam = team;
     SetArenaFaction(uint8(team == ALLIANCE ? 1 : 0));
 }
 
-uint32 Player::GetBGTeam() const
+Team Player::GetBGTeam() const
 {
     return m_bgData.bgTeam ? m_bgData.bgTeam : GetTeam();
 }

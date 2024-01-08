@@ -18,6 +18,7 @@
 #include "Creature.h"
 #include "BattlegroundMgr.h"
 #include "CellImpl.h"
+#include "CharmInfo.h"
 #include "CombatPackets.h"
 #include "Containers.h"
 #include "CreatureAI.h"
@@ -829,6 +830,8 @@ void Creature::Update(uint32 diff)
             }
 
             Unit::AIUpdateTick(diff);
+
+            DoMeleeAttackIfReady();
 
             // creature can be dead after UpdateAI call
             // CORPSE/DEAD state will processed at next tick (in other case death timer will be updated unexpectedly)
@@ -2743,8 +2746,8 @@ bool Creature::LoadCreaturesAddon()
         SetVisibilityDistanceOverride(creatureAddon->visibilityDistanceType);
 
     // Load Path
-    if (creatureAddon->path_id != 0)
-        _waypointPathId = creatureAddon->path_id;
+    if (creatureAddon->PathId != 0)
+        _waypointPathId = creatureAddon->PathId;
 
     if (!creatureAddon->auras.empty())
     {
@@ -3182,6 +3185,11 @@ std::string Creature::GetNameForLocaleIdx(LocaleConstant locale) const
     return GetName();
 }
 
+uint8 Creature::GetPetAutoSpellSize() const
+{
+    return MAX_SPELL_CHARM;
+}
+
 uint32 Creature::GetPetAutoSpellOnPos(uint8 pos) const
 {
     if (pos >= MAX_SPELL_CHARM || !m_charmInfo || m_charmInfo->GetCharmSpell(pos)->GetType() != ACT_ENABLED)
@@ -3575,7 +3583,7 @@ std::string Creature::GetDebugInfo() const
     std::stringstream sstr;
     sstr << Unit::GetDebugInfo() << "\n"
         << "AIName: " << GetAIName() << " ScriptName: " << GetScriptName()
-        << " WaypointPath: " << GetWaypointPath() << " SpawnId: " << GetSpawnId();
+        << " WaypointPath: " << GetWaypointPathId() << " SpawnId: " << GetSpawnId();
     return sstr.str();
 }
 

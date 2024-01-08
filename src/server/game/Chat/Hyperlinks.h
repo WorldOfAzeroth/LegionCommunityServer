@@ -153,7 +153,7 @@ namespace Trinity::Hyperlinks
     struct QuestLinkData
     {
         ::Quest const* Quest = nullptr;
-        uint32 ContentTuningId = 0;
+        uint32 SandboxScalingId = 0;
     };
 
     struct SpellLinkData

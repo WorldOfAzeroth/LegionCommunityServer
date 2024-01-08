@@ -321,7 +321,7 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
 
         bool CanRegenerateHealth() const { return !_staticFlags.HasFlag(CREATURE_STATIC_FLAG_5_NO_HEALTH_REGEN) && _regenerateHealth; }
         void SetRegenerateHealth(bool value) { _staticFlags.ApplyFlag(CREATURE_STATIC_FLAG_5_NO_HEALTH_REGEN, !value); }
-        virtual uint8 GetPetAutoSpellSize() const { return MAX_SPELL_CHARM; }
+        virtual uint8 GetPetAutoSpellSize() const;
         virtual uint32 GetPetAutoSpellOnPos(uint8 pos) const;
         float GetPetChaseDistance() const;
 
@@ -338,7 +338,7 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
         void GetTransportHomePosition(float& x, float& y, float& z, float& ori) const { m_transportHomePosition.GetPosition(x, y, z, ori); }
         Position const& GetTransportHomePosition() const { return m_transportHomePosition; }
 
-        uint32 GetWaypointPath() const { return _waypointPathId; }
+        uint32 GetWaypointPathId() const { return _waypointPathId; }
         void LoadPath(uint32 pathid) { _waypointPathId = pathid; }
 
         // nodeId, pathId

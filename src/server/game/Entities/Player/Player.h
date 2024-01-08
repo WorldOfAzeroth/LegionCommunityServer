@@ -1002,7 +1002,7 @@ class Player;
 struct BGData
 {
     BGData() : bgInstanceID(0), bgTypeID(BATTLEGROUND_TYPE_NONE), bgAfkReportedCount(0), bgAfkReportedTimer(0),
-        bgTeam(0), mountSpell(0), queueId(BATTLEGROUND_QUEUE_NONE) { ClearTaxiPath(); }
+        bgTeam(TEAM_OTHER), mountSpell(0), queueId(BATTLEGROUND_QUEUE_NONE) { ClearTaxiPath(); }
 
     uint32 bgInstanceID;                    ///< This variable is set to bg->m_InstanceID,
                                             ///  when player is teleported to BG - (it is battleground's GUID)
@@ -1012,7 +1012,7 @@ struct BGData
     uint8              bgAfkReportedCount;
     time_t             bgAfkReportedTimer;
 
-    uint32 bgTeam;                          ///< What side the player will be added to
+    Team bgTeam;                          ///< What side the player will be added to
 
     uint32 mountSpell;
     uint32 taxiPath[2];
@@ -1592,6 +1592,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void RemoveRewardedQuest(uint32 questId, bool update = true);
         void SendQuestUpdate(uint32 questId);
         QuestGiverStatus GetQuestDialogStatus(Object const* questGiver) const;
+        void SkipQuests(std::vector<uint32> const& questIds); // removes quest from log, flags rewarded, but does not give any rewards to player
 
         void SetDailyQuestStatus(uint32 quest_id);
         bool IsDailyQuestDone(uint32 quest_id) const;
@@ -1645,6 +1646,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void SetQuestObjectiveData(QuestObjective const& objective, int32 data);
         bool IsQuestObjectiveCompletable(uint16 slot, Quest const* quest, QuestObjective const& objective) const;
         bool IsQuestObjectiveComplete(uint16 slot, Quest const* quest, QuestObjective const& objective) const;
+        bool IsQuestObjectiveComplete(uint32 questId, uint32 objectiveId) const;
         bool IsQuestObjectiveProgressBarComplete(uint16 slot, Quest const* quest) const;
         void SendQuestComplete(uint32 questId) const;
         void SendQuestReward(Quest const* quest, Creature const* questGiver, uint32 xp, bool hideChatMessage) const;
@@ -2072,11 +2074,8 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void DestroyForPlayer(Player* target) const override;
 
         // notifiers
-        void SendAttackSwingCantAttack() const;
         void SendAttackSwingCancelAttack() const;
-        void SendAttackSwingDeadTarget() const;
-        void SendAttackSwingNotInRange() const;
-        void SendAttackSwingBadFacingAttack() const;
+        void SetAttackSwingError(Optional<AttackSwingErr> err);
         void SendAutoRepeatCancel(Unit* target);
         void SendExplorationExperience(uint32 Area, uint32 Experience) const;
 
@@ -2179,10 +2178,10 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void AddExploredZones(uint32 pos, uint64 mask) { SetFlag64(PLAYER_EXPLORED_ZONES_1 + pos, mask); }
         void RemoveExploredZones(uint32 pos, uint64 mask) { RemoveFlag64(PLAYER_EXPLORED_ZONES_1 + pos, mask); }
 
-        static uint32 TeamForRace(uint8 race);
+        static Team TeamForRace(uint8 race);
         static TeamId TeamIdForRace(uint8 race);
         static uint8 GetFactionGroupForRace(uint8 race);
-        uint32 GetTeam() const { return m_team; }
+        Team GetTeam() const { return m_team; }
         TeamId GetTeamId() const { return m_team == ALLIANCE ? TEAM_ALLIANCE : TEAM_HORDE; }
         void SetFactionForRace(uint8 race);
 
@@ -2365,8 +2364,8 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         WorldLocation const& GetBattlegroundEntryPoint() const { return m_bgData.joinPos; }
         void SetBattlegroundEntryPoint();
 
-        void SetBGTeam(uint32 team);
-        uint32 GetBGTeam() const;
+        void SetBGTeam(Team team);
+        Team GetBGTeam() const;
 
         void LeaveBattleground(bool teleportToEntryPoint = true);
         bool CanJoinToBattleground(BattlegroundTemplate const* bg) const;
@@ -2889,7 +2888,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
 
         void outDebugValues() const;
 
-        uint32 m_team;
+        Team m_team;
         uint32 m_nextSave;
         bool m_customizationsChanged;
         std::array<ChatFloodThrottle, ChatFloodThrottle::MAX> m_chatFloodData;
@@ -2999,7 +2998,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         bool m_canBlock;
         bool m_canTitanGrip;
         uint32 m_titanGripPenaltySpellId;
-        uint8 m_swingErrorMsg;
+        Optional<AttackSwingErr> m_swingErrorMsg;
 
         // Social
         PlayerSocial* m_social;

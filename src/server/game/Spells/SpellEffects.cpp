@@ -22,6 +22,7 @@
 #include "BattlegroundMgr.h"
 #include "BattlePetMgr.h"
 #include "CellImpl.h"
+#include "CharmInfo.h"
 #include "CombatLogPackets.h"
 #include "CombatPackets.h"
 #include "Common.h"
@@ -1021,7 +1022,12 @@ void Spell::EffectSendEvent()
 
     TC_LOG_DEBUG("spells", "Spell ScriptStart {} for spellid {} in EffectSendEvent ", effectInfo->MiscValue, m_spellInfo->Id);
 
-    GameEvents::Trigger(effectInfo->MiscValue, m_caster, target);
+    if (ZoneScript* zoneScript = m_caster->GetZoneScript())
+        zoneScript->ProcessEvent(target, effectInfo->MiscValue, m_caster);
+    else if (InstanceScript* instanceScript = m_caster->GetInstanceScript())    // needed in case Player is the caster
+        instanceScript->ProcessEvent(target, effectInfo->MiscValue, m_caster);
+
+    m_caster->GetMap()->ScriptsStart(sEventScripts, effectInfo->MiscValue, m_caster, target);
 }
 
 void Spell::EffectPowerBurn()
@@ -1469,8 +1475,8 @@ void Spell::EffectOpenLock()
             return;
 
         // Arathi Basin banner opening. /// @todo Verify correctness of this check
-        if ((goInfo->type == GAMEOBJECT_TYPE_BUTTON && goInfo->button.noDamageImmune) ||
-            (goInfo->type == GAMEOBJECT_TYPE_GOOBER && goInfo->goober.requireLOS))
+        if (gameObjTarget->GetMapId() != 30 && ((goInfo->type == GAMEOBJECT_TYPE_BUTTON && goInfo->button.noDamageImmune) ||
+            (goInfo->type == GAMEOBJECT_TYPE_GOOBER && goInfo->goober.requireLOS)))
         {
             //CanUseBattlegroundObject() already called in CheckCast()
             // in battleground check

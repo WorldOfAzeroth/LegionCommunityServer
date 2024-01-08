@@ -222,7 +222,6 @@ struct npc_wg_spirit_guide : public ScriptedAI
                         WorldLocation loc(safeLoc->MapID, safeLoc->GetPositionX(), safeLoc->GetPositionY(), safeLoc->GetPositionZ(), safeLoc->GetOrientation());
                         player->TeleportTo(loc);
                     }
-
         }
         return true;
     }
@@ -257,8 +256,6 @@ struct npc_wg_queue : public ScriptedAI
             FrostArmor_Timer = 180000;
         }
         else FrostArmor_Timer -= diff;
-
-        DoMeleeAttackIfReady();
     }
 
     bool OnGossipHello(Player* player) override

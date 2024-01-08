@@ -17,12 +17,14 @@
 
 #include "CreatureAIImpl.h"
 #include "ScriptMgr.h"
+#include "CharmInfo.h"
 #include "CombatAI.h"
 #include "CreatureTextMgr.h"
 #include "G3DPosition.hpp"
 #include "GameObject.h"
 #include "GameObjectAI.h"
 #include "Log.h"
+#include "Map.h"
 #include "MotionMaster.h"
 #include "MoveSplineInit.h"
 #include "ObjectAccessor.h"
@@ -31,6 +33,7 @@
 #include "Player.h"
 #include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
+#include "SpellMgr.h"
 #include "SpellScript.h"
 #include "SpellInfo.h"
 #include "TemporarySummon.h"
@@ -280,8 +283,6 @@ public:
                         break;
                     }
                 }
-
-                DoMeleeAttackIfReady();
                 break;
             default:
                 break;
@@ -1067,31 +1068,22 @@ struct npc_scarlet_ghoul : public ScriptedAI
                 Player* plrOwner = owner->ToPlayer();
                 if (plrOwner && plrOwner->IsInCombat())
                 {
-                    if (plrOwner->getAttackerForHelper() && plrOwner->getAttackerForHelper()->GetEntry() == NPC_GHOSTS)
-                        AttackStart(plrOwner->getAttackerForHelper());
+                    Unit* newTarget = plrOwner->getAttackerForHelper();
+                    if (newTarget && newTarget->GetEntry() == NPC_GHOSTS)
+                        AttackStart(newTarget);
                     else
                         FindMinions(owner);
                 }
             }
         }
 
-        if (!UpdateVictim() || !me->GetVictim())
+        if (!UpdateVictim())
             return;
+    }
 
-        //ScriptedAI::UpdateAI(diff);
-        //Check if we have a current target
-        if (me->EnsureVictim()->GetEntry() == NPC_GHOSTS)
-        {
-            if (me->isAttackReady())
-            {
-                //If we are within range melee the target
-                if (me->IsWithinMeleeRange(me->GetVictim()))
-                {
-                    me->AttackerStateUpdate(me->GetVictim());
-                    me->resetAttackTimer();
-                }
-            }
-        }
+    bool CanAIAttack(Unit const* target) const override
+    {
+        return target->GetEntry() == NPC_GHOSTS;
     }
 };
 
@@ -1257,8 +1249,6 @@ struct npc_hearthglen_crusader : public ScriptedAI
 
         if (!me->IsWithinCombatRange(me->GetVictim(), _minimumRange))
             DoSpellAttackIfReady(me->m_spells[0]);
-        else
-            DoMeleeAttackIfReady();
     }
 
     void WaypointPathEnded(uint32 /*nodeId*/, uint32 pathId) override
@@ -1334,4 +1324,5 @@ void AddSC_the_scarlet_enclave_c1()
     RegisterCreatureAI(npc_scarlet_ghoul);
     RegisterSpellScript(spell_gift_of_the_harvester);
     RegisterSpellScript(spell_chapter1_runeforging_credit);
+    RegisterCreatureAI(npc_hearthglen_crusader);
 }

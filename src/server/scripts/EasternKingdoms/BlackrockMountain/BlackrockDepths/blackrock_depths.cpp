@@ -372,9 +372,9 @@ public:
         return GetBlackrockDepthsAI<npc_phalanxAI>(creature);
     }
 
-    struct npc_phalanxAI : public ScriptedAI
+    struct npc_phalanxAI : public BossAI
     {
-        npc_phalanxAI(Creature* creature) : ScriptedAI(creature)
+        npc_phalanxAI(Creature* creature) : BossAI(creature, BOSS_PHALANX)
         {
             Initialize();
         }
@@ -392,6 +392,7 @@ public:
 
         void Reset() override
         {
+            _Reset();
             Initialize();
         }
 
@@ -424,8 +425,6 @@ public:
                 DoCastVictim(SPELL_MIGHTYBLOW);
                 MightyBlow_Timer = 10000;
             } else MightyBlow_Timer -= diff;
-
-            DoMeleeAttackIfReady();
         }
     };
 };
