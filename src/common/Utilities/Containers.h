@@ -23,6 +23,7 @@
 #include "Random.h"
 #include <algorithm>
 #include <iterator>
+#include <span>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -122,7 +123,7 @@ namespace Trinity
          * Note: container cannot be empty
          */
         template<class C>
-        inline auto SelectRandomWeightedContainerElement(C const& container, std::vector<double> const& weights) -> decltype(std::begin(container))
+        inline auto SelectRandomWeightedContainerElement(C const& container, std::span<double> const& weights) -> decltype(std::begin(container))
         {
             auto it = std::begin(container);
             std::advance(it, urandweighted(weights.size(), weights.data()));

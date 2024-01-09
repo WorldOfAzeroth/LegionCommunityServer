@@ -2956,6 +2956,72 @@ struct ItemXBonusTreeLoadInfo
     }
 };
 
+struct JournalEncounterLoadInfo
+{
+    static DB2LoadInfo const* Instance()
+    {
+        static DB2FieldMeta const fields[] =
+        {
+            { false, FT_INT, "ID" },
+            { false, FT_STRING, "Name" },
+            { false, FT_STRING, "Description" },
+            { false, FT_FLOAT, "Map_1" },
+            { false, FT_FLOAT, "Map_2" },
+            { false, FT_SHORT, "DungeonMapID" },
+            { false, FT_SHORT, "WorldMapAreaID" },
+            { false, FT_SHORT, "FirstSectionID" },
+            { false, FT_SHORT, "JournalInstanceID" },
+            { false, FT_BYTE, "DifficultyMask" },
+            { false, FT_BYTE, "Flags" },
+            { false, FT_INT, "OrderIndex" },
+            { false, FT_INT, "MapDisplayConditionID" },
+        };
+        static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, JournalEncounterMeta::Instance(), HOTFIX_SEL_JOURNAL_ENCOUNTER);
+        return &loadInfo;
+    }
+};
+
+struct JournalEncounterItemLoadInfo
+{
+    static DB2LoadInfo const* Instance()
+    {
+        static DB2FieldMeta const fields[] =
+        {
+            { false, FT_INT, "ItemID" },
+            { false, FT_SHORT, "JournalEncounterID" },
+            { false, FT_BYTE, "DifficultyMask" },
+            { false, FT_BYTE, "FactionMask" },
+            { false, FT_BYTE, "Flags" },
+            { false, FT_INT, "ID" },
+        };
+        static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, JournalEncounterItemMeta::Instance(), HOTFIX_SEL_JOURNAL_ENCOUNTER_ITEM);
+        return &loadInfo;
+    }
+};
+
+struct JournalInstanceLoadInfo
+{
+    static DB2LoadInfo const* Instance()
+    {
+        static DB2FieldMeta const fields[] =
+        {
+            { false, FT_STRING, "Name" },
+            { false, FT_STRING, "Description" },
+            { false, FT_INT, "ButtonFileDataID" },
+            { false, FT_INT, "ButtonSmallFileDataID" },
+            { false, FT_INT, "BackgroundFileDataID" },
+            { false, FT_INT, "LoreFileDataID" },
+            { false, FT_SHORT, "MapID" },
+            { false, FT_SHORT, "AreaID" },
+            { false, FT_BYTE, "OrderIndex" },
+            { false, FT_BYTE, "Flags" },
+            { false, FT_INT, "ID" },
+        };
+        static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, JournalInstanceMeta::Instance(), HOTFIX_SEL_JOURNAL_INSTANCE);
+        return &loadInfo;
+    }
+};
+
 struct KeychainLoadInfo
 {
     static DB2LoadInfo const* Instance()
@@ -5428,6 +5494,45 @@ struct TransportRotationLoadInfo
             { true, FT_INT, "GameObjectsID" },
         };
         static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, TransportRotationMeta::Instance(), HOTFIX_SEL_TRANSPORT_ROTATION);
+        return &loadInfo;
+    }
+};
+
+
+struct UnitConditionLoadInfo
+{
+    static DB2LoadInfo const* Instance()
+    {
+        static DB2FieldMeta const fields[] =
+        {
+            { true, FT_INT, "ID" },
+            { true, FT_INT, "Value1" },
+            { true, FT_INT, "Value2" },
+            { true, FT_INT, "Value3" },
+            { true, FT_INT, "Value4" },
+            { true, FT_INT, "Value5" },
+            { true, FT_INT, "Value6" },
+            { true, FT_INT, "Value7" },
+            { true, FT_INT, "Value8" },
+            { false, FT_BYTE, "Flags" },
+            { false, FT_BYTE, "Variable1" },
+            { false, FT_BYTE, "Variable2" },
+            { false, FT_BYTE, "Variable3" },
+            { false, FT_BYTE, "Variable4" },
+            { false, FT_BYTE, "Variable5" },
+            { false, FT_BYTE, "Variable6" },
+            { false, FT_BYTE, "Variable7" },
+            { false, FT_BYTE, "Variable8" },
+            { false, FT_BYTE, "Op1" },
+            { false, FT_BYTE, "Op2" },
+            { false, FT_BYTE, "Op3" },
+            { false, FT_BYTE, "Op4" },
+            { false, FT_BYTE, "Op5" },
+            { false, FT_BYTE, "Op6" },
+            { false, FT_BYTE, "Op7" },
+            { false, FT_BYTE, "Op8" },
+        };
+        static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, UnitConditionMeta::Instance(), HOTFIX_SEL_UNIT_CONDITION);
         return &loadInfo;
     }
 };

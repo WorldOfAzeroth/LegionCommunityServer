@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -142,6 +142,9 @@ TC_GAME_API extern DB2Storage<ItemSpecOverrideEntry>                sItemSpecOve
 TC_GAME_API extern DB2Storage<ItemUpgradeEntry>                     sItemUpgradeStore;
 TC_GAME_API extern DB2Storage<LanguageWordsEntry>                   sLanguageWordsStore;
 TC_GAME_API extern DB2Storage<LanguagesEntry>                       sLanguagesStore;
+TC_GAME_API extern DB2Storage<JournalEncounterEntry>                sJournalEncounterStore;
+TC_GAME_API extern DB2Storage<JournalEncounterItemEntry>            sJournalEncounterItemStore;
+TC_GAME_API extern DB2Storage<JournalInstanceEntry>                 sJournalInstanceStore;
 TC_GAME_API extern DB2Storage<LFGDungeonsEntry>                     sLFGDungeonsStore;
 TC_GAME_API extern DB2Storage<LightEntry>                           sLightStore;
 TC_GAME_API extern DB2Storage<LiquidTypeEntry>                      sLiquidTypeStore;
@@ -220,6 +223,7 @@ TC_GAME_API extern DB2Storage<TransmogSetGroupEntry>                sTransmogSet
 TC_GAME_API extern DB2Storage<TransmogSetItemEntry>                 sTransmogSetItemStore;
 TC_GAME_API extern DB2Storage<TransportAnimationEntry>              sTransportAnimationStore;
 TC_GAME_API extern DB2Storage<TransportRotationEntry>               sTransportRotationStore;
+TC_GAME_API extern DB2Storage<UnitConditionEntry>                   sUnitConditionStore;
 TC_GAME_API extern DB2Storage<UnitPowerBarEntry>                    sUnitPowerBarStore;
 TC_GAME_API extern DB2Storage<VehicleEntry>                         sVehicleStore;
 TC_GAME_API extern DB2Storage<VehicleSeatEntry>                     sVehicleSeatStore;
@@ -265,6 +269,50 @@ class TC_GAME_API DB2Manager
 public:
     DEFINE_DB2_SET_COMPARATOR(FriendshipRepReactionEntry)
     DEFINE_DB2_SET_COMPARATOR(MountTypeXCapabilityEntry)
+
+    struct HotfixId
+    {
+        int32 PushID = 0;
+        uint32 UniqueID = 0;
+
+        friend std::strong_ordering operator<=>(HotfixId const& left, HotfixId const& right) = default;
+    };
+
+    struct HotfixRecord
+    {
+        enum class Status : uint8
+        {
+            NotSet          = 0,
+            Valid           = 1,
+            RecordRemoved   = 2,
+            Invalid         = 3,
+            NotPublic       = 4
+        };
+
+        uint32 TableHash = 0;
+        int32 RecordID = 0;
+        HotfixId ID;
+        Status HotfixStatus = Status::Invalid;
+
+        friend std::strong_ordering operator<=>(HotfixRecord const& left, HotfixRecord const& right)
+        {
+            if (auto cmp = left.ID <=> right.ID; std::is_neq(cmp))
+                return cmp;
+            if (auto cmp = left.TableHash <=> right.TableHash; std::is_neq(cmp))
+                return cmp;
+            if (auto cmp = left.RecordID <=> right.RecordID; std::is_neq(cmp))
+                return cmp;
+            return std::strong_ordering::equal;
+        }
+    };
+
+    struct HotfixOptionalData
+    {
+        uint32 Key = 0;
+        std::vector<uint8> Data;
+    };
+
+    using HotfixContainer = std::map<int32, std::vector<HotfixRecord>>;
 
     using FriendshipRepReactionSet = std::set<FriendshipRepReactionEntry const*, FriendshipRepReactionEntryComparator>;
     typedef std::vector<ItemBonusEntry const*> ItemBonusList;
@@ -315,6 +363,9 @@ public:
     ItemModifiedAppearanceEntry const* GetDefaultItemModifiedAppearance(uint32 itemId) const;
     std::vector<ItemSetSpellEntry const*> const* GetItemSetSpells(uint32 itemSetId) const;
     std::vector<ItemSpecOverrideEntry const*> const* GetItemSpecOverrides(uint32 itemId) const;
+    JournalInstanceEntry const* GetJournalInstanceByMapId(uint32 mapId);
+    std::vector<JournalEncounterItemEntry const*> const* GetJournalItemsByEncounter(uint32 encounterId);
+    std::vector<JournalEncounterEntry const*> const* GetJournalEncounterByJournalInstanceId(uint32 instanceId);
     static LFGDungeonsEntry const* GetLfgDungeon(uint32 mapId, Difficulty difficulty);
     static uint32 GetDefaultMapLight(uint32 mapId);
     static uint32 GetLiquidFlags(uint32 liquidType);

@@ -31,7 +31,7 @@
 #include "UpdateData.h"
 #include "WorldSession.h"
 
-Conversation::Conversation() : WorldObject(false), _duration(0), _textureKitId(0)
+Conversation::Conversation() : WorldObject(false), _duration(0)
 {
     m_objectType |= TYPEMASK_CONVERSATION;
     m_objectTypeId = TYPEID_CONVERSATION;
@@ -40,7 +40,6 @@ Conversation::Conversation() : WorldObject(false), _duration(0), _textureKitId(0
 
     m_valuesCount = CONVERSATION_END;
     _dynamicValuesCount = CONVERSATION_DYNAMIC_END;
-    _lastLineEndTimes.fill(Milliseconds::zero());
 }
 
 Conversation::~Conversation() = default;
@@ -177,21 +176,21 @@ void Conversation::Create(ObjectGuid::LowType lowGuid, uint32 conversationEntry,
     for (ConversationActorTemplate const& actor : conversationTemplate->Actors)
         std::visit(ConversationActorFillVisitor(this, creator, map, actor), actor.Data);
 
-    std::vector<UF::ConversationLine> lines;
+    std::vector<ConversationLine> lines;
     for (ConversationLineTemplate const* line : conversationTemplate->Lines)
     {
         if (!sConditionMgr->IsObjectMeetingNotGroupedConditions(CONDITION_SOURCE_TYPE_CONVERSATION_LINE, line->Id, creator))
             continue;
 
-        lines.emplace_back();
+        ConversationLineEntry const* convoLine = sConversationLineStore.LookupEntry(line->Id); // never null for conversationTemplate->Lines
 
-        UF::ConversationLine& lineField = lines.back();
+        ConversationLine& lineField = lines.emplace_back();
         lineField.ConversationLineID = line->Id;
         lineField.UiCameraID = line->UiCameraID;
         lineField.ActorIndex = line->ActorIdx;
         lineField.Flags = line->Flags;
+        lineField.ChatType = line->ChatType;
 
-        ConversationLineEntry const* convoLine = sConversationLineStore.LookupEntry(line->Id); // never null for conversationTemplate->Lines
         for (LocaleConstant locale = LOCALE_enUS; locale < TOTAL_LOCALES; locale = LocaleConstant(locale + 1))
         {
             if (locale == LOCALE_none)
@@ -200,6 +199,9 @@ void Conversation::Create(ObjectGuid::LowType lowGuid, uint32 conversationEntry,
             _lineStartTimes[{ locale, line->Id }] = _lastLineEndTimes[locale];
             if (locale == DEFAULT_LOCALE)
                 lineField.StartTime = _lastLineEndTimes[locale].count();
+
+            if (int32 const* broadcastTextDuration = sObjectMgr->GetBroadcastTextDuration(convoLine->BroadcastTextID, locale))
+                _lastLineEndTimes[locale] += Milliseconds(*broadcastTextDuration);
 
             _lastLineEndTimes[locale] += Milliseconds(convoLine->AdditionalDuration);
         }
@@ -213,18 +215,17 @@ void Conversation::Create(ObjectGuid::LowType lowGuid, uint32 conversationEntry,
     _duration += 10s;
 
     sScriptMgr->OnConversationCreate(this, creator);
-
 }
 
 bool Conversation::Start()
 {
-    const DynamicFieldStructuredView<UF::ConversationLine> &view = GetDynamicStructuredValues<UF::ConversationLine>(
+    const DynamicFieldStructuredView<ConversationLineTemplate> &view = GetDynamicStructuredValues<ConversationLineTemplate>(
             CONVERSATION_DYNAMIC_FIELD_LINES);
     for (const auto &line : view) {
-        UF::ConversationActor const* actor = GetDynamicStructuredValue<UF::ConversationActor>(CONVERSATION_DYNAMIC_FIELD_ACTORS, line.ActorIndex);
+        ConversationActor const* actor = GetDynamicStructuredValue<ConversationActor>(CONVERSATION_DYNAMIC_FIELD_ACTORS, line.ActorIdx);
         if (!actor || (!actor->CreatureID && actor->ActorGUID.IsEmpty() && !actor->NoActorObject))
         {
-            TC_LOG_ERROR("entities.conversation", "Failed to create conversation (Id: {}) due to missing actor (Idx: {}).", GetEntry(), line.ActorIndex);
+            TC_LOG_ERROR("entities.conversation", "Failed to create conversation (Id: {}) due to missing actor (Idx: {}).", GetEntry(), line.ActorIdx);
             return false;
         }
     }
@@ -238,7 +239,7 @@ bool Conversation::Start()
 
 void Conversation::AddActor(int32 actorId, uint32 actorIdx, ObjectGuid const& actorGuid)
 {
-    UF::ConversationActor actorField;
+    ConversationActor actorField;
     actorField.ActorGUID = actorGuid;
     actorField.Id = actorId;
     actorField.Type = AsUnderlyingType(ConversationActorType::WorldObject);
@@ -247,7 +248,7 @@ void Conversation::AddActor(int32 actorId, uint32 actorIdx, ObjectGuid const& ac
 
 void Conversation::AddActor(int32 actorId, uint32 actorIdx, ConversationActorType type, uint32 creatureId, uint32 creatureDisplayInfoId)
 {
-    UF::ConversationActor actorField;
+    ConversationActor actorField;
     actorField.CreatureID = creatureId;
     actorField.CreatureDisplayInfoID = creatureDisplayInfoId;
     actorField.ActorGUID = ObjectGuid::Empty;
@@ -276,7 +277,7 @@ int32 Conversation::GetLineDuration(LocaleConstant locale, int32 lineId)
         return 0;
     }
 
-    int32 const* textDuration = sDB2Manager.GetBroadcastTextDuration(convoLine->BroadcastTextID, locale);
+    int32 const* textDuration = sObjectMgr->GetBroadcastTextDuration(convoLine->BroadcastTextID, locale);
     if (!textDuration)
         return 0;
 
@@ -304,12 +305,13 @@ LocaleConstant Conversation::GetPrivateObjectOwnerLocale() const
 
 Unit* Conversation::GetActorUnit(uint32 actorIdx) const
 {
-    if (m_conversationData->Actors.size() <= actorIdx)
+    const ConversationActor *pActor = GetDynamicStructuredValue<ConversationActor>(CONVERSATION_DYNAMIC_FIELD_ACTORS, actorIdx);
+    if (!pActor)
     {
         TC_LOG_ERROR("entities.conversation", "Conversation::GetActorUnit: Tried to access invalid actor idx {} (Conversation ID: {}).", actorIdx, GetEntry());
         return nullptr;
     }
-    return ObjectAccessor::GetUnit(*this, m_conversationData->Actors[actorIdx].ActorGUID);
+    return ObjectAccessor::GetUnit(*this, pActor->ActorGUID);
 }
 
 Creature* Conversation::GetActorCreature(uint32 actorIdx) const

@@ -107,7 +107,7 @@ WorldPacket const* WorldPackets::Battleground::PVPLogData::Write()
     _worldPacket.WriteBit(Ratings.has_value());
     _worldPacket.WriteBit(Winner.has_value());
     _worldPacket << uint32(Players.size());
-    _worldPacket.append(PlayerCount, 2);
+    _worldPacket.append(PlayerCount.data(), PlayerCount.size());
 
     if (Ratings.has_value())
         _worldPacket << *Ratings;

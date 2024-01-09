@@ -258,9 +258,9 @@ void WorldSession::HandlePVPLogDataOpcode(WorldPackets::Battleground::PVPLogData
     if (bg->isArena())
         return;
 
-    WorldPackets::Battleground::PVPMatchStatisticsMessage pvpMatchStatistics;
-    bg->BuildPvPLogDataPacket(pvpMatchStatistics.Data);
-    SendPacket(pvpMatchStatistics.Write());
+    WorldPackets::Battleground::PVPLogData pvpLogData;
+    bg->BuildPvPLogDataPacket(pvpLogData);
+    SendPacket(pvpLogData.Write());
 }
 
 void WorldSession::HandleBattlefieldListOpcode(WorldPackets::Battleground::BattlefieldListRequest& battlefieldList)

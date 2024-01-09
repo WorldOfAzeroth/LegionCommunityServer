@@ -89,7 +89,7 @@ uint32 BattlegroundScore::GetAttr(uint8 index) const
     return itr->second;
 }
 
-void BattlegroundScore::BuildPvPLogPlayerDataPacket(WorldPackets::Battleground::PVPMatchStatistics::PVPMatchPlayerStatistics& playerData) const
+void BattlegroundScore::BuildPvPLogPlayerDataPacket(WorldPackets::Battleground::PVPLogData::PlayerData& playerData) const
 {
     playerData.PlayerGUID = PlayerGuid;
     playerData.Kills = KillingBlows;
@@ -118,7 +118,7 @@ void BattlegroundScore::BuildPvPLogPlayerDataPacket(WorldPackets::Battleground::
         playerData.MmrChange = int32(PostMatchMMR) - PreMatchMMR;
 
     for (const auto& [pvpStatID, value] : PvpStats)
-        playerData.Stats.emplace_back(pvpStatID, value);
+        playerData.Stats.push_back(value);
 }
 
 std::string BattlegroundScore::ToString() const

@@ -46,7 +46,7 @@ namespace WorldPackets
 {
     namespace Battleground
     {
-        struct PVPMatchStatistics;
+        class PVPLogData;
         struct BattlegroundPlayerPosition;
     }
 
@@ -381,7 +381,7 @@ class TC_GAME_API Battleground : public ZoneScript
         Group* GetBgRaid(uint32 TeamID) const { return TeamID == ALLIANCE ? m_BgRaids[TEAM_ALLIANCE] : m_BgRaids[TEAM_HORDE]; }
         void SetBgRaid(uint32 TeamID, Group* bg_raid);
 
-        virtual void BuildPvPLogDataPacket(WorldPackets::Battleground::PVPMatchStatistics& pvpLogData) const;
+        virtual void BuildPvPLogDataPacket(WorldPackets::Battleground::PVPLogData& pvpLogData) const;
 
         BattlegroundScore const* GetBattlegroundScore(Player* player) const;
 

@@ -56,13 +56,13 @@ INSERT INTO `conditions` (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry
 -- Quest stuff
 DELETE FROM `quest_details` WHERE `ID`=38759;
 INSERT INTO `quest_details` (`ID`, `Emote1`, `Emote2`, `Emote3`, `Emote4`, `EmoteDelay1`, `EmoteDelay2`, `EmoteDelay3`, `EmoteDelay4`, `VerifiedBuild`) VALUES
-(38759, 0, 0, 0, 0, 0, 0, 0, 0, 51536); -- Set Them Free
+(38759, 0, 0, 0, 0, 0, 0, 0, 0, 25549); -- Set Them Free
 
-UPDATE `quest_details` SET `VerifiedBuild`=51536 WHERE `ID`=39049;
+UPDATE `quest_details` SET `VerifiedBuild`=25549 WHERE `ID`=39049;
 
 DELETE FROM `creature_queststarter` WHERE (`id`=94410 AND `quest`=38759);
-INSERT INTO `creature_queststarter` (`id`, `quest`, `VerifiedBuild`) VALUES
-(94410, 38759, 51536); -- Set Them Free offered Allari the Souleater
+INSERT INTO `creature_queststarter` (`id`, `quest`) VALUES
+(94410, 38759); -- Set Them Free offered Allari the Souleater
 
 DELETE FROM `quest_template_addon` WHERE `ID` = 38759;
 INSERT INTO `quest_template_addon` (`ID`, `MaxLevel`, `AllowableClasses`, `SourceSpellID`, `PrevQuestID`, `NextQuestID`, `ExclusiveGroup`, `BreadcrumbForQuestId`, `RewardMailTemplateID`, `RewardMailDelay`, `RequiredSkillID`, `RequiredSkillPoints`, `RequiredMinRepFaction`, `RequiredMaxRepFaction`, `RequiredMinRepValue`, `RequiredMaxRepValue`, `ProvidedItemCount`, `SpecialFlags`, `ScriptName`) VALUES

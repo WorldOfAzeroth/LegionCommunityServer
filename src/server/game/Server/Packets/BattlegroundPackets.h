@@ -88,8 +88,13 @@ namespace WorldPackets
             void Read() override { }
         };
 
-        struct PVPMatchStatistics
+        class PVPLogData final : public ServerPacket
         {
+        public:
+            PVPLogData() : ServerPacket(SMSG_PVP_LOG_DATA, 0) { }
+
+            WorldPacket const* Write() override;
+
             struct RatingData
             {
                 RatingData() { } // work around clang bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=101227
@@ -108,7 +113,7 @@ namespace WorldPackets
                 uint32 ContributionPoints = 0;
             };
 
-            struct PVPMatchPlayerStatistics
+            struct PlayerData
             {
                 ObjectGuid PlayerGUID;
                 uint32 Kills = 0;
@@ -121,7 +126,7 @@ namespace WorldPackets
                 Optional<int32> RatingChange;
                 Optional<uint32> PreMatchMMR;
                 Optional<int32> MmrChange;
-                std::vector<uint32> Stats;
+                std::vector<int32> Stats;
                 int32 PrimaryTalentTree = 0;
                 int32 PrimaryTalentTreeNameIndex = 0;  // controls which name field from ChrSpecialization.dbc will be sent to lua
                 int32 Race = 0;
@@ -129,19 +134,9 @@ namespace WorldPackets
             };
 
             Optional<uint8> Winner;
-            std::vector<PVPMatchPlayerStatistics> Players;
+            std::vector<PlayerData> Players;
             Optional<RatingData> Ratings;
             std::array<int8, 2> PlayerCount = { };
-        };
-
-        class PVPMatchStatisticsMessage final : public ServerPacket
-        {
-        public:
-            PVPMatchStatisticsMessage() : ServerPacket(SMSG_PVP_LOG_DATA, 0) { }
-
-            WorldPacket const* Write() override;
-
-            PVPMatchStatistics Data;
         };
 
         struct BattlefieldStatusHeader

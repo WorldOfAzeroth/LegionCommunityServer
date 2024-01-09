@@ -1,16 +1,16 @@
 -- Conversation
 DELETE FROM `conversation_actors` WHERE (`ConversationId`=922 AND `Idx` IN (2,1,0));
 INSERT INTO `conversation_actors` (`ConversationId`, `ConversationActorId`, `Idx`, `CreatureId`, `CreatureDisplayInfoId`, `NoActorObject`, `ActivePlayerObject`, `VerifiedBuild`) VALUES
-(922, 50662, 2, 0, 0, 0, 0, 50622), -- Full: 0x203AE8B9205FFD0000062700004BB5D8 Creature/0 R3770/S1575 Map: 1481 (Mardum) Entry: 98292 (Kor'vas Bloodthorn) Low: 4961752
-(922, 48466, 1, 0, 0, 0, 0, 50622), -- Full: 0x203AE8B9205AD4C000062700004BB5D8 Creature/0 R3770/S1575 Map: 1481 (Mardum) Entry: 93011 (Kayn Sunfury) Low: 4961752
-(922, 0, 0, 0, 0, 0, 1, 50622); -- Full: 0x0800040000000000FFFFFFFFFFFFFFFF Player/0 R1/S16777215 Map: 0 (Eastern Kingdoms) Low: 1099511627775
+(922, 50662, 2, 0, 0, 0, 0, 25549), -- Full: 0x203AE8B9205FFD0000062700004BB5D8 Creature/0 R3770/S1575 Map: 1481 (Mardum) Entry: 98292 (Kor'vas Bloodthorn) Low: 4961752
+(922, 48466, 1, 0, 0, 0, 0, 25549), -- Full: 0x203AE8B9205AD4C000062700004BB5D8 Creature/0 R3770/S1575 Map: 1481 (Mardum) Entry: 93011 (Kayn Sunfury) Low: 4961752
+(922, 0, 0, 0, 0, 0, 1, 25549); -- Full: 0x0800040000000000FFFFFFFFFFFFFFFF Player/0 R1/S16777215 Map: 0 (Eastern Kingdoms) Low: 1099511627775
 
 DELETE FROM `conversation_line_template` WHERE `Id` IN (2289, 2288, 2287, 2529);
 INSERT INTO `conversation_line_template` (`Id`, `UiCameraID`, `ActorIdx`, `Flags`, `ChatType`, `VerifiedBuild`) VALUES
-(2289, 0, 2, 0, 1, 50622),
-(2288, 0, 1, 0, 0, 50622),
-(2287, 0, 1, 0, 0, 50622),
-(2529, 0, 0, 0, 0, 50622);
+(2289, 0, 2, 0, 1, 25549),
+(2288, 0, 1, 0, 0, 25549),
+(2287, 0, 1, 0, 0, 25549),
+(2529, 0, 0, 0, 0, 25549);
 
 DELETE FROM `conversation_template` WHERE `Id`=922;
 INSERT INTO `conversation_template` (`Id`, `FirstLineID`, `TextureKitId`, `VerifiedBuild`) VALUES
@@ -19,29 +19,25 @@ INSERT INTO `conversation_template` (`Id`, `FirstLineID`, `TextureKitId`, `Verif
 -- Quest stuff
 DELETE FROM `quest_details` WHERE `ID`=40077;
 INSERT INTO `quest_details` (`ID`, `Emote1`, `Emote2`, `Emote3`, `Emote4`, `EmoteDelay1`, `EmoteDelay2`, `EmoteDelay3`, `EmoteDelay4`, `VerifiedBuild`) VALUES
-(40077, 0, 0, 0, 0, 0, 0, 0, 0, 50622); -- The Invasion Begins
+(40077, 0, 0, 0, 0, 0, 0, 0, 0, 25549); -- The Invasion Begins
 
 DELETE FROM `creature_queststarter` WHERE (`id`=93011 AND `quest`=40077);
-INSERT INTO `creature_queststarter` (`id`, `quest`, `VerifiedBuild`) VALUES
-(93011, 40077, 50622); -- The Invasion Begins offered Kayn Sunfury
+INSERT INTO `creature_queststarter` (`id`, `quest`) VALUES
+(93011, 40077); -- The Invasion Begins offered Kayn Sunfury
 
--- Creature Difficulty
-DELETE FROM `creature_template_difficulty` WHERE (`Entry`=94580 AND `DifficultyID`=0);
-INSERT INTO `creature_template_difficulty` (`Entry`, `DifficultyID`, `LevelScalingDeltaMin`, `LevelScalingDeltaMax`, `ContentTuningID`, `HealthScalingExpansion`, `HealthModifier`, `ManaModifier`, `CreatureDifficultyID`, `TypeFlags`, `TypeFlags2`, `VerifiedBuild`) VALUES
-(94580, 0, 0, 0, 699, 6, 1, 1, 94555, 0, 0, 50622); -- Wrath Warrior
 
 -- Creature Equip
 DELETE FROM `creature_equip_template` WHERE (`CreatureID`=94580 AND `ID`=1);
 INSERT INTO `creature_equip_template` (`CreatureID`, `ID`, `ItemID1`, `AppearanceModID1`, `ItemVisual1`, `ItemID2`, `AppearanceModID2`, `ItemVisual2`, `ItemID3`, `AppearanceModID3`, `ItemVisual3`, `VerifiedBuild`) VALUES
-(94580, 1, 127651, 0, 0, 0, 0, 0, 0, 0, 0, 50622); -- Wrath Warrior
+(94580, 1, 127651, 0, 0, 0, 0, 0, 0, 0, 0, 25549); -- Wrath Warrior
 
 -- Creature Template
 UPDATE `creature_template` SET `faction`=954, `BaseAttackTime`=2000, `unit_flags`=32768, `unit_flags2`=33556480, `unit_flags3`=524288, `flags_extra` = 536870912 WHERE `entry`=94580; -- Wrath Warrior
 
 -- Creature Template Addon
 DELETE FROM `creature_template_addon` WHERE `entry` IN (94580);
-INSERT INTO `creature_template_addon` (`entry`, `path_id`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`) VALUES
-(94580, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 5, ''); -- 94580 (Wrath Warrior)
+INSERT INTO `creature_template_addon` (`entry`, `path_id`, `mount`, `StandState`, `AnimTier`, `VisFlags`, `SheathState`, `PvpFlags`, `emote`, `aiAnimKit`, `movementAnimKit`, `meleeAnimKit`, `visibilityDistanceType`, `auras`, `MountCreatureID`) VALUES
+(94580, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 5, '', 0); -- 94580 (Wrath Warrior)
 
 -- Update Condition for Phase 4899
 DELETE FROM `conditions` WHERE `SourceTypeOrReferenceId`=26 AND `SourceGroup` = 4899 AND `SourceEntry` = 0;
@@ -61,8 +57,8 @@ UPDATE `conversation_template` SET `ScriptName` = 'conversation_the_invasion_beg
 
 -- Serverside Spells
 DELETE FROM `serverside_spell` WHERE `Id` = 175799;
-INSERT INTO `serverside_spell` (`Id`, `DifficultyID`, `CategoryId`, `Dispel`, `Mechanic`, `Attributes`, `AttributesEx`, `AttributesEx2`, `AttributesEx3`, `AttributesEx4`, `AttributesEx5`, `AttributesEx6`, `AttributesEx7`, `AttributesEx8`, `AttributesEx9`, `AttributesEx10`, `AttributesEx11`, `AttributesEx12`, `AttributesEx13`, `AttributesEx14`, `Stances`, `StancesNot`, `Targets`, `TargetCreatureType`, `RequiresSpellFocus`, `FacingCasterFlags`, `CasterAuraState`, `TargetAuraState`, `ExcludeCasterAuraState`, `ExcludeTargetAuraState`, `CasterAuraSpell`, `TargetAuraSpell`, `ExcludeCasterAuraSpell`, `ExcludeTargetAuraSpell`, `CasterAuraType`, `TargetAuraType`, `ExcludeCasterAuraType`, `ExcludeTargetAuraType`, `CastingTimeIndex`, `RecoveryTime`, `CategoryRecoveryTime`, `StartRecoveryCategory`, `StartRecoveryTime`, `InterruptFlags`, `AuraInterruptFlags1`, `AuraInterruptFlags2`, `ChannelInterruptFlags1`, `ChannelInterruptFlags2`, `ProcFlags`, `ProcFlags2`, `ProcChance`, `ProcCharges`, `ProcCooldown`, `ProcBasePPM`, `MaxLevel`, `BaseLevel`, `SpellLevel`, `DurationIndex`, `RangeIndex`, `Speed`, `LaunchDelay`, `StackAmount`, `EquippedItemClass`, `EquippedItemSubClassMask`, `EquippedItemInventoryTypeMask`, `ContentTuningId`, `SpellName`, `ConeAngle`, `ConeWidth`, `MaxTargetLevel`, `MaxAffectedTargets`, `SpellFamilyName`, `SpellFamilyFlags1`, `SpellFamilyFlags2`, `SpellFamilyFlags3`, `SpellFamilyFlags4`, `DmgClass`, `PreventionType`, `AreaGroupId`, `SchoolMask`, `ChargeCategoryId`) VALUES
-(175799, 0, 0, 0, 0, 0, (0x00000004 | 0x00004000), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, (0x00000008), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 13, 0, 0, 0, -1, 0, 0, 0, '(Serverside/Non-DB2) Generic - Track Target in Channel (Not Unique)', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+INSERT INTO `serverside_spell` (`Id`, `DifficultyID`, `CategoryId`, `Dispel`, `Mechanic`, `Attributes`, `AttributesEx`, `AttributesEx2`, `AttributesEx3`, `AttributesEx4`, `AttributesEx5`, `AttributesEx6`, `AttributesEx7`, `AttributesEx8`, `AttributesEx9`, `AttributesEx10`, `AttributesEx11`, `AttributesEx12`, `AttributesEx13`, `AttributesEx14`, `Stances`, `StancesNot`, `Targets`, `TargetCreatureType`, `RequiresSpellFocus`, `FacingCasterFlags`, `CasterAuraState`, `TargetAuraState`, `ExcludeCasterAuraState`, `ExcludeTargetAuraState`, `CasterAuraSpell`, `TargetAuraSpell`, `ExcludeCasterAuraSpell`, `ExcludeTargetAuraSpell`, `CastingTimeIndex`, `RecoveryTime`, `CategoryRecoveryTime`, `StartRecoveryCategory`, `StartRecoveryTime`, `InterruptFlags`, `AuraInterruptFlags1`, `AuraInterruptFlags2`, `ChannelInterruptFlags1`, `ChannelInterruptFlags2`, `ProcFlags`, `ProcChance`, `ProcCharges`, `ProcCooldown`, `ProcBasePPM`, `MaxLevel`, `BaseLevel`, `SpellLevel`, `DurationIndex`, `RangeIndex`, `Speed`, `LaunchDelay`, `StackAmount`, `EquippedItemClass`, `EquippedItemSubClassMask`, `EquippedItemInventoryTypeMask`, `ContentTuningId`, `SpellName`, `ConeAngle`, `ConeWidth`, `MaxTargetLevel`, `MaxAffectedTargets`, `SpellFamilyName`, `SpellFamilyFlags1`, `SpellFamilyFlags2`, `SpellFamilyFlags3`, `SpellFamilyFlags4`, `DmgClass`, `PreventionType`, `AreaGroupId`, `SchoolMask`, `ChargeCategoryId`) VALUES
+(175799, 0, 0, 0, 0, 0, (0x00000004 | 0x00004000), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, (0x00000008), 0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 13, 0, 0, 0, -1, 0, 0, 0, '(Serverside/Non-DB2) Generic - Track Target in Channel (Not Unique)', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 DELETE FROM `serverside_spell_effect` WHERE `SpellID` = 175799;
 INSERT INTO `serverside_spell_effect` (`SpellID`, `EffectIndex`, `DifficultyID`, `Effect`, `EffectAura`, `EffectAmplitude`, `EffectAttributes`, `EffectAuraPeriod`, `EffectBonusCoefficient`, `EffectChainAmplitude`, `EffectChainTargets`, `EffectItemType`, `EffectMechanic`, `EffectPointsPerResource`, `EffectPosFacing`, `EffectRealPointsPerLevel`, `EffectTriggerSpell`, `BonusCoefficientFromAP`, `PvpMultiplier`, `Coefficient`, `Variance`, `ResourceCoefficient`, `GroupSizeBasePointsCoefficient`, `EffectBasePoints`, `EffectMiscValue1`, `EffectMiscValue2`, `EffectRadiusIndex1`, `EffectRadiusIndex2`, `EffectSpellClassMask1`, `EffectSpellClassMask2`, `EffectSpellClassMask3`, `EffectSpellClassMask4`, `ImplicitTarget1`, `ImplicitTarget2`) VALUES
@@ -74,6 +70,10 @@ UPDATE `creature_template` SET `AIName` = 'SmartAI', `ScriptName` = '' WHERE `en
 DELETE FROM `smart_scripts` WHERE `source_type` = 0 AND `entryOrGuid` = @ENTRY;
 INSERT INTO `smart_scripts` (`entryorguid`, `source_type`, `id`, `link`, `event_type`, `event_phase_mask`, `event_chance`, `event_flags`, `event_param1`, `event_param2`, `event_param3`, `event_param4`, `action_type`, `action_param1`, `action_param2`, `action_param3`, `action_param4`, `action_param5`, `action_param6`, `target_type`, `target_param1`, `target_param2`, `target_param3`, `target_x`, `target_y`, `target_z`, `target_o`, `comment`) VALUES 
 (@ENTRY, 0, 0, 0, 63, 0, 100, 0, 0, 0, 0, 0, 53, 1, 9458000, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'On just created - Self: Start path #9458000, run, do not repeat, Passive');
+
+
+ALTER TABLE `world`.`waypoint_data`
+    CHANGE COLUMN `orientation` `orientation` FLOAT NULL DEFAULT '0' ;
 
 -- Waypoints for Illidari
 SET @ENTRY := 98228; -- Jayce Darkweaver

@@ -319,7 +319,7 @@ WorldSafeLocsEntry const* BattlegroundWS::GetClosestGraveyard(Player* player)
 
 WorldSafeLocsEntry const* BattlegroundWS::GetExploitTeleportLocation(Team team)
 {
-    return sObjectMgr->GetWorldSafeLoc(team == ALLIANCE ? WS_EXPLOIT_TELEPORT_LOCATION_ALLIANCE : WS_EXPLOIT_TELEPORT_LOCATION_HORDE);
+    return sDB2Manager.GetWorldSafeLoc(team == ALLIANCE ? WS_EXPLOIT_TELEPORT_LOCATION_ALLIANCE : WS_EXPLOIT_TELEPORT_LOCATION_HORDE);
 }
 
 uint32 BattlegroundWS::GetPrematureWinner()

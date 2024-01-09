@@ -18,7 +18,6 @@
 #include "BattlegroundEY.h"
 #include "AreaTrigger.h"
 #include "BattlegroundMgr.h"
-#include "BattlegroundPackets.h"
 #include "Creature.h"
 #include "GameObject.h"
 #include "Log.h"
@@ -314,7 +313,7 @@ void BattlegroundEY::OnFlagStateChange(GameObject* /*flagInBase*/, FlagState /*o
             ResetAssaultDebuff();
             break;
         case FlagState::Dropped:
-            player->CastSpell(player, SPELL_RECENTLY_DROPPED_NEUTRAL_FLAG, true);
+            //player->CastSpell(player, SPELL_RECENTLY_DROPPED_NEUTRAL_FLAG, true);
             RemoveAssaultDebuffFromPlayer(player);
 
             UpdateWorldState(NETHERSTORM_FLAG_STATE_HORDE, BG_EY_FLAG_STATE_WAIT_RESPAWN);
@@ -386,10 +385,10 @@ bool BattlegroundEY::SetupBattleground()
 {
     UpdateWorldState(EY_MAX_RESOURCES, BG_EY_MAX_TEAM_SCORE);
 
-    _controlZoneHandlers[BG_OBJECT_FR_TOWER_CAP_EY_ENTRY] = std::make_unique<BattlegroundEYControlZoneHandler>(this, FEL_REAVER);
-    _controlZoneHandlers[BG_OBJECT_BE_TOWER_CAP_EY_ENTRY] = std::make_unique<BattlegroundEYControlZoneHandler>(this, BLOOD_ELF);
-    _controlZoneHandlers[BG_OBJECT_DR_TOWER_CAP_EY_ENTRY] = std::make_unique<BattlegroundEYControlZoneHandler>(this, DRAENEI_RUINS);
-    _controlZoneHandlers[BG_OBJECT_HU_TOWER_CAP_EY_ENTRY] = std::make_unique<BattlegroundEYControlZoneHandler>(this, MAGE_TOWER);
+    //_controlZoneHandlers[BG_OBJECT_FR_TOWER_CAP_EY_ENTRY] = std::make_unique<BattlegroundEYControlZoneHandler>(this, FEL_REAVER);
+    //_controlZoneHandlers[BG_OBJECT_BE_TOWER_CAP_EY_ENTRY] = std::make_unique<BattlegroundEYControlZoneHandler>(this, BLOOD_ELF);
+    //_controlZoneHandlers[BG_OBJECT_DR_TOWER_CAP_EY_ENTRY] = std::make_unique<BattlegroundEYControlZoneHandler>(this, DRAENEI_RUINS);
+    //_controlZoneHandlers[BG_OBJECT_HU_TOWER_CAP_EY_ENTRY] = std::make_unique<BattlegroundEYControlZoneHandler>(this, MAGE_TOWER);
 
     return true;
 }
@@ -452,7 +451,7 @@ void BattlegroundEY::EventTeamCapturedPoint(TeamId teamId, uint32 point, GameObj
 
 WorldSafeLocsEntry const* BattlegroundEY::GetExploitTeleportLocation(Team team)
 {
-    return sObjectMgr->GetWorldSafeLoc(team == ALLIANCE ? EY_EXPLOIT_TELEPORT_LOCATION_ALLIANCE : EY_EXPLOIT_TELEPORT_LOCATION_HORDE);
+    return sDB2Manager.GetWorldSafeLoc(team == ALLIANCE ? EY_EXPLOIT_TELEPORT_LOCATION_ALLIANCE : EY_EXPLOIT_TELEPORT_LOCATION_HORDE);
 }
 
 uint32 BattlegroundEY::GetPrematureWinner()

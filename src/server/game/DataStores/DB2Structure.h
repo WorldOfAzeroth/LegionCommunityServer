@@ -1799,6 +1799,47 @@ struct ItemNameDescriptionEntry
     int32 Color;
 };
 
+struct JournalEncounterEntry
+{
+    uint32 ID;
+    LocalizedString Name;
+    LocalizedString Description;
+    DBCPosition2D Map;
+    uint16 DungeonMapID;
+    uint16 WorldMapAreaID;
+    uint16 FirstSectionID;
+    uint16 JournalInstanceID;
+    uint8 DifficultyMask;
+    uint8 Flags;
+    uint32 OrderIndex;
+    uint32 MapDisplayConditionID;
+};
+
+struct JournalEncounterItemEntry
+{
+    uint32 ItemID;
+    uint16 JournalEncounterID;
+    uint8 DifficultyMask;
+    uint8 FactionMask;
+    uint8 Flags;
+    uint32 ID;
+};
+
+struct JournalInstanceEntry
+{
+    LocalizedString Name;
+    LocalizedString Description;
+    uint32 ButtonFileDataID;
+    uint32 ButtonSmallFileDataID;
+    uint32 BackgroundFileDataID;
+    uint32 LoreFileDataID;
+    uint16 MapID;
+    uint16 AreaID;
+    uint8 OrderIndex;
+    uint8 Flags;
+    uint32 ID;
+};
+
 #define KEYCHAIN_SIZE   32
 
 struct KeychainEntry
@@ -2214,30 +2255,30 @@ struct PlayerConditionEntry
     uint8 PowerTypeValue;
     uint32 ModifierTreeID;
     int32 WeaponSubclassMask;
-    uint16 SkillID[4];
-    uint16 MinSkill[4];
-    uint16 MaxSkill[4];
-    uint32 MinFactionID[3];
-    uint8 MinReputation[3];
-    uint16 PrevQuestID[4];
-    uint16 CurrQuestID[4];
-    uint16 CurrentCompletedQuestID[4];
-    int32 SpellID[4];
-    int32 ItemID[4];
-    uint32 ItemCount[4];
-    uint16 Explored[2];
-    uint32 Time[2];
-    int32 AuraSpellID[4];
-    uint8 AuraStacks[4];
-    uint16 Achievement[4];
-    uint8 LfgStatus[4];
-    uint8 LfgCompare[4];
-    uint32 LfgValue[4];
-    uint16 AreaID[4];
-    uint32 CurrencyID[4];
-    uint32 CurrencyCount[4];
-    uint32 QuestKillMonster[6];
-    int32 MovementFlags[2];
+    std::array<uint16, 4> SkillID;
+    std::array<uint16, 4> MinSkill;
+    std::array<uint16, 4> MaxSkill;
+    std::array<uint32, 3> MinFactionID;
+    std::array<uint8, 3> MinReputation;
+    std::array<uint16, 4> PrevQuestID;
+    std::array<uint16, 4> CurrQuestID;
+    std::array<uint16, 4> CurrentCompletedQuestID;
+    std::array<int32, 4> SpellID;
+    std::array<int32, 4> ItemID;
+    std::array<uint32, 4> ItemCount;
+    std::array<uint16, 2> Explored;
+    std::array<uint32, 2> Time;
+    std::array<int32, 4> AuraSpellID;
+    std::array<uint8, 4> AuraStacks;
+    std::array<uint16, 4> Achievement;
+    std::array<uint8, 4> LfgStatus;
+    std::array<uint8, 4> LfgCompare;
+    std::array<uint32, 4> LfgValue;
+    std::array<uint16, 4> AreaID;
+    std::array<uint32, 4> CurrencyID;
+    std::array<uint32, 4> CurrencyCount;
+    std::array<uint32, 6> QuestKillMonster;
+    std::array<int32, 2> MovementFlags;
 };
 
 struct PowerDisplayEntry
@@ -3172,6 +3213,19 @@ struct TransportRotationEntry
     uint32 TimeIndex;
     float Rot[4];
     int32 GameObjectsID;
+};
+
+#define MAX_UNIT_CONDITION_VALUES 8
+
+struct UnitConditionEntry
+{
+    uint32 ID;
+    int32 Value[MAX_UNIT_CONDITION_VALUES];
+    uint8 Flags;
+    uint8 Variable[MAX_UNIT_CONDITION_VALUES];
+    int8 Op[MAX_UNIT_CONDITION_VALUES];
+
+    EnumFlag<UnitConditionFlags> GetFlags() const { return static_cast<UnitConditionFlags>(Flags); }
 };
 
 struct UnitPowerBarEntry

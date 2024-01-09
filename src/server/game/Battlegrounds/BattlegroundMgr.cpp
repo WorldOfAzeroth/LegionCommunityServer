@@ -188,7 +188,7 @@ void BattlegroundMgr::BuildBattlegroundStatusHeader(WorldPackets::Battleground::
     header->Ticket.Id = ticketId;
     header->Ticket.Type = WorldPackets::LFG::RideType::Battlegrounds;
     header->Ticket.Time = joinTime;
-    header->QueueID.push_back(queueId.GetPacked());
+    header->QueueID = queueId.GetPacked();
     header->RangeMin = 0; // seems to always be 0
     header->RangeMax = DEFAULT_MAX_LEVEL; // alwyas max level of current expansion. Might be limited to account
     header->TeamSize = queueId.TeamSize;
@@ -330,11 +330,9 @@ Battleground* BattlegroundMgr::CreateNewBattleground(BattlegroundQueueTypeId que
             bg = new BattlegroundAV(bg_template);
             break;
         case BATTLEGROUND_WS:
-        case BATTLEGROUND_WG_CTF:
             bg = new BattlegroundWS(bg_template);
             break;
         case BATTLEGROUND_AB:
-        case BATTLEGROUND_DOM_AB:
             bg = new BattlegroundAB(bg_template);
             break;
         case BATTLEGROUND_NA:
@@ -429,7 +427,7 @@ void BattlegroundMgr::LoadBattlegroundTemplates()
         if (bgTemplate.Id != BATTLEGROUND_AA && !IsRandomBattleground(bgTemplate.Id))
         {
             uint32 startId = fields[1].GetUInt32();
-            if (WorldSafeLocsEntry const* start = sObjectMgr->GetWorldSafeLoc(startId))
+            if (WorldSafeLocsEntry const* start = sDB2Manager.GetWorldSafeLoc(startId))
                 bgTemplate.StartLocation[TEAM_ALLIANCE] = start;
             else if (bgTemplate.StartLocation[TEAM_ALLIANCE]) // reload case
                 TC_LOG_ERROR("sql.sql", "Table `battleground_template` for id {} contains a non-existing WorldSafeLocs.dbc id {} in field `AllianceStartLoc`. Ignoring.", bgTemplate.Id, startId);
@@ -441,7 +439,7 @@ void BattlegroundMgr::LoadBattlegroundTemplates()
             }
 
             startId = fields[2].GetUInt32();
-            if (WorldSafeLocsEntry const* start = sObjectMgr->GetWorldSafeLoc(startId))
+            if (WorldSafeLocsEntry const* start = sDB2Manager.GetWorldSafeLoc(startId))
                 bgTemplate.StartLocation[TEAM_HORDE] = start;
             else if (bgTemplate.StartLocation[TEAM_HORDE]) // reload case
                 TC_LOG_ERROR("sql.sql", "Table `battleground_template` for id {} contains a non-existing WorldSafeLocs.dbc id {} in field `HordeStartLoc`. Ignoring.", bgTemplate.Id, startId);
@@ -487,8 +485,9 @@ void BattlegroundMgr::SendToBattleground(Player* player, uint32 instanceId, Batt
         uint32 team = player->GetBGTeam();
 
         WorldSafeLocsEntry const* pos = bg->GetTeamStartPosition(Battleground::GetTeamIndexByTeamId(team));
-        TC_LOG_DEBUG("bg.battleground", "BattlegroundMgr::SendToBattleground: Sending {} to map {}, {} (bgType {})", player->GetName(), mapid, pos->Loc.ToString(), bgTypeId);
-        player->TeleportTo(pos->Loc);
+        WorldLocation wLoc(pos->MapID, pos->GetPositionX(), pos->GetPositionY(), pos->GetPositionZ(), pos->GetOrientation());
+        TC_LOG_DEBUG("bg.battleground", "BattlegroundMgr::SendToBattleground: Sending {} to map {}, {} (bgType {})", player->GetName(), mapid, wLoc.ToString(), bgTypeId);
+        player->TeleportTo(wLoc);
     }
     else
         TC_LOG_ERROR("bg.battleground", "BattlegroundMgr::SendToBattleground: Instance {} (bgType {}) not found while trying to teleport player {}", instanceId, bgTypeId, player->GetName());

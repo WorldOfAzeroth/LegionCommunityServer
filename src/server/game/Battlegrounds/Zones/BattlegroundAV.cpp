@@ -1046,15 +1046,15 @@ WorldSafeLocsEntry const* BattlegroundAV::GetClosestGraveyard(Player* player)
     player->GetPosition(x, y);
 
     uint32 team = GetPlayerTeam(player->GetGUID());
-    WorldSafeLocsEntry const* pGraveyard = sObjectMgr->GetWorldSafeLoc(BG_AV_GraveyardIds[GetTeamIndexByTeamId(team) + 7]);
-    float minDist = (pGraveyard->Loc.GetPositionX() - x) * (pGraveyard->Loc.GetPositionX() - x) + (pGraveyard->Loc.GetPositionY() - y) * (pGraveyard->Loc.GetPositionY() - y);
+    WorldSafeLocsEntry const* pGraveyard = sDB2Manager.GetWorldSafeLoc(BG_AV_GraveyardIds[GetTeamIndexByTeamId(team) + 7]);
+    float minDist = (pGraveyard->GetPositionX() - x) * (pGraveyard->GetPositionX() - x) + (pGraveyard->GetPositionY() - y) * (pGraveyard->GetPositionY() - y);
 
     for (uint8 i = BG_AV_NODES_FIRSTAID_STATION; i <= BG_AV_NODES_FROSTWOLF_HUT; ++i)
         if (m_Nodes[i].Owner == team && m_Nodes[i].State == POINT_CONTROLED)
         {
-            if (WorldSafeLocsEntry const* entry = sObjectMgr->GetWorldSafeLoc(BG_AV_GraveyardIds[i]))
+            if (WorldSafeLocsEntry const* entry = sDB2Manager.GetWorldSafeLoc(BG_AV_GraveyardIds[i]))
             {
-                float dist = (entry->Loc.GetPositionX() - x) * (entry->Loc.GetPositionX() - x) + (entry->Loc.GetPositionY() - y) * (entry->Loc.GetPositionY() - y);
+                float dist = (entry->GetPositionX() - x) * (entry->GetPositionX() - x) + (entry->GetPositionY() - y) * (entry->GetPositionY() - y);
                 if (dist < minDist)
                 {
                     minDist = dist;
@@ -1067,7 +1067,7 @@ WorldSafeLocsEntry const* BattlegroundAV::GetClosestGraveyard(Player* player)
 
 WorldSafeLocsEntry const* BattlegroundAV::GetExploitTeleportLocation(Team team)
 {
-    return sObjectMgr->GetWorldSafeLoc(team == ALLIANCE ? AV_EXPLOIT_TELEPORT_LOCATION_ALLIANCE: AV_EXPLOIT_TELEPORT_LOCATION_HORDE);
+    return sDB2Manager.GetWorldSafeLoc(team == ALLIANCE ? AV_EXPLOIT_TELEPORT_LOCATION_ALLIANCE: AV_EXPLOIT_TELEPORT_LOCATION_HORDE);
 }
 
 bool BattlegroundAV::SetupBattleground()

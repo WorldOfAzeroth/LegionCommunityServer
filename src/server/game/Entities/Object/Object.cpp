@@ -176,7 +176,6 @@ void Object::BuildCreateUpdateBlockForPlayer(UpdateData* data, Player* target) c
         return;
 
     uint8 updateType = m_isNewObject ? UPDATETYPE_CREATE_OBJECT2 : UPDATETYPE_CREATE_OBJECT;
-    uint8 objectType = m_objectTypeId;
     uint32 flags      = m_updateFlag;
 
     /** lower flag1 **/
@@ -191,6 +190,7 @@ void Object::BuildCreateUpdateBlockForPlayer(UpdateData* data, Player* target) c
         case HighGuid::DynamicObject:
         case HighGuid::AreaTrigger:
         case HighGuid::Conversation:
+        case HighGuid::SceneObject:
             updateType = UPDATETYPE_CREATE_OBJECT2;
             break;
         case HighGuid::Creature:
@@ -365,7 +365,8 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const {
     bool ThisIsYou = (flags & UPDATEFLAG_SELF) != 0;
     bool SmoothPhasing = false;
     bool SceneObjCreate = false;
-    bool PlayerCreateData = GetTypeId() == TYPEID_PLAYER && ToUnit()->GetPowerIndex(POWER_RUNES) != MAX_POWERS;
+    bool PlayerCreateData = IsPlayer() && ToUnit()->GetPowerIndex(POWER_RUNES) != MAX_POWERS;
+    bool HasConversation = IsConversation();
 
     std::vector<uint32> const *PauseTimes = nullptr;
     if (GameObject const *go = ToGameObject())
@@ -388,6 +389,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const {
     data->WriteBit(ThisIsYou);
     data->WriteBit(SceneObjCreate);
     data->WriteBit(PlayerCreateData);
+    data->WriteBit(HasConversation);
     data->FlushBits();
 
     if (HasMovementUpdate) {
@@ -525,9 +527,9 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const {
         bool hasMorphCurveID = createProperties && createProperties->MorphCurveId != 0;
         bool hasFacingCurveID = createProperties && createProperties->FacingCurveId != 0;
         bool hasMoveCurveID = createProperties && createProperties->MoveCurveId != 0;
-        bool hasUnk2 = areaTriggerTemplate->HasFlag(AREATRIGGER_FLAG_HAS_ANIM_ID);
+        bool hasAnimation = areaTriggerTemplate->HasFlag(AREATRIGGER_FLAG_HAS_ANIM_ID);
         bool hasUnk3 = areaTriggerTemplate->HasFlag(AREATRIGGER_FLAG_UNK3);
-        bool hasUnk4 = areaTriggerTemplate->HasFlag(AREATRIGGER_FLAG_HAS_ANIM_KIT_ID);
+        bool hasAnimKitID = areaTriggerTemplate->HasFlag(AREATRIGGER_FLAG_HAS_ANIM_KIT_ID);
         bool hasAreaTriggerSphere = shape.IsSphere();
         bool hasAreaTriggerBox = shape.IsBox();
         bool hasAreaTriggerPolygon = createProperties && shape.IsPolygon();
@@ -546,9 +548,9 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const {
         data->WriteBit(hasMorphCurveID);
         data->WriteBit(hasFacingCurveID);
         data->WriteBit(hasMoveCurveID);
-        data->WriteBit(hasUnk2);
+        data->WriteBit(hasAnimation);
         data->WriteBit(hasUnk3);
-        data->WriteBit(hasUnk4);
+        data->WriteBit(hasAnimKitID);
         data->WriteBit(hasAreaTriggerSphere);
         data->WriteBit(hasAreaTriggerBox);
         data->WriteBit(hasAreaTriggerPolygon);
@@ -583,10 +585,10 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const {
         if (hasMoveCurveID)
             *data << uint32(createProperties->MoveCurveId);
 
-        if (hasUnk2)
+        if (hasAnimation)
             *data << int32(0);
 
-        if (hasUnk4)
+        if (hasAnimKitID)
             *data << uint32(0);
 
         if (hasAreaTriggerSphere) {
@@ -808,6 +810,14 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const {
                 *data << uint8((baseCd - float(player->GetRuneCooldown(i))) / baseCd * 255);
         }
     }
+    if (HasConversation)
+    {
+        Conversation const* self = ToConversation();
+        if (data->WriteBit(self->GetTextureKitId() != 0))
+            *data << uint32(self->GetTextureKitId());
+
+        data->FlushBits();
+    }
 }
 
 void Object::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target) const
@@ -1015,7 +1025,7 @@ uint32 Object::GetDynamicUpdateFieldData(Player const* target, uint32*& flags) c
         case TYPEID_CONVERSATION:
             flags = ConversationDynamicUpdateFieldFlags;
 
-            if (ToConversation()->GetCreatorGuid() == target->GetGUID())
+            if (ToConversation()->GetCreatorGUID() == target->GetGUID())
                 visibleFlag |= UF_FLAG_0x100;
             break;
         default:
@@ -1535,9 +1545,6 @@ void MovementInfo::OutDebug()
     if (flags & MOVEMENTFLAG_SPLINE_ELEVATION)
         TC_LOG_DEBUG("misc", "stepUpStartElevation: {}", stepUpStartElevation);
 }
-
-FindCreatureOptions::FindCreatureOptions() = default;
-FindCreatureOptions::~FindCreatureOptions() = default;
 
 WorldObject::WorldObject(bool isWorldObject) : Object(), WorldLocation(), LastUsedScriptID(0),
 m_movementInfo(), m_name(), m_isActive(false), m_isFarVisible(false), m_isWorldObject(isWorldObject), m_zoneScript(nullptr),
@@ -2819,8 +2826,9 @@ Creature* WorldObject::FindNearestCreature(uint32 entry, float range, bool alive
 Creature* WorldObject::FindNearestCreatureWithOptions(float range, FindCreatureOptions const& options) const
 {
     Creature* creature = nullptr;
-    Trinity::NearestCreatureEntryWithOptionsInObjectRangeCheck checker(*this, range, options);
-    Trinity::CreatureLastSearcher<Trinity::NearestCreatureEntryWithOptionsInObjectRangeCheck> searcher(this, creature, checker);
+    Trinity::NearestCheckCustomizer checkCustomizer(*this, range);
+    Trinity::CreatureWithOptionsInObjectRangeCheck checker(*this, checkCustomizer, options);
+    Trinity::CreatureLastSearcher searcher(this, creature, checker);
     if (options.IgnorePhases)
         searcher.i_phaseShift = &PhasingHandler::GetAlwaysVisiblePhaseShift();
 
@@ -4297,7 +4305,7 @@ void WorldObject::PlayDistanceSound(uint32 soundId, Player* target /*= nullptr*/
         SendMessageToSet(WorldPackets::Misc::PlaySpeakerbotSound(GetGUID(), soundId).Write(), true);
 }
 
-void WorldObject::PlayDirectSound(uint32 soundId, Player* target /*= nullptr*/, uint32 broadcastTextId /*= 0*/)
+void WorldObject::PlayDirectSound(uint32 soundId, Player* target /*= nullptr*/)
 {
     if (target)
         target->SendDirectMessage(WorldPackets::Misc::PlaySound(GetGUID(), soundId).Write());
@@ -4313,14 +4321,13 @@ void WorldObject::PlayDirectMusic(uint32 musicId, Player* target /*= nullptr*/)
         SendMessageToSet(WorldPackets::Misc::PlayMusic(musicId).Write(), true);
 }
 
-void WorldObject::PlayObjectSound(int32 soundKitId, ObjectGuid targetObjectGUID, Player* target /*= nullptr*/, int32 broadcastTextId /*= 0*/)
+void WorldObject::PlayObjectSound(int32 soundKitId, ObjectGuid targetObjectGUID, Player* target /*= nullptr*/)
 {
     WorldPackets::Misc::PlayObjectSound pkt;
     pkt.TargetObjectGUID = targetObjectGUID;
     pkt.SourceObjectGUID = GetGUID();
     pkt.SoundKitID = soundKitId;
     pkt.Position = GetPosition();
-    pkt.BroadcastTextID = broadcastTextId;
 
     if (target)
         target->SendDirectMessage(pkt.Write());

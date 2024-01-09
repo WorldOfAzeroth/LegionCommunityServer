@@ -68,10 +68,10 @@ enum ConversationLineFlags
 struct ConversationLineTemplate
 {
     uint32 Id;          // Link to ConversationLine.db2
-    uint32 StartTime;   // Time in ms after conversation creation the line is displayed
     uint32 UiCameraID;  // Link to UiCamera.db2
-    uint16 ActorIdx;     // Index from conversation_actors
-    uint16 Flags;
+    uint8 ActorIdx;     // Index from conversation_actors
+    uint8 Flags;
+    uint8 ChatType;
 };
 
 struct ConversationTemplate
@@ -86,25 +86,23 @@ struct ConversationTemplate
     uint32 ScriptId;
 };
 
-namespace UF {
-    struct ConversationLine {
-        int32 ConversationLineID;
-        uint32 StartTime;
-        int32 UiCameraID;
-        uint8 ActorIndex;
-        uint8 Flags;
-        uint8 ChatType;
-    };
+struct ConversationLine {
+    int32 ConversationLineID;
+    uint32 StartTime;
+    int32 UiCameraID;
+    uint8 ActorIndex;
+    uint8 Flags;
+    uint8 ChatType;
+};
 
-    struct ConversationActor {
-        uint32 CreatureID;
-        uint32 CreatureDisplayInfoID;
-        ObjectGuid ActorGUID;
-        int32 Id;
-        uint32 Type;
-        uint32 NoActorObject;
-    };
-}
+struct ConversationActor {
+    uint32 CreatureID;
+    uint32 CreatureDisplayInfoID;
+    ObjectGuid ActorGUID;
+    int32 Id;
+    uint32 Type;
+    uint32 NoActorObject;
+};
 
 class TC_GAME_API ConversationDataStore
 {

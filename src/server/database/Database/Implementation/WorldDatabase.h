@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -9,7 +9,7 @@
  * This program is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.WORLD_DEL_CRELINKED_RESPAWN
+ * more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
@@ -99,6 +99,7 @@ enum WorldDatabaseStatements : uint32
     WORLD_DEL_SPAWNGROUP_MEMBER,
     WORLD_DEL_GAMEOBJECT_ADDON,
     WORLD_SEL_GUILD_REWARDS_REQ_ACHIEVEMENTS,
+    WORLD_INS_CONDITION,
 
     MAX_WORLDDATABASE_STATEMENTS
 };
@@ -108,9 +109,7 @@ class TC_DATABASE_API WorldDatabaseConnection : public MySQLConnection
 public:
     typedef WorldDatabaseStatements Statements;
 
-    //- Constructors for sync and async connections
-    WorldDatabaseConnection(MySQLConnectionInfo& connInfo);
-    WorldDatabaseConnection(ProducerConsumerQueue<SQLOperation*>* q, MySQLConnectionInfo& connInfo);
+    WorldDatabaseConnection(MySQLConnectionInfo& connInfo, ConnectionFlags connectionFlags);
     ~WorldDatabaseConnection();
 
     //- Loads database type specific prepared statements

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -335,6 +335,14 @@ enum HotfixDatabaseStatements : uint32
 
     HOTFIX_SEL_ITEM_X_BONUS_TREE,
 
+    HOTFIX_SEL_JOURNAL_ENCOUNTER,
+    HOTFIX_SEL_JOURNAL_ENCOUNTER_LOCALE,
+
+    HOTFIX_SEL_JOURNAL_ENCOUNTER_ITEM,
+
+    HOTFIX_SEL_JOURNAL_INSTANCE,
+    HOTFIX_SEL_JOURNAL_INSTANCE_LOCALE,
+
     HOTFIX_SEL_KEYCHAIN,
 
     HOTFIX_SEL_LANGUAGE_WORDS,
@@ -583,6 +591,8 @@ enum HotfixDatabaseStatements : uint32
 
     HOTFIX_SEL_TRANSPORT_ROTATION,
 
+    HOTFIX_SEL_UNIT_CONDITION,
+
     HOTFIX_SEL_UNIT_POWER_BAR,
     HOTFIX_SEL_UNIT_POWER_BAR_LOCALE,
 
@@ -617,9 +627,7 @@ class TC_DATABASE_API HotfixDatabaseConnection : public MySQLConnection
 public:
     typedef HotfixDatabaseStatements Statements;
 
-    //- Constructors for sync and async connections
-    HotfixDatabaseConnection(MySQLConnectionInfo& connInfo);
-    HotfixDatabaseConnection(ProducerConsumerQueue<SQLOperation*>* q, MySQLConnectionInfo& connInfo);
+    HotfixDatabaseConnection(MySQLConnectionInfo& connInfo, ConnectionFlags connectionFlags);
     ~HotfixDatabaseConnection();
 
     //- Loads database type specific prepared statements

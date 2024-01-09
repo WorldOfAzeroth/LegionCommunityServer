@@ -588,6 +588,7 @@ CREATE TABLE `character_battleground_data` (
   `taxiStart` int unsigned NOT NULL DEFAULT '0',
   `taxiEnd` int unsigned NOT NULL DEFAULT '0',
   `mountSpell` int unsigned NOT NULL DEFAULT '0',
+  `queueId` BIGINT UNSIGNED DEFAULT '0',
   PRIMARY KEY (`guid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Player System';
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -3138,10 +3139,10 @@ DROP TABLE IF EXISTS `pvpstats_battlegrounds`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `pvpstats_battlegrounds` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `winner_faction` tinyint(4) NOT NULL,
-  `bracket_id` tinyint(3) unsigned NOT NULL,
-  `type` tinyint(3) unsigned NOT NULL,
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `winner_faction` tinyint NOT NULL,
+  `bracket_id` tinyint unsigned NOT NULL,
+  `type` int unsigned NOT NULL,
   `date` datetime NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

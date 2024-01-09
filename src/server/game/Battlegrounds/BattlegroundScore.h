@@ -56,7 +56,7 @@ struct BattlegroundScore
 
     uint32 GetAttr(uint8 index) const;
 
-    void BuildPvPLogPlayerDataPacket(WorldPackets::Battleground::PVPMatchStatistics::PVPMatchPlayerStatistics& playerData) const;
+    void BuildPvPLogPlayerDataPacket(WorldPackets::Battleground::PVPLogData::PlayerData& playerData) const;
 
 protected:
 

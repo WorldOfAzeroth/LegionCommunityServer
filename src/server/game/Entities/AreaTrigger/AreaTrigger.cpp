@@ -39,8 +39,6 @@
 #include "Unit.h"
 #include "UpdateData.h"
 #include "ZoneScript.h"
-#include "advstd.h"
-#include <bit>
 
 AreaTrigger::AreaTrigger() : WorldObject(false), MapObject(), _spawnId(0), _aurEff(nullptr), _maxSearchRadius(0.0f),
     _duration(0), _totalDuration(0), _timeSinceCreated(0), _previousCheckOrientation(std::numeric_limits<float>::infinity()),

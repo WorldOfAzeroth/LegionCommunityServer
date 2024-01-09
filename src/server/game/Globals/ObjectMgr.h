@@ -79,11 +79,7 @@ struct TempSummonGroupKey
     {
     }
 
-    bool operator<(TempSummonGroupKey const& rhs) const
-    {
-        return std::tie(_summonerEntry, _summonerType, _summonGroup) <
-            std::tie(rhs._summonerEntry, rhs._summonerType, rhs._summonGroup);
-    }
+    std::strong_ordering operator<=>(TempSummonGroupKey const& right) const = default;
 
 private:
     uint32 _summonerEntry;      ///< Summoner's entry
@@ -525,6 +521,7 @@ typedef std::unordered_map<uint32, QuestOfferRewardLocale> QuestOfferRewardLocal
 typedef std::unordered_map<uint32, QuestRequestItemsLocale> QuestRequestItemsLocaleContainer;
 typedef std::unordered_map<uint32, PageTextLocale> PageTextLocaleContainer;
 typedef std::unordered_map<uint32, VehicleSeatAddon> VehicleSeatAddonContainer;
+typedef std::unordered_map<int32, int32> BroadcastTextDurationsContainer;
 
 struct GossipMenuItemsLocale
 {
@@ -816,7 +813,7 @@ typedef std::array<std::unordered_map<uint32, QuestGreetingLocale>, 2> QuestGree
 struct GraveyardData
 {
     uint32 safeLocId;
-    uint32 team;
+    ConditionContainer Conditions;
 };
 
 typedef std::multimap<uint32, GraveyardData> GraveyardContainer;
@@ -1173,7 +1170,6 @@ class TC_GAME_API ObjectMgr
         WorldSafeLocsEntry const* GetDefaultGraveyard(uint32 team) const;
         WorldSafeLocsEntry const* GetClosestGraveyard(WorldLocation const& location, uint32 team, WorldObject* conditionObject) const;
         bool AddGraveyardLink(uint32 id, uint32 zoneId, uint32 team, bool persist = true);
-        void RemoveGraveyardLink(uint32 id, uint32 zoneId, uint32 team, bool persist = false);
         void LoadGraveyardZones();
         GraveyardData const* FindGraveyardData(uint32 id, uint32 zone) const;
 
@@ -1263,6 +1259,7 @@ class TC_GAME_API ObjectMgr
         void LoadCreatureTemplateAddons();
         void LoadCreatureTemplateSparring();
         void LoadCreatureTemplate(Field* fields);
+        void LoadCreatureTemplateGossip();
         void LoadCreatureTemplateResistances();
         void LoadCreatureTemplateSpells();
         void LoadCreatureTemplateModels();
@@ -1726,6 +1723,14 @@ class TC_GAME_API ObjectMgr
             return nullptr;
         }
 
+        int32 const* GetBroadcastTextDuration(int32 broadcastTextId, LocaleConstant locale = DEFAULT_LOCALE) const
+        {
+            auto itr = _broadcastTextDurationsStore.find(broadcastTextId);
+            if (itr != _broadcastTextDurationsStore.end())
+                return &itr->second;
+            return nullptr;
+        }
+
         PlayerChoice const* GetPlayerChoice(int32 choiceId) const;
 
         JumpChargeParams const* GetJumpChargeParams(int32 id) const;
@@ -1919,6 +1924,10 @@ class TC_GAME_API ObjectMgr
 
         std::set<uint32> _transportMaps; // Helper container storing map ids that are for transports only, loaded from gameobject_template
         VehicleSeatAddonContainer _vehicleSeatAddonStore;
+
+
+        BroadcastTextDurationsContainer _broadcastTextDurationsStore;
+
 };
 
 #define sObjectMgr ObjectMgr::instance()

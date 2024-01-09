@@ -223,7 +223,7 @@ public:
     }
 
     // soundId - ID from SoundKit.db2
-    static bool HandleDebugPlaySoundCommand(ChatHandler* handler, uint32 soundId, Optional<uint32> broadcastTextId)
+    static bool HandleDebugPlaySoundCommand(ChatHandler* handler, uint32 soundId)
     {
         if (!sSoundKitStore.LookupEntry(soundId))
         {
@@ -245,7 +245,7 @@ public:
         if (player->GetTarget().IsEmpty())
             unit->PlayDistanceSound(soundId, player);
         else
-            unit->PlayDirectSound(soundId, player, broadcastTextId.value_or(0));
+            unit->PlayDirectSound(soundId, player);
 
         handler->PSendSysMessage(LANG_YOU_HEAR_SOUND, soundId);
         return true;
@@ -1574,7 +1574,7 @@ public:
         if (!wsExpressionEntry)
             return false;
 
-        if (sConditionMgr->IsPlayerMeetingExpression(target, wsExpressionEntry))
+        if (ConditionMgr::IsMeetingWorldStateExpression(target->GetMap(), wsExpressionEntry))
             handler->PSendSysMessage("Expression %u meet", expressionId);
         else
             handler->PSendSysMessage("Expression %u not meet", expressionId);

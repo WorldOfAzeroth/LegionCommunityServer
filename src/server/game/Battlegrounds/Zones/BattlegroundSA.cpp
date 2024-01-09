@@ -190,7 +190,7 @@ bool BattlegroundSA::ResetObjs()
     //Graveyards
     for (uint8 i = 0; i < BG_SA_MAX_GY; i++)
     {
-        WorldSafeLocsEntry const* sg = sObjectMgr->GetWorldSafeLoc(BG_SA_GYEntries[i]);
+        WorldSafeLocsEntry const* sg = sDB2Manager.GetWorldSafeLoc(BG_SA_GYEntries[i]);
 
         if (!sg)
         {
@@ -201,12 +201,12 @@ bool BattlegroundSA::ResetObjs()
         if (i == BG_SA_BEACH_GY)
         {
             GraveyardStatus[i] = Attackers;
-            AddSpiritGuide(i + BG_SA_MAXNPC, sg->Loc.GetPositionX(), sg->Loc.GetPositionY(), sg->Loc.GetPositionZ(), BG_SA_GYOrientation[i], Attackers);
+            AddSpiritGuide(i + BG_SA_MAXNPC, sg->GetPositionX(), sg->GetPositionY(), sg->GetPositionZ(), BG_SA_GYOrientation[i], Attackers);
         }
         else
         {
             GraveyardStatus[i] = ((Attackers == TEAM_HORDE)? TEAM_ALLIANCE : TEAM_HORDE);
-            if (!AddSpiritGuide(i + BG_SA_MAXNPC, sg->Loc.GetPositionX(), sg->Loc.GetPositionY(), sg->Loc.GetPositionZ(), BG_SA_GYOrientation[i], Attackers == TEAM_HORDE ? TEAM_ALLIANCE : TEAM_HORDE))
+            if (!AddSpiritGuide(i + BG_SA_MAXNPC, sg->GetPositionX(), sg->GetPositionY(), sg->GetPositionZ(), BG_SA_GYOrientation[i], Attackers == TEAM_HORDE ? TEAM_ALLIANCE : TEAM_HORDE))
                 TC_LOG_ERROR("bg.battleground", "SOTA: couldn't spawn GY: {}", i);
         }
     }
@@ -669,16 +669,16 @@ WorldSafeLocsEntry const* BattlegroundSA::GetClosestGraveyard(Player* player)
     else
         safeloc = BG_SA_GYEntries[BG_SA_DEFENDER_LAST_GY];
 
-    closest = sObjectMgr->GetWorldSafeLoc(safeloc);
-    nearest = player->GetExactDistSq(closest->Loc);
+    closest = sDB2Manager.GetWorldSafeLoc(safeloc);
+    nearest = player->GetExactDistSq(closest->GetPositionX(), closest->GetPositionY(), closest->GetPositionZ());
 
     for (uint8 i = BG_SA_RIGHT_CAPTURABLE_GY; i < BG_SA_MAX_GY; i++)
     {
         if (GraveyardStatus[i] != teamId)
             continue;
 
-        ret = sObjectMgr->GetWorldSafeLoc(BG_SA_GYEntries[i]);
-        dist = player->GetExactDistSq(ret->Loc);
+        ret = sDB2Manager.GetWorldSafeLoc(BG_SA_GYEntries[i]);
+        dist = player->GetExactDistSq(ret->GetPositionX(), ret->GetPositionY(), ret->GetPositionZ());
         if (dist < nearest)
         {
             closest = ret;
@@ -764,14 +764,14 @@ void BattlegroundSA::CaptureGraveyard(BG_SA_Graveyards i, Player* Source)
     DelCreature(AsUnderlyingType(BG_SA_MAXNPC) + i);
     TeamId teamId = GetTeamIndexByTeamId(GetPlayerTeam(Source->GetGUID()));
     GraveyardStatus[i] = teamId;
-    WorldSafeLocsEntry const* sg = sObjectMgr->GetWorldSafeLoc(BG_SA_GYEntries[i]);
+    WorldSafeLocsEntry const* sg = sDB2Manager.GetWorldSafeLoc(BG_SA_GYEntries[i]);
     if (!sg)
     {
         TC_LOG_ERROR("bg.battleground", "BattlegroundSA::CaptureGraveyard: non-existant GY entry: {}", BG_SA_GYEntries[i]);
         return;
     }
 
-    AddSpiritGuide(i + AsUnderlyingType(BG_SA_MAXNPC), sg->Loc.GetPositionX(), sg->Loc.GetPositionY(), sg->Loc.GetPositionZ(), BG_SA_GYOrientation[i], GraveyardStatus[i]);
+    AddSpiritGuide(i + AsUnderlyingType(BG_SA_MAXNPC), sg->GetPositionX(), sg->GetPositionY(), sg->GetPositionZ(), BG_SA_GYOrientation[i], GraveyardStatus[i]);
     uint32 npc = 0;
     uint32 flag = 0;
 
