@@ -185,6 +185,7 @@ struct PlayerSpell
     bool active            : 1;                             // show in spellbook
     bool dependent         : 1;                             // learned as result another spell learn, skill grow, quest reward, etc
     bool disabled          : 1;                             // first rank has been learned in result talent learn but currently talent unlearned, save max learned ranks
+    bool favorite          : 1;
 };
 
 struct StoredAuraTeleportLocation
@@ -853,6 +854,7 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOAD_AURA_EFFECTS,
     PLAYER_LOGIN_QUERY_LOAD_AURA_STORED_LOCATIONS,
     PLAYER_LOGIN_QUERY_LOAD_SPELLS,
+    PLAYER_LOGIN_QUERY_LOAD_SPELL_FAVORITES,
     PLAYER_LOGIN_QUERY_LOAD_QUEST_STATUS,
     PLAYER_LOGIN_QUERY_LOAD_QUEST_STATUS_OBJECTIVES,
     PLAYER_LOGIN_QUERY_LOAD_QUEST_STATUS_OBJECTIVES_CRITERIA,
@@ -1024,7 +1026,7 @@ struct VoidStorageItem
 {
     VoidStorageItem() : ItemId(0), ItemEntry(0), RandomBonusListId(0), FixedScalingLevel(0), ArtifactKnowledgeLevel(0), Context(ItemContext::NONE) { }
     VoidStorageItem(uint64 id, uint32 entry, ObjectGuid const& creator, ItemRandomBonusListId randomBonusListId,
-        uint32 fixedScalingLevel, uint32 artifactKnowledgeLevel, ItemContext context, std::vector<uint32> const& bonuses)
+        uint32 fixedScalingLevel, uint32 artifactKnowledgeLevel, ItemContext context, std::vector<int32> const& bonuses)
         : ItemId(id), ItemEntry(entry), CreatorGuid(creator), RandomBonusListId(randomBonusListId),
         FixedScalingLevel(fixedScalingLevel), ArtifactKnowledgeLevel(artifactKnowledgeLevel), Context(context)
     {
@@ -1042,7 +1044,7 @@ struct VoidStorageItem
     uint32 FixedScalingLevel;
     uint32 ArtifactKnowledgeLevel;
     ItemContext Context;
-    std::vector<uint32> BonusListIDs;
+    std::vector<int32> BonusListIDs;
 };
 
 struct ResurrectionData
@@ -1390,7 +1392,8 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         bool HasItemTotemCategory(uint32 TotemCategory) const;
         InventoryResult CanUseItem(ItemTemplate const* pItem, bool skipRequiredLevelCheck = false) const;
         InventoryResult CanRollNeedForItem(ItemTemplate const* item, Map const* map, bool restrictOnlyLfg) const;
-        Item* StoreNewItem(ItemPosCountVec const& pos, uint32 itemId, bool update, ItemRandomBonusListId randomBonusListId = 0, GuidSet const& allowedLooters = GuidSet(), ItemContext context = ItemContext::NONE, std::vector<uint32> const& bonusListIDs = std::vector<uint32>(), bool addToCollection = true);
+        Item* StoreNewItem(ItemPosCountVec const& pos, uint32 itemId, bool update, ItemRandomBonusListId randomBonusListId = 0, GuidSet const& allowedLooters = GuidSet(),
+            ItemContext context = ItemContext::NONE, std::vector<int32> const* bonusListIDs = nullptr, bool addToCollection = true);
         Item* StoreItem(ItemPosCountVec const& pos, Item* pItem, bool update);
         Item* EquipNewItem(uint16 pos, uint32 item, ItemContext context, bool update);
         Item* EquipItem(uint16 pos, Item* pItem, bool update);
@@ -1551,7 +1554,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         uint32 GetQuestMoneyReward(Quest const* quest) const;
         uint32 GetQuestXPReward(Quest const* quest);
         bool CanSelectQuestPackageItem(QuestPackageItemEntry const* questPackageItem) const;
-        void RewardQuestPackage(uint32 questPackageId, uint32 onlyItemId = 0);
+        void RewardQuestPackage(uint32 questPackageId, ItemContext context, uint32 onlyItemId = 0);
         void RewardQuest(Quest const* quest, LootItemType rewardType, uint32 rewardId, Object* questGiver, bool announce = true);
         void SetRewardedQuest(uint32 quest_id);
         void FailQuest(uint32 quest_id);
@@ -1781,7 +1784,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void SendProficiency(ItemClass itemClass, uint32 itemSubclassMask) const;
         void SendKnownSpells();
         void SendUnlearnSpells();
-        bool AddSpell(uint32 spellId, bool active, bool learning, bool dependent, bool disabled, bool loading = false, int32 fromSkill = 0);
+        bool AddSpell(uint32 spellId, bool active, bool learning, bool dependent, bool disabled, bool loading = false, int32 fromSkill = 0, bool favorite = false);
         void LearnSpell(uint32 spell_id, bool dependent, int32 fromSkill = 0, bool suppressMessaging = false);
         void RemoveSpell(uint32 spell_id, bool disabled = false, bool learn_low_rank = true, bool suppressMessaging = false);
         void ResetSpells(bool myClassOnly = false);
@@ -1798,6 +1801,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void LearnSpecializationSpells();
         void RemoveSpecializationSpells();
         void SendSpellCategoryCooldowns() const;
+        void SetSpellFavorite(uint32 spellId, bool favorite);
 
         void AddStoredAuraTeleportLocation(uint32 spellId);
         void RemoveStoredAuraTeleportLocation(uint32 spellId);
@@ -2757,7 +2761,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
     protected:
         // Gamemaster whisper whitelist
         GuidList WhisperList;
-        uint32 m_combatExitTime;
+        TimePoint m_regenInterruptTimestamp;
         uint32 m_regenTimerCount;
         uint32 m_foodEmoteTimerCount;
         std::array<float, MAX_POWERS_PER_CLASS> m_powerFraction;
@@ -2823,7 +2827,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void _LoadRandomBGStatus(PreparedQueryResult result);
         void _LoadGroup(PreparedQueryResult result);
         void _LoadSkills(PreparedQueryResult result);
-        void _LoadSpells(PreparedQueryResult result);
+        void _LoadSpells(PreparedQueryResult result, PreparedQueryResult favoritesResult);
         void _LoadStoredAuraTeleportLocations(PreparedQueryResult result);
         bool _LoadHomeBind(PreparedQueryResult result);
         void _LoadDeclinedNames(PreparedQueryResult result);

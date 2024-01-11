@@ -17,7 +17,6 @@
 
 #include "ScriptMgr.h"
 #include "AccountMgr.h"
-#include "ArenaTeamMgr.h"
 #include "CellImpl.h"
 #include "CharacterCache.h"
 #include "Chat.h"
@@ -30,11 +29,9 @@
 #include "IpAddress.h"
 #include "IPLocation.h"
 #include "Item.h"
-#include "Language.h"
 #include "MiscPackets.h"
 #include "MMapFactory.h"
 #include "MotionMaster.h"
-#include "MovementDefines.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "PhasingHandler.h"
@@ -910,7 +907,6 @@ public:
     static bool HandleUnstuckCommand(ChatHandler* handler, char const* args)
     {
 #define SPELL_UNSTUCK_ID 7355
-#define SPELL_UNSTUCK_VISUAL 2683
 
         // No args required for players
         if (handler->GetSession() && !handler->GetSession()->HasPermission(rbac::RBAC_PERM_COMMANDS_USE_UNSTUCK_WITH_ARGS))
@@ -1219,7 +1215,7 @@ public:
         if (count == 0)
             count = 1;
 
-        std::vector<uint32> bonusListIDs;
+        std::vector<int32> bonusListIDs;
         char const* bonuses = strtok(nullptr, " ");
 
         char const* context = strtok(nullptr, " ");
@@ -1234,7 +1230,7 @@ public:
         if (context)
         {
             itemContext = ItemContext(Trinity::StringTo<uint8>(context).value_or(0));
-            if (itemContext != ItemContext::NONE && itemContext < ItemContext::Max)
+            if (itemContext < ItemContext::Max)
             {
                 std::set<uint32> contextBonuses = sDB2Manager.GetDefaultItemBonusTree(itemId, itemContext);
                 bonusListIDs.insert(bonusListIDs.begin(), contextBonuses.begin(), contextBonuses.end());
@@ -1297,7 +1293,8 @@ public:
             return false;
         }
 
-        Item* item = playerTarget->StoreNewItem(dest, itemId, true, GenerateItemRandomBonusListId(itemId), GuidSet(), itemContext, bonusListIDs);
+        Item* item = playerTarget->StoreNewItem(dest, itemId, true, GenerateItemRandomBonusListId(itemId), GuidSet(), itemContext,
+            bonusListIDs.empty() ? nullptr : &bonusListIDs);
 
         // remove binding (let GM give it to another player later)
         if (player == playerTarget)
@@ -1384,7 +1381,7 @@ public:
         if (count == 0)
             count = 1;
 
-        std::vector<uint32> bonusListIDs;
+        std::vector<int32> bonusListIDs;
         char const* bonuses = strtok(nullptr, " ");
 
         char const* context = strtok(nullptr, " ");
@@ -1392,14 +1389,14 @@ public:
         // semicolon separated bonuslist ids (parse them after all arguments are extracted by strtok!)
         if (bonuses)
             for (std::string_view token : Trinity::Tokenize(bonuses, ';', false))
-                if (Optional<int32> bonusListId = Trinity::StringTo<int32>(token))
+                if (Optional<int32> bonusListId = Trinity::StringTo<int32>(token); bonusListId && *bonusListId)
                     bonusListIDs.push_back(*bonusListId);
 
         ItemContext itemContext = ItemContext::NONE;
         if (context)
         {
             itemContext = ItemContext(Trinity::StringTo<uint8>(context).value_or(0));
-            if (itemContext != ItemContext::NONE && itemContext < ItemContext::Max)
+            if (itemContext < ItemContext::Max)
             {
                 std::set<uint32> contextBonuses = sDB2Manager.GetDefaultItemBonusTree(itemId, itemContext);
                 bonusListIDs.insert(bonusListIDs.begin(), contextBonuses.begin(), contextBonuses.end());
@@ -1457,7 +1454,8 @@ public:
             return false;
         }
 
-        Item* item = playerTarget->StoreNewItem(dest, itemId, true, GenerateItemRandomBonusListId(itemId), GuidSet(), itemContext, bonusListIDs);
+        Item* item = playerTarget->StoreNewItem(dest, itemId, true, GenerateItemRandomBonusListId(itemId), GuidSet(), itemContext,
+            bonusListIDs.empty() ? nullptr : &bonusListIDs);
 
         // remove binding (let GM give it to another player later)
         if (player == playerTarget)
@@ -1488,12 +1486,12 @@ public:
             return false;
         }
 
-        std::vector<uint32> bonusListIDs;
+        std::vector<int32> bonusListIDs;
 
         // semicolon separated bonuslist ids (parse them after all arguments are extracted by strtok!)
         if (bonuses)
             for (std::string_view token : Trinity::Tokenize(*bonuses, ';', false))
-                if (Optional<int32> bonusListId = Trinity::StringTo<int32>(token))
+                if (Optional<int32> bonusListId = Trinity::StringTo<int32>(token); bonusListId && *bonusListId)
                     bonusListIDs.push_back(*bonusListId);
 
         ItemContext itemContext = ItemContext::NONE;
@@ -1517,14 +1515,15 @@ public:
             InventoryResult msg = playerTarget->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, itemTemplatePair.first, 1);
             if (msg == EQUIP_ERR_OK)
             {
-                std::vector<uint32> bonusListIDsForItem = bonusListIDs; // copy, bonuses for each depending on context might be different for each item
-                if (itemContext != ItemContext::NONE && itemContext < ItemContext::Max)
+                std::vector<int32> bonusListIDsForItem = bonusListIDs; // copy, bonuses for each depending on context might be different for each item
+                if (itemContext < ItemContext::Max)
                 {
                     std::set<uint32> contextBonuses = sDB2Manager.GetDefaultItemBonusTree(itemTemplatePair.first, itemContext);
                     bonusListIDsForItem.insert(bonusListIDsForItem.begin(), contextBonuses.begin(), contextBonuses.end());
                 }
 
-                Item* item = playerTarget->StoreNewItem(dest, itemTemplatePair.first, true, {}, GuidSet(), itemContext, bonusListIDsForItem);
+                Item* item = playerTarget->StoreNewItem(dest, itemTemplatePair.first, true, {}, GuidSet(), itemContext,
+                    bonusListIDsForItem.empty() ? nullptr : &bonusListIDsForItem);
 
                 // remove binding (let GM give it to another player later)
                 if (player == playerTarget)

@@ -65,15 +65,15 @@ namespace WorldPackets
         bool SandboxScalingData::GenerateDataForUnits<Creature, Player>(Creature* attacker, Player* target)
         {
             CreatureTemplate const* creatureTemplate = attacker->GetCreatureTemplate();
-
+            CreatureDifficulty const* creatureDifficulty = creatureTemplate->GetDifficulty(attacker->GetMap()->GetDifficultyID());
             Type = TYPE_CREATURE_TO_PLAYER_DAMAGE;
             PlayerLevelDelta = target->GetInt32Value(PLAYER_FIELD_SCALING_PLAYER_LEVEL_DELTA);
             PlayerItemLevel = target->GetAverageItemLevel();
             TargetLevel = target->GetLevel();
-            Expansion = creatureTemplate->RequiredExpansion;
+            Expansion = creatureDifficulty->GetHealthScalingExpansion();
             Class = creatureTemplate->unit_class;
-            TargetMinScalingLevel = uint8(creatureTemplate->scalingStore->MinLevel);
-            TargetMaxScalingLevel = uint8(creatureTemplate->scalingStore->MaxLevel);
+            TargetMinScalingLevel = uint8(attacker->GetUInt32Value(UNIT_FIELD_SCALING_LEVEL_MIN));
+            TargetMaxScalingLevel = uint8(attacker->GetUInt32Value(UNIT_FIELD_SCALING_LEVEL_MAX));
             TargetScalingLevelDelta = int8(attacker->GetInt32Value(UNIT_FIELD_SCALING_LEVEL_DELTA));
             return true;
         }
@@ -82,15 +82,16 @@ namespace WorldPackets
         bool SandboxScalingData::GenerateDataForUnits<Player, Creature>(Player* attacker, Creature* target)
         {
             CreatureTemplate const* creatureTemplate = target->GetCreatureTemplate();
+            CreatureDifficulty const* creatureDifficulty = creatureTemplate->GetDifficulty(target->GetMap()->GetDifficultyID());
 
             Type = TYPE_PLAYER_TO_CREATURE_DAMAGE;
             PlayerLevelDelta = attacker->GetInt32Value(PLAYER_FIELD_SCALING_PLAYER_LEVEL_DELTA);
             PlayerItemLevel = attacker->GetAverageItemLevel();
             TargetLevel = target->GetLevel();
-            Expansion = creatureTemplate->RequiredExpansion;
+            Expansion = creatureDifficulty->HealthScalingExpansion;
             Class = creatureTemplate->unit_class;
-            TargetMinScalingLevel = uint8(creatureTemplate->scalingStore->MinLevel);
-            TargetMaxScalingLevel = uint8(creatureTemplate->scalingStore->MaxLevel);
+            TargetMinScalingLevel = uint8(target->GetUInt32Value(UNIT_FIELD_SCALING_LEVEL_MIN));
+            TargetMaxScalingLevel = uint8(target->GetUInt32Value(UNIT_FIELD_SCALING_LEVEL_MAX));
             TargetScalingLevelDelta = int8(target->GetInt32Value(UNIT_FIELD_SCALING_LEVEL_DELTA));
             return true;
         }
@@ -100,15 +101,16 @@ namespace WorldPackets
         {
             Creature* accessor = target->HasScalableLevels() ? target : attacker;
             CreatureTemplate const* creatureTemplate = accessor->GetCreatureTemplate();
+            CreatureDifficulty const* creatureDifficulty = creatureTemplate->GetDifficulty(accessor->GetMap()->GetDifficultyID());
 
             Type = TYPE_CREATURE_TO_CREATURE_DAMAGE;
             PlayerLevelDelta = 0;
             PlayerItemLevel = 0;
             TargetLevel = target->GetLevel();
-            Expansion = creatureTemplate->RequiredExpansion;
+            Expansion = creatureDifficulty->HealthScalingExpansion;
             Class = creatureTemplate->unit_class;
-            TargetMinScalingLevel = uint8(creatureTemplate->scalingStore->MinLevel);
-            TargetMaxScalingLevel = uint8(creatureTemplate->scalingStore->MaxLevel);
+            TargetMinScalingLevel = uint8(accessor->GetUInt32Value(UNIT_FIELD_SCALING_LEVEL_MIN));
+            TargetMaxScalingLevel = uint8(accessor->GetUInt32Value(UNIT_FIELD_SCALING_LEVEL_MAX));
             TargetScalingLevelDelta = int8(accessor->GetInt32Value(UNIT_FIELD_SCALING_LEVEL_DELTA));
             return true;
         }

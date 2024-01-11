@@ -222,10 +222,21 @@ bool Trinity::Hyperlinks::LinkTags::item::StoreTo(ItemLinkData& val, std::string
     val.ItemBonusListIDs.resize(numBonusListIDs);
     for (int32& itemBonusListID : val.ItemBonusListIDs)
     {
-        if (!t.TryConsumeTo(itemBonusListID) || !sDB2Manager.GetItemBonusList(itemBonusListID))
+        if (!t.TryConsumeTo(itemBonusListID))
             return false;
 
         evaluatedBonus.AddBonusList(itemBonusListID);
+    }
+
+    if (!val.ItemBonusListIDs.empty() && val.ItemBonusListIDs[0] == 3524) // default uninitialized bonus
+    {
+        const std::set<uint32> &bonusTree = sDB2Manager.GetDefaultItemBonusTree(itemId, ItemContext(val.Context));
+        val.ItemBonusListIDs.assign(bonusTree.begin(), bonusTree.end());
+
+        // reset bonuses
+        evaluatedBonus.Initialize(val.Item);
+        for (int32 itemBonusListID : val.ItemBonusListIDs)
+            evaluatedBonus.AddBonusList(itemBonusListID);
     }
 
     val.Quality = evaluatedBonus.Quality;
@@ -252,7 +263,7 @@ bool Trinity::Hyperlinks::LinkTags::item::StoreTo(ItemLinkData& val, std::string
 
         val.GemItemBonusListIDs[i].resize(numBonusListIDs);
         for (int32& itemBonusListID : val.GemItemBonusListIDs[i])
-            if (!t.TryConsumeTo(itemBonusListID) || !sDB2Manager.GetItemBonusList(itemBonusListID))
+            if (!t.TryConsumeTo(itemBonusListID))
                 return false;
     }
 

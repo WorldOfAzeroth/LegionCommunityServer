@@ -966,3 +966,15 @@ WorldPacket const* WorldPackets::Spells::MissileCancel::Write()
 
     return &_worldPacket;
 }
+
+void WorldPackets::Spells::TradeSkillSetFavorite::Read()
+{
+    _worldPacket >> RecipeID;
+    IsFavorite = _worldPacket.ReadBit();
+}
+
+void WorldPackets::Spells::KeyboundOverride::Read()
+{
+    _worldPacket >> OverrideID;
+}
+

@@ -1348,22 +1348,14 @@ void GameEventMgr::ChangeEquipOrModel(int16 event_id, bool activate)
                     itr->second.equipement_id_prev = creature->GetCurrentEquipmentId();
                     itr->second.modelid_prev = creature->GetDisplayId();
                     creature->LoadEquipment(itr->second.equipment_id, true);
-                    if (itr->second.modelid > 0 && itr->second.modelid_prev != itr->second.modelid &&
-                        sObjectMgr->GetCreatureModelInfo(itr->second.modelid))
-                    {
-                        creature->SetDisplayId(itr->second.modelid);
-                        creature->SetNativeDisplayId(itr->second.modelid);
-                    }
+                    if (itr->second.modelid > 0 && itr->second.modelid_prev != itr->second.modelid && sObjectMgr->GetCreatureModelInfo(itr->second.modelid))
+                        creature->SetDisplayId(itr->second.modelid, true);
                 }
                 else
                 {
                     creature->LoadEquipment(itr->second.equipement_id_prev, true);
-                    if (itr->second.modelid_prev > 0 && itr->second.modelid_prev != itr->second.modelid &&
-                        sObjectMgr->GetCreatureModelInfo(itr->second.modelid_prev))
-                    {
-                        creature->SetDisplayId(itr->second.modelid_prev);
-                        creature->SetNativeDisplayId(itr->second.modelid_prev);
-                    }
+                    if (itr->second.modelid_prev > 0 && itr->second.modelid_prev != itr->second.modelid && sObjectMgr->GetCreatureModelInfo(itr->second.modelid_prev))
+                        creature->SetDisplayId(itr->second.modelid_prev, true);
                 }
             }
         });
@@ -1372,14 +1364,20 @@ void GameEventMgr::ChangeEquipOrModel(int16 event_id, bool activate)
         CreatureData& data2 = sObjectMgr->NewOrExistCreatureData(itr->first);
         if (activate)
         {
-            itr->second.modelid_prev = data2.displayid;
+            itr->second.modelid_prev = data2.display ? data2.display->CreatureDisplayID : 0;
             itr->second.equipement_id_prev = data2.equipmentId;
-            data2.displayid = itr->second.modelid;
+            if (itr->second.modelid)
+                data2.display.emplace(itr->second.modelid, DEFAULT_PLAYER_DISPLAY_SCALE, 1.0f);
+            else
+                data2.display.reset();
             data2.equipmentId = itr->second.equipment_id;
         }
         else
         {
-            data2.displayid = itr->second.modelid_prev;
+            if (itr->second.modelid_prev)
+                data2.display.emplace(itr->second.modelid_prev, DEFAULT_PLAYER_DISPLAY_SCALE, 1.0f);
+            else
+                data2.display.reset();
             data2.equipmentId = itr->second.equipement_id_prev;
         }
     }

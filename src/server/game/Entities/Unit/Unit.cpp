@@ -1578,7 +1578,7 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
     }
 }
 
-void Unit::HandleEmoteCommand(Emote emoteId, Player* target /*=nullptr*/, Trinity::IteratorPair<int32 const*> spellVisualKitIds /*= {}*/, int32 sequenceVariation /*= 0*/)
+void Unit::HandleEmoteCommand(Emote emoteId)
 {
     WorldPackets::Chat::Emote packet;
     packet.Guid = GetGUID();
@@ -1649,11 +1649,9 @@ void Unit::HandleEmoteCommand(Emote emoteId, Player* target /*=nullptr*/, Trinit
     if (G3D::fuzzyLe(armor, 0.0f))
         return damage;
 
-    Classes attackerClass = CLASS_WARRIOR;
     if (attacker)
     {
         attackerLevel = attacker->GetLevelForTarget(victim);
-        attackerClass = Classes(attacker->GetClass());
     }
 
     GtArmorMitigationByLvlEntry const* ambl = sArmorMitigationByLvlGameTable.GetRow(attackerLevel);
@@ -5451,7 +5449,7 @@ void Unit::SetPowerType(Powers new_powertype, bool sendUpdate/* = true*/)
     }
 }
 
-void Unit::UpdateDisplayPower()
+Powers Unit::CalculateDisplayPowerType() const
 {
     Powers displayPower = POWER_MANA;
     switch (GetShapeshiftForm())
@@ -5475,22 +5473,18 @@ void Unit::UpdateDisplayPower()
                 AuraEffect const* powerTypeAura = powerTypeAuras.front();
                 displayPower = Powers(powerTypeAura->GetMiscValue());
             }
-            else if (GetTypeId() == TYPEID_PLAYER)
+            else
             {
                 ChrClassesEntry const* cEntry = sChrClassesStore.LookupEntry(GetClass());
                 if (cEntry && cEntry->DisplayPower < MAX_POWERS)
                     displayPower = Powers(cEntry->DisplayPower);
-            }
-            else if (GetTypeId() == TYPEID_UNIT)
-            {
+
                 if (Vehicle* vehicle = GetVehicleKit())
                 {
                     if (PowerDisplayEntry const* powerDisplay = sPowerDisplayStore.LookupEntry(vehicle->GetVehicleInfo()->PowerDisplayID[0]))
                         displayPower = Powers(powerDisplay->ActualType);
-                    else if (GetClass() == CLASS_ROGUE)
-                        displayPower = POWER_ENERGY;
                 }
-                else if (Pet* pet = ToPet())
+                else if (Pet const* pet = ToPet())
                 {
                     if (pet->getPetType() == HUNTER_PET) // Hunter pets have focus
                         displayPower = POWER_FOCUS;
@@ -5502,7 +5496,12 @@ void Unit::UpdateDisplayPower()
         }
     }
 
-    SetPowerType(displayPower);
+    return displayPower;
+}
+
+void Unit::UpdateDisplayPower()
+{
+    SetPowerType(CalculateDisplayPowerType());
 }
 
 void Unit::SetSheath(SheathState sheathed)
@@ -5995,10 +5994,7 @@ void Unit::SetMinion(Minion *minion, bool apply)
                         minion->SetWildBattlePetLevel(pet->PacketInfo.Level);
 
                         if (uint32 display = pet->PacketInfo.DisplayID)
-                        {
-                            minion->SetDisplayId(display);
-                            minion->SetNativeDisplayId(display);
-                        }
+                            minion->SetDisplayId(display, true);
                     }
                 }
             }
@@ -6630,6 +6626,14 @@ float Unit::SpellDamagePctDone(Unit* victim, SpellInfo const* spellProto, Damage
     DoneTotalMod *= GetTotalAuraMultiplier(SPELL_AURA_MOD_DAMAGE_DONE_VERSUS_AURASTATE, [victim](AuraEffect const* aurEff) -> bool
     {
         if (victim->HasAuraState(static_cast<AuraStateType>(aurEff->GetMiscValue())))
+            return true;
+        return false;
+    });
+
+    // bonus against target aura mechanic
+    DoneTotalMod *= GetTotalAuraMultiplier(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE_BY_TARGET_AURA_MECHANIC, [victim](AuraEffect const* aurEff) -> bool
+    {
+        if (victim->HasAuraWithMechanic(UI64LIT(1) << aurEff->GetMiscValue()))
             return true;
         return false;
     });
@@ -7523,6 +7527,14 @@ int32 Unit::MeleeDamageBonusDone(Unit* pVictim, int32 damage, WeaponAttackType a
     DoneTotalMod *= GetTotalAuraMultiplier(SPELL_AURA_MOD_DAMAGE_DONE_VERSUS_AURASTATE, [pVictim](AuraEffect const* aurEff) -> bool
     {
         if (pVictim->HasAuraState(AuraStateType(aurEff->GetMiscValue())))
+            return true;
+        return false;
+    });
+
+    // bonus against target aura mechanic
+    DoneTotalMod *= GetTotalAuraMultiplier(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE_BY_TARGET_AURA_MECHANIC, [pVictim](AuraEffect const* aurEff) -> bool
+    {
+        if (pVictim->HasAuraWithMechanic(UI64LIT(1) << aurEff->GetMiscValue()))
             return true;
         return false;
     });
@@ -9268,17 +9280,6 @@ void Unit::TriggerOnPowerChangeAuras(Powers power, int32 oldVal, int32 newVal)
     }
 }
 
-int32 Unit::GetCreatePowerValue(Powers power) const
-{
-    if (power == POWER_MANA)
-        return GetCreateMana();
-
-    if (PowerTypeEntry const* powerType = sDB2Manager.GetPowerTypeEntry(power))
-        return powerType->MaxBasePower;
-
-    return 0;
-}
-
 void Unit::AIUpdateTick(uint32 diff)
 {
     if (UnitAI* ai = GetAI())
@@ -10148,13 +10149,26 @@ void Unit::RecalculateObjectScale()
     SetObjectScale(std::max(scale, scaleMin));
 }
 
-void Unit::SetDisplayId(uint32 modelId, float displayScale /*= 1.f*/)
+void Unit::SetDisplayId(uint32 displayId, bool setNative /*= false*/)
 {
-    SetUInt32Value(UNIT_FIELD_DISPLAYID, modelId);
+    float displayScale = DEFAULT_PLAYER_DISPLAY_SCALE;
+
+    if (IsCreature() && !IsPet())
+        if (CreatureModel const* model = ToCreature()->GetCreatureTemplate()->GetModelWithDisplayId(displayId))
+            displayScale = model->DisplayScale;
+
+    SetUInt32Value(UNIT_FIELD_DISPLAYID, displayId);
     SetObjectScale(displayScale);
+
+    if (setNative)
+    {
+        SetUInt32Value(UNIT_FIELD_NATIVEDISPLAYID, displayId);
+        SetObjectScale(displayScale);
+    }
+
     // Set Gender by modelId
-    if (CreatureModelInfo const* minfo = sObjectMgr->GetCreatureModelInfo(modelId))
-        SetGender(Gender(minfo->gender));
+    if (CreatureModelInfo const* modelInfo = sObjectMgr->GetCreatureModelInfo(displayId))
+        SetGender(Gender(modelInfo->gender));
 }
 
 void Unit::RestoreDisplayId(bool ignorePositiveAurasPreventingMounting /*= false*/)
@@ -10347,7 +10361,7 @@ void Unit::UpdateAttackTimeField(WeaponAttackType att)
             SetUInt32Value(AsUnderlyingType(UNIT_FIELD_BASEATTACKTIME) + att, uint32(m_baseAttackSpeed[att] * m_modAttackSpeedPct[att]));
             break;
         case RANGED_ATTACK:
-            SetUInt32Value(AsUnderlyingType(UNIT_FIELD_BASEATTACKTIME) + att, uint32(m_baseAttackSpeed[RANGED_ATTACK] * m_modAttackSpeedPct[RANGED_ATTACK]));
+            SetUInt32Value(AsUnderlyingType(UNIT_FIELD_RANGEDATTACKTIME) + att, uint32(m_baseAttackSpeed[RANGED_ATTACK] * m_modAttackSpeedPct[RANGED_ATTACK]));
             break;
         default:
             break;;
@@ -10684,8 +10698,8 @@ void Unit::SetMeleeAnimKitId(uint16 animKitId)
             {
                 if (dungeonEncounter)
                 {
-                    creature->m_personalLoot = GenerateDungeonEncounterPersonalLoot(dungeonEncounter->ID, creature->GetCreatureTemplate()->lootid,
-                        LootTemplates_Creature, LOOT_CORPSE, creature, creature->GetCreatureTemplate()->mingold, creature->GetCreatureTemplate()->maxgold,
+                    creature->m_personalLoot = GenerateDungeonEncounterPersonalLoot(dungeonEncounter->ID, creature->GetLootId(),
+                        LootTemplates_Creature, LOOT_CORPSE, creature, creature->GetCreatureDifficulty()->GoldMin, creature->GetCreatureDifficulty()->GoldMax,
                         creature->GetLootMode(), creature->GetMap()->GetDifficultyLootItemContext(), tappers);
                 }
                 else if (!tappers.empty())
@@ -10695,11 +10709,11 @@ void Unit::SetMeleeAnimKitId(uint16 animKitId)
 
                     Loot* loot = new Loot(creature->GetMap(), creature->GetGUID(), LOOT_CORPSE, dungeonEncounter ? group : nullptr);
 
-                    if (uint32 lootid = creature->GetCreatureTemplate()->lootid)
+                    if (uint32 lootid = creature->GetLootId())
                         loot->FillLoot(lootid, LootTemplates_Creature, looter, dungeonEncounter != nullptr, false, creature->GetLootMode(), creature->GetMap()->GetDifficultyLootItemContext());
 
                     if (creature->GetLootMode() > 0)
-                        loot->generateMoneyLoot(creature->GetCreatureTemplate()->mingold, creature->GetCreatureTemplate()->maxgold);
+                        loot->generateMoneyLoot(creature->GetCreatureDifficulty()->GoldMin, creature->GetCreatureDifficulty()->GoldMax);
 
                     if (group)
                         loot->NotifyLootList(creature->GetMap());
@@ -10721,11 +10735,11 @@ void Unit::SetMeleeAnimKitId(uint16 animKitId)
                     if (dungeonEncounter)
                         loot->SetDungeonEncounterId(dungeonEncounter->ID);
 
-                    if (uint32 lootid = creature->GetCreatureTemplate()->lootid)
+                    if (uint32 lootid = creature->GetLootId())
                         loot->FillLoot(lootid, LootTemplates_Creature, tapper, true, false, creature->GetLootMode(), creature->GetMap()->GetDifficultyLootItemContext());
 
                     if (creature->GetLootMode() > 0)
-                        loot->generateMoneyLoot(creature->GetCreatureTemplate()->mingold, creature->GetCreatureTemplate()->maxgold);
+                        loot->generateMoneyLoot(creature->GetCreatureDifficulty()->GoldMin, creature->GetCreatureDifficulty()->GoldMax);
 
                     creature->m_personalLoot[tapper->GetGUID()].reset(loot);
                 }
@@ -10825,7 +10839,7 @@ void Unit::SetMeleeAnimKitId(uint16 animKitId)
             else
                 creature->AllLootRemovedFromCorpse();
 
-            if (creature->CanHaveLoot() && LootTemplates_Skinning.HaveLootFor(creature->GetCreatureTemplate()->SkinLootId))
+            if (creature->CanHaveLoot() && LootTemplates_Skinning.HaveLootFor(creature->GetCreatureDifficulty()->SkinLootID))
             {
                 creature->SetDynamicFlag(UNIT_DYNFLAG_CAN_SKIN);
                 creature->SetUnitFlag(UNIT_FLAG_SKINNABLE);
@@ -10963,7 +10977,7 @@ void Unit::SetControlled(bool apply, UnitState state)
                 SetStunned(false);
                 break;
             case UNIT_STATE_ROOT:
-                if (HasAuraType(SPELL_AURA_MOD_ROOT) || HasAuraType(SPELL_AURA_MOD_ROOT_2) || HasAuraType(SPELL_AURA_MOD_ROOT_DISABLE_GRAVITY) || GetVehicle() || (ToCreature() && ToCreature()->GetMovementTemplate().IsRooted()))
+                if (HasAuraType(SPELL_AURA_MOD_ROOT) || HasAuraType(SPELL_AURA_MOD_ROOT_2) || HasAuraType(SPELL_AURA_MOD_ROOT_DISABLE_GRAVITY) || GetVehicle() || (ToCreature() && ToCreature()->IsTemplateRooted()))
                     return;
 
                 ClearUnitState(state);
@@ -11540,8 +11554,8 @@ bool Unit::IsInPartyWith(Unit const* unit) const
 
     if (u1->GetTypeId() == TYPEID_PLAYER && u2->GetTypeId() == TYPEID_PLAYER)
         return u1->ToPlayer()->IsInSameGroupWith(u2->ToPlayer());
-    else if ((u2->GetTypeId() == TYPEID_PLAYER && u1->GetTypeId() == TYPEID_UNIT && u1->ToCreature()->GetCreatureTemplate()->type_flags & CREATURE_TYPE_FLAG_TREAT_AS_RAID_UNIT) ||
-        (u1->GetTypeId() == TYPEID_PLAYER && u2->GetTypeId() == TYPEID_UNIT && u2->ToCreature()->GetCreatureTemplate()->type_flags & CREATURE_TYPE_FLAG_TREAT_AS_RAID_UNIT))
+    else if ((u2->GetTypeId() == TYPEID_PLAYER && u1->GetTypeId() == TYPEID_UNIT && u1->ToCreature()->HasFlag(CREATURE_STATIC_FLAG_4_TREAT_AS_RAID_UNIT_FOR_HELPFUL_SPELLS)) ||
+        (u1->GetTypeId() == TYPEID_PLAYER && u2->GetTypeId() == TYPEID_UNIT && u2->ToCreature()->HasFlag(CREATURE_STATIC_FLAG_4_TREAT_AS_RAID_UNIT_FOR_HELPFUL_SPELLS)))
         return true;
 
     return u1->GetTypeId() == TYPEID_UNIT && u2->GetTypeId() == TYPEID_UNIT && u1->GetFaction() == u2->GetFaction();
@@ -11559,8 +11573,8 @@ bool Unit::IsInRaidWith(Unit const* unit) const
 
     if (u1->GetTypeId() == TYPEID_PLAYER && u2->GetTypeId() == TYPEID_PLAYER)
         return u1->ToPlayer()->IsInSameRaidWith(u2->ToPlayer());
-    else if ((u2->GetTypeId() == TYPEID_PLAYER && u1->GetTypeId() == TYPEID_UNIT && u1->ToCreature()->GetCreatureTemplate()->type_flags & CREATURE_TYPE_FLAG_TREAT_AS_RAID_UNIT) ||
-            (u1->GetTypeId() == TYPEID_PLAYER && u2->GetTypeId() == TYPEID_UNIT && u2->ToCreature()->GetCreatureTemplate()->type_flags & CREATURE_TYPE_FLAG_TREAT_AS_RAID_UNIT))
+    else if ((u2->GetTypeId() == TYPEID_PLAYER && u1->GetTypeId() == TYPEID_UNIT && u1->ToCreature()->HasFlag(CREATURE_STATIC_FLAG_4_TREAT_AS_RAID_UNIT_FOR_HELPFUL_SPELLS)) ||
+            (u1->GetTypeId() == TYPEID_PLAYER && u2->GetTypeId() == TYPEID_UNIT && u2->ToCreature()->HasFlag(CREATURE_STATIC_FLAG_4_TREAT_AS_RAID_UNIT_FOR_HELPFUL_SPELLS)))
         return true;
 
     return u1->GetTypeId() == TYPEID_UNIT && u2->GetTypeId() == TYPEID_UNIT && u1->GetFaction() == u2->GetFaction();
@@ -13031,7 +13045,7 @@ bool Unit::SetDisableGravity(bool disable, bool updateAnimTier /*= true*/)
         SendMessageToSet(packet.Write(), true);
     }
 
-    if (IsCreature() && updateAnimTier && IsAlive() && !HasUnitState(UNIT_STATE_ROOT) && !ToCreature()->GetMovementTemplate().IsRooted())
+    if (IsCreature() && updateAnimTier && IsAlive() && !HasUnitState(UNIT_STATE_ROOT) && !ToCreature()->IsTemplateRooted())
     {
         if (IsGravityDisabled())
             SetAnimTier(AnimTier::Fly);
@@ -13247,7 +13261,7 @@ bool Unit::SetHover(bool enable, bool updateAnimTier /*= true*/)
         SendMessageToSet(packet.Write(), true);
     }
 
-    if (IsCreature() && updateAnimTier && IsAlive() && !HasUnitState(UNIT_STATE_ROOT) && !ToCreature()->GetMovementTemplate().IsRooted())
+    if (IsCreature() && updateAnimTier && IsAlive() && !HasUnitState(UNIT_STATE_ROOT) && !ToCreature()->IsTemplateRooted())
     {
         if (IsGravityDisabled())
             SetAnimTier(AnimTier::Fly);

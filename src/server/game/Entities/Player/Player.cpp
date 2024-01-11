@@ -170,7 +170,7 @@ Player::Player(WorldSession* session) : Unit(true), m_sceneMgr(this)
     if (!GetSession()->HasPermission(rbac::RBAC_PERM_CAN_FILTER_WHISPERS))
         SetAcceptWhispers(true);
 
-    m_combatExitTime = 0;
+    m_regenInterruptTimestamp = GameTime::Now();
     m_regenTimer = 0;
     m_regenTimerCount = 0;
     m_foodEmoteTimerCount = 0;
@@ -619,10 +619,6 @@ bool Player::StoreNewItemInBestSlots(uint32 itemId, uint32 amount, ItemContext c
     TC_LOG_DEBUG("entities.player.items", "Player::StoreNewItemInBestSlots: Player '{}' ({}) creates initial item (ItemID: {}, Count: {})",
         GetName(), GetGUID().ToString(), itemId, amount);
 
-    std::vector<uint32> bonusListIDs;
-    std::set<uint32> contextBonuses = sDB2Manager.GetDefaultItemBonusTree(itemId, context);
-    bonusListIDs.insert(bonusListIDs.begin(), contextBonuses.begin(), contextBonuses.end());
-
     // attempt equip by one
     while (amount > 0)
     {
@@ -631,8 +627,7 @@ bool Player::StoreNewItemInBestSlots(uint32 itemId, uint32 amount, ItemContext c
         if (msg != EQUIP_ERR_OK)
             break;
 
-        Item* item = EquipNewItem(eDest, itemId, context, true);
-        item->SetBonuses(bonusListIDs);
+        EquipNewItem(eDest, itemId, context, true);
         AutoUnequipOffhandIfNeed();
         --amount;
     }
@@ -646,7 +641,7 @@ bool Player::StoreNewItemInBestSlots(uint32 itemId, uint32 amount, ItemContext c
     InventoryResult msg = CanStoreNewItem(INVENTORY_SLOT_BAG_0, NULL_SLOT, sDest, itemId, amount);
     if (msg == EQUIP_ERR_OK)
     {
-        StoreNewItem(sDest, itemId, true, GenerateItemRandomBonusListId(itemId), GuidSet(), context, bonusListIDs);
+        StoreNewItem(sDest, itemId, true, GenerateItemRandomBonusListId(itemId), GuidSet(), context);
         return true;                                        // stored
     }
 
@@ -1829,7 +1824,7 @@ void Player::Regenerate(Powers power)
     float addvalue = 0.0f;
     if (!IsInCombat())
     {
-        if (powerType->RegenInterruptTimeMS && GetMSTimeDiffToNow(m_combatExitTime) < uint32(powerType->RegenInterruptTimeMS))
+        if (powerType->GetFlags().HasFlag(PowerTypeFlags::UseRegenInterrupt) && m_regenInterruptTimestamp + Milliseconds(powerType->RegenInterruptTimeMS) < GameTime::Now())
             return;
 
         addvalue = (powerType->RegenPeace + GetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER + powerIndex)) * 0.001f * m_regenTimer;
@@ -2054,11 +2049,11 @@ Creature* Player::GetNPCIfCanInteractWith(ObjectGuid const& guid, NPCFlags npcFl
         return nullptr;
 
     // Deathstate checks
-    if (!IsAlive() && !(creature->GetCreatureTemplate()->type_flags & CREATURE_TYPE_FLAG_VISIBLE_TO_GHOSTS))
+    if (!IsAlive() && !(creature->GetCreatureDifficulty()->TypeFlags & CREATURE_TYPE_FLAG_VISIBLE_TO_GHOSTS))
         return nullptr;
 
     // alive or spirit healer
-    if (!creature->IsAlive() && !(creature->GetCreatureTemplate()->type_flags & CREATURE_TYPE_FLAG_INTERACT_WHILE_DEAD))
+    if (!creature->IsAlive() && !(creature->GetCreatureDifficulty()->TypeFlags & CREATURE_TYPE_FLAG_INTERACT_WHILE_DEAD))
         return nullptr;
 
     // appropriate npc type
@@ -2428,7 +2423,9 @@ void Player::GiveLevel(uint8 level)
 
     // Only health and mana are set to maximum.
     SetFullHealth();
-    SetFullPower(POWER_MANA);
+    for (PowerTypeEntry const* powerType : sPowerTypeStore)
+        if (powerType->GetFlags().HasFlag(PowerTypeFlags::SetToMaxOnLevelUp))
+            SetFullPower(Powers(powerType->PowerTypeEnum));
 
     // update level to hunter/summon pet
     if (Pet* pet = GetPet())
@@ -2679,7 +2676,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
 void Player::SendKnownSpells()
 {
     WorldPackets::Spells::SendKnownSpells knownSpells;
-    knownSpells.InitialLogin = false; /// @todo
+    knownSpells.InitialLogin = IsLoading();
 
     knownSpells.KnownSpells.reserve(m_spells.size());
     for (PlayerSpellMap::value_type const& spell : m_spells)
@@ -2691,6 +2688,8 @@ void Player::SendKnownSpells()
             continue;
 
         knownSpells.KnownSpells.push_back(spell.first);
+        if (spell.second.favorite)
+            knownSpells.FavoriteSpells.push_back(spell.first);
     }
 
     SendDirectMessage(knownSpells.Write());
@@ -2859,7 +2858,7 @@ WorldLocation const* Player::GetStoredAuraTeleportLocation(uint32 spellId) const
     return nullptr;
 }
 
-bool Player::AddSpell(uint32 spellId, bool active, bool learning, bool dependent, bool disabled, bool loading /*= false*/, int32 fromSkill /*= 0*/)
+bool Player::AddSpell(uint32 spellId, bool active, bool learning, bool dependent, bool disabled, bool loading /*= false*/, int32 fromSkill /*= 0*/, bool favorite /*= false*/)
 {
     SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId, DIFFICULTY_NONE);
     if (!spellInfo)
@@ -2938,6 +2937,8 @@ bool Player::AddSpell(uint32 spellId, bool active, bool learning, bool dependent
                 itr->second.state = PLAYERSPELL_CHANGED;
             dependent_set = true;
         }
+
+        itr->second.favorite = favorite;
 
         // update active state for known spell
         if (itr->second.active != active && itr->second.state != PLAYERSPELL_REMOVED && !itr->second.disabled)
@@ -3020,6 +3021,7 @@ bool Player::AddSpell(uint32 spellId, bool active, bool learning, bool dependent
         newspell.active    = active;
         newspell.dependent = dependent;
         newspell.disabled  = disabled;
+        newspell.favorite  = favorite;
 
         // replace spells in action bars and spellbook to bigger rank if only one spell rank must be accessible
         if (newspell.active && !newspell.disabled && spellInfo->IsRanked())
@@ -3231,14 +3233,17 @@ void Player::LearnSpell(uint32 spell_id, bool dependent, int32 fromSkill /*= 0*/
 
     bool disabled = (itr != m_spells.end()) ? itr->second.disabled : false;
     bool active = disabled ? itr->second.active : true;
+    bool favorite = itr != m_spells.end() ? itr->second.favorite : false;
 
-    bool learning = AddSpell(spell_id, active, true, dependent, false, false, fromSkill);
+    bool learning = AddSpell(spell_id, active, true, dependent, false, false, fromSkill, favorite);
 
     // prevent duplicated entires in spell book, also not send if not in world (loading)
     if (learning && IsInWorld())
     {
         WorldPackets::Spells::LearnedSpells packet;
         packet.SpellID.push_back(spell_id);
+        if (favorite)
+            packet.FavoriteSpellID.push_back(spell_id);
         packet.SuppressMessaging = suppressMessaging;
         SendDirectMessage(packet.Write());
     }
@@ -3433,6 +3438,17 @@ void Player::RemoveSpell(uint32 spell_id, bool disabled /*= false*/, bool learn_
         unlearnedSpells.SuppressMessaging = suppressMessaging;
         SendDirectMessage(unlearnedSpells.Write());
     }
+}
+
+void Player::SetSpellFavorite(uint32 spellId, bool favorite)
+{
+    auto itr = m_spells.find(spellId);
+    if (itr == m_spells.end())
+        return;
+
+    itr->second.favorite = favorite;
+    if (itr->second.state == PLAYERSPELL_UNCHANGED)
+        itr->second.state = PLAYERSPELL_CHANGED;
 }
 
 void Player::RemoveArenaSpellCooldowns(bool removeActivePetCooldowns)
@@ -10827,18 +10843,20 @@ InventoryResult Player::CanRollNeedForItem(ItemTemplate const* proto, Map const*
 
 // Return stored item (if stored to stack, it can diff. from pItem). And pItem ca be deleted in this case.
 Item* Player::StoreNewItem(ItemPosCountVec const& pos, uint32 itemId, bool update, ItemRandomBonusListId randomBonusListId /*= 0*/,
-    GuidSet const& allowedLooters /*= GuidSet()*/, ItemContext context /*= ItemContext::NONE*/, std::vector<uint32> const& bonusListIDs /*= std::vector<int32>()*/, bool addToCollection /*= true*/)
+    GuidSet const& allowedLooters /*= GuidSet()*/, ItemContext context /*= ItemContext::NONE*/,
+    std::vector<int32> const* bonusListIDs /*= std::vector<int32>()*/, bool addToCollection /*= true*/)
 {
     uint32 count = 0;
     for (ItemPosCountVec::const_iterator itr = pos.begin(); itr != pos.end(); ++itr)
         count += itr->count;
 
-    Item* item = Item::CreateItem(itemId, count, context, this);
+    Item* item = Item::CreateItem(itemId, count, context, this, bonusListIDs == nullptr);
     if (item)
     {
         item->SetItemFlag(ITEM_FIELD_FLAG_NEW_ITEM);
 
-        item->SetBonuses(bonusListIDs);
+        if (bonusListIDs)
+            item->SetBonuses(*bonusListIDs);
 
         item = StoreItem(pos, item, update);
 
@@ -14385,7 +14403,7 @@ bool Player::CanSelectQuestPackageItem(QuestPackageItemEntry const* questPackage
     return false;
 }
 
-void Player::RewardQuestPackage(uint32 questPackageId, uint32 onlyItemId /*= 0*/)
+void Player::RewardQuestPackage(uint32 questPackageId, ItemContext context, uint32 onlyItemId /*= 0*/)
 {
     bool hasFilteredQuestPackageReward = false;
     if (std::vector<QuestPackageItemEntry const*> const* questPackageItems = sDB2Manager.GetQuestPackageItems(questPackageId))
@@ -14401,7 +14419,7 @@ void Player::RewardQuestPackage(uint32 questPackageId, uint32 onlyItemId /*= 0*/
                 ItemPosCountVec dest;
                 if (CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, questPackageItem->ItemID, questPackageItem->ItemQuantity) == EQUIP_ERR_OK)
                 {
-                    Item* item = StoreNewItem(dest, questPackageItem->ItemID, true, GenerateItemRandomBonusListId(questPackageItem->ItemID));
+                    Item* item = StoreNewItem(dest, questPackageItem->ItemID, true, GenerateItemRandomBonusListId(questPackageItem->ItemID), {}, context);
                     SendNewItem(item, questPackageItem->ItemQuantity, true, false);
                 }
             }
@@ -14420,7 +14438,7 @@ void Player::RewardQuestPackage(uint32 questPackageId, uint32 onlyItemId /*= 0*/
                 ItemPosCountVec dest;
                 if (CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, questPackageItem->ItemID, questPackageItem->ItemQuantity) == EQUIP_ERR_OK)
                 {
-                    Item* item = StoreNewItem(dest, questPackageItem->ItemID, true, GenerateItemRandomBonusListId(questPackageItem->ItemID));
+                    Item* item = StoreNewItem(dest, questPackageItem->ItemID, true, GenerateItemRandomBonusListId(questPackageItem->ItemID), {}, context);
                     SendNewItem(item, questPackageItem->ItemQuantity, true, false);
                 }
             }
@@ -14474,7 +14492,7 @@ void Player::RewardQuest(Quest const* quest, LootItemType rewardType, uint32 rew
                 ItemPosCountVec dest;
                 if (CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, itemId, quest->RewardItemCount[i]) == EQUIP_ERR_OK)
                 {
-                    Item* item = StoreNewItem(dest, itemId, true, GenerateItemRandomBonusListId(itemId));
+                    Item* item = StoreNewItem(dest, itemId, true, GenerateItemRandomBonusListId(itemId), {}, ItemContext::Quest_Reward);
                     SendNewItem(item, quest->RewardItemCount[i], true, false);
                 }
                 else if (quest->IsDFQuest())
@@ -14497,7 +14515,7 @@ void Player::RewardQuest(Quest const* quest, LootItemType rewardType, uint32 rew
                         ItemPosCountVec dest;
                         if (CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, rewardId, quest->RewardChoiceItemCount[i]) == EQUIP_ERR_OK)
                         {
-                            Item* item = StoreNewItem(dest, rewardId, true, GenerateItemRandomBonusListId(rewardId));
+                            Item* item = StoreNewItem(dest, rewardId, true, GenerateItemRandomBonusListId(rewardId), {}, ItemContext::Quest_Reward);
                             SendNewItem(item, quest->RewardChoiceItemCount[i], true, false);
                         }
                     }
@@ -14506,7 +14524,7 @@ void Player::RewardQuest(Quest const* quest, LootItemType rewardType, uint32 rew
 
             // QuestPackageItem.db2
             if (rewardProto && quest->GetQuestPackageID())
-                RewardQuestPackage(quest->GetQuestPackageID(), rewardId);
+                RewardQuestPackage(quest->GetQuestPackageID(), ItemContext::Quest_Reward, rewardId);
             break;
         }
         case LootItemType::Currency:
@@ -17216,7 +17234,7 @@ bool Player::LoadFromDB(ObjectGuid guid, CharacterDatabaseQueryHolder const& hol
     UpdateDisplayPower();
     _LoadTalents(holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_TALENTS));
     _LoadPvpTalents(holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_PVP_TALENTS));
-    _LoadSpells(holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_SPELLS));
+    _LoadSpells(holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_SPELLS), holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_SPELL_FAVORITES));
     GetSession()->GetCollectionMgr()->LoadToys();
     GetSession()->GetCollectionMgr()->LoadHeirlooms();
     GetSession()->GetCollectionMgr()->LoadMounts();
@@ -17919,7 +17937,7 @@ void Player::_LoadVoidStorage(PreparedQueryResult result)
         uint32 fixedScalingLevel = fields[5].GetUInt32();
         uint32 artifactKnowledgeLevel = fields[6].GetUInt32();
         ItemContext context = ItemContext(fields[7].GetUInt8());
-        std::vector<uint32> bonusListIDs;
+        std::vector<int32> bonusListIDs;
         for (std::string_view bonusListIDtoken : Trinity::Tokenize(fields[8].GetStringView(), ' ', false))
             if (Optional<int32> bonusListID = Trinity::StringTo<int32>(bonusListIDtoken))
                 bonusListIDs.push_back(*bonusListID);
@@ -18490,15 +18508,24 @@ void Player::_LoadMonthlyQuestStatus(PreparedQueryResult result)
     m_MonthlyQuestChanged = false;
 }
 
-void Player::_LoadSpells(PreparedQueryResult result)
+void Player::_LoadSpells(PreparedQueryResult result, PreparedQueryResult favoritesResult)
 {
-    //QueryResult* result = CharacterDatabase.PQuery("SELECT spell, active, disabled FROM character_spell WHERE guid = '%u'", GetGUIDLow());
-
+    //QueryResult* result = CharacterDatabase.PQuery("SELECT spell, active, disabled, favorite FROM character_spell WHERE guid = '%u'", GetGUIDLow());
     if (result)
     {
         do
             AddSpell((*result)[0].GetUInt32(), (*result)[1].GetBool(), false, false, (*result)[2].GetBool(), true);
         while (result->NextRow());
+    }
+
+    if (favoritesResult)
+    {
+        do
+        {
+            auto itr = m_spells.find((*favoritesResult)[0].GetUInt32());
+            if (itr != m_spells.end())
+                itr->second.favorite = true;
+        } while (favoritesResult->NextRow());
     }
 }
 
@@ -19892,15 +19919,31 @@ void Player::_SaveSpells(CharacterDatabaseTransaction trans)
             trans->Append(stmt);
         }
 
-        // add only changed/new not dependent spells
-        if (!itr->second.dependent && (itr->second.state == PLAYERSPELL_NEW || itr->second.state == PLAYERSPELL_CHANGED))
+        if ((itr->second.state == PLAYERSPELL_NEW || itr->second.state == PLAYERSPELL_CHANGED))
         {
-            stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_SPELL);
-            stmt->setUInt64(0, GetGUID().GetCounter());
-            stmt->setUInt32(1, itr->first);
-            stmt->setBool(2, itr->second.active);
-            stmt->setBool(3, itr->second.disabled);
+            // add only changed/new not dependent spells
+            if (!itr->second.dependent)
+            {
+                stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_SPELL);
+                stmt->setUInt64(0, GetGUID().GetCounter());
+                stmt->setUInt32(1, itr->first);
+                stmt->setBool(2, itr->second.active);
+                stmt->setBool(3, itr->second.disabled);
+                trans->Append(stmt);
+            }
+
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_SPELL_FAVORITE);
+            stmt->setUInt32(0, itr->first);
+            stmt->setUInt64(1, GetGUID().GetCounter());
             trans->Append(stmt);
+
+            if (itr->second.favorite)
+            {
+                stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_SPELL_FAVORITE);
+                stmt->setUInt64(0, GetGUID().GetCounter());
+                stmt->setUInt32(1, itr->first);
+                trans->Append(stmt);
+            }
         }
 
         if (itr->second.state == PLAYERSPELL_REMOVED)
@@ -21535,12 +21578,10 @@ void Player::InitDisplayIds()
     switch (gender)
     {
         case GENDER_FEMALE:
-            SetDisplayId(info->displayIdF);
-            SetNativeDisplayId(info->displayIdF);
+            SetDisplayId(info->displayIdF, true);
             break;
         case GENDER_MALE:
-            SetDisplayId(info->displayIdM);
-            SetNativeDisplayId(info->displayIdM);
+            SetDisplayId(info->displayIdM, true);
             break;
         default:
             TC_LOG_ERROR("entities.player", "Player::InitDisplayIds: Player '{}' ({}) has invalid gender {}", GetName(), GetGUID().ToString(), gender);
@@ -21585,7 +21626,7 @@ inline bool Player::_StoreOrEquipNewItem(uint32 vendorslot, uint32 item, uint8 c
     }
 
     Item* it = bStore ?
-        StoreNewItem(vDest, item, true, GenerateItemRandomBonusListId(item), {}, ItemContext::Vendor, crItem->BonusListIDs, false) :
+        StoreNewItem(vDest, item, true, GenerateItemRandomBonusListId(item), {}, ItemContext::Vendor, &crItem->BonusListIDs, false) :
         EquipNewItem(uiDest, item, ItemContext::Vendor, true);
     if (it)
     {
@@ -24610,7 +24651,7 @@ void Player::AtExitCombat()
 {
     Unit::AtExitCombat();
     UpdatePotionCooldown();
-    m_combatExitTime = getMSTime();
+    m_regenInterruptTimestamp = GameTime::Now();
 }
 
 
@@ -24972,7 +25013,7 @@ void Player::StoreLootItem(ObjectGuid lootWorldObjectGuid, uint8 lootSlot, Loot*
     InventoryResult msg = CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, item->itemid, item->count);
     if (msg == EQUIP_ERR_OK)
     {
-        Item* newitem = StoreNewItem(dest, item->itemid, true, item->randomBonusListId, item->GetAllowedLooters(), item->context, item->BonusListIDs);
+        Item* newitem = StoreNewItem(dest, item->itemid, true, item->randomBonusListId, item->GetAllowedLooters(), item->context);
 
         if (ffaItem)
         {

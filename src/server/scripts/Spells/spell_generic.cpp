@@ -4723,11 +4723,11 @@ class spell_defender_of_azeroth_speak_with_mograine : public SpellScript
             return;
 
         if (Creature* nazgrim = GetHitUnit()->FindNearestCreature(NPC_NAZGRIM, 10.0f))
-            nazgrim->HandleEmoteCommand(EMOTE_ONESHOT_POINT, player);
+            nazgrim->HandleEmoteCommand(EMOTE_ONESHOT_POINT);
         if (Creature* trollbane = GetHitUnit()->FindNearestCreature(NPC_TROLLBANE, 10.0f))
-            trollbane->HandleEmoteCommand(EMOTE_ONESHOT_POINT, player);
+            trollbane->HandleEmoteCommand(EMOTE_ONESHOT_POINT);
         if (Creature* whitemane = GetHitUnit()->FindNearestCreature(NPC_WHITEMANE, 10.0f))
-            whitemane->HandleEmoteCommand(EMOTE_ONESHOT_POINT, player);
+            whitemane->HandleEmoteCommand(EMOTE_ONESHOT_POINT);
 
         // @TODO: spawntracking - show death gate for casting player
     }

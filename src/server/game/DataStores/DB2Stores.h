@@ -160,6 +160,7 @@ TC_GAME_API extern DB2Storage<ParagonReputationEntry>               sParagonRepu
 TC_GAME_API extern DB2Storage<PhaseEntry>                           sPhaseStore;
 TC_GAME_API extern DB2Storage<PlayerConditionEntry>                 sPlayerConditionStore;
 TC_GAME_API extern DB2Storage<PowerDisplayEntry>                    sPowerDisplayStore;
+TC_GAME_API extern DB2Storage<PowerTypeEntry>                       sPowerTypeStore;
 TC_GAME_API extern DB2Storage<PvpTalentEntry>                       sPvpTalentStore;
 TC_GAME_API extern DB2Storage<PvpTalentUnlockEntry>                 sPvpTalentUnlockStore;
 TC_GAME_API extern DB2Storage<QuestFactionRewardEntry>              sQuestFactionRewardStore;
@@ -194,6 +195,7 @@ TC_GAME_API extern DB2Storage<SpellFocusObjectEntry>                sSpellFocusO
 TC_GAME_API extern DB2Storage<SpellInterruptsEntry>                 sSpellInterruptsStore;
 TC_GAME_API extern DB2Storage<SpellItemEnchantmentEntry>            sSpellItemEnchantmentStore;
 TC_GAME_API extern DB2Storage<SpellItemEnchantmentConditionEntry>   sSpellItemEnchantmentConditionStore;
+TC_GAME_API extern DB2Storage<SpellKeyboundOverrideEntry>           sSpellKeyboundOverrideStore;
 TC_GAME_API extern DB2Storage<SpellLabelEntry>                      sSpellLabelStore;
 TC_GAME_API extern DB2Storage<SpellLearnSpellEntry>                 sSpellLearnSpellStore;
 TC_GAME_API extern DB2Storage<SpellLevelsEntry>                     sSpellLevelsStore;

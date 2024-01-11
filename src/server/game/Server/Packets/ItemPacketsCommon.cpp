@@ -35,7 +35,7 @@ void WorldPackets::Item::ItemInstance::Initialize(::Item const* item)
     ItemID               = item->GetEntry();
     RandomPropertiesSeed = item->GetItemSuffixFactor();
     RandomPropertiesID   = item->GetItemRandomPropertyId();
-    std::vector<uint32> const& bonusListIds = item->GetDynamicValues(ITEM_DYNAMIC_FIELD_BONUSLIST_IDS);
+    std::vector<int32> const& bonusListIds = item->GetBonuses();
     if (!bonusListIds.empty())
     {
         ItemBonus.emplace();
@@ -59,7 +59,7 @@ void WorldPackets::Item::ItemInstance::Initialize(::ItemDynamicFieldGems const* 
 
     ItemBonuses bonus;
     bonus.Context = ItemContext(gem->Context);
-    for (uint16 bonusListId : gem->BonusListIDs)
+    for (int16 bonusListId : gem->BonusListIDs)
         if (bonusListId)
             bonus.BonusListIDs.push_back(bonusListId);
 

@@ -1176,7 +1176,7 @@ void Spell::EffectHealthLeech()
     }
 }
 
-void Spell::DoCreateItem(uint32 itemId, ItemContext context /*= ItemContext::NONE*/, std::vector<uint32> const& bonusListIDs /*= std::vector<int32>()*/)
+void Spell::DoCreateItem(uint32 itemId, ItemContext context /*= ItemContext::NONE*/, std::vector<int32> const* bonusListIDs /*= nullptr*/)
 {
     if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
         return;
@@ -2101,7 +2101,7 @@ void Spell::EffectPickPocket()
         creature->StartPickPocketRefillTimer();
 
         creature->m_loot.reset(new Loot(creature->GetMap(), creature->GetGUID(), LOOT_PICKPOCKETING, nullptr));
-        if (uint32 lootid = creature->GetCreatureTemplate()->pickpocketLootId)
+        if (uint32 lootid = creature->GetCreatureDifficulty()->PickPocketLootID)
             creature->m_loot->FillLoot(lootid, LootTemplates_Pickpocketing, player, true);
 
         // Generate extra money for pick pocket loot
@@ -3676,13 +3676,13 @@ void Spell::EffectSkinning()
     Creature* creature = unitTarget->ToCreature();
     int32 targetLevel = creature->GetLevelForTarget(m_caster);
 
-    uint32 skill = creature->GetCreatureTemplate()->GetRequiredLootSkill();
+    uint32 skill = creature->GetCreatureDifficulty()->GetRequiredLootSkill();
 
     creature->SetUnitFlag3(UNIT_FLAG3_ALREADY_SKINNED);
     creature->SetDynamicFlag(UNIT_DYNFLAG_LOOTABLE);
     Loot* loot = new Loot(creature->GetMap(), creature->GetGUID(), LOOT_SKINNING, nullptr);
     creature->m_personalLoot[player->GetGUID()].reset(loot);
-    loot->FillLoot(creature->GetCreatureTemplate()->SkinLootId, LootTemplates_Skinning, player, true);
+    loot->FillLoot(creature->GetCreatureDifficulty()->SkinLootID, LootTemplates_Skinning, player, true);
     player->SendLoot(*loot);
 
     if (skill == SKILL_SKINNING)
@@ -5257,10 +5257,10 @@ void Spell::EffectCreateHeirloomItem()
     if (!collectionMgr)
         return;
 
-    std::vector<uint32> bonusList;
+    std::vector<int32> bonusList;
     bonusList.push_back(collectionMgr->GetHeirloomBonus(m_misc.Raw.Data[0]));
 
-    DoCreateItem(m_misc.Raw.Data[0], ItemContext::NONE, bonusList);
+    DoCreateItem(m_misc.Raw.Data[0], ItemContext::NONE, &bonusList);
     ExecuteLogEffectCreateItem(SpellEffectName(effectInfo->Effect), m_misc.Raw.Data[0]);
 }
 

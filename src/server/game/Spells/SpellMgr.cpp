@@ -1600,7 +1600,8 @@ void SpellMgr::LoadSpellProcs()
                             continue;
 
                         if (spellEffectInfo.ApplyAuraName == SPELL_AURA_ADD_PCT_MODIFIER || spellEffectInfo.ApplyAuraName == SPELL_AURA_ADD_FLAT_MODIFIER
-                            || spellEffectInfo.ApplyAuraName == SPELL_AURA_ADD_PCT_MODIFIER_BY_SPELL_LABEL || spellEffectInfo.ApplyAuraName == SPELL_AURA_ADD_FLAT_MODIFIER_BY_SPELL_LABEL)
+                            || spellEffectInfo.ApplyAuraName == SPELL_AURA_ADD_PCT_MODIFIER_BY_SPELL_LABEL || spellEffectInfo.ApplyAuraName == SPELL_AURA_ADD_FLAT_MODIFIER_BY_SPELL_LABEL
+                            || spellEffectInfo.ApplyAuraName == SPELL_AURA_IGNORE_SPELL_COOLDOWN)
                         {
                             found = true;
                             break;
@@ -1698,6 +1699,7 @@ void SpellMgr::LoadSpellProcs()
     isTriggerAura[SPELL_AURA_MOD_WEAPON_CRIT_PERCENT] = true;
     isTriggerAura[SPELL_AURA_MOD_BLOCK_PERCENT] = true;
     isTriggerAura[SPELL_AURA_MOD_ROOT_2] = true;
+    isTriggerAura[SPELL_AURA_IGNORE_SPELL_COOLDOWN] = true;
 
     isAlwaysTriggeredAura[SPELL_AURA_OVERRIDE_CLASS_SCRIPTS] = true;
     isAlwaysTriggeredAura[SPELL_AURA_MOD_STEALTH] = true;
@@ -2214,6 +2216,7 @@ void SpellMgr::LoadPetDefaultSpells()
     for (SpellInfo const& spellEntry : mSpellInfoMap)
     {
         if (spellEntry.Difficulty != DIFFICULTY_NONE)
+            continue;
 
         for (SpellEffectInfo const& spellEffectInfo : spellEntry.GetEffects())
         {

@@ -485,7 +485,7 @@ void Item::SaveToDB(CharacterDatabaseTransaction trans)
             stmt->setUInt8(++index, uint8(GetUInt32Value(ITEM_FIELD_CONTEXT)));
 
             std::ostringstream bonusListIDs;
-            for (int32 bonusListID : GetBonusListIDs())
+            for (int32 bonusListID : GetBonuses())
                 bonusListIDs << bonusListID << ' ';
             stmt->setString(++index, bonusListIDs.str());
 
@@ -783,7 +783,7 @@ bool Item::LoadFromDB(ObjectGuid::LowType guid, ObjectGuid ownerGuid, Field* fie
     SetContext(ItemContext(fields[19].GetUInt8()));
 
     std::vector<std::string_view> bonusListString = Trinity::Tokenize(fields[20].GetStringView(), ' ', false);
-    std::vector<uint32> bonusListIDs;
+    std::vector<int32> bonusListIDs;
     bonusListIDs.reserve(bonusListString.size());
     for (std::string_view token : bonusListString)
         if (Optional<int32> bonusListID = Trinity::StringTo<int32>(token))
@@ -1478,7 +1478,7 @@ void Item::SendTimeUpdate(Player* owner)
     owner->GetSession()->SendPacket(itemTimeUpdate.Write());
 }
 
-Item* Item::CreateItem(uint32 itemEntry, uint32 count, ItemContext context, Player const* player /*= nullptr*/)
+Item* Item::CreateItem(uint32 itemEntry, uint32 count, ItemContext context, Player const* player /*= nullptr*/, bool addDefaultBonuses /*= true*/)
 {
     if (count < 1)
         return nullptr;                                        //don't create item at zero count
@@ -1495,6 +1495,12 @@ Item* Item::CreateItem(uint32 itemEntry, uint32 count, ItemContext context, Play
         if (item->Create(sObjectMgr->GetGenerator<HighGuid::Item>().Generate(), itemEntry, context, player))
         {
             item->SetCount(count);
+            if (addDefaultBonuses) {
+                const std::set<uint32>& bonusListIDSet = sDB2Manager.GetDefaultItemBonusTree(itemEntry, context);
+                std::vector<int32> bonusListIDs(bonusListIDSet.begin(), bonusListIDSet.end());
+                item->SetBonuses(bonusListIDs);
+            }
+
             return item;
         }
         else
@@ -1507,7 +1513,7 @@ Item* Item::CreateItem(uint32 itemEntry, uint32 count, ItemContext context, Play
 
 Item* Item::CloneItem(uint32 count, Player const* player /*= nullptr*/) const
 {
-    Item* newItem = CreateItem(GetEntry(), count, GetContext(), player);
+    Item* newItem = CreateItem(GetEntry(), count, GetContext(), player, false);
     if (!newItem)
         return nullptr;
 
@@ -1515,6 +1521,7 @@ Item* Item::CloneItem(uint32 count, Player const* player /*= nullptr*/) const
     newItem->SetGiftCreator(GetGiftCreator());
     newItem->SetUInt32Value(ITEM_FIELD_FLAGS, GetUInt32Value(ITEM_FIELD_FLAGS) & ~(ITEM_FIELD_FLAG_REFUNDABLE | ITEM_FIELD_FLAG_BOP_TRADEABLE));
     newItem->SetUInt32Value(ITEM_FIELD_DURATION, GetUInt32Value(ITEM_FIELD_DURATION));
+    newItem->SetBonuses(GetBonuses());
     // player CAN be NULL in which case we must not update random properties because that accesses player's item update queue
     if (player)
         newItem->SetItemRandomBonusList(m_randomBonusListId);
@@ -2316,14 +2323,21 @@ void Item::AddBonuses(uint32 bonusListID)
     }
 }
 
-void Item::SetBonuses(std::vector<uint32> bonusListIDs)
+void Item::SetBonuses(std::vector<int32> bonusListIDs)
 {
     ClearDynamicValue(ITEM_DYNAMIC_FIELD_BONUSLIST_IDS);
     for (const auto &bonusListID : bonusListIDs) {
         AddBonuses(bonusListID);
         _bonusData.AddBonusList(bonusListID);
     }
+}
 
+std::vector<int32> Item::GetBonuses() const
+{
+    std::vector<uint32> const &dynamicValues = GetDynamicValues(ITEM_DYNAMIC_FIELD_BONUSLIST_IDS);
+    std::vector<int32> result;
+    result.assign(dynamicValues.begin(), dynamicValues.end());
+    return result;
 }
 
 void Item::ClearBonuses() {

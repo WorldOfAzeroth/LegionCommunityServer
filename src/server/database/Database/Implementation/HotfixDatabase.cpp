@@ -964,6 +964,9 @@ void HotfixDatabaseConnection::DoPrepareStatements()
         "RtOperandType1, RtOperandType2, RtOperandType3, RtOperandType4, RtOperandType5, RtOperand1, RtOperand2, RtOperand3, RtOperand4, RtOperand5, "
         "Logic1, Logic2, Logic3, Logic4, Logic5 FROM spell_item_enchantment_condition ORDER BY ID DESC", CONNECTION_SYNCH);
 
+    // SpellKeyboundOverride.db2
+    PrepareStatement(HOTFIX_SEL_SPELL_KEYBOUND_OVERRIDE, "SELECT ID, `Function`, Data, Type FROM spell_keybound_override ORDER BY ID DESC", CONNECTION_SYNCH);
+
     // SpellLabel.db2
     PrepareStatement(HOTFIX_SEL_SPELL_LABEL, "SELECT ID, LabelID, SpellID FROM spell_label WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
 

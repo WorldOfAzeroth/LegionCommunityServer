@@ -37,7 +37,7 @@ namespace WorldPackets
         struct ItemBonuses
         {
             ItemContext Context = ItemContext(0);
-            std::vector<uint32> BonusListIDs;
+            std::vector<int32> BonusListIDs;
 
             bool operator==(ItemBonuses const& r) const;
             bool operator!=(ItemBonuses const& r) const { return !(*this == r); }

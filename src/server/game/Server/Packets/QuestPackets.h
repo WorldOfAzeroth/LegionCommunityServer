@@ -307,7 +307,7 @@ namespace WorldPackets
 
             ObjectGuid QuestGiverGUID;
             int32 QuestID = 0;
-            int32 ItemChoiceID = 0;
+            uint32 ItemChoiceID = 0;
         };
 
         class QuestGiverQuestComplete final : public ServerPacket

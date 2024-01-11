@@ -23,14 +23,13 @@
 #include "Log.h"
 #include "ObjectMgr.h"
 #include "Timer.h"
-#include <list>
 #include <vector>
 
 namespace
 {
     struct RandomBonusListIds
     {
-        std::vector<uint32> BonusListIDs;
+        std::vector<int32> BonusListIDs;
         std::vector<double> Chances;
     };
 

@@ -67,6 +67,7 @@ class TC_GAME_API AuraEffect
         int32 CalculateAmount(Unit* caster);
         static Optional<float> CalculateEstimatedAmount(Unit const* caster, Unit* target, SpellInfo const* spellInfo, SpellEffectInfo const& spellEffectInfo, int32 amount, uint8 stack, AuraEffect const* aurEff);
         Optional<float> CalculateEstimatedAmount(Unit const* caster, int32 amount) const;
+        static float CalculateEstimatedfTotalPeriodicAmount(Unit* caster, Unit* target, SpellInfo const* spellInfo, SpellEffectInfo const& spellEffectInfo, float amount, uint8 stack);
         void CalculatePeriodic(Unit* caster, bool resetPeriodicTimer = true, bool load = false);
         void CalculateSpellMod();
         void ChangeAmount(int32 newAmount, bool mark = true, bool onStackOrReapply = false, AuraEffect const* triggeredBy = nullptr);
@@ -85,6 +86,7 @@ class TC_GAME_API AuraEffect
         uint32 GetTotalTicks() const;
         void ResetPeriodic(bool resetPeriodicTimer = false);
         void ResetTicks() { _ticksDone = 0; }
+
 
         bool IsPeriodic() const { return m_isPeriodic; }
         void SetPeriodic(bool isPeriodic) { m_isPeriodic = isPeriodic; }
@@ -191,6 +193,7 @@ class TC_GAME_API AuraEffect
         void HandleAuraModTotalThreat(AuraApplication const* aurApp, uint8 mode, bool apply) const;
         void HandleModTaunt(AuraApplication const* aurApp, uint8 mode, bool apply) const;
         void HandleModDetaunt(AuraApplication const* aurApp, uint8 mode, bool apply) const;
+        void HandleAuraModFixate(AuraApplication const* aurApp, uint8 mode, bool apply) const;
         //  control
         void HandleModConfuse(AuraApplication const* aurApp, uint8 mode, bool apply) const;
         void HandleModFear(AuraApplication const* aurApp, uint8 mode, bool apply) const;

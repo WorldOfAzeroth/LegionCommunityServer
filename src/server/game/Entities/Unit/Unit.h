@@ -902,6 +902,7 @@ class TC_GAME_API Unit : public WorldObject
         Powers GetPowerType() const { return Powers(GetUInt32Value(UNIT_FIELD_DISPLAY_POWER)); }
         void SetPowerType(Powers power, bool sendUpdate = true);
         void SetOverrideDisplayPowerId(uint32 powerDisplayId) { SetUInt32Value(UNIT_FIELD_OVERRIDE_DISPLAY_POWER_ID, powerDisplayId); }
+        Powers CalculateDisplayPowerType() const;
         void UpdateDisplayPower();
         int32 GetPower(Powers power) const;
         int32 GetMinPower(Powers power) const { return power == POWER_LUNAR_POWER ? -100 : 0; }
@@ -1031,7 +1032,7 @@ class TC_GAME_API Unit : public WorldObject
                                      DamageInfo* damageInfo, HealInfo* healInfo);
         void TriggerAurasProcOnEvent(ProcEventInfo& eventInfo, AuraApplicationProcContainer& procAuras);
 
-        void HandleEmoteCommand(Emote emoteId, Player* target = nullptr, Trinity::IteratorPair<int32 const*> spellVisualKitIds = {}, int32 sequenceVariation = 0);
+        void HandleEmoteCommand(Emote emoteId);
         void AttackerStateUpdate (Unit* victim, WeaponAttackType attType = BASE_ATTACK, bool extra = false);
 
         void CalculateMeleeDamage(Unit* victim, CalcDamageInfo* damageInfo, WeaponAttackType attackType = BASE_ATTACK);
@@ -1155,7 +1156,7 @@ class TC_GAME_API Unit : public WorldObject
         void SendClearTarget();
 
         bool HasAuraTypeWithFamilyFlags(AuraType auraType, uint32 familyName, flag128 familyFlags) const;
-        bool virtual HasSpell(uint32 /*spellID*/) const { return false; }
+        virtual bool HasSpell(uint32 /*spellID*/) const { return false; }
         bool HasBreakableByDamageAuraType(AuraType type, uint32 excludeAura = 0) const;
         bool HasBreakableByDamageCrowdControlAura(Unit* excludeCasterChannel = nullptr) const;
 
@@ -1471,9 +1472,9 @@ class TC_GAME_API Unit : public WorldObject
         uint32 GetCreateHealth() const { return GetUInt32Value(UNIT_FIELD_BASE_HEALTH); }
         void SetCreateMana(uint32 val) { SetUInt32Value(UNIT_FIELD_BASE_MANA, val); }
         uint32 GetCreateMana() const { return GetUInt32Value(UNIT_FIELD_BASE_MANA); }
-        int32 GetCreatePowerValue(Powers power) const;
+        virtual int32 GetCreatePowerValue(Powers power) const;
         float GetPosStat(Stats stat) const { return GetFloatValue(AsUnderlyingType(UNIT_FIELD_POSSTAT) + stat); }
-        float GetNegStat(Stats stat) const { return GetFloatValue(UNIT_FIELD_NEGSTAT + stat); }
+        float GetNegStat(Stats stat) const { return GetFloatValue(AsUnderlyingType(UNIT_FIELD_NEGSTAT) + stat); }
         float GetCreateStat(Stats stat) const { return m_createStats[stat]; }
 
         uint32 GetChannelSpellId() const { return GetUInt32Value(UNIT_FIELD_CHANNEL_DATA); }
@@ -1616,10 +1617,10 @@ class TC_GAME_API Unit : public WorldObject
         virtual float GetNativeObjectScale() const { return 1.0f; }
         virtual void RecalculateObjectScale();
         uint32 GetDisplayId() const { return GetUInt32Value(UNIT_FIELD_DISPLAYID); }
-        virtual void SetDisplayId(uint32 modelId, float displayScale = 1.f);
+        float GetDisplayScale() const { return GetUInt32Value(UNIT_FIELD_DISPLAYID); }
+        virtual void SetDisplayId(uint32 displayId, bool setNative = false);
         uint32 GetNativeDisplayId() const { return GetUInt32Value(UNIT_FIELD_NATIVEDISPLAYID); }
         void RestoreDisplayId(bool ignorePositiveAurasPreventingMounting = false);
-        void SetNativeDisplayId(uint32 displayId) { SetUInt32Value(UNIT_FIELD_NATIVEDISPLAYID, displayId);}
         void SetTransformSpell(uint32 spellid) { m_transformSpell = spellid;}
         uint32 GetTransformSpell() const { return m_transformSpell;}
 

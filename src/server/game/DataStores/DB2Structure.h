@@ -2306,6 +2306,8 @@ struct PowerTypeEntry
     int8 CenterPower;
     int8 DefaultPower;
     int8 DisplayModifier;
+
+    EnumFlag<PowerTypeFlags> GetFlags() const { return static_cast<PowerTypeFlags>(Flags); }
 };
 
 struct PrestigeLevelInfoEntry
@@ -2466,6 +2468,8 @@ struct SandboxScalingEntry
     int32 MinLevel;
     int32 MaxLevel;
     int32 Flags;
+
+    EnumFlag<ContentTuningFlag> GetFlags() const { return static_cast<ContentTuningFlag>(Flags); }
 };
 
 struct ScalingStatDistributionEntry
@@ -2816,6 +2820,14 @@ struct SpellItemEnchantmentConditionEntry
     uint8 RtOperandType[5];
     uint8 RtOperand[5];
     uint8 Logic[5];
+};
+
+struct SpellKeyboundOverrideEntry
+{
+    int32       ID;
+    LocalizedString Function;
+    int32       Data;
+    uint8       Type;
 };
 
 struct SpellLabelEntry

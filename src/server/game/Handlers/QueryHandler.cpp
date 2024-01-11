@@ -80,7 +80,7 @@ void WorldSession::HandleCreatureQuery(WorldPackets::Query::QueryCreature& packe
             SendPacket(&ci->QueryData[static_cast<uint32>(GetSessionDbLocaleIndex())]);
         else
         {
-            WorldPacket response = ci->BuildQueryData(GetSessionDbLocaleIndex());
+            WorldPacket response = ci->BuildQueryData(GetSessionDbLocaleIndex(), difficulty);
             SendPacket(&response);
         }
         TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUERY_CREATURE_RESPONSE");

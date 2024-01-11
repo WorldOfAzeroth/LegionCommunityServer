@@ -77,7 +77,7 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
 
         float GetNativeObjectScale() const override;
         void SetObjectScale(float scale) override;
-        void SetDisplayId(uint32 displayId, float displayScale = 1.f) override;
+        void SetDisplayId(uint32 displayId, bool setNative = false) override;
         void SetDisplayFromModel(uint32 modelIdx);
 
         void DisappearAndDie() { ForcedDespawn(0); }
@@ -95,6 +95,8 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
         void LoadEquipment(int8 id = 1, bool force = false);
         void SetSpawnHealth();
         void LoadTemplateRoot();
+        bool IsTemplateRooted() const { return _staticFlags.HasFlag(CREATURE_STATIC_FLAG_SESSILE); }
+        void SetTemplateRooted(bool rooted);
 
         ObjectGuid::LowType GetSpawnId() const { return m_spawnId; }
 
@@ -191,6 +193,7 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
 
         bool UpdateEntry(uint32 entry, CreatureData const* data = nullptr, bool updateLevel = true);
 
+        int32 GetCreatePowerValue(Powers power) const override;
         bool UpdateStats(Stats stat) override;
         bool UpdateAllStats() override;
         void UpdateArmor() override;
@@ -213,6 +216,7 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
 
         CreatureTemplate const* GetCreatureTemplate() const { return m_creatureInfo; }
         CreatureData const* GetCreatureData() const { return m_creatureData; }
+        CreatureDifficulty const* GetCreatureDifficulty() const { return m_creatureDifficulty; }
         CreatureAddon const* GetCreatureAddon() const;
 
         std::string const& GetAIName() const;
@@ -235,6 +239,8 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
 
         bool CanHaveLoot() const { return !_staticFlags.HasFlag(CREATURE_STATIC_FLAG_NO_LOOT); }
         void SetCanHaveLoot(bool canHaveLoot) { _staticFlags.ApplyFlag(CREATURE_STATIC_FLAG_NO_LOOT, !canHaveLoot); }
+        uint32 GetLootId() const;
+        void SetLootId(Optional<uint32> lootId);
         std::unique_ptr<Loot> m_loot;
         std::unordered_map<ObjectGuid, std::unique_ptr<Loot>> m_personalLoot;
         void StartPickPocketRefillTimer();
@@ -464,11 +470,13 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
 
         bool DisableReputationGain;
 
-        CreatureTemplate const* m_creatureInfo;                 // Can differ from sObjectMgr->GetCreatureTemplate(GetEntry()) in difficulty mode > 0
+        CreatureTemplate const* m_creatureInfo;
         CreatureData const* m_creatureData;
+        CreatureDifficulty const* m_creatureDifficulty;
         std::array<std::string_view, 3> m_stringIds;
         Optional<std::string> m_scriptStringId;
 
+        Optional<uint32> m_lootId;
         uint16 m_LootMode;                                  // Bitmask (default: LOOT_MODE_DEFAULT) that determines what loot will be lootable
 
         bool IsInvisibleDueToDespawn(WorldObject const* seer) const override;
@@ -499,6 +507,8 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
 
         time_t _lastDamagedTime; // Part of Evade mechanics
         CreatureTextRepeatGroup m_textRepeat;
+
+        void ApplyAllStaticFlags(CreatureStaticFlagsHolder const& flags);
 
         CreatureStaticFlagsHolder _staticFlags;
 

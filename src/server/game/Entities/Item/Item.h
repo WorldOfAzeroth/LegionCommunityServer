@@ -161,7 +161,7 @@ class TC_GAME_API Item : public Object
     friend void RemoveItemFromUpdateQueueOf(Item* item, Player* player);
 
     public:
-        static Item* CreateItem(uint32 itemEntry, uint32 count, ItemContext context, Player const* player = nullptr);
+        static Item* CreateItem(uint32 itemEntry, uint32 count, ItemContext context, Player const* player = nullptr, bool addDefaultBonuses = true);
         Item* CloneItem(uint32 count, Player const* player = nullptr) const;
 
         Item();
@@ -210,8 +210,8 @@ class TC_GAME_API Item : public Object
         void CheckArtifactRelicSlotUnlock(Player const* owner);
 
         void AddBonuses(uint32 bonusListID);
-        std::vector<uint32> const& GetBonusListIDs() const { return GetDynamicValues(ITEM_DYNAMIC_FIELD_BONUSLIST_IDS); }
-        void SetBonuses(std::vector<uint32> bonusListIDs);
+        std::vector<int32> GetBonuses() const;
+        void SetBonuses(std::vector<int32> bonusListIDs);
         void ClearBonuses();
 
         static void DeleteFromDB(CharacterDatabaseTransaction trans, ObjectGuid::LowType itemGuid);

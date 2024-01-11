@@ -4740,6 +4740,22 @@ struct SpellItemEnchantmentConditionLoadInfo
     }
 };
 
+struct SpellKeyboundOverrideLoadInfo
+{
+    static DB2LoadInfo const* Instance()
+    {
+        static DB2FieldMeta const fields[] =
+        {
+            { true, FT_INT, "ID" },
+            { false, FT_STRING, "Function" },
+            { true, FT_INT, "Data" },
+            { false, FT_BYTE, "Type" },
+        };
+        static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, SpellKeyboundOverrideMeta::Instance(), HOTFIX_SEL_SPELL_KEYBOUND_OVERRIDE);
+        return &loadInfo;
+    }
+};
+
 struct SpellLabelLoadInfo
 {
     static DB2LoadInfo const* Instance()

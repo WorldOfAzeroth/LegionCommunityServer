@@ -1761,7 +1761,7 @@ Loot* GameObject::GetFishLoot(Player* lootOwner)
     uint32 areaId = GetAreaId();
     while (AreaTableEntry const* areaEntry = sAreaTableStore.LookupEntry(areaId))
     {
-        fishLoot->FillLoot(areaId, LootTemplates_Fishing, lootOwner, true, true);
+        fishLoot->FillLoot(areaId, LootTemplates_Fishing, lootOwner, true, true, LOOT_MODE_DEFAULT);
         if (!fishLoot->isLooted())
             break;
 
@@ -1769,7 +1769,7 @@ Loot* GameObject::GetFishLoot(Player* lootOwner)
     }
 
     if (fishLoot->isLooted())
-        fishLoot->FillLoot(defaultzone, LootTemplates_Fishing, lootOwner, true, true);
+        fishLoot->FillLoot(defaultzone, LootTemplates_Fishing, lootOwner, true, true, LOOT_MODE_DEFAULT);
 
     return fishLoot;
 }
@@ -3039,11 +3039,11 @@ void GameObject::Use(Unit* user)
 
             //required lvl checks!
             /*
-            if (Optional<ContentTuningLevels> userLevels = sDB2Manager.GetContentTuningData(info->RequiredLevel, player->m_playerData->CtrOptions->ContentTuningConditionMask))
+            if (Optional<SandboxScalingLevels> userLevels = sDB2Manager.GetContentTuningData(info->RequiredLevel, player->m_playerData->CtrOptions->ContentTuningConditionMask))
                 if (player->GetLevel() < userLevels->MaxLevel)
                     return;
 
-            if (Optional<ContentTuningLevels> targetLevels = sDB2Manager.GetContentTuningData(info->RequiredLevel, targetPlayer->m_playerData->CtrOptions->ContentTuningConditionMask))
+            if (Optional<SandboxScalingLevels> targetLevels = sDB2Manager.GetSandboxScalingLevels(info->RequiredLevel, targetPlayer->m_playerData->CtrOptions->ContentTuningConditionMask))
                 if (targetPlayer->GetLevel() < targetLevels->MaxLevel)
                     return;
             */
@@ -3095,7 +3095,7 @@ void GameObject::Use(Unit* user)
             Player* player = user->ToPlayer();
 
             Loot* loot = new Loot(GetMap(), GetGUID(), LOOT_FISHINGHOLE, nullptr);
-            loot->FillLoot(GetGOInfo()->GetLootId(), LootTemplates_Gameobject, player, true);
+            loot->FillLoot(GetGOInfo()->GetLootId(), LootTemplates_Gameobject, player, true, false, LOOT_MODE_DEFAULT, GetMap()->GetDifficultyLootItemContext());
             m_personalLoot[player->GetGUID()].reset(loot);
 
             player->SendLoot(*loot);

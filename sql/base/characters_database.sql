@@ -1524,6 +1524,30 @@ LOCK TABLES `character_spell_cooldown` WRITE;
 /*!40000 ALTER TABLE `character_spell_cooldown` ENABLE KEYS */;
 UNLOCK TABLES;
 
+
+--
+-- Table structure for table `character_spell_favorite`
+--
+
+DROP TABLE IF EXISTS `character_spell_favorite`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `character_spell_favorite` (
+  `guid` bigint unsigned NOT NULL DEFAULT '0' COMMENT 'Global Unique Identifier',
+  `spell` int unsigned NOT NULL DEFAULT '0' COMMENT 'Spell Identifier',
+  PRIMARY KEY (`guid`,`spell`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Player System';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `character_spell_favorite`
+--
+
+LOCK TABLES `character_spell_favorite` WRITE;
+/*!40000 ALTER TABLE `character_spell_favorite` DISABLE KEYS */;
+/*!40000 ALTER TABLE `character_spell_favorite` ENABLE KEYS */;
+UNLOCK TABLES;
+
 --
 -- Table structure for table `character_stats`
 --

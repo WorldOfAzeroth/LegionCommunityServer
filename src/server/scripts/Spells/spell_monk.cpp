@@ -376,7 +376,7 @@ class spell_monk_stagger : public AuraScript
         Unit* target = GetTarget();
         float agility = target->GetStat(STAT_AGILITY);
         float base = CalculatePct(agility, float(effect->GetAmount()));
-        float K = 1.0f;
+        float K = 1.0f;//TODO
 
         float newAmount = (base / (base + K));
         newAmount *= multiplier;

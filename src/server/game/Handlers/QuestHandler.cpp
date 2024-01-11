@@ -265,15 +265,15 @@ void WorldSession::HandleQuestgiverChooseRewardOpcode(WorldPackets::Quest::Quest
         ItemTemplate const* rewardProto = sObjectMgr->GetItemTemplate(packet.ItemChoiceID);
         if (!rewardProto)
         {
-            TC_LOG_ERROR("entities.player.cheat", "Error in CMSG_QUESTGIVER_CHOOSE_REWARD: player %s %s tried to get invalid reward item (Item Entry: %u) for quest %u (possible packet-hacking detected)",
-                         _player->GetName().c_str(), _player->GetGUID().ToString().c_str(), packet.ItemChoiceID, packet.QuestID);
+            TC_LOG_ERROR("entities.player.cheat", "Error in CMSG_QUESTGIVER_CHOOSE_REWARD: player {} {} tried to get invalid reward item (Item Entry: {}) for quest {} (possible packet-hacking detected)",
+                         _player->GetName(), _player->GetGUID().ToString(), packet.ItemChoiceID, packet.QuestID);
             return;
         }
 
         bool itemValid = false;
         for (uint32 i = 0; i < quest->GetRewChoiceItemsCount(); ++i)
         {
-            if (quest->RewardChoiceItemId[i] && quest->RewardChoiceItemId[i] == packet.ItemChoiceID)
+            if (quest->RewardChoiceItemId[i] && quest->RewardChoiceItemType[i] == LootItemType::Item && quest->RewardChoiceItemId[i] == packet.ItemChoiceID)
             {
                 itemValid = true;
                 break;
@@ -787,7 +787,7 @@ void WorldSession::HandlePlayerChoiceResponse(WorldPackets::Quest::ChoiceRespons
             _player->SetTitle(sCharTitlesStore.AssertEntry(playerChoiceResponse->Reward->TitleId), false);
 
         if (playerChoiceResponse->Reward->PackageId)
-            _player->RewardQuestPackage(playerChoiceResponse->Reward->PackageId);
+            _player->RewardQuestPackage(playerChoiceResponse->Reward->PackageId, ItemContext::NONE);
 
         if (playerChoiceResponse->Reward->SkillLineId && _player->HasSkill(playerChoiceResponse->Reward->SkillLineId))
             _player->UpdateSkillPro(playerChoiceResponse->Reward->SkillLineId, 1000, playerChoiceResponse->Reward->SkillPointCount);
@@ -806,7 +806,7 @@ void WorldSession::HandlePlayerChoiceResponse(WorldPackets::Quest::ChoiceRespons
             ItemPosCountVec dest;
             if (_player->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, item.Id, item.Quantity) == EQUIP_ERR_OK)
             {
-                Item* newItem = _player->StoreNewItem(dest, item.Id, true, GenerateItemRandomBonusListId(item.Id), {}, ItemContext::Quest_Reward, item.BonusListIDs);
+                Item* newItem = _player->StoreNewItem(dest, item.Id, true, GenerateItemRandomBonusListId(item.Id), {}, ItemContext::Quest_Reward, &item.BonusListIDs);
                 _player->SendNewItem(newItem, item.Quantity, true, false);
             }
         }

@@ -686,6 +686,8 @@ namespace WorldPackets
         class SpellClick;
         class MissileTrajectoryCollision;
         class UpdateMissileTrajectory;
+        class TradeSkillSetFavorite;
+        class KeyboundOverride;
     }
 
     namespace Talent
@@ -1477,6 +1479,7 @@ class TC_GAME_API WorldSession
         void HandleLearnTalentsOpcode(WorldPackets::Talent::LearnTalents& packet);
         void HandleConfirmRespecWipeOpcode(WorldPackets::Talent::ConfirmRespecWipe& confirmRespecWipe);
         void HandleUnlearnSkillOpcode(WorldPackets::Spells::UnlearnSkill& packet);
+        void HandleTradeSkillSetFavorite(WorldPackets::Spells::TradeSkillSetFavorite const& tradeSkillSetFavorite);
 
         void HandleQuestgiverStatusQueryOpcode(WorldPackets::Quest::QuestGiverStatusQuery& packet);
         void HandleQuestgiverStatusMultipleQuery(WorldPackets::Quest::QuestGiverStatusMultipleQuery& packet);
@@ -1699,7 +1702,7 @@ class TC_GAME_API WorldSession
         void HandleObjectUpdateRescuedOpcode(WorldPackets::Misc::ObjectUpdateRescued& objectUpdateRescued);
         void HandleRequestCategoryCooldowns(WorldPackets::Spells::RequestCategoryCooldowns& requestCategoryCooldowns);
         void HandleCloseInteraction(WorldPackets::Misc::CloseInteraction& closeInteraction);
-
+        void HandleKeyboundOverride(WorldPackets::Spells::KeyboundOverride& keyboundOverride);
         // Toys
         void HandleAddToy(WorldPackets::Toy::AddToy& packet);
         void HandleUseToy(WorldPackets::Toy::UseToy& packet);

@@ -191,7 +191,7 @@ NonDefaultConstructible<pAuraEffectHandler> AuraEffectHandler[TOTAL_AURAS]=
     &AuraEffect::HandleNoImmediateEffect,                         //125 SPELL_AURA_MOD_MELEE_DAMAGE_TAKEN implemented in Unit::MeleeDamageBonus
     &AuraEffect::HandleNoImmediateEffect,                         //126 SPELL_AURA_MOD_MELEE_DAMAGE_TAKEN_PCT implemented in Unit::MeleeDamageBonus
     &AuraEffect::HandleNoImmediateEffect,                         //127 SPELL_AURA_RANGED_ATTACK_POWER_ATTACKER_BONUS implemented in Unit::MeleeDamageBonus
-    &AuraEffect::HandleNULL,                                      //128 SPELL_AURA_MOD_FIXATE
+    &AuraEffect::HandleAuraModFixate,                             //128 SPELL_AURA_MOD_FIXATE
     &AuraEffect::HandleAuraModIncreaseSpeed,                      //129 SPELL_AURA_MOD_SPEED_ALWAYS
     &AuraEffect::HandleAuraModIncreaseMountedSpeed,               //130 SPELL_AURA_MOD_MOUNTED_SPEED_ALWAYS
     &AuraEffect::HandleNoImmediateEffect,                         //131 SPELL_AURA_MOD_RANGED_ATTACK_POWER_VERSUS implemented in Unit::MeleeDamageBonus
@@ -312,7 +312,7 @@ NonDefaultConstructible<pAuraEffectHandler> AuraEffectHandler[TOTAL_AURAS]=
     &AuraEffect::HandleNoImmediateEffect,                         //246 SPELL_AURA_MOD_AURA_DURATION_BY_DISPEL_NOT_STACK implemented in Spell::EffectApplyAura
     &AuraEffect::HandleAuraCloneCaster,                           //247 SPELL_AURA_CLONE_CASTER
     &AuraEffect::HandleNoImmediateEffect,                         //248 SPELL_AURA_MOD_COMBAT_RESULT_CHANCE         implemented in Unit::RollMeleeOutcomeAgainst
-    &AuraEffect::HandleNULL,                                      //249 SPELL_AURA_MOD_DAMAGE_PERCENT_DONE_BY_TARGET_AURA_MECHANIC
+    &AuraEffect::HandleNoImmediateEffect,                         //249 SPELL_AURA_MOD_DAMAGE_PERCENT_DONE_BY_TARGET_AURA_MECHANIC implemented in Unit::SpellDamagePctDone and Unit::MeleeDamagePctDone
     &AuraEffect::HandleAuraModIncreaseHealth,                     //250 SPELL_AURA_MOD_INCREASE_HEALTH_2
     &AuraEffect::HandleNoImmediateEffect,                         //251 SPELL_AURA_MOD_ENEMY_DODGE                  implemented in Unit::GetUnitDodgeChance
     &AuraEffect::HandleModCombatSpeedPct,                         //252 SPELL_AURA_252 Is there any difference between this and SPELL_AURA_MELEE_SLOW ? maybe not stacking mod?
@@ -446,7 +446,7 @@ NonDefaultConstructible<pAuraEffectHandler> AuraEffectHandler[TOTAL_AURAS]=
     &AuraEffect::HandleNULL,                                      //380
     &AuraEffect::HandleNULL,                                      //381 SPELL_AURA_MOD_DAMAGE_TAKEN_FROM_CASTER_PET
     &AuraEffect::HandleNULL,                                      //382 SPELL_AURA_MOD_PET_STAT_PCT
-    &AuraEffect::HandleNULL,                                      //383 SPELL_AURA_IGNORE_SPELL_COOLDOWN
+    &AuraEffect::HandleNoImmediateEffect,                         //383 SPELL_AURA_IGNORE_SPELL_COOLDOWN implemented in SpellHistory::HasCooldown
     &AuraEffect::HandleNULL,                                      //384
     &AuraEffect::HandleNULL,                                      //385
     &AuraEffect::HandleNULL,                                      //386
@@ -469,7 +469,7 @@ NonDefaultConstructible<pAuraEffectHandler> AuraEffectHandler[TOTAL_AURAS]=
     &AuraEffect::HandleNoImmediateEffect,                         //403 SPELL_AURA_OVERRIDE_SPELL_VISUAL implemented in Unit::GetCastSpellXSpellVisualId
     &AuraEffect::HandleOverrideAttackPowerBySpellPower,           //404 SPELL_AURA_OVERRIDE_ATTACK_POWER_BY_SP_PCT
     &AuraEffect::HandleModRatingPct,                              //405 SPELL_AURA_MOD_RATING_PCT
-    &AuraEffect::HandleNULL,                                      //406 SPELL_AURA_KEYBOUND_OVERRIDE
+    &AuraEffect::HandleNoImmediateEffect,                         //406 SPELL_AURA_KEYBOUND_OVERRIDE implemented in WorldSession::HandleKeyboundOverride
     &AuraEffect::HandleNULL,                                      //407 SPELL_AURA_MOD_FEAR_2
     &AuraEffect::HandleUnused,                                    //408 SPELL_AURA_SET_ACTION_BUTTON_SPELL_COUNT clientside
     &AuraEffect::HandleAuraCanTurnWhileFalling,                   //409 SPELL_AURA_CAN_TURN_WHILE_FALLING
@@ -691,6 +691,39 @@ Optional<float> AuraEffect::CalculateEstimatedAmount(Unit const* caster, int32 a
         return {};
 
     return CalculateEstimatedAmount(caster, GetBase()->GetUnitOwner(), GetSpellInfo(), GetSpellEffectInfo(), amount, GetBase()->GetStackAmount(), this);
+}
+
+
+float AuraEffect::CalculateEstimatedfTotalPeriodicAmount(Unit* caster, Unit* target, SpellInfo const* spellInfo, SpellEffectInfo const& spellEffectInfo,
+                                                         float amount, uint8 stack)
+{
+    int32 maxDuration = Aura::CalcMaxDuration(spellInfo, caster, nullptr);
+    if (maxDuration <= 0)
+        return 0.0f;
+
+    int32 period = spellEffectInfo.ApplyAuraPeriod;
+    if (!period)
+        return 0.0f;
+
+    if (Player* modOwner = caster->GetSpellModOwner())
+        modOwner->ApplySpellMod(spellInfo, SpellModOp::Period, period);
+
+    // Haste modifies periodic time of channeled spells
+    if (spellInfo->IsChanneled())
+        caster->ModSpellDurationTime(spellInfo, period);
+    else if (spellInfo->HasAttribute(SPELL_ATTR5_SPELL_HASTE_AFFECTS_PERIODIC))
+        period = int32(period * caster->GetModCastingSpeed());
+    else if (spellInfo->HasAttribute(SPELL_ATTR8_MELEE_HASTE_AFFECTS_PERIODIC))
+        period = int32(period * caster->GetFloatValue(UNIT_FIELD_MOD_HASTE));
+
+    if (!period)
+        return 0.0f;
+
+    float totalTicks = float(maxDuration) / period;
+    if (spellInfo->HasAttribute(SPELL_ATTR5_EXTRA_INITIAL_PERIOD))
+        totalTicks += 1.0f;
+
+    return totalTicks * CalculateEstimatedAmount(caster, target, spellInfo, spellEffectInfo, amount, stack, nullptr).value_or(amount);
 }
 
 uint32 AuraEffect::GetTotalTicks() const
@@ -2785,6 +2818,23 @@ void AuraEffect::HandleModDetaunt(AuraApplication const* aurApp, uint8 mode, boo
         return;
 
     caster->GetThreatManager().TauntUpdate();
+}
+
+void AuraEffect::HandleAuraModFixate(AuraApplication const* aurApp, uint8 mode, bool apply) const
+{
+    if (!(mode & AURA_EFFECT_HANDLE_REAL))
+        return;
+
+    Unit* caster = GetCaster();
+    Unit* target = aurApp->GetTarget();
+
+    if (!caster || !caster->IsAlive() || !target->IsAlive() || !caster->CanHaveThreatList())
+        return;
+
+    if (apply)
+        caster->GetThreatManager().FixateTarget(target);
+    else
+        caster->GetThreatManager().ClearFixate();
 }
 
 /*****************************/

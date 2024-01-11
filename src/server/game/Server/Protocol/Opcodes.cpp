@@ -19,8 +19,6 @@
 #include "Log.h"
 #include "WorldSession.h"
 #include "Packets/AllPackets.h"
-#include <iomanip>
-#include <sstream>
 
 template<class PacketClass, void(WorldSession::*HandlerFunction)(PacketClass&)>
 class PacketHandler : public ClientOpcodeHandler
@@ -30,7 +28,7 @@ public:
 
     void Call(WorldSession* session, WorldPacket& packet) const override
     {
-        PacketClass nicePacket(std::move(packet));
+        std::remove_cv_t<PacketClass> nicePacket(std::move(packet));
         nicePacket.Read();
         (session->*HandlerFunction)(nicePacket);
         session->LogUnprocessedTail(nicePacket.GetRawPacket());
@@ -65,26 +63,34 @@ OpcodeTable::~OpcodeTable()
     }
 }
 
-template<typename Handler, Handler HandlerFunction>
-void OpcodeTable::ValidateAndSetClientOpcode(OpcodeClient opcode, char const* name, SessionStatus status, PacketProcessing processing)
+bool OpcodeTable::ValidateClientOpcode(OpcodeClient opcode, char const* name) const
 {
     if (uint32(opcode) == NULL_OPCODE)
     {
         TC_LOG_ERROR("network", "Opcode {} does not have a value", name);
-        return;
+        return false;
     }
 
     if (uint32(opcode) >= NUM_OPCODE_HANDLERS)
     {
         TC_LOG_ERROR("network", "Tried to set handler for an invalid opcode {}", opcode);
-        return;
+        return false;
     }
 
-    if (_internalTableClient[opcode] != NULL)
+    if (_internalTableClient[opcode] != nullptr)
     {
         TC_LOG_ERROR("network", "Tried to override client handler of {} with {} (opcode {})", _internalTableClient[opcode]->Name, name, opcode);
-        return;
+        return false;
     }
+
+    return true;
+}
+
+template<typename Handler, Handler HandlerFunction>
+void OpcodeTable::ValidateAndSetClientOpcode(OpcodeClient opcode, char const* name, SessionStatus status, PacketProcessing processing)
+{
+    if (!ValidateClientOpcode(opcode, name))
+        return;
 
     _internalTableClient[opcode] = new PacketHandler<typename get_packet_class<Handler>::type, HandlerFunction>(name, status, processing);
 }
@@ -115,7 +121,7 @@ void OpcodeTable::ValidateAndSetServerOpcode(OpcodeServer opcode, char const* na
         return;
     }
 
-    if (_internalTableServer[opcode] != NULL)
+    if (_internalTableServer[opcode] != nullptr)
     {
         TC_LOG_ERROR("network", "Tried to override server handler of {} with {} (opcode {})", opcodeTable[opcode]->Name, name, opcode);
         return;
@@ -464,7 +470,7 @@ void OpcodeTable::Initialize()
     DEFINE_HANDLER(CMSG_JOIN_PET_BATTLE_QUEUE,                              STATUS_UNHANDLED, PROCESS_INPLACE,      &WorldSession::Handle_NULL);
     DEFINE_HANDLER(CMSG_JOIN_RATED_BATTLEGROUND,                            STATUS_UNHANDLED, PROCESS_INPLACE,      &WorldSession::Handle_NULL);
     DEFINE_HANDLER(CMSG_KEEP_ALIVE,                                         STATUS_NEVER,     PROCESS_INPLACE,      &WorldSession::Handle_EarlyProccess);
-    DEFINE_HANDLER(CMSG_KEYBOUND_OVERRIDE,                                  STATUS_UNHANDLED, PROCESS_INPLACE,      &WorldSession::Handle_NULL);
+    DEFINE_HANDLER(CMSG_KEYBOUND_OVERRIDE,                                  STATUS_LOGGEDIN,  PROCESS_THREADSAFE,   &WorldSession::HandleKeyboundOverride);
     DEFINE_HANDLER(CMSG_LEARN_PVP_TALENTS,                                  STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleLearnPvpTalentsOpcode);
     DEFINE_HANDLER(CMSG_LEARN_TALENTS,                                      STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleLearnTalentsOpcode);
     DEFINE_HANDLER(CMSG_LEAVE_GROUP,                                        STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleLeaveGroupOpcode);
@@ -803,7 +809,7 @@ void OpcodeTable::Initialize()
     DEFINE_HANDLER(CMSG_TOGGLE_DIFFICULTY,                                  STATUS_UNHANDLED, PROCESS_INPLACE,      &WorldSession::Handle_NULL);
     DEFINE_HANDLER(CMSG_TOGGLE_PVP,                                         STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleTogglePvP);
     DEFINE_HANDLER(CMSG_TOTEM_DESTROYED,                                    STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleTotemDestroyed);
-    DEFINE_HANDLER(CMSG_TRADE_SKILL_SET_FAVORITE,                           STATUS_UNHANDLED, PROCESS_THREADUNSAFE, &WorldSession::Handle_NULL);
+    DEFINE_HANDLER(CMSG_TRADE_SKILL_SET_FAVORITE,                           STATUS_LOGGEDIN,  PROCESS_INPLACE,      &WorldSession::HandleTradeSkillSetFavorite);
     DEFINE_HANDLER(CMSG_TRAINER_BUY_SPELL,                                  STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleTrainerBuySpellOpcode);
     DEFINE_HANDLER(CMSG_TRAINER_LIST,                                       STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleTrainerListOpcode);
     DEFINE_HANDLER(CMSG_TRANSMOGRIFY_ITEMS,                                 STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleTransmogrifyItems);
@@ -1835,21 +1841,19 @@ template<typename T>
 inline std::string GetOpcodeNameForLoggingImpl(T id)
 {
     uint32 opcode = uint32(id);
-    std::ostringstream ss;
-    ss << '[';
+    char const* name = nullptr;
 
-    if (static_cast<uint32>(id) < NUM_OPCODE_HANDLERS)
+    if (opcode < NUM_OPCODE_HANDLERS)
     {
         if (OpcodeHandler const* handler = opcodeTable[id])
-            ss << handler->Name;
+            name = handler->Name;
         else
-            ss << "UNKNOWN OPCODE";
+            name = "UNKNOWN OPCODE";
     }
     else
-        ss << "INVALID OPCODE";
+        name = "INVALID OPCODE";
 
-    ss << " 0x" << std::hex << std::setw(4) << std::setfill('0') << std::uppercase << opcode << std::nouppercase << std::dec << " (" << opcode << ")]";
-    return ss.str();
+    return Trinity::StringFormat("[{0} 0x{1:04X} ({1})]", name, opcode);
 }
 
 std::string GetOpcodeNameForLogging(OpcodeClient opcode)

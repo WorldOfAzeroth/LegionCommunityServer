@@ -47,7 +47,7 @@ struct StoredLootItem
     bool NeedsQuest;
     ItemRandomBonusListId RandomBonusListId;
     ItemContext Context;
-    std::vector<uint32> BonusListIDs;
+    std::vector<int32> BonusListIDs;
 };
 
 class StoredLootContainer
