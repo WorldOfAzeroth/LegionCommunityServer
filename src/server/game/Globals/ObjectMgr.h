@@ -736,14 +736,14 @@ struct GossipMenuItems
     uint32              BoxMoney;
     std::string         BoxText;
     uint32              BoxBroadcastTextID;
-    ConditionContainer  Conditions;
+    ConditionsReference Conditions;
 };
 
 struct GossipMenus
 {
     uint32              MenuID;
     uint32              TextID;
-    ConditionContainer  Conditions;
+    ConditionsReference Conditions;
 };
 
 struct GossipMenuAddon
@@ -811,7 +811,7 @@ typedef std::array<std::unordered_map<uint32, QuestGreetingLocale>, 2> QuestGree
 struct GraveyardData
 {
     uint32 safeLocId;
-    ConditionContainer Conditions;
+    ConditionsReference Conditions;
 };
 
 typedef std::multimap<uint32, GraveyardData> GraveyardContainer;

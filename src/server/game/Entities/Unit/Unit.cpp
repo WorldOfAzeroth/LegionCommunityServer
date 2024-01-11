@@ -3519,6 +3519,7 @@ void Unit::_RegisterAuraEffect(AuraEffect* aurEff, bool apply)
 {
     if (apply)
     {
+        TC_LOG_ERROR("spells", "Unit::_RegisterAuraEffect type {}, apply {}", aurEff->GetAuraType(), apply);
         m_modAuras[aurEff->GetAuraType()].push_front(aurEff);
         if (Player* player = ToPlayer())
         {

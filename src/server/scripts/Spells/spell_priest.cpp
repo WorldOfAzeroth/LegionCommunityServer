@@ -23,6 +23,7 @@
 
 #include "ScriptMgr.h"
 #include "AreaTriggerAI.h"
+#include "CommonPredicates.h"
 #include "Containers.h"
 #include "G3DPosition.hpp"
 #include "GridNotifiers.h"
@@ -450,7 +451,7 @@ class spell_pri_divine_hymn : public SpellScript
 
         if (targets.size() > maxTargets)
         {
-            targets.sort(Trinity::HealthPctOrderPred());
+            targets.sort(Trinity::Predicates::HealthPctOrderPred());
             targets.resize(maxTargets);
         }
     }
