@@ -1863,7 +1863,6 @@ void World::SetInitialWorldSettings()
     sObjectMgr->LoadCreatureLocales();
     sObjectMgr->LoadGameObjectLocales();
     sObjectMgr->LoadQuestTemplateLocale();
-    sObjectMgr->LoadQuestGreetingLocales();
     sObjectMgr->LoadQuestOfferRewardLocale();
     sObjectMgr->LoadQuestRequestItemsLocale();
     sObjectMgr->LoadQuestObjectivesLocale();
@@ -2266,6 +2265,8 @@ void World::SetInitialWorldSettings()
     TC_LOG_INFO("server.loading", "Loading faction change quest pairs...");
     sObjectMgr->LoadFactionChangeQuests();
 
+    TC_LOG_INFO("server.loading", "Loading faction change item pairs...");
+    sObjectMgr->LoadFactionChangeItems();
 
     TC_LOG_INFO("server.loading", "Loading faction change reputation pairs...");
     sObjectMgr->LoadFactionChangeReputations();

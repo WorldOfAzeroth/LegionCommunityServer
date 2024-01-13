@@ -1667,6 +1667,7 @@ class TC_GAME_API ObjectMgr
         CharacterConversionMap FactionChangeTitles;
 
         void LoadFactionChangeAchievements();
+        void LoadFactionChangeItems();
         void LoadFactionChangeQuests();
         void LoadFactionChangeReputations();
         void LoadFactionChangeSpells();

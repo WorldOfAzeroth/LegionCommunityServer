@@ -9760,6 +9760,43 @@ void ObjectMgr::LoadFactionChangeAchievements()
     TC_LOG_INFO("server.loading", ">> Loaded {} faction change achievement pairs in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
+void ObjectMgr::LoadFactionChangeItems()
+{
+    uint32 oldMSTime = getMSTime();
+    uint32 count = 0;
+    
+    QueryResult result = WorldDatabase.Query("SELECT alliance_id, horde_id FROM player_factionchange_items");
+
+    if (!result)
+    {
+        TC_LOG_INFO("server.loading", ">> Loaded 0 faction change item pairs. DB table `player_factionchange_items` is empty.");
+        return;
+    }
+    
+    do
+    {
+        Field* fields = result->Fetch();
+
+        uint32 alliance = fields[0].GetUInt32();
+        uint32 horde = fields[1].GetUInt32();
+
+        const ItemTemplate *pTemplate = GetItemTemplate(alliance);
+        if (!pTemplate)
+            TC_LOG_ERROR("sql.sql", "Item {} (alliance_id) referenced in `player_factionchange_items` does not exist, pair skipped!", alliance);
+        else if (!GetItemTemplate(horde))
+            TC_LOG_ERROR("sql.sql", "Item {} (horde_id) referenced in `player_factionchange_items` does not exist, pair skipped!", horde);
+        else if (pTemplate->HasFlag(ITEM_FLAG2_FACTION_HORDE))
+            FactionChangeItemsHordeToAlliance[horde] = alliance;
+        else if (pTemplate->HasFlag(ITEM_FLAG2_FACTION_ALLIANCE))
+            FactionChangeItemsAllianceToHorde[alliance] = alliance;
+        else
+            TC_LOG_ERROR("sql.sql", "Item alliance-horde {}-{} does not match the itme flags, pair skipped!", alliance, horde);
+
+        ++count;
+    }
+    while (result->NextRow());
+    TC_LOG_INFO("server.loading", ">> Loaded {} faction change item pairs in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+}
 
 void ObjectMgr::LoadFactionChangeQuests()
 {
