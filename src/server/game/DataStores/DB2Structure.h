@@ -2395,7 +2395,7 @@ struct QuestMoneyRewardEntry
 struct QuestPackageItemEntry
 {
     uint32 ID;
-    int32 ItemID;
+    uint32 ItemID;
     uint16 PackageID;
     uint8 DisplayType;
     uint32 ItemQuantity;

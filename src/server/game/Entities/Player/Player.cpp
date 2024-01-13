@@ -14165,7 +14165,7 @@ bool Player::CanRewardQuest(Quest const* quest, LootItemType rewardType, uint32 
         {
             for (QuestPackageItemEntry const* questPackageItem : *questPackageItems)
             {
-                if (questPackageItem->ItemID != int32(rewardId))
+                if (questPackageItem->ItemID != rewardId)
                     continue;
 
                 if (CanSelectQuestPackageItem(questPackageItem))
@@ -14187,7 +14187,7 @@ bool Player::CanRewardQuest(Quest const* quest, LootItemType rewardType, uint32 
             {
                 for (QuestPackageItemEntry const* questPackageItem : *questPackageItems)
                 {
-                    if (questPackageItem->ItemID != int32(rewardId))
+                    if (questPackageItem->ItemID != rewardId)
                         continue;
 
                     InventoryResult res = CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, questPackageItem->ItemID, questPackageItem->ItemQuantity);
@@ -14395,7 +14395,7 @@ void Player::RewardQuestPackage(uint32 questPackageId, ItemContext context, uint
     {
         for (QuestPackageItemEntry const* questPackageItem : *questPackageItems)
         {
-            if (onlyItemId && questPackageItem->ItemID != int32(onlyItemId))
+            if (onlyItemId && questPackageItem->ItemID != onlyItemId)
                 continue;
 
             if (CanSelectQuestPackageItem(questPackageItem))
@@ -14417,7 +14417,7 @@ void Player::RewardQuestPackage(uint32 questPackageId, ItemContext context, uint
         {
             for (QuestPackageItemEntry const* questPackageItem : *questPackageItems)
             {
-                if (onlyItemId && questPackageItem->ItemID != int32(onlyItemId))
+                if (onlyItemId && questPackageItem->ItemID != onlyItemId)
                     continue;
 
                 ItemPosCountVec dest;
@@ -18807,6 +18807,33 @@ void Player::AddInstanceEnterTime(uint32 instanceId, time_t enterTime)
 {
     if (_instanceResetTimes.find(instanceId) == _instanceResetTimes.end())
         _instanceResetTimes.insert(InstanceTimeMap::value_type(instanceId, enterTime + HOUR));
+}
+
+WorldSafeLocsEntry const* Player::GetInstanceEntrance(uint32 targetMapId)
+{
+    WorldSafeLocsEntry const* entranceLocation = nullptr;
+    MapEntry const* mapEntry = sMapStore.AssertEntry(targetMapId);
+
+    if (mapEntry->Instanceable())
+    {
+        // Check if we can contact the instancescript of the instance for an updated entrance location
+        if (uint32 targetInstanceId = sMapMgr->FindInstanceIdForPlayer(targetMapId, this))
+            if (Map* map = sMapMgr->FindMap(targetMapId, targetInstanceId))
+                if (InstanceMap* instanceMap = map->ToInstanceMap())
+                    if (InstanceScript* instanceScript = instanceMap->GetInstanceScript())
+                        entranceLocation = sDB2Manager.GetWorldSafeLoc(instanceScript->GetEntranceLocation());
+
+        // Finally check with the instancesave for an entrance location if we did not get a valid one from the instancescript
+        if (!entranceLocation)
+        {
+            Group* group = GetGroup();
+            Difficulty difficulty = group ? group->GetDifficultyID(mapEntry) : GetDifficultyID(mapEntry);
+            ObjectGuid instanceOwnerGuid = group ? group->GetRecentInstanceOwner(targetMapId) : GetGUID();
+            if (InstanceLock const* instanceLock = sInstanceLockMgr.FindActiveInstanceLock(instanceOwnerGuid, { mapEntry, sDB2Manager.GetDownscaledMapDifficultyData(targetMapId, difficulty) }))
+                entranceLocation = sDB2Manager.GetWorldSafeLoc(instanceLock->GetData()->EntranceWorldSafeLocId);
+        }
+    }
+    return entranceLocation;
 }
 
 bool Player::_LoadHomeBind(PreparedQueryResult result)

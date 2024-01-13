@@ -39,6 +39,17 @@ namespace Movement
     class Spline;
 }
 
+enum ScaleCurveOffset : uint16
+{
+    START_TIME_OFFSET = 0,
+    PARAMETER_CURVE_OFFSET = 1,
+    POINT1_X_OFFSET = 2,
+    POINT1_Y_OFFSET = 3,
+    POINT2_X_OFFSET = 4,
+    POINT2_Y_OFFSET = 5,
+    OVERRIDE_ACTIVE_OFFSET = 6
+};
+
 class TC_GAME_API AreaTrigger : public WorldObject, public GridObject<AreaTrigger>, public MapObject
 {
     public:
@@ -57,12 +68,18 @@ class TC_GAME_API AreaTrigger : public WorldObject, public GridObject<AreaTrigge
 
         bool IsNeverVisibleFor(WorldObject const* seer, bool allowServersideObjects = false) const override { return WorldObject::IsNeverVisibleFor(seer) || (IsServerSide() && !allowServersideObjects); }
 
+        float GetStationaryX() const override { return _stationaryPosition.GetPositionX(); }
+        float GetStationaryY() const override { return _stationaryPosition.GetPositionY(); }
+        float GetStationaryZ() const override { return _stationaryPosition.GetPositionZ(); }
+        float GetStationaryO() const override { return _stationaryPosition.GetOrientation(); }
+        void RelocateStationaryPosition(Position const& pos) { _stationaryPosition.Relocate(pos); }
+
     private:
-        bool Create(uint32 areaTriggerCreatePropertiesId, Unit* caster, Unit* target, SpellInfo const* spellInfo, Position const& pos, int32 duration, uint32 spellVisual, Spell const* spell, AuraEffect const* aurEff);
+        bool Create(uint32 areaTriggerCreatePropertiesId, Unit* caster, Unit* target, SpellInfo const* spellInfo, Position const& pos, int32 duration, uint32 spellVisual, Spell* spell, AuraEffect const* aurEff);
         bool CreateServer(Map* map, AreaTriggerTemplate const* areaTriggerTemplate, AreaTriggerSpawn const& position);
 
     public:
-        static AreaTrigger* CreateAreaTrigger(uint32 areaTriggerCreatePropertiesId, Unit* caster, Unit* target, SpellInfo const* spellInfo, Position const& pos, int32 duration, uint32 spellVisual, Spell const* spell = nullptr, AuraEffect const* aurEff = nullptr);
+        static AreaTrigger* CreateAreaTrigger(uint32 areaTriggerCreatePropertiesId, Unit* caster, Unit* target, SpellInfo const* spellInfo, Position const& pos, int32 duration, uint32 spellVisual, Spell* spell = nullptr, AuraEffect const* aurEff = nullptr);
         static ObjectGuid CreateNewMovementForceId(Map* map, uint32 areaTriggerId);
         bool LoadFromDB(ObjectGuid::LowType spawnId, Map* map, bool addToMap, bool allowDuplicate);
 
@@ -72,8 +89,24 @@ class TC_GAME_API AreaTrigger : public WorldObject, public GridObject<AreaTrigge
         uint32 GetSpellId() const { return GetUInt32Value(AREATRIGGER_SPELLID); }
         AuraEffect const* GetAuraEffect() const { return _aurEff; }
         uint32 GetTimeSinceCreated() const { return _timeSinceCreated; }
+
+        void SetOverrideScaleCurve(float overrideScale);
+        void SetOverrideScaleCurve(std::array<DBCPosition2D, 2> const& points, Optional<uint32> startTimeOffset = {}, CurveInterpolationMode interpolation = CurveInterpolationMode::Linear);
+        void ClearOverrideScaleCurve();
+
+        void SetExtraScaleCurve(float extraScale);
+        void SetExtraScaleCurve(std::array<DBCPosition2D, 2> const& points, Optional<uint32> startTimeOffset = {}, CurveInterpolationMode interpolation = CurveInterpolationMode::Linear);
+        void ClearExtraScaleCurve();
+
         uint32 GetTimeToTarget() const { return GetUInt32Value(AREATRIGGER_TIME_TO_TARGET); }
+        void SetTimeToTarget(uint32 timeToTarget) { SetUInt32Value(AREATRIGGER_TIME_TO_TARGET, timeToTarget); }
+
         uint32 GetTimeToTargetScale() const { return GetUInt32Value(AREATRIGGER_TIME_TO_TARGET_SCALE); }
+        void SetTimeToTargetScale(uint32 timeToTargetScale) { SetUInt32Value(AREATRIGGER_TIME_TO_TARGET_SCALE, timeToTargetScale); }
+
+        uint32 GetTimeToTargetExtraScale() const { return GetUInt32Value(AREATRIGGER_TIME_TO_TARGET_EXTRA_SCALE); }
+        void SetTimeToTargetExtraScale(uint32 timeToTargetExtraScale) { SetUInt32Value(AREATRIGGER_TIME_TO_TARGET_SCALE, timeToTargetExtraScale);  }
+
         int32 GetDuration() const { return _duration; }
         int32 GetTotalDuration() const { return _totalDuration; }
         void SetDuration(int32 newDuration);
@@ -94,7 +127,7 @@ class TC_GAME_API AreaTrigger : public WorldObject, public GridObject<AreaTrigge
         uint32 GetFaction() const override;
 
         AreaTriggerShapeInfo const& GetShape() const { return _shape; }
-        float GetMaxSearchRadius() const { return _maxSearchRadius; }
+        float GetMaxSearchRadius() const;
         Position const& GetRollPitchYaw() const { return _rollPitchYaw; }
         Position const& GetTargetRollPitchYaw() const { return _targetRollPitchYaw; }
         void InitSplineOffsets(std::vector<Position> const& offsets, uint32 timeToTarget);
@@ -105,13 +138,25 @@ class TC_GAME_API AreaTrigger : public WorldObject, public GridObject<AreaTrigge
 
         void InitOrbit(AreaTriggerOrbitInfo const& orbit, uint32 timeToTarget);
         bool HasOrbit() const;
-        Optional<AreaTriggerOrbitInfo> const& GetCircularMovementInfo() const { return _orbitInfo; }
+        Optional<AreaTriggerOrbitInfo> const& GetOrbit() const { return _orbitInfo; }
+
 
         void UpdateShape();
 
     protected:
         void _UpdateDuration(int32 newDuration);
+
+        float CalcCurrentScale() const;
+
         float GetProgress() const;
+
+        float GetScaleCurveProgress(uint16 scaleCurveAt, uint32 timeTo) const;
+        float GetScaleCurveValueAtProgress(uint16 scaleCurveAt, float x) const;
+        float GetScaleCurveValue(uint16 scaleCurveAt, uint32 timeTo) const;
+        void SetScaleCurve(uint16 scaleCurveAt, float constantValue);
+        void SetScaleCurve(uint16 scaleCurveAt, std::array<DBCPosition2D, 2> const& points, Optional<uint32> startTimeOffset, CurveInterpolationMode interpolation);
+        void ClearScaleCurve(uint16 scaleCurveAt);
+        void SetScaleCurve(uint16 scaleCurveAt, Optional<AreaTriggerScaleCurveTemplate> const& curve);
 
         void UpdateTargetList();
         void SearchUnits(std::vector<Unit*>& targetList, float radius, bool check3D);
@@ -127,7 +172,7 @@ class TC_GAME_API AreaTrigger : public WorldObject, public GridObject<AreaTrigge
         void DoActions(Unit* unit);
         void UndoActions(Unit* unit);
 
-        void UpdatePolygonOrientation();
+        void UpdatePolygonVertices();
         void UpdateOrbitPosition(uint32 diff);
         void UpdateSplinePosition(uint32 diff);
 
@@ -142,12 +187,12 @@ class TC_GAME_API AreaTrigger : public WorldObject, public GridObject<AreaTrigge
 
         AuraEffect const* _aurEff;
 
+        Position _stationaryPosition;
         AreaTriggerShapeInfo _shape;
-        float _maxSearchRadius;
         int32 _duration;
         int32 _totalDuration;
         uint32 _timeSinceCreated;
-        float _previousCheckOrientation;
+        float _verticesUpdatePreviousOrientation;
         bool _isRemoved;
 
         Position _rollPitchYaw;

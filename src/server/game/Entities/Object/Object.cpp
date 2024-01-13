@@ -348,7 +348,8 @@ ObjectGuid const& Object::GetGuidValue(uint16 index) const
     return *((ObjectGuid*)&(m_uint32Values[index]));
 }
 
-void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const {
+void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const
+{
     bool NoBirthAnim = false;
     bool EnablePortals = false;
     bool PlayHoverAnim = false;
@@ -535,7 +536,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const {
         bool hasAreaTriggerPolygon = createProperties && shape.IsPolygon();
         bool hasAreaTriggerCylinder = shape.IsCylinder();
         bool hasAreaTriggerSpline = areaTrigger->HasSplines();
-        bool hasAreaTriggerUnkType = false; // areaTriggerTemplate->HasFlag(AREATRIGGER_FLAG_UNK5);
+        bool hasOrbit = areaTrigger->HasOrbit();
 
         data->WriteBit(hasAbsoluteOrientation);
         data->WriteBit(hasDynamicShape);
@@ -556,7 +557,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const {
         data->WriteBit(hasAreaTriggerPolygon);
         data->WriteBit(hasAreaTriggerCylinder);
         data->WriteBit(hasAreaTriggerSpline);
-        data->WriteBit(hasAreaTriggerUnkType);
+        data->WriteBit(hasOrbit);
 
         if (hasUnk3)
             data->WriteBit(0);
@@ -627,27 +628,8 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const {
             *data << float(shape.CylinderDatas.LocationZOffsetTarget);
         }
 
-        if (hasAreaTriggerUnkType) {
-            /*packet.ResetBitReader();
-            var unk1 = packet.ReadBit("AreaTriggerUnk1");
-            var hasCenter = packet.ReadBit("HasCenter", index);
-            packet.ReadBit("Unk bit 703 1", index);
-            packet.ReadBit("Unk bit 703 2", index);
-
-            packet.ReadUInt32();
-            packet.ReadInt32();
-            packet.ReadUInt32();
-            packet.ReadSingle("Radius", index);
-            packet.ReadSingle("BlendFromRadius", index);
-            packet.ReadSingle("InitialAngel", index);
-            packet.ReadSingle("ZOffset", index);
-
-            if (unk1)
-                packet.ReadPackedGuid128("AreaTriggerUnkGUID", index);
-
-            if (hasCenter)
-                packet.ReadVector3("Center", index);*/
-        }
+        if (hasOrbit)
+            *data << *areaTrigger->GetOrbit();
     }
 
     if (HasGameObject) {
@@ -2963,12 +2945,12 @@ Player* WorldObject::GetSpellModOwner() const
 }
 
 // function uses real base points (typically value - 1)
-int32 WorldObject::CalculateSpellDamage(Unit const* target, SpellEffectInfo const& spellEffectInfo, int32 const* basePoints /*= nullptr*/, float* variance /*= nullptr*/, uint32 castItemId /*= 0*/, int32 itemLevel /*= -1*/) const
+int32 WorldObject::CalculateSpellDamage(Unit const* target, SpellEffectInfo const& spellEffectInfo, int32 const* basePoints /*= nullptr*/, float* variance /*= nullptr*/, int32 itemLevel /*= -1*/) const
 {
     if (variance)
         *variance = 0.0f;
 
-    return spellEffectInfo.CalcValue(this, basePoints, target, variance, castItemId, itemLevel);
+    return spellEffectInfo.CalcValue(this, basePoints, target, variance, itemLevel);
 }
 
 float WorldObject::GetSpellMaxRangeForTarget(Unit const* target, SpellInfo const* spellInfo) const

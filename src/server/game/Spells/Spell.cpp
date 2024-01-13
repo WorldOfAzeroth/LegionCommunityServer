@@ -466,7 +466,7 @@ SpellValue::SpellValue(SpellInfo const* proto, WorldObject const* caster)
 {
     memset(EffectBasePoints, 0, sizeof(EffectBasePoints));
     for (SpellEffectInfo const& spellEffectInfo : proto->GetEffects())
-        EffectBasePoints[spellEffectInfo.EffectIndex] = spellEffectInfo.CalcBaseValue(caster, nullptr, 0, -1);
+        EffectBasePoints[spellEffectInfo.EffectIndex] = spellEffectInfo.CalcBaseValue(caster, nullptr, -1);
 
     CustomBasePointsMask = 0;
     MaxAffectedTargets = proto->MaxAffectedTargets;
@@ -3113,7 +3113,7 @@ SpellMissInfo Spell::PreprocessSpellHit(Unit* unit, TargetInfo& hitInfo)
         for (SpellEffectInfo const& auraSpellEffect : m_spellInfo->GetEffects())
             hitInfo.AuraBasePoints[auraSpellEffect.EffectIndex] = (m_spellValue->CustomBasePointsMask & (1 << auraSpellEffect.EffectIndex))
             ? m_spellValue->EffectBasePoints[auraSpellEffect.EffectIndex]
-            : auraSpellEffect.CalcBaseValue(m_originalCaster, unit, m_castItemEntry, m_castItemLevel);
+            : auraSpellEffect.CalcBaseValue(m_originalCaster, unit, m_castItemLevel);
 
         // Get Data Needed for Diminishing Returns, some effects may have multiple auras, so this must be done on spell hit, not aura add
         hitInfo.DRGroup = m_spellInfo->GetDiminishingReturnsGroupForSpell();
@@ -4923,7 +4923,7 @@ void Spell::UpdateSpellCastDataAmmo(WorldPackets::Spells::SpellAmmo& ammo)
     ammo.InventoryType = ammoInventoryType;
 }
 
-static std::pair<int32, SpellHealPredictionType> CalcPredictedHealing(SpellInfo const* spellInfo, Unit const* unitCaster, Unit* target, uint32 castItemEntry, int32 castItemLevel, Spell* spell, bool withPeriodic)
+static std::pair<int32, SpellHealPredictionType> CalcPredictedHealing(SpellInfo const* spellInfo, Unit const* unitCaster, Unit* target, int32 castItemLevel, Spell* spell, bool withPeriodic)
 {
     int32 points = 0;
     SpellHealPredictionType type = SPELL_HEAL_PREDICTION_TARGET;
@@ -4934,7 +4934,7 @@ static std::pair<int32, SpellHealPredictionType> CalcPredictedHealing(SpellInfo 
             case SPELL_EFFECT_HEAL:
             case SPELL_EFFECT_HEAL_PCT:
                 points += unitCaster->SpellHealingBonusDone(target,
-                    spellInfo, spellEffectInfo.CalcValue(unitCaster, nullptr, target, nullptr, castItemEntry, castItemLevel),
+                    spellInfo, spellEffectInfo.CalcValue(unitCaster, nullptr, target, nullptr, castItemLevel),
                     DIRECT_DAMAGE, spellEffectInfo, 1, spell);
 
                 if (target != unitCaster && (spellEffectInfo.TargetA.GetTarget() == TARGET_UNIT_CASTER || spellEffectInfo.TargetB.GetTarget() == TARGET_UNIT_CASTER))
@@ -4953,12 +4953,12 @@ static std::pair<int32, SpellHealPredictionType> CalcPredictedHealing(SpellInfo 
                 case SPELL_AURA_PERIODIC_HEAL:
                 case SPELL_AURA_OBS_MOD_HEALTH:
                     points += unitCaster->SpellHealingBonusDone(target,
-                        spellInfo, spellEffectInfo.CalcValue(unitCaster, nullptr, target, nullptr, castItemEntry, castItemLevel),
+                        spellInfo, spellEffectInfo.CalcValue(unitCaster, nullptr, target, nullptr, castItemLevel),
                         DIRECT_DAMAGE, spellEffectInfo, 1, spell) * spellInfo->GetMaxTicks();
                     break;
                 case SPELL_AURA_PERIODIC_TRIGGER_SPELL:
                     if (SpellInfo const* triggered = sSpellMgr->GetSpellInfo(spellEffectInfo.TriggerSpell, spellInfo->Difficulty))
-                        points += CalcPredictedHealing(triggered, unitCaster, target, castItemEntry, castItemLevel, nullptr, withPeriodic).first;
+                        points += CalcPredictedHealing(triggered, unitCaster, target, castItemLevel, nullptr, withPeriodic).first;
                     break;
                 default:
                     break;
@@ -4979,7 +4979,7 @@ void Spell::UpdateSpellHealPrediction(WorldPackets::Spells::SpellHealPrediction&
 
     if (Unit* target = m_targets.GetUnitTarget())
     {
-        auto [points, type] = CalcPredictedHealing(m_spellInfo, unitCaster, target, m_castItemEntry, m_castItemLevel, this, withPeriodic);
+        auto [points, type] = CalcPredictedHealing(m_spellInfo, unitCaster, target, m_castItemLevel, this, withPeriodic);
         healPrediction.Points = points;
         healPrediction.Type = type;
     }
@@ -6698,7 +6698,7 @@ SpellCastResult Spell::CheckCast(bool strict, int32* param1 /*= nullptr*/, int32
             && !m_spellInfo->IsTargetingArea())
             if (Unit* target = m_targets.GetUnitTarget())
                 if (!target->IsHighestExclusiveAuraEffect(m_spellInfo, spellEffectInfo.ApplyAuraName,
-                    spellEffectInfo.CalcValue(m_caster, &m_spellValue->EffectBasePoints[spellEffectInfo.EffectIndex], nullptr, nullptr, m_castItemEntry, m_castItemLevel),
+                    spellEffectInfo.CalcValue(m_caster, &m_spellValue->EffectBasePoints[spellEffectInfo.EffectIndex], nullptr, nullptr, m_castItemLevel),
                     approximateAuraEffectMask, false))
                     return SPELL_FAILED_AURA_BOUNCED;
     }
@@ -7032,7 +7032,7 @@ SpellCastResult Spell::CheckMovement() const
 int32 Spell::CalculateDamage(SpellEffectInfo const& spellEffectInfo, Unit const* target, float* var /*= nullptr*/) const
 {
     bool needRecalculateBasePoints = !(m_spellValue->CustomBasePointsMask & (1 << spellEffectInfo.EffectIndex));
-    return m_caster->CalculateSpellDamage(target, spellEffectInfo, needRecalculateBasePoints ? nullptr : &m_spellValue->EffectBasePoints[spellEffectInfo.EffectIndex], var, m_castItemEntry, m_castItemLevel);
+    return m_caster->CalculateSpellDamage(target, spellEffectInfo, needRecalculateBasePoints ? nullptr : &m_spellValue->EffectBasePoints[spellEffectInfo.EffectIndex], var, m_castItemLevel);
 }
 
 bool Spell::CanAutoCast(Unit* target)

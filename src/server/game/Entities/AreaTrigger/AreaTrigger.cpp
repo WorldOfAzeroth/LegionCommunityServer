@@ -32,6 +32,7 @@
 #include "ObjectMgr.h"
 #include "PhasingHandler.h"
 #include "Player.h"
+#include "ScriptMgr.h"
 #include "SpellInfo.h"
 #include "SpellMgr.h"
 #include "Spline.h"
@@ -39,9 +40,10 @@
 #include "Unit.h"
 #include "UpdateData.h"
 #include "ZoneScript.h"
+#include <bit>
 
-AreaTrigger::AreaTrigger() : WorldObject(false), MapObject(), _spawnId(0), _aurEff(nullptr), _maxSearchRadius(0.0f),
-    _duration(0), _totalDuration(0), _timeSinceCreated(0), _previousCheckOrientation(std::numeric_limits<float>::infinity()),
+AreaTrigger::AreaTrigger() : WorldObject(false), MapObject(), _spawnId(0), _aurEff(nullptr),
+    _duration(0), _totalDuration(0), _timeSinceCreated(0), _verticesUpdatePreviousOrientation(std::numeric_limits<float>::infinity()),
     _isRemoved(false), _reachedDestination(true), _lastSplineIndex(0), _movementTime(0),
     _areaTriggerCreateProperties(nullptr), _areaTriggerTemplate(nullptr)
 {
@@ -87,10 +89,10 @@ void AreaTrigger::RemoveFromWorld()
         if (Unit* caster = GetCaster())
             caster->_UnregisterAreaTrigger(this);
 
+        _ai->OnRemove();
+
         // Handle removal of all units, calling OnUnitExit & deleting auras if needed
         HandleUnitEnterExit({});
-
-        _ai->OnRemove();
 
         WorldObject::RemoveFromWorld();
 
@@ -100,13 +102,14 @@ void AreaTrigger::RemoveFromWorld()
     }
 }
 
-bool AreaTrigger::Create(uint32 areaTriggerCreatePropertiesId, Unit* caster, Unit* target, SpellInfo const* spellInfo, Position const& pos, int32 duration, uint32 spellXSpellVisualId, Spell const* spell, AuraEffect const* aurEff)
+bool AreaTrigger::Create(uint32 areaTriggerCreatePropertiesId, Unit* caster, Unit* target, SpellInfo const* spellInfo, Position const& pos, int32 duration, uint32 spellXSpellVisualId, Spell* spell, AuraEffect const* aurEff)
 {
     _targetGuid = target ? target->GetGUID() : ObjectGuid::Empty;
     _aurEff = aurEff;
 
     SetMap(caster->GetMap());
     Relocate(pos);
+    RelocateStationaryPosition(pos);
     if (!IsPositionValid())
     {
         TC_LOG_ERROR("entities.areatrigger", "AreaTrigger (areaTriggerCreatePropertiesId {}) not created. Invalid coordinates (X: {} Y: {})", areaTriggerCreatePropertiesId, GetPositionX(), GetPositionY());
@@ -134,10 +137,10 @@ bool AreaTrigger::Create(uint32 areaTriggerCreatePropertiesId, Unit* caster, Uni
     SetObjectScale(1.0f);
 
     _shape = GetCreateProperties()->Shape;
-    _maxSearchRadius = GetCreateProperties()->GetMaxSearchRadius();
 
     SetGuidValue(AREATRIGGER_CASTER, caster->GetGUID());
-    SetGuidValue(AREATRIGGER_CREATING_EFFECT_GUID, caster->GetGUID());
+    if (spell)
+        SetGuidValue(AREATRIGGER_CREATING_EFFECT_GUID, caster->GetGUID());
     SetUInt32Value(AREATRIGGER_SPELLID, spellInfo->Id);
     SetUInt32Value(AREATRIGGER_SPELL_FOR_VISUALS, spellInfo->Id);
     SetUInt32Value(AREATRIGGER_SPELL_X_SPELL_VISUAL_ID, spellXSpellVisualId);
@@ -145,9 +148,25 @@ bool AreaTrigger::Create(uint32 areaTriggerCreatePropertiesId, Unit* caster, Uni
     SetFloatValue(AREATRIGGER_BOUNDS_RADIUS_2D, GetMaxSearchRadius());
     SetUInt32Value(AREATRIGGER_DECAL_PROPERTIES_ID, GetCreateProperties()->DecalPropertiesId);
 
-    for (uint8 scaleCurveIndex = 0; scaleCurveIndex < MAX_AREATRIGGER_SCALE; ++scaleCurveIndex)
-        if (GetCreateProperties()->ExtraScale.Data.Structured.Points[scaleCurveIndex])
-            SetUInt32Value(AREATRIGGER_EXTRA_SCALE_CURVE + scaleCurveIndex, GetCreateProperties()->ExtraScale.Data.Structured.Points[scaleCurveIndex]);
+    SetScaleCurve(AREATRIGGER_EXTRA_SCALE_CURVE, GetCreateProperties()->ExtraScale);
+
+    if (Player const* modOwner = caster->GetSpellModOwner())
+    {
+        float multiplier = 1.0f;
+        int32 flat = 0;
+        modOwner->GetSpellModValues(spellInfo, SpellModOp::Radius, spell, GetUInt32Value(AREATRIGGER_BOUNDS_RADIUS_2D), &flat, &multiplier);
+        if (multiplier != 1.0f)
+        {
+            AreaTriggerScaleCurveTemplate overrideScale;
+            overrideScale.Curve = multiplier;
+            SetScaleCurve(AREATRIGGER_OVERRIDE_SCALE_CURVE, overrideScale);
+        }
+    }
+
+    //SetUpdateFieldValue(areaTriggerData.ModifyValue(&UF::AreaTriggerData::VisualAnim).ModifyValue(&UF::VisualAnim::AnimationDataID), GetCreateProperties()->AnimId);
+    //SetUpdateFieldValue(areaTriggerData.ModifyValue(&UF::AreaTriggerData::VisualAnim).ModifyValue(&UF::VisualAnim::AnimKitID), GetCreateProperties()->AnimKitId);
+    //if (GetTemplate() && GetTemplate()->HasFlag(AREATRIGGER_FLAG_UNK3))
+    //    SetUpdateFieldValue(areaTriggerData.ModifyValue(&UF::AreaTriggerData::VisualAnim).ModifyValue(&UF::VisualAnim::Field_C), true);
 
     PhasingHandler::InheritPhaseShift(this, caster);
 
@@ -212,7 +231,7 @@ bool AreaTrigger::Create(uint32 areaTriggerCreatePropertiesId, Unit* caster, Uni
     return true;
 }
 
-AreaTrigger* AreaTrigger::CreateAreaTrigger(uint32 areaTriggerCreatePropertiesId, Unit* caster, Unit* target, SpellInfo const* spellInfo, Position const& pos, int32 duration, uint32 spellVisual, Spell const* spell /*= nullptr*/, AuraEffect const* aurEff /*= nullptr*/)
+AreaTrigger* AreaTrigger::CreateAreaTrigger(uint32 areaTriggerCreatePropertiesId, Unit* caster, Unit* target, SpellInfo const* spellInfo, Position const& pos, int32 duration, uint32 spellVisual, Spell* spell /*= nullptr*/, AuraEffect const* aurEff /*= nullptr*/)
 {
     AreaTrigger* at = new AreaTrigger();
     if (!at->Create(areaTriggerCreatePropertiesId, caster, target, spellInfo, pos, duration, spellVisual, spell, aurEff))
@@ -248,6 +267,7 @@ bool AreaTrigger::CreateServer(Map* map, AreaTriggerTemplate const* areaTriggerT
 {
     SetMap(map);
     Relocate(position.spawnPoint);
+    RelocateStationaryPosition(position.spawnPoint);
     if (!IsPositionValid())
     {
         TC_LOG_ERROR("entities.areatrigger", "AreaTriggerServer (id {}) not created. Invalid coordinates (X: {} Y: {})",
@@ -264,20 +284,25 @@ bool AreaTrigger::CreateServer(Map* map, AreaTriggerTemplate const* areaTriggerT
     SetEntry(areaTriggerTemplate->Id.Id);
 
     SetObjectScale(1.0f);
-
-    SetFloatValue(AREATRIGGER_BOUNDS_RADIUS_2D, GetMaxSearchRadius());
-    SetUInt32Value(AREATRIGGER_DECAL_PROPERTIES_ID, 24);
-
-    float tmp = 1.0000001f;
-    uint32 tmp2;
-    memcpy(&tmp2, &tmp, sizeof(tmp));
-
-    SetUInt32Value(AREATRIGGER_EXTRA_SCALE_CURVE, tmp2);
-    SetUInt32Value(AREATRIGGER_OVERRIDE_SCALE_CURVE, true);
+    SetDuration(-1);
 
     _shape = position.Shape;
-    _maxSearchRadius = _shape.GetMaxSearchRadius();
 
+    SetUInt32Value(AREATRIGGER_BOUNDS_RADIUS_2D, GetMaxSearchRadius());
+    if (position.SpellForVisuals)
+    {
+        SpellInfo const* spellInfo = sSpellMgr->AssertSpellInfo(*position.SpellForVisuals, DIFFICULTY_NONE);
+        SetUInt32Value(AREATRIGGER_SPELL_FOR_VISUALS, *position.SpellForVisuals);
+        SetUInt32Value(AREATRIGGER_SPELL_X_SPELL_VISUAL_ID, spellInfo->GetSpellXSpellVisualId());
+        SetUInt32Value(AREATRIGGER_SPELLID, spellInfo->Id);
+    }
+
+    SetScaleCurve(AREATRIGGER_DECAL_PROPERTIES_ID, _shape.GetMaxSearchRadius());
+    if (IsServerSide())
+        SetUInt32Value(AREATRIGGER_DECAL_PROPERTIES_ID, 24); // blue decal, for .debug areatrigger visibility
+
+    SetScaleCurve(AREATRIGGER_EXTRA_SCALE_CURVE, AreaTriggerScaleCurveTemplate());
+    
     if (position.phaseUseFlags || position.phaseId || position.phaseGroup)
         PhasingHandler::InitDbPhaseShift(GetPhaseShift(), position.phaseUseFlags, position.phaseId, position.phaseGroup);
 
@@ -297,7 +322,6 @@ void AreaTrigger::Update(uint32 diff)
 
     if (!IsServerSide())
     {
-        // "If" order matter here, Orbit > Attached > Splines
         if (HasOrbit())
         {
             UpdateOrbitPosition(diff);
@@ -305,20 +329,48 @@ void AreaTrigger::Update(uint32 diff)
         else if (GetTemplate() && GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_ATTACHED))
         {
             if (Unit* target = GetTarget())
-                GetMap()->AreaTriggerRelocation(this, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), target->GetOrientation());
+            {
+                float orientation = 0.0f;
+                if (AreaTriggerCreateProperties const* createProperties = GetCreateProperties())
+                    if (createProperties->FacingCurveId)
+                        orientation = sDB2Manager.GetCurveValueAt(createProperties->FacingCurveId, GetProgress());
+
+                if (!GetTemplate() || !GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_ABSOLUTE_ORIENTATION))
+                    orientation += target->GetOrientation();
+
+                GetMap()->AreaTriggerRelocation(this, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), orientation);
+            }
+        }
+        else if (HasSplines())
+        {
+            UpdateSplinePosition(diff);
         }
         else
-            UpdateSplinePosition(diff);
-
-        if (GetDuration() != -1)
         {
-            if (GetDuration() > int32(diff))
-                _UpdateDuration(_duration - diff);
-            else
+            if (AreaTriggerCreateProperties const* createProperties = GetCreateProperties())
             {
-                Remove(); // expired
-                return;
+                if (createProperties->FacingCurveId)
+                {
+                    float orientation = sDB2Manager.GetCurveValueAt(createProperties->FacingCurveId, GetProgress());
+                    if (!GetTemplate() || !GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_ABSOLUTE_ORIENTATION))
+                        orientation += GetStationaryO();
+
+                    SetOrientation(orientation);
+                }
             }
+
+            UpdateShape();
+        }
+    }
+
+    if (GetDuration() != -1)
+    {
+        if (GetDuration() > int32(diff))
+            _UpdateDuration(_duration - diff);
+        else
+        {
+            Remove(); // expired
+            return;
         }
     }
 
@@ -334,6 +386,38 @@ void AreaTrigger::Remove()
         AddObjectToRemoveList(); // calls RemoveFromWorld
     }
 }
+
+void AreaTrigger::SetOverrideScaleCurve(float overrideScale)
+{
+    SetScaleCurve(AREATRIGGER_OVERRIDE_SCALE_CURVE, overrideScale);
+}
+
+void AreaTrigger::SetOverrideScaleCurve(std::array<DBCPosition2D, 2> const& points, Optional<uint32> startTimeOffset, CurveInterpolationMode interpolation)
+{
+    SetScaleCurve(AREATRIGGER_OVERRIDE_SCALE_CURVE, points, startTimeOffset, interpolation);
+}
+
+void AreaTrigger::ClearOverrideScaleCurve()
+{
+    ClearScaleCurve(AREATRIGGER_OVERRIDE_SCALE_CURVE);
+}
+
+void AreaTrigger::SetExtraScaleCurve(float extraScale)
+{
+    SetScaleCurve(AREATRIGGER_EXTRA_SCALE_CURVE, extraScale);
+}
+
+void AreaTrigger::SetExtraScaleCurve(std::array<DBCPosition2D, 2> const& points, Optional<uint32> startTimeOffset, CurveInterpolationMode interpolation)
+{
+    SetScaleCurve(AREATRIGGER_EXTRA_SCALE_CURVE, points, startTimeOffset, interpolation);
+}
+
+void AreaTrigger::ClearExtraScaleCurve()
+{
+    ClearScaleCurve(AREATRIGGER_EXTRA_SCALE_CURVE);
+}
+
+
 
 void AreaTrigger::SetDuration(int32 newDuration)
 {
@@ -352,9 +436,158 @@ void AreaTrigger::_UpdateDuration(int32 newDuration)
     m_uint32Values[AREATRIGGER_DURATION] = _duration;
 }
 
+float AreaTrigger::CalcCurrentScale() const
+{
+    float scale = 1.0f;
+    uint32 value = GetUInt32Value(AREATRIGGER_OVERRIDE_SCALE_CURVE + AsUnderlyingType(OVERRIDE_ACTIVE_OFFSET));
+    if (value)
+        scale *= std::max(GetScaleCurveValue(AREATRIGGER_OVERRIDE_SCALE_CURVE, GetUInt32Value(AREATRIGGER_TIME_TO_TARGET_SCALE)), 0.000001f);
+    else if (AreaTriggerCreateProperties const* createProperties = GetCreateProperties())
+        if (createProperties->ScaleCurveId)
+            scale *= std::max(sDB2Manager.GetCurveValueAt(createProperties->ScaleCurveId, GetScaleCurveProgress(AREATRIGGER_OVERRIDE_SCALE_CURVE, GetUInt32Value(AREATRIGGER_TIME_TO_TARGET_SCALE))), 0.000001f);
+
+    scale *= std::max(GetScaleCurveValue(AREATRIGGER_EXTRA_SCALE_CURVE, GetUInt32Value(AREATRIGGER_TIME_TO_TARGET_EXTRA_SCALE)), 0.000001f);
+
+    return scale;
+}
+
 float AreaTrigger::GetProgress() const
 {
-    return GetTimeSinceCreated() < GetTimeToTargetScale() ? float(GetTimeSinceCreated()) / float(GetTimeToTargetScale()) : 1.0f;
+    if (_totalDuration <= 0)
+        return 1.0f;
+
+    return std::clamp(float(GetTimeSinceCreated()) / float(GetTotalDuration()), 0.0f, 1.0f);
+}
+
+float AreaTrigger::GetScaleCurveProgress(uint16 scaleCurveAt, uint32 timeTo) const
+{
+    if (!timeTo)
+        return 0.0f;
+
+    return std::clamp(float(GetTimeSinceCreated() - GetUInt32Value(scaleCurveAt + START_TIME_OFFSET)) / float(timeTo), 0.0f, 1.0f);
+}
+
+float AreaTrigger::GetScaleCurveValueAtProgress(uint16 scaleCurveAt, float x) const
+{
+    ASSERT(GetUInt32Value(scaleCurveAt + OVERRIDE_ACTIVE_OFFSET), "ScaleCurve must be active to evaluate it");
+
+    // unpack ParameterCurve
+    uint32 parameterCurve = GetUInt32Value(scaleCurveAt + PARAMETER_CURVE_OFFSET);
+    if (parameterCurve & 1)
+        return std::bit_cast<float>(parameterCurve & ~1);
+
+    std::array<DBCPosition2D, 2> points;
+
+    points[0] = { .X = GetFloatValue(scaleCurveAt + POINT1_X_OFFSET), .Y = GetFloatValue(scaleCurveAt + POINT1_Y_OFFSET)};
+    points[1] = { .X = GetFloatValue(scaleCurveAt + POINT2_Y_OFFSET), .Y = GetFloatValue(scaleCurveAt + POINT2_Y_OFFSET)};
+
+
+    CurveInterpolationMode mode = CurveInterpolationMode(parameterCurve >> 1 & 0x7);
+    std::size_t pointCount = parameterCurve >> 24 & 0xFF;
+
+    return sDB2Manager.GetCurveValueAt(mode, std::span(points.begin(), pointCount), x);
+}
+
+float AreaTrigger::GetScaleCurveValue(uint16 scaleCurveAt, uint32 timeTo) const
+{
+    return GetScaleCurveValueAtProgress(scaleCurveAt, GetScaleCurveProgress(scaleCurveAt, timeTo));
+}
+
+void AreaTrigger::SetScaleCurve(uint16 scaleCurveAt, float constantValue)
+{
+    AreaTriggerScaleCurveTemplate curveTemplate;
+    curveTemplate.Curve = constantValue;
+    SetScaleCurve(scaleCurveAt, curveTemplate);
+}
+
+void AreaTrigger::SetScaleCurve(uint16 scaleCurveAt, std::array<DBCPosition2D, 2> const& points,
+    Optional<uint32> startTimeOffset, CurveInterpolationMode interpolation)
+{
+    AreaTriggerScaleCurvePointsTemplate curve;
+    curve.Mode = interpolation;
+    curve.Points = points;
+
+    AreaTriggerScaleCurveTemplate curveTemplate;
+    curveTemplate.StartTimeOffset = startTimeOffset.value_or(GetTimeSinceCreated());
+    curveTemplate.Curve = curve;
+
+    SetScaleCurve(scaleCurveAt, curveTemplate);
+}
+
+void AreaTrigger::ClearScaleCurve(uint16 scaleCurveAt)
+{
+    SetUInt32Value(scaleCurveAt + START_TIME_OFFSET, 0);
+    SetUInt32Value(scaleCurveAt + PARAMETER_CURVE_OFFSET, 0);
+    SetFloatValue(scaleCurveAt + POINT1_X_OFFSET, 0);
+    SetFloatValue(scaleCurveAt + POINT1_Y_OFFSET, 0);
+    SetFloatValue(scaleCurveAt + POINT2_X_OFFSET, 0);
+    SetFloatValue(scaleCurveAt + POINT2_Y_OFFSET, 0);
+    SetUInt32Value(scaleCurveAt + OVERRIDE_ACTIVE_OFFSET, false);
+}
+
+void AreaTrigger::SetScaleCurve(uint16 scaleCurveAt, Optional<AreaTriggerScaleCurveTemplate> const& curve)
+{
+    if (!curve)
+    {
+        SetUInt32Value(scaleCurveAt + OVERRIDE_ACTIVE_OFFSET, false);
+        return;
+    }
+
+    SetUInt32Value(scaleCurveAt + OVERRIDE_ACTIVE_OFFSET, true);
+    SetUInt32Value(scaleCurveAt + START_TIME_OFFSET, curve->StartTimeOffset);
+
+    Position point;
+    // ParameterCurve packing information
+    // (not_using_points & 1) | ((interpolation_mode & 0x7) << 1) | ((first_point_offset & 0xFFFFF) << 4) | ((point_count & 0xFF) << 24)
+    //   if not_using_points is set then the entire field is simply read as a float (ignoring that lowest bit)
+
+    if (float const* simpleFloat = std::get_if<float>(&curve->Curve))
+    {
+        uint32 packedCurve = std::bit_cast<uint32>(*simpleFloat);
+        packedCurve |= 1;
+
+        SetUInt32Value(scaleCurveAt + PARAMETER_CURVE_OFFSET, packedCurve);
+        SetFloatValue(scaleCurveAt + POINT1_X_OFFSET, 0);
+        SetFloatValue(scaleCurveAt + POINT1_Y_OFFSET, 0);
+        SetFloatValue(scaleCurveAt + POINT2_X_OFFSET, 0);
+        SetFloatValue(scaleCurveAt + POINT2_Y_OFFSET, 0);
+    }
+    else if (AreaTriggerScaleCurvePointsTemplate const* curvePoints = std::get_if<AreaTriggerScaleCurvePointsTemplate>(&curve->Curve))
+    {
+        CurveInterpolationMode mode = curvePoints->Mode;
+        if (curvePoints->Points[1].X < curvePoints->Points[0].X)
+            mode = CurveInterpolationMode::Constant;
+
+        switch (mode)
+        {
+            case CurveInterpolationMode::CatmullRom:
+                // catmullrom requires at least 4 points, impossible here
+                mode = CurveInterpolationMode::Cosine;
+                break;
+            case CurveInterpolationMode::Bezier3:
+            case CurveInterpolationMode::Bezier4:
+            case CurveInterpolationMode::Bezier:
+                // bezier requires more than 2 points, impossible here
+                mode = CurveInterpolationMode::Linear;
+                break;
+            default:
+                break;
+        }
+
+        uint32 pointCount = 2;
+        if (mode == CurveInterpolationMode::Constant)
+            pointCount = 1;
+
+        uint32 packedCurve = (uint32(mode) << 1) | (pointCount << 24);
+        SetUInt32Value(scaleCurveAt + PARAMETER_CURVE_OFFSET, packedCurve);
+
+        for (std::size_t i = 0; i < curvePoints->Points.size(); ++i)
+        {
+            point.Relocate(curvePoints->Points[i].X, curvePoints->Points[i].Y);
+            SetFloatValue(scaleCurveAt + POINT1_X_OFFSET + i * 2, point.GetPositionX());
+            SetFloatValue(scaleCurveAt + POINT1_Y_OFFSET + i * 2, point.GetPositionY());
+        }
+    }
 }
 
 void AreaTrigger::UpdateTargetList()
@@ -389,10 +622,10 @@ void AreaTrigger::UpdateTargetList()
     {
         if (ConditionContainer const* conditions = sConditionMgr->GetConditionsForAreaTrigger(GetTemplate()->Id.Id, GetTemplate()->Id.IsServerSide))
         {
-            targetList.erase(std::remove_if(targetList.begin(), targetList.end(), [conditions](Unit* target)
+            Trinity::Containers::EraseIf(targetList, [conditions](Unit const* target)
             {
                 return !sConditionMgr->IsObjectMeetToConditions(target, *conditions);
-            }), targetList.end());
+            });
         }
     }
 
@@ -416,93 +649,125 @@ void AreaTrigger::SearchUnits(std::vector<Unit*>& targetList, float radius, bool
 
 void AreaTrigger::SearchUnitInSphere(std::vector<Unit*>& targetList)
 {
-    float radius = _shape.SphereDatas.Radius;
-    if (GetTemplate() && GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_DYNAMIC_SHAPE))
-    {
-        if (GetCreateProperties()->MorphCurveId)
-        {
-            radius = G3D::lerp(_shape.SphereDatas.Radius,
-                _shape.SphereDatas.RadiusTarget,
-                sDB2Manager.GetCurveValueAt(GetCreateProperties()->MorphCurveId, GetProgress()));
-        }
-    }
+    float progress = GetProgress();
+    if (AreaTriggerCreateProperties const* createProperties = GetCreateProperties())
+        if (createProperties->MorphCurveId)
+            progress = sDB2Manager.GetCurveValueAt(createProperties->MorphCurveId, progress);
+
+    float scale = CalcCurrentScale();
+    float radius = G3D::lerp(_shape.SphereDatas.Radius, _shape.SphereDatas.RadiusTarget, progress) * scale;
 
     SearchUnits(targetList, radius, true);
 }
 
 void AreaTrigger::SearchUnitInBox(std::vector<Unit*>& targetList)
 {
-    SearchUnits(targetList, GetMaxSearchRadius(), false);
+    float progress = GetProgress();
+    if (AreaTriggerCreateProperties const* createProperties = GetCreateProperties())
+        if (createProperties->MorphCurveId)
+            progress = sDB2Manager.GetCurveValueAt(createProperties->MorphCurveId, progress);
+
+    float scale = CalcCurrentScale();
+    float extentsX = G3D::lerp(_shape.BoxDatas.Extents[0], _shape.BoxDatas.ExtentsTarget[0], progress) * scale;
+    float extentsY = G3D::lerp(_shape.BoxDatas.Extents[1], _shape.BoxDatas.ExtentsTarget[1], progress) * scale;
+    float extentsZ = G3D::lerp(_shape.BoxDatas.Extents[2], _shape.BoxDatas.ExtentsTarget[2], progress) * scale;
+    float radius = std::sqrt(extentsX * extentsX + extentsY * extentsY);
+
+    SearchUnits(targetList, radius, false);
 
     Position const& boxCenter = GetPosition();
-    float extentsX = _shape.BoxDatas.Extents[0];
-    float extentsY = _shape.BoxDatas.Extents[1];
-    float extentsZ = _shape.BoxDatas.Extents[2];
-
-    targetList.erase(std::remove_if(targetList.begin(), targetList.end(), [boxCenter, extentsX, extentsY, extentsZ](Unit* unit) -> bool
+    Trinity::Containers::EraseIf(targetList, [boxCenter, extentsX, extentsY, extentsZ](Unit const* unit) -> bool
     {
-        return !unit->IsWithinBox(boxCenter, extentsX, extentsY, extentsZ);
-    }), targetList.end());
+        return !unit->IsWithinBox(boxCenter, extentsX, extentsY, extentsZ / 2);
+    });
 }
 
 void AreaTrigger::SearchUnitInPolygon(std::vector<Unit*>& targetList)
 {
-    SearchUnits(targetList, GetMaxSearchRadius(), false);
+    float progress = GetProgress();
+    if (AreaTriggerCreateProperties const* createProperties = GetCreateProperties())
+        if (createProperties->MorphCurveId)
+            progress = sDB2Manager.GetCurveValueAt(createProperties->MorphCurveId, progress);
 
-    float height = _shape.PolygonDatas.Height;
+    float height = G3D::lerp(_shape.PolygonDatas.Height, _shape.PolygonDatas.HeightTarget, progress);
     float minZ = GetPositionZ() - height;
     float maxZ = GetPositionZ() + height;
 
-    targetList.erase(std::remove_if(targetList.begin(), targetList.end(), [this, minZ, maxZ](Unit* unit) -> bool
+    SearchUnits(targetList, GetMaxSearchRadius(), false);
+
+    Trinity::Containers::EraseIf(targetList, [this, minZ, maxZ](Unit const* unit) -> bool
     {
-        return !CheckIsInPolygon2D(unit)
-            || unit->GetPositionZ() < minZ
-            || unit->GetPositionZ() > maxZ;
-    }), targetList.end());
+        return unit->GetPositionZ() < minZ
+            || unit->GetPositionZ() > maxZ
+            || !CheckIsInPolygon2D(unit);
+    });
 }
 
 void AreaTrigger::SearchUnitInCylinder(std::vector<Unit*>& targetList)
 {
-    SearchUnits(targetList, GetMaxSearchRadius(), false);
+    float progress = GetProgress();
+    if (AreaTriggerCreateProperties const* createProperties = GetCreateProperties())
+        if (createProperties->MorphCurveId)
+            progress = sDB2Manager.GetCurveValueAt(createProperties->MorphCurveId, progress);
 
-    float height = _shape.CylinderDatas.Height;
+    float scale = CalcCurrentScale();
+    float radius = G3D::lerp(_shape.CylinderDatas.Radius, _shape.CylinderDatas.RadiusTarget, progress) * scale;
+    float height = G3D::lerp(_shape.CylinderDatas.Height, _shape.CylinderDatas.HeightTarget, progress);
+
     float minZ = GetPositionZ() - height;
     float maxZ = GetPositionZ() + height;
 
-    targetList.erase(std::remove_if(targetList.begin(), targetList.end(), [minZ, maxZ](Unit* unit) -> bool
+    SearchUnits(targetList, radius, false);
+
+    Trinity::Containers::EraseIf(targetList, [minZ, maxZ](Unit const* unit) -> bool
     {
         return unit->GetPositionZ() < minZ
             || unit->GetPositionZ() > maxZ;
-    }), targetList.end());
+    });
 }
 
 void AreaTrigger::SearchUnitInDisk(std::vector<Unit*>& targetList)
 {
-    SearchUnits(targetList, GetMaxSearchRadius(), false);
+    float progress = GetProgress();
+    if (AreaTriggerCreateProperties const* createProperties = GetCreateProperties())
+        if (createProperties->MorphCurveId)
+            progress = sDB2Manager.GetCurveValueAt(createProperties->MorphCurveId, progress);
 
-    float innerRadius = _shape.DiskDatas.InnerRadius;
-    float height = _shape.DiskDatas.Height;
+    float scale = CalcCurrentScale();
+    float innerRadius = G3D::lerp(_shape.DiskDatas.InnerRadius, _shape.DiskDatas.InnerRadiusTarget, progress) * scale;
+    float outerRadius = G3D::lerp(_shape.DiskDatas.OuterRadius, _shape.DiskDatas.OuterRadiusTarget, progress) * scale;
+    float height = G3D::lerp(_shape.DiskDatas.Height, _shape.DiskDatas.HeightTarget, progress);
+
     float minZ = GetPositionZ() - height;
     float maxZ = GetPositionZ() + height;
 
-    targetList.erase(std::remove_if(targetList.begin(), targetList.end(), [this, innerRadius, minZ, maxZ](Unit const* unit) -> bool
+    SearchUnits(targetList, outerRadius, false);
+
+    Trinity::Containers::EraseIf(targetList, [this, innerRadius, minZ, maxZ](Unit const* unit) -> bool
     {
-        return unit->IsInDist2d(this, innerRadius) ||  unit->GetPositionZ() < minZ || unit->GetPositionZ() > maxZ;
-    }), targetList.end());
+        return unit->IsInDist2d(this, innerRadius) || unit->GetPositionZ() < minZ || unit->GetPositionZ() > maxZ;
+    });
 }
 
 void AreaTrigger::SearchUnitInBoundedPlane(std::vector<Unit*>& targetList)
 {
-    SearchUnits(targetList, GetMaxSearchRadius(), false);
+    float progress = GetProgress();
+    if (AreaTriggerCreateProperties const* createProperties = GetCreateProperties())
+        if (createProperties->MorphCurveId)
+            progress = sDB2Manager.GetCurveValueAt(createProperties->MorphCurveId, progress);
+
+    float scale = CalcCurrentScale();
+    float extentsX = G3D::lerp(_shape.BoundedPlaneDatas.Extents[0], _shape.BoundedPlaneDatas.ExtentsTarget[0], progress) * scale;
+    float extentsY = G3D::lerp(_shape.BoundedPlaneDatas.Extents[1], _shape.BoundedPlaneDatas.ExtentsTarget[1], progress) * scale;
+    float radius = std::sqrt(extentsX * extentsX + extentsY * extentsY);
+
+    SearchUnits(targetList, radius, false);
 
     Position const& boxCenter = GetPosition();
-    float extentsX = _shape.BoxDatas.Extents[0];
-    float extentsY = _shape.BoxDatas.Extents[1];
-
-    targetList.erase(std::remove_if(targetList.begin(), targetList.end(), [boxCenter, extentsX, extentsY](Unit const* unit) -> bool
+    Trinity::Containers::EraseIf(targetList, [boxCenter, extentsX, extentsY](Unit const* unit) -> bool
     {
         return !unit->IsWithinBox(boxCenter, extentsX, extentsY, MAP_SIZE);
-    }), targetList.end());
+    });
 }
 
 void AreaTrigger::HandleUnitEnterExit(std::vector<Unit*> const& newTargetList)
@@ -564,8 +829,8 @@ uint32 AreaTrigger::GetScriptId() const
     if (_spawnId)
         return ASSERT_NOTNULL(sAreaTriggerDataStore->GetAreaTriggerSpawn(_spawnId))->scriptId;
 
-    if (GetCreateProperties())
-        return GetCreateProperties()->ScriptId;
+    if (AreaTriggerCreateProperties const* createProperties = GetCreateProperties())
+        return createProperties->ScriptId;
 
     return 0;
 }
@@ -588,15 +853,36 @@ uint32 AreaTrigger::GetFaction() const
     return 0;
 }
 
-void AreaTrigger::UpdatePolygonOrientation()
+float AreaTrigger::GetMaxSearchRadius() const
 {
+    return GetUInt32Value(AREATRIGGER_BOUNDS_RADIUS_2D) * CalcCurrentScale();
+}
+
+void AreaTrigger::UpdatePolygonVertices()
+{
+    AreaTriggerCreateProperties const* createProperties = GetCreateProperties();
     float newOrientation = GetOrientation();
 
     // No need to recalculate, orientation didn't change
-    if (G3D::fuzzyEq(_previousCheckOrientation, newOrientation))
+    if (G3D::fuzzyEq(_verticesUpdatePreviousOrientation, newOrientation) && (!createProperties || createProperties->PolygonVerticesTarget.empty()))
         return;
 
-    _polygonVertices.assign(GetCreateProperties()->PolygonVertices.begin(), GetCreateProperties()->PolygonVertices.end());
+    _polygonVertices.assign(createProperties->PolygonVertices.begin(), createProperties->PolygonVertices.end());
+    if (!createProperties->PolygonVerticesTarget.empty())
+    {
+        float progress = GetProgress();
+        if (createProperties->MorphCurveId)
+            progress = sDB2Manager.GetCurveValueAt(createProperties->MorphCurveId, progress);
+
+        for (std::size_t i = 0; i < _polygonVertices.size(); ++i)
+        {
+            Position& vertex = _polygonVertices[i];
+            Position const& vertexTarget = createProperties->PolygonVerticesTarget[i].Pos;
+
+            vertex.m_positionX = G3D::lerp(vertex.GetPositionX(), vertexTarget.GetPositionX(), progress);
+            vertex.m_positionY = G3D::lerp(vertex.GetPositionY(), vertexTarget.GetPositionY(), progress);
+        }
+    }
 
     float angleSin = std::sin(newOrientation);
     float angleCos = std::cos(newOrientation);
@@ -609,7 +895,7 @@ void AreaTrigger::UpdatePolygonOrientation()
         vertice.Relocate(x, y);
     }
 
-    _previousCheckOrientation = newOrientation;
+    _verticesUpdatePreviousOrientation = newOrientation;
 }
 
 bool AreaTrigger::CheckIsInPolygon2D(Position const* pos) const
@@ -684,7 +970,7 @@ bool AreaTrigger::CheckIsInPolygon2D(Position const* pos) const
 void AreaTrigger::UpdateShape()
 {
     if (_shape.IsPolygon())
-        UpdatePolygonOrientation();
+        UpdatePolygonVertices();
 }
 
 bool UnitFitToActionRequirement(Unit* unit, Unit* caster, AreaTriggerAction const& action)
@@ -741,10 +1027,18 @@ void AreaTrigger::DoActions(Unit* unit)
                     case AREATRIGGER_ACTION_TELEPORT:
                     {
                         if (WorldSafeLocsEntry const* safeLoc = sDB2Manager.GetWorldSafeLoc(action.Param))
-                            if (Player* player = caster->ToPlayer()) {
+                        {
+                            if (Player* player = caster->ToPlayer())
+                            {
+                                if (player->GetMapId() != safeLoc->MapID)
+                                {
+                                    if (WorldSafeLocsEntry const* instanceEntrance = player->GetInstanceEntrance(safeLoc->MapID))
+                                        safeLoc = instanceEntrance;
+                                }
                                 WorldLocation loc(safeLoc->MapID, safeLoc->GetPositionX(), safeLoc->GetPositionY(), safeLoc->GetPositionZ(), safeLoc->GetOrientation());
                                 player->TeleportTo(loc);
                             }
+                        }
                         break;
                     }
                     default:
@@ -877,10 +1171,13 @@ Position AreaTrigger::CalculateOrbitPosition() const
     if (!centerPos)
         return GetPosition();
 
+    AreaTriggerCreateProperties const* createProperties = GetCreateProperties();
     AreaTriggerOrbitInfo const& cmi = *_orbitInfo;
 
     // AreaTrigger make exactly "Duration / TimeToTarget" loops during his life time
     float pathProgress = float(cmi.ElapsedTimeForMovement) / float(cmi.TimeToTarget);
+    if (createProperties && createProperties->MoveCurveId)
+        pathProgress = sDB2Manager.GetCurveValueAt(createProperties->MoveCurveId, pathProgress);
 
     // We already made one circle and can't loop
     if (!cmi.CanLoop)
@@ -905,7 +1202,17 @@ Position AreaTrigger::CalculateOrbitPosition() const
     float y = centerPos->GetPositionY() + (radius * std::sin(angle));
     float z = centerPos->GetPositionZ() + cmi.ZOffset;
 
-    return { x, y, z, angle };
+    float orientation = 0.0f;
+    if (createProperties && createProperties->FacingCurveId)
+        orientation = sDB2Manager.GetCurveValueAt(createProperties->FacingCurveId, GetProgress());
+
+    if (!GetTemplate() || !GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_ABSOLUTE_ORIENTATION))
+    {
+        orientation += angle;
+        orientation += cmi.CounterClockwise ? float(M_PI_4) : -float(M_PI_4);
+    }
+
+    return { x, y, z, orientation };
 }
 
 void AreaTrigger::UpdateOrbitPosition(uint32 /*diff*/)
@@ -926,9 +1233,6 @@ void AreaTrigger::UpdateOrbitPosition(uint32 /*diff*/)
 void AreaTrigger::UpdateSplinePosition(uint32 diff)
 {
     if (_reachedDestination)
-        return;
-
-    if (!HasSplines())
         return;
 
     _movementTime += diff;
@@ -954,13 +1258,14 @@ void AreaTrigger::UpdateSplinePosition(uint32 diff)
     if (currentTimePercent <= 0.f)
         return;
 
-    if (GetCreateProperties()->MoveCurveId)
+    AreaTriggerCreateProperties const* createProperties = GetCreateProperties();
+    if (createProperties && createProperties->MoveCurveId)
     {
-        float progress = sDB2Manager.GetCurveValueAt(GetCreateProperties()->MoveCurveId, currentTimePercent);
+        float progress = sDB2Manager.GetCurveValueAt(createProperties->MoveCurveId, currentTimePercent);
         if (progress < 0.f || progress > 1.f)
         {
             TC_LOG_ERROR("entities.areatrigger", "AreaTrigger (Id: {}, AreaTriggerCreatePropertiesId: {}) has wrong progress ({}) caused by curve calculation (MoveCurveId: {})",
-                GetEntry(), GetCreateProperties()->Id, progress, GetCreateProperties()->MorphCurveId);
+                GetEntry(), createProperties->Id, progress, createProperties->MoveCurveId);
         }
         else
             currentTimePercent = progress;
@@ -973,11 +1278,16 @@ void AreaTrigger::UpdateSplinePosition(uint32 diff)
     G3D::Vector3 currentPosition;
     _spline->evaluate_percent(lastPositionIndex, percentFromLastPoint, currentPosition);
 
-    float orientation = GetOrientation();
-    if (GetTemplate() && GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_FACE_MOVEMENT_DIR))
+    float orientation = GetStationaryO();
+    if (createProperties && createProperties->FacingCurveId)
+        orientation += sDB2Manager.GetCurveValueAt(createProperties->FacingCurveId, GetProgress());
+
+    if (GetTemplate() && !GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_ABSOLUTE_ORIENTATION) && GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_FACE_MOVEMENT_DIR))
     {
-        G3D::Vector3 const& nextPoint = _spline->getPoint(lastPositionIndex + 1);
-        orientation = GetAbsoluteAngle(nextPoint.x, nextPoint.y);
+        G3D::Vector3 derivative;
+        _spline->evaluate_derivative(lastPositionIndex, percentFromLastPoint, derivative);
+        if (derivative.x != 0.0f || derivative.y != 0.0f)
+            orientation += std::atan2(derivative.y, derivative.x);
     }
 
     GetMap()->AreaTriggerRelocation(this, currentPosition.x, currentPosition.y, currentPosition.z, orientation);
