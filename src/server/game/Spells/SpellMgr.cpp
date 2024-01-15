@@ -1783,8 +1783,8 @@ void SpellMgr::LoadSpellProcs()
             {
                 if (spellEffectInfo.IsAura())
                 {
-                    TC_LOG_ERROR("sql.sql", "Spell Id {} has DBC ProcFlags 0x{:X} 0x{:X}, but it's of non-proc aura type, it probably needs an entry in `spell_proc` table to be handled correctly.",
-                        spellInfo.Id, spellInfo.ProcFlags[0], spellInfo.ProcFlags[1]);
+                    TC_LOG_ERROR("sql.sql", "Spell Id {} has DBC ProcFlags 0x{:X}, but it's of non-proc aura type, it probably needs an entry in `spell_proc` table to be handled correctly.",
+                        spellInfo.Id, spellInfo.ProcFlags[0]);
                     break;
                 }
             }

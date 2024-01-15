@@ -13,5 +13,11 @@ delete from serverside_spell where ID=196866;
 delete from serverside_spell_effect where SpellID=196866;
 
 
-update gameobject_template  set `data0`=0 where entry=73;
-update gameobject_template  set `data0`=0 where entry=73;
+
+
+
+
+
+
+
+

@@ -49,6 +49,9 @@ INSERT INTO `conversation_line_template` (`Id`, `UiCameraID`, `ActorIdx`, `Flags
 (1684, 296, 0, 0, 0, 25549),
 (1683, 296, 0, 0, 0, 25549);
 
+ALTER TABLE `conversation_template`
+    CHANGE COLUMN `LastLineEndTime` `LastLineEndTime` INT UNSIGNED NOT NULL DEFAULT 0 ;
+
 
 DELETE FROM `conversation_template` WHERE `Id`=705;
 INSERT INTO `conversation_template` (`Id`, `FirstLineID`, `TextureKitId`, `VerifiedBuild`) VALUES
