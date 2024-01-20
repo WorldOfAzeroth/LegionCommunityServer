@@ -288,7 +288,6 @@ bool AreaTrigger::CreateServer(Map* map, AreaTriggerTemplate const* areaTriggerT
 
     _shape = position.Shape;
 
-    SetUInt32Value(AREATRIGGER_BOUNDS_RADIUS_2D, GetMaxSearchRadius());
     if (position.SpellForVisuals)
     {
         SpellInfo const* spellInfo = sSpellMgr->AssertSpellInfo(*position.SpellForVisuals, DIFFICULTY_NONE);
@@ -297,7 +296,7 @@ bool AreaTrigger::CreateServer(Map* map, AreaTriggerTemplate const* areaTriggerT
         SetUInt32Value(AREATRIGGER_SPELLID, spellInfo->Id);
     }
 
-    SetScaleCurve(AREATRIGGER_DECAL_PROPERTIES_ID, _shape.GetMaxSearchRadius());
+    SetUInt32Value(AREATRIGGER_DECAL_PROPERTIES_ID, _shape.GetMaxSearchRadius());
     if (IsServerSide())
         SetUInt32Value(AREATRIGGER_DECAL_PROPERTIES_ID, 24); // blue decal, for .debug areatrigger visibility
 
