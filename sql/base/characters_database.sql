@@ -2767,6 +2767,7 @@ CREATE TABLE `item_loot_items` (
   `container_id` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'guid of container (item_instance.guid)',
   `item_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'loot item entry (item_instance.itemEntry)',
   `item_count` int(10) NOT NULL DEFAULT '0' COMMENT 'stack size',
+  `item_index` int(10) unsigned NOT NULL DEFAULT '0',
   `follow_rules` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'follow loot rules',
   `ffa` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'free-for-all',
   `blocked` tinyint(1) NOT NULL DEFAULT '0',
