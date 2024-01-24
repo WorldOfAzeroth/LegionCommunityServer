@@ -358,11 +358,11 @@ void ObjectMgr::LoadCreatureTemplates()
     //                                       "family, trainer_class, type, VehicleId, AIName, MovementType, "
     //                                        31          32        33          34          35         36          37                         38
     //                                       "ctm.Ground, ctm.Swim, ctm.Flight, ctm.Rooted, ctm.Chase, ctm.Random, ctm.InteractionPauseTimer, ExperienceModifier, "
-    //                                        39            40          41           42
-    //                                       "RacialLeader, movementId, HoverHeight, RegenHealth, "
-    //                                        43                    44                        45
+    //                                        39            40          41
+    //                                       "RacialLeader, movementId, RegenHealth, "
+    //                                        42                    43                        44
     //                                       "mechanic_immune_mask, spell_school_immune_mask, flags_extra, "
-    //                                        46          47
+    //                                        45          46
     //                                       "ScriptName, StringId FROM creature_template WHERE entry = ? OR 1 = ?");
 
     WorldDatabasePreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_CREATURE_TEMPLATE);
@@ -467,13 +467,12 @@ void ObjectMgr::LoadCreatureTemplate(Field* fields)
     creatureTemplate.ModExperience          = fields[38].GetFloat();
     creatureTemplate.RacialLeader           = fields[39].GetBool();
     creatureTemplate.movementId             = fields[40].GetUInt32();
-    creatureTemplate.HoverHeight            = fields[41].GetFloat();
-    creatureTemplate.RegenHealth            = fields[42].GetBool();
-    creatureTemplate.MechanicImmuneMask     = fields[43].GetUInt64();
-    creatureTemplate.SpellSchoolImmuneMask  = fields[44].GetUInt32();
-    creatureTemplate.flags_extra            = fields[45].GetUInt32();
-    creatureTemplate.ScriptID               = GetScriptId(fields[46].GetString());
-    creatureTemplate.StringId               = fields[47].GetString();
+    creatureTemplate.RegenHealth            = fields[41].GetBool();
+    creatureTemplate.MechanicImmuneMask     = fields[42].GetUInt64();
+    creatureTemplate.SpellSchoolImmuneMask  = fields[43].GetUInt32();
+    creatureTemplate.flags_extra            = fields[44].GetUInt32();
+    creatureTemplate.ScriptID               = GetScriptId(fields[45].GetString());
+    creatureTemplate.StringId               = fields[46].GetString();
 }
 
 void ObjectMgr::LoadCreatureTemplateGossip()
@@ -1078,12 +1077,6 @@ void ObjectMgr::CheckCreatureTemplate(CreatureTemplate const* cInfo)
     }
 
     CheckCreatureMovement("creature_template_movement", cInfo->Entry, const_cast<CreatureTemplate*>(cInfo)->Movement);
-
-    if (cInfo->HoverHeight < 0.0f)
-    {
-        TC_LOG_ERROR("sql.sql", "Creature (Entry: {}) has wrong value ({}) in `HoverHeight`", cInfo->Entry, cInfo->HoverHeight);
-        const_cast<CreatureTemplate*>(cInfo)->HoverHeight = 1.0f;
-    }
 
     if (cInfo->VehicleId)
     {
@@ -9732,7 +9725,7 @@ void ObjectMgr::LoadFactionChangeItems()
 {
     uint32 oldMSTime = getMSTime();
     uint32 count = 0;
-    
+
     QueryResult result = WorldDatabase.Query("SELECT alliance_id, horde_id FROM player_factionchange_items");
 
     if (!result)
@@ -9740,7 +9733,7 @@ void ObjectMgr::LoadFactionChangeItems()
         TC_LOG_INFO("server.loading", ">> Loaded 0 faction change item pairs. DB table `player_factionchange_items` is empty.");
         return;
     }
-    
+
     do
     {
         Field* fields = result->Fetch();

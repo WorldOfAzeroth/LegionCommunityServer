@@ -540,7 +540,6 @@ struct TC_GAME_API CreatureTemplate
     float   ModExperience;
     bool    RacialLeader;
     uint32  movementId;
-    float   HoverHeight;
     bool    RegenHealth;
     uint64  MechanicImmuneMask;
     uint32  SpellSchoolImmuneMask;
