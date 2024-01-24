@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -63,9 +63,9 @@ WorldPacket const* WorldPackets::Guild::QueryGuildInfoResponse::Write()
 
 WorldPacket const* WorldPackets::Guild::GuildRoster::Write()
 {
-    _worldPacket << NumAccounts;
-    _worldPacket.AppendPackedTime(CreateDate);
-    _worldPacket << GuildFlags;
+    _worldPacket << int32(NumAccounts);
+    _worldPacket << CreateDate;
+    _worldPacket << int32(GuildFlags);
     _worldPacket << uint32(MemberData.size());
     _worldPacket.WriteBits(WelcomeText.length(), 10);
     _worldPacket.WriteBits(InfoText.length(), 11);
@@ -725,7 +725,7 @@ void WorldPackets::Guild::GuildQueryNews::Read()
 ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Guild::GuildNewsEvent const& newsEvent)
 {
     data << int32(newsEvent.Id);
-    data.AppendPackedTime(newsEvent.CompletedDate);
+    data << newsEvent.CompletedDate;
     data << int32(newsEvent.Type);
     data << int32(newsEvent.Flags);
 

@@ -1057,7 +1057,7 @@ class spell_sindragosa_s_fury : public SpellScript
         if (!GetHitUnit()->IsAlive() || !_targetCount)
             return;
 
-        if (GetHitUnit()->IsImmunedToDamage(GetSpellInfo()))
+        if (GetHitUnit()->IsImmunedToDamage(GetSpellInfo(), &GetEffectInfo()))
         {
             GetCaster()->SendSpellDamageImmune(GetHitUnit(), GetSpellInfo()->Id, false);
             return;
@@ -1417,7 +1417,7 @@ class spell_frostwarden_handler_focus_fire_aura : public AuraScript
 {
     bool Validate(SpellInfo const* spellInfo) override
     {
-        return spellInfo->GetEffects().size() > EFFECT_1;
+        return ValidateSpellEffect({ { spellInfo->Id, EFFECT_1 } });
     }
 
     void PeriodicTick(AuraEffect const* /*aurEff*/)

@@ -70,7 +70,6 @@
 
 ScriptMapMap sSpellScripts;
 ScriptMapMap sEventScripts;
-ScriptMapMap sWaypointScripts;
 
 std::string GetScriptsTableNameByType(ScriptsType type)
 {
@@ -79,7 +78,6 @@ std::string GetScriptsTableNameByType(ScriptsType type)
     {
         case SCRIPTS_SPELL:         res = "spell_scripts";      break;
         case SCRIPTS_EVENT:         res = "event_scripts";      break;
-        case SCRIPTS_WAYPOINT:      res = "waypoint_scripts";   break;
         default: break;
     }
     return res;
@@ -92,7 +90,6 @@ ScriptMapMap* GetScriptsMapByType(ScriptsType type)
     {
         case SCRIPTS_SPELL:         res = &sSpellScripts;       break;
         case SCRIPTS_EVENT:         res = &sEventScripts;       break;
-        case SCRIPTS_WAYPOINT:      res = &sWaypointScripts;    break;
         default: break;
     }
     return res;
@@ -2348,7 +2345,7 @@ void ObjectMgr::LoadCreatures()
         {
             if (uint32 disallowedUnitFlags3 = (*data.unit_flags3 & ~UNIT_FLAG3_ALLOWED))
             {
-                TC_LOG_ERROR("sql.sql", "Table `creature` has creature (GUID: {} Entry: {}) with disallowed `unit_flags2` {}, removing incorrect flag.", guid, data.id, disallowedUnitFlags3);
+                TC_LOG_ERROR("sql.sql", "Table `creature` has creature (GUID: {} Entry: {}) with disallowed `unit_flags3` {}, removing incorrect flag.", guid, data.id, disallowedUnitFlags3);
                 *data.unit_flags3 &= UNIT_FLAG3_ALLOWED;
             }
         }
@@ -5765,35 +5762,6 @@ void ObjectMgr::LoadEventScripts()
     } while (result->NextRow());
 
     TC_LOG_INFO("server.loading", ">> Loaded {} event scripts in {} ms", _eventScriptStore.size(), GetMSTimeDiffToNow(oldMSTime));
-}
-
-//Load WP Scripts
-void ObjectMgr::LoadWaypointScripts()
-{
-    LoadScripts(SCRIPTS_WAYPOINT);
-
-    std::set<uint32> actionSet;
-
-    for (ScriptMapMap::const_iterator itr = sWaypointScripts.begin(); itr != sWaypointScripts.end(); ++itr)
-        actionSet.insert(itr->first);
-
-    WorldDatabasePreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_WAYPOINT_DATA_ACTION);
-    PreparedQueryResult result = WorldDatabase.Query(stmt);
-
-    if (result)
-    {
-        do
-        {
-            Field* fields = result->Fetch();
-            uint32 action = fields[0].GetUInt32();
-
-            actionSet.erase(action);
-        }
-        while (result->NextRow());
-    }
-
-    for (std::set<uint32>::iterator itr = actionSet.begin(); itr != actionSet.end(); ++itr)
-        TC_LOG_ERROR("sql.sql", "There is no waypoint which links to the waypoint script {}", *itr);
 }
 
 void ObjectMgr::LoadSpellScriptNames()
@@ -10290,7 +10258,7 @@ void ObjectMgr::LoadRaceAndClassExpansionRequirements()
             ++count;
         }
         while (result->NextRow());
-        TC_LOG_INFO("server.loading", ">> Loaded %u class expansion requirements in %u ms.", count, GetMSTimeDiffToNow(oldMSTime));
+        TC_LOG_INFO("server.loading", ">> Loaded {} class expansion requirements in {} ms.", count, GetMSTimeDiffToNow(oldMSTime));
     }
     else
         TC_LOG_INFO("server.loading", ">> Loaded 0 class expansion requirements. DB table `class_expansion_requirement` is empty.");

@@ -21,7 +21,7 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Calendar::CalendarSendCal
 {
     data << uint64(eventInfo.EventID);
     data << uint8(eventInfo.EventType);
-    data.AppendPackedTime(eventInfo.Date);
+    data << eventInfo.Date;
     data << uint32(eventInfo.Flags);
     data << int32(eventInfo.TextureID);
     data << eventInfo.EventGuildID;
@@ -39,7 +39,7 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Calendar::CalendarSendCal
     data << uint64(lockoutInfo.InstanceID);
     data << int32(lockoutInfo.MapID);
     data << uint32(lockoutInfo.DifficultyID);
-    data << uint32(lockoutInfo.ExpireTime);
+    data << int32(lockoutInfo.ExpireTime);
 
     return data;
 }
@@ -65,8 +65,7 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Calendar::CalendarEventIn
     data << uint8(inviteInfo.Status);
     data << uint8(inviteInfo.Moderator);
     data << uint8(inviteInfo.InviteType);
-
-    data.AppendPackedTime(inviteInfo.ResponseTime);
+    data << inviteInfo.ResponseTime;
 
     data.WriteBits(inviteInfo.Notes.size(), 8);
     data.FlushBits();
@@ -102,7 +101,7 @@ ByteBuffer& operator>>(ByteBuffer& buffer, WorldPackets::Calendar::CalendarAddEv
 
     buffer >> addEventInfo.EventType;
     buffer >> addEventInfo.TextureID;
-    addEventInfo.Time = buffer.ReadPackedTime();
+    buffer >> addEventInfo.Time;
     buffer >> addEventInfo.Flags;
     addEventInfo.Invites.resize(buffer.read<uint32>());
 
@@ -127,7 +126,7 @@ void WorldPackets::Calendar::CalendarUpdateEvent::Read()
     _worldPacket >> EventInfo.ModeratorID;
     _worldPacket >> EventInfo.EventType;
     _worldPacket >> EventInfo.TextureID;
-    EventInfo.Time = _worldPacket.ReadPackedTime();
+    _worldPacket >> EventInfo.Time;
     _worldPacket >> EventInfo.Flags;
 
     uint8 titleLen = _worldPacket.ReadBits(8);
@@ -149,7 +148,7 @@ void WorldPackets::Calendar::CalendarCopyEvent::Read()
 {
     _worldPacket >> EventID;
     _worldPacket >> ModeratorID;
-    Date = _worldPacket.ReadPackedTime();
+    _worldPacket >> Date;
 }
 
 void WorldPackets::Calendar::CalendarRSVP::Read()
@@ -218,7 +217,7 @@ WorldPacket const* WorldPackets::Calendar::CalendarInviteAdded::Write()
     _worldPacket << uint8(Level);
     _worldPacket << uint8(Status);
     _worldPacket << uint8(Type);
-    _worldPacket.AppendPackedTime(ResponseTime);
+    _worldPacket << ResponseTime;
 
     _worldPacket.WriteBit(ClearPending);
     _worldPacket.FlushBits();
@@ -228,7 +227,7 @@ WorldPacket const* WorldPackets::Calendar::CalendarInviteAdded::Write()
 
 WorldPacket const* WorldPackets::Calendar::CalendarSendCalendar::Write()
 {
-    _worldPacket.AppendPackedTime(ServerTime);
+    _worldPacket << ServerTime;
     _worldPacket << uint32(Invites.size());
     _worldPacket << uint32(Events.size());
     _worldPacket << uint32(RaidLockouts.size());
@@ -253,8 +252,8 @@ WorldPacket const* WorldPackets::Calendar::CalendarSendEvent::Write()
     _worldPacket << uint8(GetEventType);
     _worldPacket << int32(TextureID);
     _worldPacket << uint32(Flags);
-    _worldPacket.AppendPackedTime(Date);
-    _worldPacket << uint32(LockDate);
+    _worldPacket << Date;
+    _worldPacket << LockDate;
     _worldPacket << EventGuildID;
     _worldPacket << uint32(Invites.size());
     _worldPacket.WriteBits(EventName.size(), 8);
@@ -273,7 +272,7 @@ WorldPacket const* WorldPackets::Calendar::CalendarSendEvent::Write()
 WorldPacket const* WorldPackets::Calendar::CalendarInviteAlert::Write()
 {
     _worldPacket << uint64(EventID);
-    _worldPacket.AppendPackedTime(Date);
+    _worldPacket << Date;
     _worldPacket << uint32(Flags);
     _worldPacket << uint8(EventType);
     _worldPacket << int32(TextureID);
@@ -297,10 +296,10 @@ WorldPacket const* WorldPackets::Calendar::CalendarInviteStatus::Write()
 {
     _worldPacket << InviteGuid;
     _worldPacket << uint64(EventID);
-    _worldPacket.AppendPackedTime(Date);
+    _worldPacket << Date;
     _worldPacket << uint32(Flags);
     _worldPacket << uint8(Status);
-    _worldPacket.AppendPackedTime(ResponseTime);
+    _worldPacket << ResponseTime;
 
     _worldPacket.WriteBit(ClearPending);
     _worldPacket.FlushBits();
@@ -335,7 +334,7 @@ WorldPacket const* WorldPackets::Calendar::CalendarModeratorStatus::Write()
 WorldPacket const* WorldPackets::Calendar::CalendarInviteRemovedAlert::Write()
 {
     _worldPacket << uint64(EventID);
-    _worldPacket.AppendPackedTime(Date);
+    _worldPacket << Date;
     _worldPacket << uint32(Flags);
     _worldPacket << uint8(Status);
 
@@ -346,9 +345,9 @@ WorldPacket const* WorldPackets::Calendar::CalendarEventUpdatedAlert::Write()
 {
     _worldPacket << uint64(EventID);
 
-    _worldPacket.AppendPackedTime(OriginalDate);
-    _worldPacket.AppendPackedTime(Date);
-    _worldPacket << uint32(LockDate);
+    _worldPacket << OriginalDate;
+    _worldPacket << Date;
+    _worldPacket << LockDate;
     _worldPacket << uint32(Flags);
     _worldPacket << uint32(TextureID);
     _worldPacket << uint8(EventType);
@@ -367,7 +366,7 @@ WorldPacket const* WorldPackets::Calendar::CalendarEventUpdatedAlert::Write()
 WorldPacket const* WorldPackets::Calendar::CalendarEventRemovedAlert::Write()
 {
     _worldPacket << uint64(EventID);
-    _worldPacket.AppendPackedTime(Date);
+    _worldPacket << Date;
 
     _worldPacket.WriteBit(ClearPending);
     _worldPacket.FlushBits();
@@ -415,7 +414,7 @@ WorldPacket const* WorldPackets::Calendar::CalendarRaidLockoutRemoved::Write()
 
 WorldPacket const* WorldPackets::Calendar::CalendarRaidLockoutUpdated::Write()
 {
-    _worldPacket << uint32(ServerTime);
+    _worldPacket << ServerTime;
     _worldPacket << int32(MapID);
     _worldPacket << uint32(DifficultyID);
     _worldPacket << int32(NewTimeRemaining);
@@ -439,7 +438,7 @@ WorldPacket const* WorldPackets::Calendar::CalendarEventInitialInvites::Write()
 WorldPacket const* WorldPackets::Calendar::CalendarEventInviteStatusAlert::Write()
 {
     _worldPacket << uint64(EventID);
-    _worldPacket.AppendPackedTime(Date);
+    _worldPacket << Date;
     _worldPacket << uint32(Flags);
     _worldPacket << uint8(Status);
 

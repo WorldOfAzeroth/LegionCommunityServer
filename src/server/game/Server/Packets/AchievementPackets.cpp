@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -20,7 +20,7 @@
 ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Achievement::EarnedAchievement const& earned)
 {
     data << uint32(earned.Id);
-    data.AppendPackedTime(earned.Date);
+    data << earned.Date;
     data << earned.Owner;
     data << uint32(earned.VirtualRealmAddress);
     data << uint32(earned.NativeRealmAddress);
@@ -32,7 +32,7 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Achievement::CriteriaProg
     data << uint32(criteria.Id);
     data << uint64(criteria.Quantity);
     data << criteria.Player;
-    data.AppendPackedTime(criteria.Date);
+    data << criteria.Date;
     data << criteria.TimeFromStart;
     data << criteria.TimeFromCreate;
     data.WriteBits(criteria.Flags, 4);
@@ -84,7 +84,7 @@ WorldPacket const* WorldPackets::Achievement::CriteriaUpdate::Write()
     _worldPacket << uint64(Quantity);
     _worldPacket << PlayerGUID;
     _worldPacket << uint32(Flags);
-    _worldPacket.AppendPackedTime(CurrentTime);
+    _worldPacket << CurrentTime;
     _worldPacket << ElapsedTime;
     _worldPacket << CreationTime;
     return &_worldPacket;
@@ -117,7 +117,7 @@ WorldPacket const* WorldPackets::Achievement::AchievementEarned::Write()
     _worldPacket << Sender;
     _worldPacket << Earner;
     _worldPacket << uint32(AchievementID);
-    _worldPacket.AppendPackedTime(Time);
+    _worldPacket << Time;
     _worldPacket << uint32(EarnerNativeRealm);
     _worldPacket << uint32(EarnerVirtualRealm);
     _worldPacket.WriteBit(Initial);
@@ -146,7 +146,7 @@ WorldPacket const* WorldPackets::Achievement::GuildCriteriaUpdate::Write()
         _worldPacket << int32(progress.CriteriaID);
         _worldPacket << progress.DateCreated;
         _worldPacket << progress.DateStarted;
-        _worldPacket.AppendPackedTime(progress.DateUpdated);
+        _worldPacket << int64(progress.DateUpdated.GetPackedTime());
         _worldPacket << uint64(progress.Quantity);
         _worldPacket << progress.PlayerGUID;
         _worldPacket << int32(progress.Flags);
@@ -172,7 +172,7 @@ WorldPacket const* WorldPackets::Achievement::GuildAchievementDeleted::Write()
 {
     _worldPacket << GuildGUID;
     _worldPacket << uint32(AchievementID);
-    _worldPacket.AppendPackedTime(TimeDeleted);
+    _worldPacket << TimeDeleted;
 
     return &_worldPacket;
 }
@@ -181,7 +181,7 @@ WorldPacket const* WorldPackets::Achievement::GuildAchievementEarned::Write()
 {
     _worldPacket << GuildGUID;
     _worldPacket << uint32(AchievementID);
-    _worldPacket.AppendPackedTime(TimeEarned);
+    _worldPacket << TimeEarned;
 
     return &_worldPacket;
 }

@@ -39,7 +39,6 @@ Copied events should probably have a new owner
 #include "CalendarPackets.h"
 #include "CharacterCache.h"
 #include "DatabaseEnv.h"
-#include "DB2Stores.h"
 #include "GameTime.h"
 #include "Guild.h"
 #include "GuildMgr.h"
@@ -49,16 +48,14 @@ Copied events should probably have a new owner
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "SocialMgr.h"
-#include "Util.h"
 #include "World.h"
 
 void WorldSession::HandleCalendarGetCalendar(WorldPackets::Calendar::CalendarGetCalendar& /*calendarGetCalendar*/)
 {
     ObjectGuid guid = _player->GetGUID();
-    time_t currTime = GameTime::GetGameTime();
 
     WorldPackets::Calendar::CalendarSendCalendar packet;
-    packet.ServerTime = currTime;
+    packet.ServerTime = *GameTime::GetWowTime();
 
     CalendarInviteStore playerInvites = sCalendarMgr->GetPlayerInvites(guid);
     for (auto const& invite : playerInvites)
@@ -80,7 +77,8 @@ void WorldSession::HandleCalendarGetCalendar(WorldPackets::Calendar::CalendarGet
     {
         WorldPackets::Calendar::CalendarSendCalendarEventInfo eventInfo;
         eventInfo.EventID = event->GetEventId();
-        eventInfo.Date = event->GetDate();
+        eventInfo.Date.SetUtcTimeFromUnixTime(event->GetDate());
+        eventInfo.Date += GetTimezoneOffset();
         Guild* guild = sGuildMgr->GetGuildById(event->GetGuildId());
         eventInfo.EventGuildID = guild ? guild->GetGUID() : ObjectGuid::Empty;
         eventInfo.EventName = event->GetTitle();
@@ -125,11 +123,10 @@ void WorldSession::HandleCalendarAddEvent(WorldPackets::Calendar::CalendarAddEve
 {
     ObjectGuid guid = _player->GetGUID();
 
-    calendarAddEvent.EventInfo.Time = uint32(LocalTimeToUTCTime(calendarAddEvent.EventInfo.Time));
+    calendarAddEvent.EventInfo.Time -= GetTimezoneOffset();
 
     // prevent events in the past
-    // To Do: properly handle timezones and remove the "- time_t(86400L)" hack
-    if (calendarAddEvent.EventInfo.Time < (GameTime::GetGameTime() - time_t(86400L)))
+    if (calendarAddEvent.EventInfo.Time < *GameTime::GetUtcWowTime())
     {
         sCalendarMgr->SendCalendarCommandResult(guid, CALENDAR_ERROR_EVENT_PASSED);
         return;
@@ -171,7 +168,7 @@ void WorldSession::HandleCalendarAddEvent(WorldPackets::Calendar::CalendarAddEve
     SetCalendarEventCreationCooldown(GameTime::GetGameTime() + CALENDAR_CREATE_EVENT_COOLDOWN);
 
     CalendarEvent* calendarEvent = new CalendarEvent(sCalendarMgr->GetFreeEventId(), guid, UI64LIT(0), CalendarEventType(calendarAddEvent.EventInfo.EventType), calendarAddEvent.EventInfo.TextureID,
-        calendarAddEvent.EventInfo.Time, calendarAddEvent.EventInfo.Flags, calendarAddEvent.EventInfo.Title, calendarAddEvent.EventInfo.Description, time_t(0));
+        calendarAddEvent.EventInfo.Time.GetUnixTimeFromUtcTime(), calendarAddEvent.EventInfo.Flags, calendarAddEvent.EventInfo.Title, calendarAddEvent.EventInfo.Description, time_t(0));
 
     if (calendarEvent->IsGuildEvent() || calendarEvent->IsGuildAnnouncement())
         calendarEvent->SetGuildId(_player->GetGuildId());
@@ -209,11 +206,10 @@ void WorldSession::HandleCalendarUpdateEvent(WorldPackets::Calendar::CalendarUpd
     ObjectGuid guid = _player->GetGUID();
     time_t oldEventTime = time_t(0);
 
-    calendarUpdateEvent.EventInfo.Time = uint32(LocalTimeToUTCTime(calendarUpdateEvent.EventInfo.Time));
+    calendarUpdateEvent.EventInfo.Time -= GetTimezoneOffset();
 
     // prevent events in the past
-    // To Do: properly handle timezones and remove the "- time_t(86400L)" hack
-    if (calendarUpdateEvent.EventInfo.Time < (GameTime::GetGameTime() - time_t(86400L)))
+    if (calendarUpdateEvent.EventInfo.Time < *GameTime::GetUtcWowTime())
         return;
 
     if (CalendarEvent* calendarEvent = sCalendarMgr->GetEvent(calendarUpdateEvent.EventInfo.EventID))
@@ -222,7 +218,7 @@ void WorldSession::HandleCalendarUpdateEvent(WorldPackets::Calendar::CalendarUpd
 
         calendarEvent->SetType(CalendarEventType(calendarUpdateEvent.EventInfo.EventType));
         calendarEvent->SetFlags(calendarUpdateEvent.EventInfo.Flags);
-        calendarEvent->SetDate(calendarUpdateEvent.EventInfo.Time);
+        calendarEvent->SetDate(calendarUpdateEvent.EventInfo.Time.GetUnixTimeFromUtcTime());
         calendarEvent->SetTextureId(calendarUpdateEvent.EventInfo.TextureID);
         calendarEvent->SetTitle(calendarUpdateEvent.EventInfo.Title);
         calendarEvent->SetDescription(calendarUpdateEvent.EventInfo.Description);
@@ -244,11 +240,10 @@ void WorldSession::HandleCalendarCopyEvent(WorldPackets::Calendar::CalendarCopyE
 {
     ObjectGuid guid = _player->GetGUID();
 
-    calendarCopyEvent.Date = uint32(LocalTimeToUTCTime(calendarCopyEvent.Date));
+    calendarCopyEvent.Date -= GetTimezoneOffset();
 
     // prevent events in the past
-    // To Do: properly handle timezones and remove the "- time_t(86400L)" hack
-    if (calendarCopyEvent.Date < (GameTime::GetGameTime() - time_t(86400L)))
+    if (calendarCopyEvent.Date < *GameTime::GetUtcWowTime())
     {
         sCalendarMgr->SendCalendarCommandResult(guid, CALENDAR_ERROR_EVENT_PASSED);
         return;
@@ -300,7 +295,7 @@ void WorldSession::HandleCalendarCopyEvent(WorldPackets::Calendar::CalendarCopyE
         SetCalendarEventCreationCooldown(GameTime::GetGameTime() + CALENDAR_CREATE_EVENT_COOLDOWN);
 
         CalendarEvent* newEvent = new CalendarEvent(*oldEvent, sCalendarMgr->GetFreeEventId());
-        newEvent->SetDate(calendarCopyEvent.Date);
+        newEvent->SetDate(calendarCopyEvent.Date.GetUnixTimeFromUtcTime());
         sCalendarMgr->AddEvent(newEvent, CALENDAR_SENDTYPE_COPY);
 
         CalendarInviteStore invites = sCalendarMgr->GetEventInvites(calendarCopyEvent.EventID);
@@ -558,7 +553,7 @@ void WorldSession::HandleSetSavedInstanceExtend(WorldPackets::Calendar::SetSaved
         return;
 
     WorldPackets::Calendar::CalendarRaidLockoutUpdated calendarRaidLockoutUpdated;
-    calendarRaidLockoutUpdated.ServerTime = GameTime::GetGameTime();
+    calendarRaidLockoutUpdated.ServerTime = *GameTime::GetWowTime();
     calendarRaidLockoutUpdated.MapID = setSavedInstanceExtend.MapID;
     calendarRaidLockoutUpdated.DifficultyID = setSavedInstanceExtend.DifficultyID;
     calendarRaidLockoutUpdated.OldTimeRemaining = std::max(std::chrono::duration_cast<Seconds>(expiryTimes.first - GameTime::GetSystemTime()).count(), SI64LIT(0));

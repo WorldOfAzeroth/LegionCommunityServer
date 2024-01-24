@@ -23,6 +23,7 @@
 #include "Guild.h"
 #include "ObjectGuid.h"
 #include "PacketUtilities.h"
+#include "WowTime.h"
 
 namespace WorldPackets
 {
@@ -126,7 +127,7 @@ namespace WorldPackets
             std::vector<GuildRosterMemberData> MemberData;
             std::string WelcomeText;
             std::string InfoText;
-            uint32 CreateDate = 0;
+            WowTime CreateDate;
             int32 NumAccounts = 0;
             int32 GuildFlags = 0;
         };
@@ -910,7 +911,7 @@ namespace WorldPackets
         struct GuildNewsEvent
         {
             int32 Id = 0;
-            uint32 CompletedDate = 0;
+            WowTime CompletedDate;
             int32 Type = 0;
             int32 Flags = 0;
             int32 Data[2];

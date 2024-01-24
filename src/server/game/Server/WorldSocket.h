@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -19,7 +18,6 @@
 #ifndef __WORLDSOCKET_H__
 #define __WORLDSOCKET_H__
 
-#include "Common.h"
 #include "AsyncCallbackProcessor.h"
 #include "AuthDefines.h"
 #include "DatabaseEnvFwd.h"
@@ -110,7 +108,7 @@ protected:
     ReadDataHandlerResult ReadDataHandler();
 private:
     void CheckIpCallback(PreparedQueryResult result);
-    void InitializeHandler(boost::system::error_code error, std::size_t transferedBytes);
+    void InitializeHandler(boost::system::error_code const& error, std::size_t transferedBytes);
 
     /// writes network.opcode log
     /// accessing WorldSession is not threadsafe, only do it when holding _worldSessionLock
@@ -145,6 +143,7 @@ private:
     std::mutex _worldSessionLock;
     WorldSession* _worldSession;
     bool _authed;
+    bool _canRequestHotfixes;
 
     MessageBuffer _headerBuffer;
     MessageBuffer _packetBuffer;

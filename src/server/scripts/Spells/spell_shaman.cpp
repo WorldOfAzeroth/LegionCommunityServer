@@ -571,6 +571,11 @@ class spell_sha_earthquake_tick : public SpellScript
             && ValidateSpellEffect({ { spellInfo->Id, EFFECT_1 } });
     }
 
+    void HandleDamageCalc(SpellEffIndex /*effIndex*/)
+    {
+        SetEffectValue(GetCaster()->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_NATURE) * 0.391f);
+    }
+
     void HandleOnHit()
     {
         if (Unit* target = GetHitUnit())
@@ -611,10 +616,7 @@ class spell_sha_elemental_blast : public SpellScript
             SPELL_SHAMAN_ELEMENTAL_BLAST_MASTERY,
             SPELL_SHAMAN_ELEMENTAL_BLAST_ENERGIZE,
             SPELL_SHAMAN_MAELSTROM_CONTROLLER
-        }) && ValidateSpellEffect({
-            { SPELL_SHAMAN_MAELSTROM_CONTROLLER, EFFECT_10 },
-            { SPELL_SHAMAN_T29_2P_ELEMENTAL_DAMAGE_BUFF, EFFECT_0 }
-        });
+        }) && ValidateSpellEffect({ { SPELL_SHAMAN_MAELSTROM_CONTROLLER, EFFECT_10 } });
     }
 
     void HandleEnergize(SpellEffIndex /*effIndex*/)

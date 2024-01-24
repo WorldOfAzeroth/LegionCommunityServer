@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -35,6 +34,7 @@
 #include "GitRevision.h"
 #include "InstanceLockMgr.h"
 #include "IoContext.h"
+#include "IpNetwork.h"
 #include "MapManager.h"
 #include "Metric.h"
 #include "MySQLThreading.h"
@@ -269,6 +269,8 @@ extern int main(int argc, char** argv)
 
     if (vm.count("update-databases-only"))
         return 0;
+
+    Trinity::Net::ScanLocalNetworks();
 
     // Set server offline (not connectable)
     LoginDatabase.DirectPExecute("UPDATE realmlist SET flag = flag | {} WHERE id = '{}'", REALM_FLAG_OFFLINE, realm.Id.Realm);
@@ -568,7 +570,10 @@ void FreezeDetector::Handler(std::weak_ptr<FreezeDetector> freezeDetectorRef, bo
             }
 
             freezeDetector->_timer.expires_from_now(boost::posix_time::seconds(1));
-            freezeDetector->_timer.async_wait(std::bind(&FreezeDetector::Handler, freezeDetectorRef, std::placeholders::_1));
+            freezeDetector->_timer.async_wait([freezeDetectorRef = std::move(freezeDetectorRef)](boost::system::error_code const& error) mutable
+            {
+                Handler(std::move(freezeDetectorRef), error);
+            });
         }
     }
 }
@@ -594,19 +599,7 @@ bool LoadRealmInfo()
 {
     if (Realm const* realmListRealm = sRealmList->GetRealm(realm.Id))
     {
-        realm.Id = realmListRealm->Id;
-        realm.Build = realmListRealm->Build;
-        realm.ExternalAddress = std::make_unique<boost::asio::ip::address>(*realmListRealm->ExternalAddress);
-        realm.LocalAddress = std::make_unique<boost::asio::ip::address>(*realmListRealm->LocalAddress);
-        realm.LocalSubnetMask = std::make_unique<boost::asio::ip::address>(*realmListRealm->LocalSubnetMask);
-        realm.Port = realmListRealm->Port;
-        realm.Name = realmListRealm->Name;
-        realm.NormalizedName = realmListRealm->NormalizedName;
-        realm.Type = realmListRealm->Type;
-        realm.Flags = realmListRealm->Flags;
-        realm.Timezone = realmListRealm->Timezone;
-        realm.AllowedSecurityLevel = realmListRealm->AllowedSecurityLevel;
-        realm.PopulationLevel = realmListRealm->PopulationLevel;
+        realm = *realmListRealm;
         return true;
     }
 

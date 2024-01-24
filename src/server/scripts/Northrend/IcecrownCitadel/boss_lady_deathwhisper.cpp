@@ -1036,7 +1036,7 @@ class spell_deathwhisper_dark_reckoning : public AuraScript
 {
     bool Validate(SpellInfo const* spell) override
     {
-        return !spell->GetEffects().empty()
+        return ValidateSpellEffect({ { spell->Id, EFFECT_0 } })
             && ValidateSpellInfo({ spell->GetEffect(EFFECT_0).TriggerSpell });
     }
 

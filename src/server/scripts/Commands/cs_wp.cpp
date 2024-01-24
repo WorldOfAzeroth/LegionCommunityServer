@@ -557,14 +557,10 @@ public:
                 uint32 point            = fields[1].GetUInt32();
                 uint32 delay            = fields[2].GetUInt32();
                 uint32 flag             = fields[3].GetUInt32();
-                uint32 ev_id            = fields[4].GetUInt32();
-                uint32 ev_chance        = fields[5].GetUInt16();
 
                 handler->PSendSysMessage("|cff00ff00Show info: for current point: |r|cff00ffff%u|r|cff00ff00, Path ID: |r|cff00ffff%u|r", point, pathid);
                 handler->PSendSysMessage("|cff00ff00Show info: delay: |r|cff00ffff%u|r", delay);
                 handler->PSendSysMessage("|cff00ff00Show info: Move flag: |r|cff00ffff%u|r", flag);
-                handler->PSendSysMessage("|cff00ff00Show info: Waypoint event: |r|cff00ffff%u|r", ev_id);
-                handler->PSendSysMessage("|cff00ff00Show info: Event chance: |r|cff00ffff%u|r", ev_chance);
             }
             while (result->NextRow());
 

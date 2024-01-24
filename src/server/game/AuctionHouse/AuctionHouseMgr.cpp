@@ -37,6 +37,7 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#include "WowTime.h"
 #include <boost/dynamic_bitset.hpp>
 #include <numeric>
 #include <sstream>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -23,7 +23,6 @@
 #include "Errors.h"
 #include "IpNetwork.h"
 #include "ProtobufJSON.h"
-#include "Realm.h"
 #include "Resolver.h"
 #include "SslContext.h"
 #include "Util.h"
@@ -83,26 +82,25 @@ bool LoginRESTService::Start(Trinity::Asio::IoContext* ioContext)
 
     Trinity::Asio::Resolver resolver(*ioContext);
 
-    std::string configuredAddress = sConfigMgr->GetStringDefault("LoginREST.ExternalAddress", "127.0.0.1");
-    Optional<boost::asio::ip::tcp::endpoint> externalAddress = resolver.Resolve(boost::asio::ip::tcp::v4(), configuredAddress, std::to_string(_port));
+    _hostnames[0] = sConfigMgr->GetStringDefault("LoginREST.ExternalAddress", "127.0.0.1");
+    Optional<boost::asio::ip::tcp::endpoint> externalAddress = resolver.Resolve(boost::asio::ip::tcp::v4(), _hostnames[0], std::to_string(_port));
     if (!externalAddress)
     {
-        TC_LOG_ERROR("server.rest", "Could not resolve LoginREST.ExternalAddress {}", configuredAddress);
+        TC_LOG_ERROR("server.rest", "Could not resolve LoginREST.ExternalAddress {}", _hostnames[0]);
         return false;
     }
 
-    _externalAddress = *externalAddress;
+    _addresses[0] = externalAddress->address();
 
-    configuredAddress = sConfigMgr->GetStringDefault("LoginREST.LocalAddress", "127.0.0.1");
-    Optional<boost::asio::ip::tcp::endpoint> localAddress = resolver.Resolve(boost::asio::ip::tcp::v4(), configuredAddress, std::to_string(_port));
+    _hostnames[1] = sConfigMgr->GetStringDefault("LoginREST.LocalAddress", "127.0.0.1");
+    Optional<boost::asio::ip::tcp::endpoint> localAddress = resolver.Resolve(boost::asio::ip::tcp::v4(), _hostnames[1], std::to_string(_port));
     if (!localAddress)
     {
-        TC_LOG_ERROR("server.rest", "Could not resolve LoginREST.LocalAddress {}", configuredAddress);
+        TC_LOG_ERROR("server.rest", "Could not resolve LoginREST.LocalAddress {}", _hostnames[1]);
         return false;
     }
 
-    _localAddress = *localAddress;
-    _localNetmask = Trinity::Net::GetDefaultNetmaskV4(_localAddress.address().to_v4());
+    _addresses[1] = localAddress->address();
 
     // set up form inputs
     Battlenet::JSON::Login::FormInput* input;
@@ -136,17 +134,15 @@ void LoginRESTService::Stop()
     _thread.join();
 }
 
-boost::asio::ip::tcp::endpoint const& LoginRESTService::GetAddressForClient(boost::asio::ip::address const& address) const
+std::string const& LoginRESTService::GetHostnameForClient(boost::asio::ip::address const& address) const
 {
+    if (auto addressIndex = Trinity::Net::SelectAddressForClient(address, _addresses))
+        return _hostnames[*addressIndex];
+
     if (address.is_loopback())
-        return _localAddress;
-    else if (_localAddress.address().is_loopback())
-        return _externalAddress;
+        return _hostnames[1];
 
-    if (Trinity::Net::IsInNetwork(_localAddress.address().to_v4(), _localNetmask, address.to_v4()))
-        return _localAddress;
-
-    return _externalAddress;
+    return _hostnames[0];
 }
 
 void LoginRESTService::Run()
@@ -299,8 +295,8 @@ int32 LoginRESTService::HandleGetGameAccounts(std::shared_ptr<AsyncRequest> requ
 
 int32 LoginRESTService::HandleGetPortal(std::shared_ptr<AsyncRequest> request)
 {
-    boost::asio::ip::tcp::endpoint const& endpoint = GetAddressForClient(boost::asio::ip::address_v4(request->GetClient()->ip));
-    std::string response = Trinity::StringFormat("{}:{}", endpoint.address().to_string(), sConfigMgr->GetIntDefault("BattlenetPort", 1119));
+    std::string const& hostname = GetHostnameForClient(boost::asio::ip::address_v4(request->GetClient()->ip));
+    std::string response = Trinity::StringFormat("{}:{}", hostname, sConfigMgr->GetIntDefault("BattlenetPort", 1119));
 
     soap_response(request->GetClient(), SOAP_FILE);
     soap_send_raw(request->GetClient(), response.c_str(), response.length());
@@ -554,7 +550,7 @@ void LoginRESTService::ResponseCodePlugin::Destroy(soap* s, soap_plugin* p)
     delete data;
 }
 
-int32 LoginRESTService::ResponseCodePlugin::ChangeResponse(soap* s, int32 originalResponse, size_t contentLength)
+int32 LoginRESTService::ResponseCodePlugin::ChangeResponse(soap* s, int32 originalResponse, uint64 contentLength)
 {
     ResponseCodePlugin* self = reinterpret_cast<ResponseCodePlugin*>(soap_lookup_plugin(s, PluginId));
     return self->fresponse(s, self->ErrorCode && originalResponse == SOAP_FILE ? self->ErrorCode : originalResponse, contentLength);
