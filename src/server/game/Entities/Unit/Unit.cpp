@@ -6919,7 +6919,7 @@ float Unit::SpellCritChanceTaken(Unit const* caster, Spell* spell, AuraEffect co
     return std::max(crit_chance, 0.0f);
 }
 
-/*static*/ uint32 Unit::SpellCriticalDamageBonus(Unit const* caster, SpellInfo const* spellProto, uint32 damage, Unit* victim)
+/*static*/ uint32 Unit::SpellCriticalDamageBonus(Unit const* caster, SpellInfo const* spellProto, uint32 damage, Unit* /*victim*/)
 {
     // Calculate critical bonus
     int32 crit_bonus = damage * 2;

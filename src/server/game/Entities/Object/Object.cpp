@@ -367,7 +367,6 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const
     bool SmoothPhasing = false;
     bool SceneObjCreate = false;
     bool PlayerCreateData = IsPlayer() && ToUnit()->GetPowerIndex(POWER_RUNES) != MAX_POWERS;
-    bool HasConversation = IsConversation();
 
     std::vector<uint32> const *PauseTimes = nullptr;
     if (GameObject const *go = ToGameObject())
@@ -390,7 +389,6 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const
     data->WriteBit(ThisIsYou);
     data->WriteBit(SceneObjCreate);
     data->WriteBit(PlayerCreateData);
-    data->WriteBit(HasConversation);
     data->FlushBits();
 
     if (HasMovementUpdate) {
@@ -508,35 +506,35 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const
     }
 
     if (HasAreaTrigger) {
-        AreaTrigger const *areaTrigger = ToAreaTrigger();
-        AreaTriggerCreateProperties const *createProperties = areaTrigger->GetCreateProperties();
-        AreaTriggerTemplate const *areaTriggerTemplate = areaTrigger->GetTemplate();
-        AreaTriggerShapeInfo const &shape = areaTrigger->GetShape();
+        AreaTrigger const* areaTrigger = ToAreaTrigger();
+        AreaTriggerCreateProperties const* createProperties = areaTrigger->GetCreateProperties();
+        AreaTriggerShapeInfo const& shape = areaTrigger->GetShape();
 
         *data << uint32(areaTrigger->GetTimeSinceCreated());
 
         *data << areaTrigger->GetRollPitchYaw().PositionXYZStream();
 
-        bool hasAbsoluteOrientation = areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_ABSOLUTE_ORIENTATION);
-        bool hasDynamicShape = areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_DYNAMIC_SHAPE);
-        bool hasAttached = areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_ATTACHED);
-        bool hasFaceMovementDir = areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_FACE_MOVEMENT_DIR);
-        bool hasFollowsTerrain = areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_FOLLOWS_TERRAIN);
-        bool hasUnk1 = areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_UNK1);
-        bool hasTargetRollPitchYaw = areaTriggerTemplate && areaTrigger->GetTemplate()->HasFlag(AREATRIGGER_FLAG_HAS_TARGET_ROLL_PITCH_YAW);
-        bool hasScaleCurveID = createProperties && createProperties->ScaleCurveId != 0;
-        bool hasMorphCurveID = createProperties && createProperties->MorphCurveId != 0;
-        bool hasFacingCurveID = createProperties && createProperties->FacingCurveId != 0;
-        bool hasMoveCurveID = createProperties && createProperties->MoveCurveId != 0;
-        bool hasAnimation = areaTriggerTemplate->HasFlag(AREATRIGGER_FLAG_HAS_ANIM_ID);
-        bool hasUnk3 = areaTriggerTemplate->HasFlag(AREATRIGGER_FLAG_UNK3);
-        bool hasAnimKitID = areaTriggerTemplate->HasFlag(AREATRIGGER_FLAG_HAS_ANIM_KIT_ID);
-        bool hasAreaTriggerSphere = shape.IsSphere();
-        bool hasAreaTriggerBox = shape.IsBox();
-        bool hasAreaTriggerPolygon = createProperties && shape.IsPolygon();
+        bool hasAbsoluteOrientation = createProperties && createProperties->Flags.HasFlag(AreaTriggerCreatePropertiesFlag::HasAbsoluteOrientation);
+        bool hasDynamicShape        = createProperties && createProperties->Flags.HasFlag(AreaTriggerCreatePropertiesFlag::HasDynamicShape);
+        bool hasAttached            = createProperties && createProperties->Flags.HasFlag(AreaTriggerCreatePropertiesFlag::HasAttached);
+        bool hasFaceMovementDir     = createProperties && createProperties->Flags.HasFlag(AreaTriggerCreatePropertiesFlag::HasFaceMovementDir);
+        bool hasFollowsTerrain      = createProperties && createProperties->Flags.HasFlag(AreaTriggerCreatePropertiesFlag::HasFollowsTerrain);
+        bool hasUnk1                = createProperties && createProperties->Flags.HasFlag(AreaTriggerCreatePropertiesFlag::Unk1);
+        bool hasTargetRollPitchYaw  = createProperties && createProperties->Flags.HasFlag(AreaTriggerCreatePropertiesFlag::HasTargetRollPitchYaw);
+        bool hasScaleCurveID        = createProperties && createProperties->ScaleCurveId != 0;
+        bool hasMorphCurveID        = createProperties && createProperties->MorphCurveId != 0;
+        bool hasFacingCurveID       = createProperties && createProperties->FacingCurveId != 0;
+        bool hasMoveCurveID         = createProperties && createProperties->MoveCurveId != 0;
+        bool hasAnimation           = createProperties && createProperties->Flags.HasFlag(AreaTriggerCreatePropertiesFlag::HasAnimId);
+        bool hasUnk3                = createProperties && createProperties->Flags.HasFlag(AreaTriggerCreatePropertiesFlag::Unk3);
+        bool hasAnimKitID           = createProperties && createProperties->Flags.HasFlag(AreaTriggerCreatePropertiesFlag::HasAnimKitId);
+
+        bool hasAreaTriggerSphere   = shape.IsSphere();
+        bool hasAreaTriggerBox      = shape.IsBox();
+        bool hasAreaTriggerPolygon  = createProperties && shape.IsPolygon();
         bool hasAreaTriggerCylinder = shape.IsCylinder();
-        bool hasAreaTriggerSpline = areaTrigger->HasSplines();
-        bool hasOrbit = areaTrigger->HasOrbit();
+        bool hasAreaTriggerSpline   = areaTrigger->HasSplines();
+        bool hasOrbit               = areaTrigger->HasOrbit();
 
         data->WriteBit(hasAbsoluteOrientation);
         data->WriteBit(hasDynamicShape);
@@ -564,7 +562,8 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const
 
         data->FlushBits();
 
-        if (hasAreaTriggerSpline) {
+        if (hasAreaTriggerSpline)
+        {
             *data << uint32(areaTrigger->GetTimeToTarget());
             *data << uint32(areaTrigger->GetElapsedTimeForMovement());
 
@@ -587,17 +586,19 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const
             *data << uint32(createProperties->MoveCurveId);
 
         if (hasAnimation)
-            *data << int32(0);
+            *data << int32(createProperties->AnimId);
 
         if (hasAnimKitID)
-            *data << uint32(0);
+            *data << uint32(createProperties->AnimKitId);
 
-        if (hasAreaTriggerSphere) {
+        if (hasAreaTriggerSphere)
+        {
             *data << float(shape.SphereDatas.Radius);
             *data << float(shape.SphereDatas.RadiusTarget);
         }
 
-        if (hasAreaTriggerBox) {
+        if (hasAreaTriggerBox)
+        {
             *data << float(shape.BoxDatas.Extents[0]);
             *data << float(shape.BoxDatas.Extents[1]);
             *data << float(shape.BoxDatas.Extents[2]);
@@ -606,20 +607,22 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const
             *data << float(shape.BoxDatas.ExtentsTarget[2]);
         }
 
-        if (hasAreaTriggerPolygon) {
-            *data << int32(createProperties->PolygonVertices.size());
-            *data << int32(createProperties->PolygonVerticesTarget.size());
+        if (hasAreaTriggerPolygon)
+        {
+            *data << int32(shape.PolygonVertices.size());
+            *data << int32(shape.PolygonVerticesTarget.size());
             *data << float(shape.PolygonDatas.Height);
             *data << float(shape.PolygonDatas.HeightTarget);
 
-            for (TaggedPosition<Position::XY> const &vertice: createProperties->PolygonVertices)
+            for (TaggedPosition<Position::XY> const& vertice : shape.PolygonVertices)
                 *data << vertice;
 
-            for (TaggedPosition<Position::XY> const &vertice: createProperties->PolygonVerticesTarget)
+            for (TaggedPosition<Position::XY> const& vertice : shape.PolygonVerticesTarget)
                 *data << vertice;
         }
 
-        if (hasAreaTriggerCylinder) {
+        if (hasAreaTriggerCylinder)
+        {
             *data << float(shape.CylinderDatas.Radius);
             *data << float(shape.CylinderDatas.RadiusTarget);
             *data << float(shape.CylinderDatas.Height);
@@ -776,12 +779,14 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const
         data->WriteBit(HasSceneInstanceIDs);
         data->WriteBit(HasRuneState);
         data->FlushBits();
-        if (HasSceneInstanceIDs) {
+        if (HasSceneInstanceIDs)
+        {
             *data << uint32(player->GetSceneMgr().GetSceneTemplateByInstanceMap().size());
-            for (auto const &itr: player->GetSceneMgr().GetSceneTemplateByInstanceMap())
+            for (auto const& itr : player->GetSceneMgr().GetSceneTemplateByInstanceMap())
                 *data << uint32(itr.first);
         }
-        if (HasRuneState) {
+        if (HasRuneState)
+        {
             float baseCd = float(player->GetRuneBaseCooldown());
             uint32 maxRunes = uint32(player->GetMaxPower(POWER_RUNES));
 
@@ -791,14 +796,6 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const
             for (uint32 i = 0; i < maxRunes; ++i)
                 *data << uint8((baseCd - float(player->GetRuneCooldown(i))) / baseCd * 255);
         }
-    }
-    if (HasConversation)
-    {
-        Conversation const* self = ToConversation();
-        if (data->WriteBit(self->GetTextureKitId() != 0))
-            *data << uint32(self->GetTextureKitId());
-
-        data->FlushBits();
     }
 }
 

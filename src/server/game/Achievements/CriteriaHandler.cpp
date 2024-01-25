@@ -543,8 +543,10 @@ void CriteriaHandler::UpdateCriteria(CriteriaType type, uint64 miscValue1 /*= 0*
             case CriteriaType::PlayerTriggerGameEvent:
             case CriteriaType::Login:
             case CriteriaType::AnyoneTriggerGameEventScenario:
+            case CriteriaType::DefeatDungeonEncounterWhileElegibleForLoot:
             case CriteriaType::BattlePetReachLevel:
             case CriteriaType::ActivelyEarnPetLevel:
+            case CriteriaType::DefeatDungeonEncounter:
             case CriteriaType::PlaceGarrisonBuilding:
             case CriteriaType::ActivateAnyGarrisonBuilding:
             case CriteriaType::HonorLevelIncrease:
@@ -788,9 +790,6 @@ void CriteriaHandler::UpdateCriteria(CriteriaType type, uint64 miscValue1 /*= 0*
             case CriteriaType::AccountObtainPetThroughBattle:
             case CriteriaType::WinPetBattle:
             case CriteriaType::PlayerObtainPetThroughBattle:
-            case CriteriaType::EnterArea:
-            case CriteriaType::LeaveArea:
-            case CriteriaType::DefeatDungeonEncounter:
             case CriteriaType::ActivateGarrisonBuilding:
             case CriteriaType::UpgradeGarrison:
             case CriteriaType::StartAnyGarrisonMissionWithFollowerType:
@@ -814,7 +813,6 @@ void CriteriaHandler::UpdateCriteria(CriteriaType type, uint64 miscValue1 /*= 0*
             case CriteriaType::BattlePetAchievementPointsEarned:
             case CriteriaType::ReleasedSpirit:
             case CriteriaType::AccountKnownPet:
-            case CriteriaType::DefeatDungeonEncounterWhileElegibleForLoot:
             case CriteriaType::CompletedLFGDungeon:
             case CriteriaType::KickInitiatorInLFGDungeon:
             case CriteriaType::KickVoterInLFGDungeon:
@@ -1185,6 +1183,7 @@ bool CriteriaHandler::IsCompletedCriteria(Criteria const* criteria, uint64 requi
         case CriteriaType::CatchFishInFishingHole:
         case CriteriaType::LearnSpellFromSkillLine:
         case CriteriaType::WinDuel:
+        case CriteriaType::DefeatDungeonEncounterWhileElegibleForLoot:
         case CriteriaType::GetLootByType:
         case CriteriaType::LearnTradeskillSkillLine:
         case CriteriaType::CompletedLFGDungeonWithStrangers:
@@ -1194,6 +1193,7 @@ bool CriteriaHandler::IsCompletedCriteria(Criteria const* criteria, uint64 requi
         case CriteriaType::UniquePetsOwned:
         case CriteriaType::BattlePetReachLevel:
         case CriteriaType::ActivelyEarnPetLevel:
+        case CriteriaType::DefeatDungeonEncounter:
         case CriteriaType::LearnAnyTransmogInSlot:
         case CriteriaType::ParagonLevelIncreaseWithFaction:
         case CriteriaType::PlayerHasEarnedHonor:
@@ -1586,6 +1586,11 @@ bool CriteriaHandler::RequirementsSatisfied(Criteria const* criteria, uint64 mis
             break;
         case CriteriaType::EarnTeamArenaRating:
             return false;
+        case CriteriaType::DefeatDungeonEncounterWhileElegibleForLoot:
+        case CriteriaType::DefeatDungeonEncounter:
+            if (!miscValue1 || miscValue1 != uint32(criteria->Entry->Asset.DungeonEncounterID))
+                return false;
+            break;
         case CriteriaType::PlaceGarrisonBuilding:
         case CriteriaType::ActivateGarrisonBuilding:
             if (miscValue1 != uint32(criteria->Entry->Asset.GarrBuildingID))
@@ -3473,9 +3478,11 @@ inline bool IsCriteriaTypeStoredByAsset(CriteriaType type)
         case CriteriaType::GainAura:
         case CriteriaType::CatchFishInFishingHole:
         case CriteriaType::LearnSpellFromSkillLine:
+        case CriteriaType::DefeatDungeonEncounterWhileElegibleForLoot:
         case CriteriaType::GetLootByType:
         case CriteriaType::LandTargetedSpellOnTarget:
         case CriteriaType::LearnTradeskillSkillLine:
+        case CriteriaType::DefeatDungeonEncounter:
             return true;
         default:
             break;

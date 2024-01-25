@@ -15,8 +15,8 @@ DELETE FROM `creature_template_difficulty` WHERE `DifficultyID`=0 AND `VerifiedB
 
 UPDATE `creature_template_difficulty` SET `DifficultyID`=0 WHERE `DifficultyID`=1 AND `Entry` IN (54847,54840,21931,21904,21891,20343,19429,19428,18956,18703,18701,18473,18472,18328,18327,18326,18325,18323,18322,18321,18320,18319,18318);
 UPDATE `creature_template_difficulty` SET `DifficultyID`=0 WHERE `DifficultyID`=2 AND `Entry` IN (23136,23135,23134);
-UPDATE `creature_template_difficulty` SET `LevelScalingDeltaMin`=2, `LevelScalingDeltaMax`=2, `ContentTuningID`=224 WHERE `DifficultyID`=0 AND `Entry`=23035;
-UPDATE `creature_template_difficulty` SET `ContentTuningID`=1068, `CreatureDifficultyID`=14006, `VerifiedBuild`=52649 WHERE `DifficultyID`=2 AND `Entry`=18320;
+UPDATE `creature_template_difficulty` SET `LevelScalingDeltaMin`=2, `LevelScalingDeltaMax`=2, `SandboxScalingId`=224 WHERE `DifficultyID`=0 AND `Entry`=23035;
+UPDATE `creature_template_difficulty` SET `SandboxScalingId`=1068, `CreatureDifficultyID`=14006, `VerifiedBuild`=52649 WHERE `DifficultyID`=2 AND `Entry`=18320;
 
 DELETE FROM `creature_questitem` WHERE `DifficultyID`=1 AND `CreatureEntry` IN (18472,18473,19428);
 
@@ -29,7 +29,7 @@ UPDATE `creature_template_difficulty` SET `DifficultyID`=0 WHERE `DifficultyID`=
 DELETE FROM `creature_template_difficulty` WHERE `DifficultyID`=0 AND `VerifiedBuild`=0 AND `Entry` IN (18848,54895,54893,54891,54890,21159,19427,19226,19224,18891,18830,18797,18796,18794,18793,18732,18731,18708,18667,18663,18642,18641,18640,18639,18638,18637,18636,18635,18634,18633,18632,18631);
 
 UPDATE `creature_template_difficulty` SET `DifficultyID`=0 WHERE `DifficultyID`=1 AND `Entry` IN (18848,54895,54893,54891,54890,21159,19427,19226,19224,18891,18830,18797,18796,18794,18793,18732,18731,18708,18667,18663,18642,18641,18640,18639,18638,18637,18636,18635,18634,18633,18632,18631);
-UPDATE `creature_template_difficulty` SET `ContentTuningID`=1069, `CreatureDifficultyID`=14407, `VerifiedBuild`=52649 WHERE `DifficultyID`=2 AND `Entry`=18663;
+UPDATE `creature_template_difficulty` SET `SandboxScalingId`=1069, `CreatureDifficultyID`=14407, `VerifiedBuild`=52649 WHERE `DifficultyID`=2 AND `Entry`=18663;
 
 DELETE FROM `creature_questitem` WHERE `DifficultyID`=1 AND `CreatureEntry` IN (18642,18667,18732);
 
@@ -37,7 +37,7 @@ DELETE FROM `creature_questitem` WHERE `DifficultyID`=1 AND `CreatureEntry` IN (
 DELETE FROM `creature_template_difficulty` WHERE `DifficultyID`=0 AND `VerifiedBuild`=0 AND `Entry` IN (17729,17894,54678,54675,54674,20465,19632,18409,18105,17992,17990,17827,17885,17882,17871,17826,17771,17770,17735,17734,17732,17731,17730,17728,17727,17726,17725,17724,17723);
 
 UPDATE `creature_template_difficulty` SET `DifficultyID`=0 WHERE `DifficultyID`=1 AND `Entry` IN (17729,17894,54678,54675,54674,20465,19632,18409,18105,17992,17990,17827,17885,17882,17871,17826,17771,17770,17735,17734,17732,17731,17730,17728,17727,17726,17725,17724,17723);
-UPDATE `creature_template_difficulty` SET `ContentTuningID`=234, `VerifiedBuild`=52649 WHERE `DifficultyID`=0 AND `Entry`=22299;
+UPDATE `creature_template_difficulty` SET `SandboxScalingId`=234, `VerifiedBuild`=52649 WHERE `DifficultyID`=0 AND `Entry`=22299;
 
 DELETE FROM `creature_questitem` WHERE `DifficultyID`=1 AND `CreatureEntry` IN (17724,17731,17882,18105);
 
@@ -119,7 +119,7 @@ DELETE FROM `creature_template_difficulty` WHERE `DifficultyID`=0 AND `VerifiedB
 
 UPDATE `creature_template_difficulty` SET `DifficultyID`=0 WHERE `DifficultyID`=1 AND `Entry` IN (20923,17301,17295,17296,17297,17302,57909,57908,55136,54932,54931,20709,19524,19523,18370,17695,17694,17693,17687,17671,17670,17669,17623,17622,17621,17611,17578,17552,17471,17465,17464,17462,17461,17427,17420,17357,17356,17083,16809,16808,16807,16704,16700,16699,16594,16593,16523,16507);
 
-UPDATE `creature_template_difficulty` SET `ContentTuningID`=231, `VerifiedBuild`=52649 WHERE `DifficultyID`=0 AND `Entry` IN (17301,20923);
+UPDATE `creature_template_difficulty` SET `SandboxScalingId`=231, `VerifiedBuild`=52649 WHERE `DifficultyID`=0 AND `Entry` IN (17301,20923);
 
 DELETE FROM `creature_questitem` WHERE `DifficultyID`=1 AND `CreatureEntry` IN (16807,16808,16809,17669);
 
@@ -132,15 +132,15 @@ UPDATE `creature_template_difficulty` SET `DifficultyID`=0 WHERE `DifficultyID`=
 DELETE FROM `creature_template_difficulty` WHERE `DifficultyID`=0 AND `VerifiedBuild`=0 AND `Entry` IN (22894,23369,23379,23499);
 
 UPDATE `creature_template_difficulty` SET `HealthModifier`=23.52000045776367187, `ManaModifier`=40, `CreatureDifficultyID`=126942, `VerifiedBuild`=52649 WHERE (`Entry`=22876 AND `DifficultyID`=14);
-UPDATE `creature_template_difficulty` SET `DifficultyID`=0, `ContentTuningID`=1014, `DamageModifier`=1, `VerifiedBuild`=52649 WHERE `DifficultyID`=14 AND `Entry` IN (22894,23369,23379,23499);
-UPDATE `creature_template_difficulty` SET `ContentTuningID`=778, `VerifiedBuild`=52649 WHERE `DifficultyID`=0 AND `Entry`=123252;
+UPDATE `creature_template_difficulty` SET `DifficultyID`=0, `SandboxScalingId`=1014, `DamageModifier`=1, `VerifiedBuild`=52649 WHERE `DifficultyID`=14 AND `Entry` IN (22894,23369,23379,23499);
+UPDATE `creature_template_difficulty` SET `SandboxScalingId`=778, `VerifiedBuild`=52649 WHERE `DifficultyID`=0 AND `Entry`=123252;
 
 UPDATE `creature_template_difficulty` ctd
 INNER JOIN `creature_template_difficulty` ctd2 ON ctd.`Entry`=ctd2.`Entry` AND ctd.`DifficultyID`!=ctd2.`DifficultyID`
 SET
     ctd.`LevelScalingDeltaMin`=ctd2.`LevelScalingDeltaMin`,
     ctd.`LevelScalingDeltaMax`=ctd2.`LevelScalingDeltaMax`,
-    ctd.`ContentTuningID`=ctd2.`ContentTuningID`,
+    ctd.`SandboxScalingId`=ctd2.`SandboxScalingId`,
     ctd.`DamageModifier`=ctd2.`DamageModifier`,
     ctd.`LootID`=ctd2.`LootID`,
     ctd.`PickPocketLootID`=ctd2.`PickPocketLootID`,
