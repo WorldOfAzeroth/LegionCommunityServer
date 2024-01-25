@@ -487,6 +487,8 @@ public:
     bool IsDeletable() const override;
     Spell const* GetSpell() const { return m_Spell; }
 
+    std::string GetDebugInfo() const { return m_Spell->GetDebugInfo(); }
+
 protected:
     Spell* m_Spell;
 };
@@ -501,8 +503,6 @@ m_spellValue(new SpellValue(m_spellInfo, caster)), _spellEvent(nullptr)
     m_selfContainer = nullptr;
     m_referencedFromCurrentSpell = false;
     m_executedCurrently = false;
-    m_needComboPoints = m_spellInfo->NeedsComboPoints();
-    m_comboPointGain = 0;
     m_delayStart = 0;
     m_delayAtDamageCount = 0;
 
@@ -867,8 +867,42 @@ uint64 Spell::CalculateDelayMomentForDst(float launchDelay) const
 
 void Spell::RecalculateDelayMomentForDst()
 {
-    m_delayMoment = CalculateDelayMomentForDst(0.0f);
-    m_caster->m_Events.ModifyEventTime(_spellEvent, Milliseconds(GetDelayStart() + m_delayMoment));
+    UpdateDelayMomentForDst(CalculateDelayMomentForDst(0.0f));
+}
+
+void Spell::UpdateDelayMomentForDst(uint64 hitDelay)
+{
+    m_delayMoment = hitDelay;
+
+    if (GetDelayStart())
+        m_caster->m_Events.ModifyEventTime(_spellEvent, Milliseconds(GetDelayStart() + m_delayMoment));
+}
+
+void Spell::UpdateDelayMomentForUnitTarget(Unit* unit, uint64 hitDelay)
+{
+    auto itr = std::find_if(m_UniqueTargetInfo.begin(), m_UniqueTargetInfo.end(), [unit](Spell::TargetInfo const& targetInfo)
+    {
+        return targetInfo.TargetGUID == unit->GetGUID();
+    });
+
+    uint64 oldDelay = itr->TimeDelay;
+    itr->TimeDelay = hitDelay;
+
+    if (hitDelay && (!m_delayMoment || m_delayMoment > hitDelay))
+        m_delayMoment = hitDelay;
+    else if (m_delayMoment && oldDelay < hitDelay)
+    {
+        // if new hit delay is greater than old delay for this target we must check all other spell targets to see if m_delayMoment can be increased
+        auto minDelayTargetItr = std::min_element(m_UniqueTargetInfo.begin(), m_UniqueTargetInfo.end(), [](Spell::TargetInfo const& itr, Spell::TargetInfo const& smallest)
+        {
+            return itr.TimeDelay < smallest.TimeDelay;
+        });
+
+        m_delayMoment = minDelayTargetItr->TimeDelay;
+    }
+
+    if (GetDelayStart())
+        m_caster->m_Events.ModifyEventTime(_spellEvent, Milliseconds(GetDelayStart() + m_delayMoment));
 }
 
 void Spell::SelectEffectImplicitTargets(SpellEffectInfo const& spellEffectInfo, SpellImplicitTargetInfo const& targetType, SpellTargetIndex targetIndex, uint32& processedEffectMask)
@@ -1566,7 +1600,7 @@ void Spell::SelectImplicitCasterDestTargets(SpellEffectInfo const& spellEffectIn
                     break;
                 case TARGET_DEST_CASTER_RANDOM:
                     if (dist > objSize)
-                        dist = objSize + (dist - objSize) * rand_norm();
+                        dist = objSize + (dist - objSize);
                     break;
                 case TARGET_DEST_CASTER_FRONT_LEFT:
                 case TARGET_DEST_CASTER_BACK_LEFT:
@@ -1617,8 +1651,6 @@ void Spell::SelectImplicitTargetDestTargets(SpellEffectInfo const& spellEffectIn
         {
             float angle = targetType.CalcDirectionAngle();
             float dist = spellEffectInfo.CalcRadius(nullptr, targetIndex);
-            if (targetType.GetTarget() == TARGET_DEST_TARGET_RANDOM)
-                dist *= rand_norm();
 
             Position pos = dest._position;
             target->MovePositionToFirstCollision(pos, dist, angle);
@@ -1671,8 +1703,6 @@ void Spell::SelectImplicitDestDestTargets(SpellEffectInfo const& spellEffectInfo
         {
             float angle = targetType.CalcDirectionAngle();
             float dist = spellEffectInfo.CalcRadius(m_caster, targetIndex);
-            if (targetType.GetTarget() == TARGET_DEST_DEST_RANDOM)
-                dist *= rand_norm();
 
             Position pos = dest._position;
             m_caster->MovePositionToFirstCollision(pos, dist, angle);
@@ -1732,6 +1762,10 @@ void Spell::SelectImplicitCasterObjectTargets(SpellEffectInfo const& spellEffect
             if (Creature* creatureCaster = m_caster->ToCreature())
                 if (!creatureCaster->GetTapList().empty())
                     target = ObjectAccessor::GetWorldObject(*creatureCaster, Trinity::Containers::SelectRandomContainerElement(creatureCaster->GetTapList()));
+            break;
+        case TARGET_UNIT_OWN_CRITTER:
+            if (Unit const* unitCaster = m_caster->ToUnit())
+                target = ObjectAccessor::GetCreatureOrPetOrVehicle(*m_caster, unitCaster->GetCritterGUID());
             break;
         default:
             break;
@@ -2875,8 +2909,12 @@ void Spell::TargetInfo::DoDamageAndTriggers(Spell* spell)
                 procVictim |= PROC_FLAG_TAKE_ANY_DAMAGE;
 
                 // sparring
-                if (Creature* victimCreature = damageInfo.target->ToCreature())
-                    damageInfo.damage = victimCreature->CalculateDamageForSparring(damageInfo.attacker, damageInfo.damage);
+                if (damageInfo.target != damageInfo.attacker)
+                {
+                    if (Creature* victimCreature = damageInfo.target->ToCreature())
+                        damageInfo.damage = victimCreature->CalculateDamageForSparring(damageInfo.attacker, damageInfo.damage);
+                }
+                spell->m_damage = damageInfo.damage;
 
                 caster->DealSpellDamage(&damageInfo, true);
 
@@ -2931,10 +2969,6 @@ void Spell::TargetInfo::DoDamageAndTriggers(Spell* spell)
         // set hitmask for finish procs
         spell->m_hitMask |= hitMask;
         spell->m_procSpellType |= procSpellType;
-
-        // Do not take combo points on dodge and miss
-        if (MissCondition != SPELL_MISS_NONE && spell->m_needComboPoints && spell->m_targets.GetUnitTargetGUID() == TargetGUID)
-            spell->m_needComboPoints = false;
 
         // _spellHitTarget can be null if spell is missed in DoSpellHitOnUnit
         if (MissCondition != SPELL_MISS_EVADE && _spellHitTarget && !spell->m_caster->IsFriendlyTo(unit) && (!spell->IsPositive() || spell->m_spellInfo->HasEffect(SPELL_EFFECT_DISPEL)))
@@ -3425,15 +3459,8 @@ SpellCastResult Spell::prepare(SpellCastTargets const& targets, AuraEffect const
     if (!m_CastItem)
         m_powerCost = m_spellInfo->CalcPowerCost(m_caster, m_spellSchoolMask, this);
 
-    // Set combo point requirement
-    if ((_triggeredCastFlags & TRIGGERED_IGNORE_COMBO_POINTS) || m_CastItem)
-        m_needComboPoints = false;
-
     int32 param1 = 0, param2 = 0;
     SpellCastResult result = CheckCast(true, &param1, &param2);
-    if(m_caster->IsPlayer()) {
-        TC_LOG_ERROR("spells", "SpellCastResult:{}-{}",m_spellInfo->Id, result);
-    }
     // target is checked in too many locations and with different results to handle each of them
     // handle just the general SPELL_FAILED_BAD_TARGETS result which is the default result for most DBC target checks
     if (_triggeredCastFlags & TRIGGERED_IGNORE_TARGET_CHECK && result == SPELL_FAILED_BAD_TARGETS)
@@ -3520,7 +3547,7 @@ SpellCastResult Spell::prepare(SpellCastTargets const& targets, AuraEffect const
         {
             // stealth must be removed at cast starting (at show channel bar)
             // skip triggered spell (item equip spell casting and other not explicit character casts/item uses)
-            if (!(_triggeredCastFlags & TRIGGERED_IGNORE_AURA_INTERRUPT_FLAGS) && !m_spellInfo->HasAttribute(SPELL_ATTR2_NOT_AN_ACTION))
+            if (!(_triggeredCastFlags & TRIGGERED_IGNORE_CAST_IN_PROGRESS) && !m_spellInfo->HasAttribute(SPELL_ATTR2_NOT_AN_ACTION))
                 unitCaster->RemoveAurasWithInterruptFlags(SpellAuraInterruptFlags::Action, m_spellInfo);
 
             // Do not register as current spell when requested to ignore cast in progress
@@ -3684,8 +3711,6 @@ void Spell::_cast(bool skipCheck)
         {
             cleanupSpell(castResult, &param1, &param2);
             return;
-        } else {
-
         }
 
         // additional check after cast bar completes (must not be in CheckCast)
@@ -3904,7 +3929,7 @@ void Spell::_cast(bool skipCheck)
     if (!(hitMask & PROC_HIT_CRITICAL))
         hitMask |= PROC_HIT_NORMAL;
 
-    if (!(_triggeredCastFlags & TRIGGERED_IGNORE_AURA_INTERRUPT_FLAGS) && !m_spellInfo->HasAttribute(SPELL_ATTR2_NOT_AN_ACTION))
+    if (!(_triggeredCastFlags & TRIGGERED_IGNORE_CAST_IN_PROGRESS) && !m_spellInfo->HasAttribute(SPELL_ATTR2_NOT_AN_ACTION))
         m_originalCaster->RemoveAurasWithInterruptFlags(SpellAuraInterruptFlags::ActionDelayed, m_spellInfo);
 
     Unit::ProcSkillsAndAuras(m_originalCaster, nullptr, procAttacker, PROC_FLAG_NONE, PROC_SPELL_TYPE_MASK_ALL, PROC_SPELL_PHASE_CAST, hitMask, this, nullptr, nullptr);
@@ -4006,7 +4031,9 @@ uint64 Spell::handle_delayed(uint64 t_offset)
         return 0;
     }
 
+    // when spell has a single missile we hit all targets (except caster) at the same time
     bool single_missile = m_targets.HasDst();
+    bool ignoreTargetInfoTimeDelay = single_missile;
     uint64 next_time = 0;
 
     if (!m_launchHandled)
@@ -4017,21 +4044,13 @@ uint64 Spell::handle_delayed(uint64 t_offset)
 
         HandleLaunchPhase();
         m_launchHandled = true;
-        if (m_delayMoment > t_offset)
-        {
-            if (single_missile)
-                return m_delayMoment;
-
-            next_time = m_delayMoment;
-            if ((m_UniqueTargetInfo.size() > 2 || (m_UniqueTargetInfo.size() == 1 && m_UniqueTargetInfo.front().TargetGUID == m_caster->GetGUID())) || !m_UniqueGOTargetInfo.empty())
-            {
-                t_offset = 0; // if LaunchDelay was present then the only target that has timeDelay = 0 is m_caster - and that is the only target we want to process now
-            }
-        }
     }
 
-    if (single_missile && !t_offset)
-        return m_delayMoment;
+    if (m_delayMoment > t_offset)
+    {
+        ignoreTargetInfoTimeDelay = false;
+        next_time = m_delayMoment;
+    }
 
     Player* modOwner = m_caster->GetSpellModOwner();
     if (modOwner)
@@ -4039,7 +4058,7 @@ uint64 Spell::handle_delayed(uint64 t_offset)
 
     PrepareTargetProcessing();
 
-    if (!m_immediateHandled && t_offset)
+    if (!m_immediateHandled && m_delayMoment <= t_offset)
     {
         _handle_immediate_phase();
         m_immediateHandled = true;
@@ -4050,13 +4069,13 @@ uint64 Spell::handle_delayed(uint64 t_offset)
         std::vector<TargetInfo> delayedTargets;
         m_UniqueTargetInfo.erase(std::remove_if(m_UniqueTargetInfo.begin(), m_UniqueTargetInfo.end(), [&](TargetInfo& target) -> bool
         {
-            if (single_missile || target.TimeDelay <= t_offset)
+            if (ignoreTargetInfoTimeDelay || target.TimeDelay <= t_offset)
             {
                 target.TimeDelay = t_offset;
                 delayedTargets.emplace_back(std::move(target));
                 return true;
             }
-            else if (next_time == 0 || target.TimeDelay < next_time)
+            else if (!single_missile && (next_time == 0 || target.TimeDelay < next_time))
                 next_time = target.TimeDelay;
 
             return false;
@@ -4070,13 +4089,13 @@ uint64 Spell::handle_delayed(uint64 t_offset)
         std::vector<GOTargetInfo> delayedGOTargets;
         m_UniqueGOTargetInfo.erase(std::remove_if(m_UniqueGOTargetInfo.begin(), m_UniqueGOTargetInfo.end(), [&](GOTargetInfo& goTarget) -> bool
         {
-            if (single_missile || goTarget.TimeDelay <= t_offset)
+            if (ignoreTargetInfoTimeDelay || goTarget.TimeDelay <= t_offset)
             {
                 goTarget.TimeDelay = t_offset;
                 delayedGOTargets.emplace_back(std::move(goTarget));
                 return true;
             }
-            else if (next_time == 0 || goTarget.TimeDelay < next_time)
+            else if (!single_missile && (next_time == 0 || goTarget.TimeDelay < next_time))
                 next_time = goTarget.TimeDelay;
 
             return false;
@@ -4131,18 +4150,8 @@ void Spell::_handle_immediate_phase()
 void Spell::_handle_finish_phase()
 {
     if (Unit* unitCaster = m_caster->ToUnit())
-    {
-        // Take for real after all targets are processed
-        if (m_needComboPoints)
-            unitCaster->ClearComboPoints();
-
-        // Real add combo points from effects
-        if (m_comboPointGain)
-            unitCaster->AddComboPoints(m_comboPointGain);
-
         if (m_spellInfo->HasEffect(SPELL_EFFECT_ADD_EXTRA_ATTACKS))
             unitCaster->SetLastExtraAttackSpell(m_spellInfo->Id);
-    }
 
     // Handle procs on finish
     if (!m_originalCaster)
@@ -5712,21 +5721,6 @@ SpellCastResult Spell::CheckCast(bool strict, int32* param1 /*= nullptr*/, int32
             }
         }
 
-        bool reqCombat = true;
-        Unit::AuraEffectList const& stateAuras = unitCaster->GetAuraEffectsByType(SPELL_AURA_ABILITY_IGNORE_AURASTATE);
-        for (Unit::AuraEffectList::const_iterator j = stateAuras.begin(); j != stateAuras.end(); ++j)
-        {
-            if ((*j)->IsAffectingSpell(m_spellInfo))
-            {
-                m_needComboPoints = false;
-                if ((*j)->GetMiscValue() == 1)
-                {
-                    reqCombat = false;
-                    break;
-                }
-            }
-        }
-
         // caster state requirements
         // not for triggered spells (needed by execute)
         if (!(_triggeredCastFlags & TRIGGERED_IGNORE_CASTER_AURASTATE))
@@ -5742,7 +5736,7 @@ SpellCastResult Spell::CheckCast(bool strict, int32* param1 /*= nullptr*/, int32
             if (m_spellInfo->ExcludeCasterAuraSpell && unitCaster->HasAura(m_spellInfo->ExcludeCasterAuraSpell))
                 return SPELL_FAILED_CASTER_AURASTATE;
 
-            if (reqCombat && unitCaster->IsInCombat() && !m_spellInfo->CanBeUsedInCombat())
+            if (unitCaster->IsInCombat() && !m_spellInfo->CanBeUsedInCombat())
                 return SPELL_FAILED_AFFECTING_COMBAT;
         }
 
@@ -6726,12 +6720,6 @@ SpellCastResult Spell::CheckCast(bool strict, int32* param1 /*= nullptr*/, int32
             if (my_trade->GetSpell())
                 return SPELL_FAILED_ITEM_ALREADY_ENCHANTED;
     }
-
-    // check if caster has at least 1 combo point for spells that require combo points
-    if (m_needComboPoints)
-        if (Player* plrCaster = m_caster->ToPlayer())
-            if (!plrCaster->GetComboPoints())
-                return SPELL_FAILED_NO_COMBO_POINTS;
 
     // all ok
     return SPELL_CAST_OK;
@@ -8203,7 +8191,7 @@ bool SpellEvent::Execute(uint64 e_time, uint32 p_time)
                 if (m_Spell->m_spellInfo->LaunchDelay)
                     ASSERT(n_offset == uint64(std::floor(m_Spell->m_spellInfo->LaunchDelay * 1000.0f)));
                 else
-                    ASSERT(n_offset == m_Spell->GetDelayMoment());
+                    ASSERT(n_offset == m_Spell->GetDelayMoment(), UI64FMTD " == " UI64FMTD, n_offset, m_Spell->GetDelayMoment());
                 // re-plan the event for the delay moment
                 m_Spell->GetCaster()->m_Events.AddEvent(this, Milliseconds(e_time + n_offset), false);
                 return false;                               // event not complete

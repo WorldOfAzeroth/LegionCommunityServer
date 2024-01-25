@@ -388,8 +388,9 @@ std::array<SpellImplicitTargetInfo::StaticData, TOTAL_SPELL_TARGETS> SpellImplic
     {TARGET_OBJECT_TYPE_NONE, TARGET_REFERENCE_TYPE_NONE,   TARGET_SELECT_CATEGORY_NYI,     TARGET_CHECK_DEFAULT,  TARGET_DIR_NONE},        // 145
     {TARGET_OBJECT_TYPE_NONE, TARGET_REFERENCE_TYPE_NONE,   TARGET_SELECT_CATEGORY_NYI,     TARGET_CHECK_DEFAULT,  TARGET_DIR_NONE},        // 146
     {TARGET_OBJECT_TYPE_NONE, TARGET_REFERENCE_TYPE_NONE,   TARGET_SELECT_CATEGORY_NYI,     TARGET_CHECK_DEFAULT,  TARGET_DIR_NONE},        // 147
-    {TARGET_OBJECT_TYPE_NONE, TARGET_REFERENCE_TYPE_NONE,   TARGET_SELECT_CATEGORY_NYI,     TARGET_CHECK_DEFAULT,  TARGET_DIR_NONE},        // 148
+    {TARGET_OBJECT_TYPE_DEST, TARGET_REFERENCE_TYPE_DEST,   TARGET_SELECT_CATEGORY_DEFAULT, TARGET_CHECK_DEFAULT,  TARGET_DIR_NONE},        // 148 TARGET_DEST_DEST_TARGET_TOWARDS_CASTER
     {TARGET_OBJECT_TYPE_DEST, TARGET_REFERENCE_TYPE_CASTER, TARGET_SELECT_CATEGORY_DEFAULT, TARGET_CHECK_DEFAULT,  TARGET_DIR_RANDOM},      // 149
+    {TARGET_OBJECT_TYPE_UNIT, TARGET_REFERENCE_TYPE_CASTER, TARGET_SELECT_CATEGORY_DEFAULT, TARGET_CHECK_DEFAULT,  TARGET_DIR_NONE},        // 150 TARGET_UNIT_OWN_CRITTER
 } };
 
 SpellEffectInfo::SpellEffectInfo(): _spellInfo(nullptr), EffectIndex(EFFECT_0), Effect(SPELL_EFFECT_NONE), ApplyAuraName(AuraType(0)), ApplyAuraPeriod(0),
@@ -516,7 +517,7 @@ int32 SpellEffectInfo::CalcValue(WorldObject const* caster /*= nullptr*/, int32 
     }
     else if (GetScalingExpectedStat() == ExpectedStatType::None)
     {
-        if (casterUnit && basePointsPerLevel != 0.0f)
+        if (casterUnit && basePointsPerLevel != 0.0)
         {
             int32 level = int32(casterUnit->GetLevel());
             if (level > int32(_spellInfo->MaxLevel) && _spellInfo->MaxLevel > 0)
@@ -535,7 +536,7 @@ int32 SpellEffectInfo::CalcValue(WorldObject const* caster /*= nullptr*/, int32 
     {
         // bonus amount from combo points
         if (comboDamage)
-            if (uint32 comboPoints = casterUnit->GetComboPoints())
+            if (int32 comboPoints = casterUnit->GetPower(POWER_COMBO_POINTS))
                 value += comboDamage * comboPoints;
     }
 
@@ -641,17 +642,26 @@ float SpellEffectInfo::CalcRadius(WorldObject* caster /*= nullptr*/, SpellTarget
     // TargetA -> TargetARadiusEntry
     // TargetB -> TargetBRadiusEntry
     // Aura effects have TargetARadiusEntry == TargetBRadiusEntry (mostly)
+    SpellImplicitTargetInfo target = TargetA;
     SpellRadiusEntry const* entry = TargetARadiusEntry;
     if (targetIndex == SpellTargetIndex::TargetB && HasRadius(targetIndex))
+    {
+        target = TargetB;
         entry = TargetBRadiusEntry;
+    }
 
     if (!entry)
         return 0.0f;
 
     float radius = entry->RadiusMin;
 
-    // Client uses max if min is 0
-    if (radius == 0.0f)
+    // Random targets use random value between RadiusMin and RadiusMax
+    // For other cases, client uses RadiusMax if RadiusMin is 0
+    if (target.GetTarget() == TARGET_DEST_CASTER_RANDOM ||
+        target.GetTarget() == TARGET_DEST_TARGET_RANDOM ||
+        target.GetTarget() == TARGET_DEST_DEST_RANDOM)
+        radius += (entry->RadiusMax - radius) * rand_norm();
+    else if (radius == 0.0f)
         radius = entry->RadiusMax;
 
     if (caster)
@@ -1610,11 +1620,6 @@ bool SpellInfo::IsChanneled() const
 bool SpellInfo::IsMoveAllowedChannel() const
 {
     return IsChanneled() && !ChannelInterruptFlags.HasFlag(SpellAuraInterruptFlags::Moving | SpellAuraInterruptFlags::Turning);
-}
-
-bool SpellInfo::NeedsComboPoints() const
-{
-    return HasAttribute(SpellAttr1(SPELL_ATTR1_FINISHING_MOVE_DAMAGE | SPELL_ATTR1_FINISHING_MOVE_DURATION));
 }
 
 bool SpellInfo::IsNextMeleeSwingSpell() const

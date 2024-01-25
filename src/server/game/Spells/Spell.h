@@ -578,7 +578,6 @@ class TC_GAME_API Spell
         std::any m_customArg;
         uint32 m_SpellVisual;
         SpellCastTargets m_targets;
-        int8 m_comboPointGain;
         SpellCustomErrors m_customError;
 
         UsedSpellMods m_appliedMods;
@@ -609,6 +608,8 @@ class TC_GAME_API Spell
         uint64 GetDelayMoment() const { return m_delayMoment; }
         uint64 CalculateDelayMomentForDst(float launchDelay) const;
         void RecalculateDelayMomentForDst();
+        void UpdateDelayMomentForDst(uint64 hitDelay);
+        void UpdateDelayMomentForUnitTarget(Unit* unit, uint64 hitDelay);
         uint8 GetRuneState() const { return m_runesState; }
         void SetRuneState(uint8 value) { m_runesState = value; }
 
@@ -694,7 +695,6 @@ class TC_GAME_API Spell
         // These vars are used in both delayed spell system and modified immediate spell system
         bool m_referencedFromCurrentSpell;                  // mark as references to prevent deleted and access by dead pointers
         bool m_executedCurrently;                           // mark as executed to prevent deleted and access by dead pointers
-        bool m_needComboPoints;
         uint32 m_applyMultiplierMask;
         float m_damageMultipliers[MAX_SPELL_EFFECTS];
 
