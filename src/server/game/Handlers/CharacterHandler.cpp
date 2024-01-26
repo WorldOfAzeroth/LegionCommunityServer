@@ -2589,7 +2589,7 @@ void WorldSession::HandleCharUndeleteOpcode(WorldPackets::Character::UndeleteCha
         loginStmt->setUInt32(0, GetBattlenetAccountId());
         LoginDatabase.Execute(loginStmt);
 
-        sCharacterCache->UpdateCharacterInfoDeleted(undeleteInfo->CharacterGuid, false, &undeleteInfo->Name);
+        sCharacterCache->UpdateCharacterInfoDeleted(undeleteInfo->CharacterGuid, false, undeleteInfo->Name);
 
         SendUndeleteCharacterResponse(CHARACTER_UNDELETE_RESULT_OK, undeleteInfo.get());
     }));
