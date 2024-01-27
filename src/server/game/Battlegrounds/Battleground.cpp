@@ -1418,8 +1418,13 @@ uint32 Battleground::GetMapId() const
 void Battleground::SetBgMap(BattlegroundMap* map)
 {
     m_Map = map;
-    //TODO fill stat data here.
-    _pvpStatIds = nullptr;
+    if (map)
+    {
+        //TODO fill stat data here.
+        _pvpStatIds = nullptr;        OnMapSet(map);
+    }
+    else
+        _pvpStatIds = nullptr;
 }
 
 void Battleground::SpawnBGObject(uint32 type, uint32 respawntime)
