@@ -466,7 +466,7 @@ SpellValue::SpellValue(SpellInfo const* proto, WorldObject const* caster)
 {
     memset(EffectBasePoints, 0, sizeof(EffectBasePoints));
     for (SpellEffectInfo const& spellEffectInfo : proto->GetEffects())
-        EffectBasePoints[spellEffectInfo.EffectIndex] = spellEffectInfo.CalcBaseValue(caster, nullptr, -1);
+        EffectBasePoints[spellEffectInfo.EffectIndex] = spellEffectInfo.CalcBaseValue(caster, nullptr, 0, -1);
 
     CustomBasePointsMask = 0;
     MaxAffectedTargets = proto->MaxAffectedTargets;
@@ -2881,7 +2881,6 @@ void Spell::TargetInfo::DoDamageAndTriggers(Spell* spell)
 
             procSpellType |= PROC_SPELL_TYPE_HEAL;
         }
-
         // Do damage
         bool hasDamage = false;
         if (spell->m_damage > 0)
@@ -3148,7 +3147,7 @@ SpellMissInfo Spell::PreprocessSpellHit(Unit* unit, TargetInfo& hitInfo)
         for (SpellEffectInfo const& auraSpellEffect : m_spellInfo->GetEffects())
             hitInfo.AuraBasePoints[auraSpellEffect.EffectIndex] = (m_spellValue->CustomBasePointsMask & (1 << auraSpellEffect.EffectIndex))
             ? m_spellValue->EffectBasePoints[auraSpellEffect.EffectIndex]
-            : auraSpellEffect.CalcBaseValue(m_originalCaster, unit, m_castItemLevel);
+            : auraSpellEffect.CalcBaseValue(m_originalCaster, unit, m_castItemEntry, m_castItemLevel);
 
         // Get Data Needed for Diminishing Returns, some effects may have multiple auras, so this must be done on spell hit, not aura add
         hitInfo.DRGroup = m_spellInfo->GetDiminishingReturnsGroupForSpell();
@@ -7059,7 +7058,7 @@ bool Spell::CanAutoCast(Unit* target)
                     break;
                 case SPELL_GROUP_STACK_RULE_EXCLUSIVE_SAME_EFFECT: // this one has further checks, but i don't think they're necessary for autocast logic
                 case SPELL_GROUP_STACK_RULE_EXCLUSIVE_HIGHEST:
-                    if (abs(spellEffectInfo.CalcBaseValue(m_caster, target, 0)) <= abs((*auraIt)->GetAmount()))
+                    if (abs(spellEffectInfo.CalcBaseValue(m_caster, target, 0, -1)) <= abs((*auraIt)->GetAmount()))
                         return false;
                     break;
                 case SPELL_GROUP_STACK_RULE_DEFAULT:

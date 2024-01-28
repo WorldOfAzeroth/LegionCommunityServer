@@ -64,8 +64,8 @@ class Conversation;
 
 // Creature used instead pet to simplify *::Visit templates (not required duplicate code for Creature->Pet case)
 typedef TYPELIST_4(Player, Creature/*pets*/, Corpse/*resurrectable*/, DynamicObject/*farsight target*/) AllWorldObjectTypes;
-typedef TYPELIST_6(GameObject, Creature/*except pets*/, DynamicObject, Corpse/*Bones*/, AreaTrigger, Conversation) AllGridObjectTypes;
-typedef TYPELIST_7(Creature, GameObject, DynamicObject, Pet, Corpse, AreaTrigger, Conversation) AllMapStoredObjectTypes;
+typedef TYPELIST_7(GameObject, Creature/*except pets*/, DynamicObject, Corpse/*Bones*/, AreaTrigger, SceneObject, Conversation) AllGridObjectTypes;
+typedef TYPELIST_8(Creature, GameObject, DynamicObject, Pet, Corpse, AreaTrigger, SceneObject, Conversation) AllMapStoredObjectTypes;
 
 typedef GridRefManager<Corpse>          CorpseMapType;
 typedef GridRefManager<Creature>        CreatureMapType;
