@@ -26265,7 +26265,7 @@ void Player::_SaveTalents(CharacterDatabaseTransaction trans)
     for (uint8 group = 0; group < MAX_SPECIALIZATIONS; ++group)
     {
         PlayerTalentMap* talents = GetTalentMap(group);
-        for (auto itr = talents->begin(); itr != talents->end(); ++itr)
+        for (auto itr = talents->begin(); itr != talents->end();)
         {
             if (itr->second == PLAYERSPELL_REMOVED)
             {
@@ -26278,6 +26278,7 @@ void Player::_SaveTalents(CharacterDatabaseTransaction trans)
             stmt->setUInt32(1, itr->first);
             stmt->setUInt8(2, group);
             trans->Append(stmt);
+            ++itr;
         }
     }
 
