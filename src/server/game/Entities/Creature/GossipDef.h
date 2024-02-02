@@ -189,6 +189,10 @@ class TC_GAME_API QuestMenu
 {
     public:
         QuestMenu();
+        QuestMenu(QuestMenu const&) = delete;
+        QuestMenu(QuestMenu&&) = delete;
+        QuestMenu& operator=(QuestMenu const&) = delete;
+        QuestMenu& operator=(QuestMenu&&) = delete;
         ~QuestMenu();
 
         void AddMenuItem(uint32 QuestId, uint8 Icon);
@@ -205,8 +209,6 @@ class TC_GAME_API QuestMenu
 class InteractionData
 {
     public:
-        InteractionData() { Reset(); }
-
         void Reset()
         {
             SourceGuid.Clear();
@@ -223,6 +225,10 @@ class TC_GAME_API PlayerMenu
 {
     public:
         explicit PlayerMenu(WorldSession* session);
+        PlayerMenu(PlayerMenu const&) = delete;
+        PlayerMenu(PlayerMenu&&) = delete;
+        PlayerMenu& operator=(PlayerMenu const&) = delete;
+        PlayerMenu& operator=(PlayerMenu&&) = delete;
         ~PlayerMenu();
 
         GossipMenu& GetGossipMenu() { return _gossipMenu; }
