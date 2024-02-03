@@ -689,11 +689,16 @@ void WorldPackets::Misc::CloseInteraction::Read()
 
 WorldPacket const* WorldPackets::Misc::StartTimer::Write()
 {
-    _worldPacket << int32(TimeLeft);
-    _worldPacket << int32(TotalTime);
+    _worldPacket << TotalTime;
+    _worldPacket << TimeLeft;
     _worldPacket << int32(Type);
 
     return &_worldPacket;
+}
+
+void WorldPackets::Misc::QueryCountdownTimer::Read()
+{
+    TimerType = _worldPacket.read<CountdownTimerType, int32>();
 }
 
 void WorldPackets::Misc::ConversationLineStarted::Read()

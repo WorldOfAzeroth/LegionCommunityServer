@@ -90,7 +90,7 @@ enum GroupType
     GROUP_TYPE_WORLD_PVP    = 4
 };
 
-enum GroupFlags
+enum GroupFlags : uint16
 {
     GROUP_FLAG_NONE                 = 0x000,
     GROUP_FLAG_FAKE_RAID            = 0x001,
@@ -102,6 +102,7 @@ enum GroupFlags
     GROUP_FLAG_EVERYONE_ASSISTANT   = 0x040, // Script_IsEveryoneAssistant()
     GROUP_FLAG_GUILD_GROUP          = 0x100,
     GROUP_FLAG_CROSS_FACTION        = 0x200,
+    GROUP_FLAG_RESTRICT_PINGS       = 0x400, // C_PartyInfo::Script_GetRestrictPings()
 
     GROUP_MASK_BGRAID                = GROUP_FLAG_FAKE_RAID | GROUP_FLAG_RAID,
 };
@@ -170,6 +171,25 @@ struct RaidMarker
     }
 };
 
+enum class CountdownTimerType : int32
+{
+    Pvp             = 0,
+    ChallengeMode   = 1,
+    PlayerCountdown = 2
+};
+
+enum class PingSubjectType : uint8
+{
+    Attack          = 0,
+    Warning         = 1,
+    Assist          = 2,
+    OnMyWay         = 3,
+    AlertThreat     = 4,
+    AlertNotThreat  = 5,
+
+    Max
+};
+
 /** request member stats checken **/
 /// @todo uninvite people that not accepted invite
 class TC_GAME_API Group
@@ -188,6 +208,26 @@ class TC_GAME_API Group
         };
         typedef std::list<MemberSlot> MemberSlotList;
         typedef MemberSlotList::const_iterator member_citerator;
+
+        class CountdownInfo
+        {
+        public:
+            CountdownInfo() : _startTime(0), _endTime(0) { }
+
+            Seconds GetTimeLeft() const;
+
+            Seconds GetTotalTime() const
+            {
+                return Seconds(_endTime - _startTime);
+            }
+
+            void StartCountdown(Seconds duration, Optional<time_t> startTime = { });
+            bool IsRunning() const;
+
+        private:
+            time_t _startTime;
+            time_t _endTime;
+        };
 
     protected:
         typedef MemberSlotList::iterator member_witerator;
@@ -335,7 +375,6 @@ class TC_GAME_API Group
         void BroadcastPacket(WorldPacket const* packet, bool ignorePlayersInBGRaid, int group = -1, ObjectGuid ignoredPlayer = ObjectGuid::Empty) const;
         void BroadcastAddonMessagePacket(WorldPacket const* packet, const std::string& prefix, bool ignorePlayersInBGRaid, int group = -1, ObjectGuid ignore = ObjectGuid::Empty) const;
 
-
         void LinkMember(GroupReference* pRef);
         void DelinkMember(ObjectGuid guid);
 
@@ -364,6 +403,9 @@ class TC_GAME_API Group
 
         // FG: evil hacks
         void BroadcastGroupUpdate(void);
+
+        void StartCountdown(CountdownTimerType timerType, Seconds duration, Optional<time_t> startTime = { });
+        CountdownInfo const* GetCountdownInfo(CountdownTimerType timerType) const;
 
     protected:
         bool _setMembersGroup(ObjectGuid guid, uint8 group);
@@ -409,5 +451,7 @@ class TC_GAME_API Group
         // Raid markers
         std::array<std::unique_ptr<RaidMarker>, RAID_MARKERS_COUNT> m_markers;
         uint32              m_activeMarkers;
+
+        std::array<std::unique_ptr<CountdownInfo>, 3> _countdowns;
 };
 #endif

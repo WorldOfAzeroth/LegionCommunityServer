@@ -501,6 +501,8 @@ namespace WorldPackets
         class PvpPrestigeRankUp;
         class CloseInteraction;
         class ConversationLineStarted;
+        class RequestLatestSplashScreen;
+        class QueryCountdownTimer;
     }
 
     namespace Movement
@@ -1737,6 +1739,7 @@ class TC_GAME_API WorldSession
         void HandleCloseInteraction(WorldPackets::Misc::CloseInteraction& closeInteraction);
         void HandleConversationLineStarted(WorldPackets::Misc::ConversationLineStarted& conversationLineStarted);
         void HandleKeyboundOverride(WorldPackets::Spells::KeyboundOverride& keyboundOverride);
+        void HandleQueryCountdownTimer(WorldPackets::Misc::QueryCountdownTimer& queryCountdownTimer);
         // Toys
         void HandleAddToy(WorldPackets::Toy::AddToy& packet);
         void HandleUseToy(WorldPackets::Toy::UseToy& packet);
