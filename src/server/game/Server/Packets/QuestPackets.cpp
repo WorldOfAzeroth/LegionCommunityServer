@@ -575,6 +575,13 @@ WorldPacket const* WorldPackets::Quest::DailyQuestsReset::Write()
     return &_worldPacket;
 }
 
+WorldPacket const* WorldPackets::Quest::QuestForceRemoved::Write()
+{
+    _worldPacket << int32(QuestID);
+
+    return &_worldPacket;
+}
+
 WorldPacket const* WorldPackets::Quest::WorldQuestUpdate::Write()
 {
     _worldPacket << uint32(WorldQuestUpdates.size());

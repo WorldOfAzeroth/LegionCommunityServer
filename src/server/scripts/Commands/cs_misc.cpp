@@ -1524,6 +1524,8 @@ public:
 
                 Item* item = playerTarget->StoreNewItem(dest, itemTemplatePair.first, true, {}, GuidSet(), itemContext,
                     bonusListIDsForItem.empty() ? nullptr : &bonusListIDsForItem);
+                if (!item)
+                    continue;
 
                 // remove binding (let GM give it to another player later)
                 if (player == playerTarget)

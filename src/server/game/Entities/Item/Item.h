@@ -410,7 +410,6 @@ class TC_GAME_API Item : public Object
         std::string GetDebugInfo() const override;
 
     protected:
-        void ApplyBonusList(uint32 itemBonusListId);
         BonusData _bonusData;
 
     private:

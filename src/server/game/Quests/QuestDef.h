@@ -316,14 +316,34 @@ enum QuestObjectiveType
 
 enum QuestObjectiveFlags
 {
-    QUEST_OBJECTIVE_FLAG_TRACKED_ON_MINIMAP                 = 0x01, // client displays large yellow blob on minimap for creature/gameobject
-    QUEST_OBJECTIVE_FLAG_SEQUENCED                          = 0x02, // client will not see the objective displayed until all previous objectives are completed
-    QUEST_OBJECTIVE_FLAG_OPTIONAL                           = 0x04, // not required to complete the quest
-    QUEST_OBJECTIVE_FLAG_HIDDEN                             = 0x08, // never displayed in quest log
-    QUEST_OBJECTIVE_FLAG_HIDE_CREDIT_MSG                    = 0x10, // skip showing item objective progress
-    QUEST_OBJECTIVE_FLAG_PRESERVE_QUEST_ITEMS               = 0x20,
-    QUEST_OBJECTIVE_FLAG_PART_OF_PROGRESS_BAR               = 0x40, // hidden objective used to calculate progress bar percent (quests are limited to a single progress bar objective)
-    QUEST_OBJECTIVE_FLAG_KILL_PLAYERS_SAME_FACTION          = 0x80
+    QUEST_OBJECTIVE_FLAG_TRACKED_ON_MINIMAP                 = 0x0001, // client displays large yellow blob on minimap for creature/gameobject
+    QUEST_OBJECTIVE_FLAG_SEQUENCED                          = 0x0002, // client will not see the objective displayed until all previous objectives are completed
+    QUEST_OBJECTIVE_FLAG_OPTIONAL                           = 0x0004, // not required to complete the quest
+    QUEST_OBJECTIVE_FLAG_HIDDEN                             = 0x0008, // never displayed in quest log
+    QUEST_OBJECTIVE_FLAG_HIDE_CREDIT_MSG                    = 0x0010, // skip showing item objective progress
+    QUEST_OBJECTIVE_FLAG_PRESERVE_QUEST_ITEMS               = 0x0020,
+    QUEST_OBJECTIVE_FLAG_PART_OF_PROGRESS_BAR               = 0x0040, // hidden objective used to calculate progress bar percent (quests are limited to a single progress bar objective)
+    QUEST_OBJECTIVE_FLAG_KILL_PLAYERS_SAME_FACTION          = 0x0080,
+    QUEST_OBJECTIVE_FLAG_NO_SHARE_PROGRESS                  = 0x0100,
+    QUEST_OBJECTIVE_FLAG_IGNORE_SOULBOUND_ITEMS             = 0x0200,
+};
+
+enum QuestObjectiveFlags2
+{
+    QUEST_OBJECTIVE_FLAG_2_QUEST_BOUND_ITEM = 0x1   // Item is bound to a single objective, only increments the counter for one quest if multiple require the same item and is not stored in inventory
+};
+
+enum class QuestCompleteSpellType : uint32
+{
+    LegacyBehavior  = 0,
+    Follower        = 1,
+    Tradeskill      = 2,
+    Ability         = 3,
+    Aura            = 4,
+    Spell           = 5,
+    Unlock          = 6,
+    Companion       = 7,
+    Max
 };
 
 struct QuestGreeting
@@ -724,6 +744,7 @@ struct QuestStatusData
 {
     uint16 Slot = MAX_QUEST_LOG_SIZE;
     QuestStatus Status = QUEST_STATUS_NONE;
+    time_t AcceptTime = time_t(0);
     uint32 Timer = 0;
     bool Explored = false;
     std::vector<int32> ObjectiveData;
