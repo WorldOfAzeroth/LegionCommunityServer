@@ -726,6 +726,7 @@ struct QuestStatusData
     QuestStatus Status = QUEST_STATUS_NONE;
     uint32 Timer = 0;
     bool Explored = false;
+    std::vector<int32> ObjectiveData;
 };
 
 #endif

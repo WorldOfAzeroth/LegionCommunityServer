@@ -637,8 +637,6 @@ enum QuestSlotOffsets
     QUEST_ID_OFFSET              = 0,
     QUEST_STATE_OFFSET           = 1,
     QUEST_COUNTS_OFFSET          = 2,
-    QUEST_ACCEPTED_TIME_OFFSET   = 3,
-    QUEST_OBJECTIVE_FLAGS_OFFSET = 4,
     QUEST_END_TIME_OFFSET        = 14
 };
 
@@ -1629,17 +1627,12 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         uint32 GetQuestSlotState(uint16 slot) const;
         uint16 GetQuestSlotCounter(uint16 slot, uint8 counter) const;
         uint32 GetQuestSlotEndTime(uint16 slot) const;
-        uint32 GetQuestSlotAcceptTime(uint16 slot) const;
-        bool GetQuestSlotObjectiveFlag(uint16 slot, int8 objectiveIndex) const;
         int32 GetQuestSlotObjectiveData(uint16 slot, QuestObjective const& objective) const;
         void SetQuestSlot(uint16 slot, uint32 quest_id);
         void SetQuestSlotCounter(uint16 slot, uint8 counter, uint16 count);
         void SetQuestSlotState(uint16 slot, uint32 state);
         void RemoveQuestSlotState(uint16 slot, uint32 state);
         void SetQuestSlotEndTime(uint16 slot, time_t endTime);
-        void SetQuestSlotAcceptTime(uint16 slot, time_t acceptTime);
-        void SetQuestSlotObjectiveFlag(uint16 slot, int8 objectiveIndex);
-        void RemoveQuestSlotObjectiveFlag(uint16 slot, int8 objectiveIndex);
         void SetQuestCompletedBit(uint32 questBit, bool completed);
 
         uint16 GetReqKillOrCastCurrentCount(uint32 quest_id, int32 entry) const;

@@ -14266,6 +14266,14 @@ void Player::AddQuest(Quest const* quest, Object* questGiver)
     questStatusData.Status = QUEST_STATUS_INCOMPLETE;
     questStatusData.Explored = false;
 
+    // Resize quest objective data to proper size
+    int32 maxStorageIndex = 0;
+    for (QuestObjective const& obj : quest->GetObjectives())
+        if (obj.StorageIndex > maxStorageIndex)
+            maxStorageIndex = obj.StorageIndex;
+
+    questStatusData.ObjectiveData.resize(maxStorageIndex + 1);
+
     for (QuestObjective const& obj : quest->GetObjectives())
     {
         m_questObjectiveStatus.emplace(std::make_pair(QuestObjectiveType(obj.Type), obj.ObjectID), QuestObjectiveStatusData { questStatusItr, &obj });
@@ -14319,7 +14327,6 @@ void Player::AddQuest(Quest const* quest, Object* questGiver)
     }
 
     SetQuestSlotEndTime(log_slot, endTime);
-    SetQuestSlotAcceptTime(log_slot, GameTime::GetGameTime());
 
     m_QuestStatusSave[quest_id] = QUEST_DEFAULT_SAVE_TYPE;
 
@@ -15726,18 +15733,6 @@ uint32 Player::GetQuestSlotEndTime(uint16 slot) const
     return GetUInt32Value(PLAYER_QUEST_LOG + slot * MAX_QUEST_OFFSET + QUEST_END_TIME_OFFSET);
 }
 
-uint32 Player::GetQuestSlotAcceptTime(uint16 slot) const
-{
-    return GetUInt32Value(PLAYER_QUEST_LOG + slot * MAX_QUEST_OFFSET + QUEST_ACCEPTED_TIME_OFFSET);
-}
-
-bool Player::GetQuestSlotObjectiveFlag(uint16 slot, int8 objectiveIndex) const
-{
-    if (objectiveIndex < MAX_QUEST_COUNTS)
-        return GetUInt32Value(PLAYER_QUEST_LOG + slot * MAX_QUEST_OFFSET + QUEST_OBJECTIVE_FLAGS_OFFSET) & (1 << objectiveIndex);
-    return false;
-}
-
 int32 Player::GetQuestSlotObjectiveData(uint16 slot, QuestObjective const& objective) const
 {
     if (objective.StorageIndex < 0)
@@ -15757,7 +15752,15 @@ int32 Player::GetQuestSlotObjectiveData(uint16 slot, QuestObjective const& objec
     if (!objective.IsStoringFlag())
         return GetQuestSlotCounter(slot, objective.StorageIndex);
 
-    return GetQuestSlotObjectiveFlag(slot, objective.StorageIndex) ? 1 : 0;
+    auto itr = m_QuestStatus.find(objective.QuestID);
+    if (itr == m_QuestStatus.end())
+    {
+        TC_LOG_ERROR("entities.player.quest", "Player::SetQuestObjectiveData: player '{}' ({}) doesn't have quest status data (QuestID: {})",
+                     GetName(), GetGUID().ToString(), objective.QuestID);
+        return 0;
+    }
+    QuestStatusData const& status = itr->second;
+    return status.ObjectiveData[objective.StorageIndex];
 }
 
 void Player::SetQuestSlot(uint16 slot, uint32 quest_id)
@@ -15790,22 +15793,6 @@ void Player::RemoveQuestSlotState(uint16 slot, uint32 state)
 void Player::SetQuestSlotEndTime(uint16 slot, time_t endTime)
 {
     SetUInt32Value(PLAYER_QUEST_LOG + slot * MAX_QUEST_OFFSET + QUEST_END_TIME_OFFSET, uint32(endTime));
-
-}
-
-void Player::SetQuestSlotAcceptTime(uint16 slot, time_t acceptTime)
-{
-    SetUInt32Value(PLAYER_QUEST_LOG + slot * MAX_QUEST_OFFSET + QUEST_ACCEPTED_TIME_OFFSET, uint32(acceptTime));
-}
-void Player::SetQuestSlotObjectiveFlag(uint16 slot, int8 objectiveIndex)
-{
-    SetByteValue(PLAYER_QUEST_LOG, slot * MAX_QUEST_OFFSET + QUEST_OBJECTIVE_FLAGS_OFFSET, 1 << objectiveIndex);
-
-}
-
-void Player::RemoveQuestSlotObjectiveFlag(uint16 slot, int8 objectiveIndex)
-{
-    SetUInt32Value(PLAYER_QUEST_LOG + slot * MAX_QUEST_OFFSET + QUEST_OBJECTIVE_FLAGS_OFFSET, 1 << objectiveIndex);
 
 }
 
@@ -16181,6 +16168,9 @@ void Player::SetQuestObjectiveData(QuestObjective const& objective, int32 data)
     if (Quest const* quest = sObjectMgr->GetQuestTemplate(objective.QuestID))
         sScriptMgr->OnQuestObjectiveChange(this, quest, objective, oldData, data);
 
+    // Set data
+    status.ObjectiveData[objective.StorageIndex] = data;
+
     // Add to save
     m_QuestStatusSave[objective.QuestID] = QUEST_DEFAULT_SAVE_TYPE;
 
@@ -16188,9 +16178,9 @@ void Player::SetQuestObjectiveData(QuestObjective const& objective, int32 data)
     if (!objective.IsStoringFlag())
         SetQuestSlotCounter(status.Slot, objective.StorageIndex, data);
     else if (data)
-        SetQuestSlotObjectiveFlag(status.Slot, objective.StorageIndex);
+        SetQuestSlotState(status.Slot, 256 << objective.StorageIndex);
     else
-        RemoveQuestSlotObjectiveFlag(status.Slot, objective.StorageIndex);
+        RemoveQuestSlotState(status.Slot, 256 << objective.StorageIndex);
 }
 
 bool Player::IsQuestObjectiveCompletable(uint16 slot, Quest const* quest, QuestObjective const& objective) const
@@ -18399,8 +18389,7 @@ void Player::_LoadQuestStatus(PreparedQueryResult result)
 
                 questStatusData.Explored = (fields[2].GetUInt8() > 0);
 
-                time_t acceptTime = time_t(fields[3].GetInt64());
-                time_t endTime = time_t(fields[4].GetInt64());
+                time_t endTime = time_t(fields[3].GetInt64());
 
                 if (quest->GetLimitTime() && !GetQuestRewardStatus(quest_id))
                 {
@@ -18424,7 +18413,6 @@ void Player::_LoadQuestStatus(PreparedQueryResult result)
 
                     SetQuestSlot(slot, quest_id);
                     SetQuestSlotEndTime(slot, endTime);
-                    SetQuestSlotAcceptTime(slot, acceptTime);
 
                     if (questStatusData.Status == QUEST_STATUS_COMPLETE)
                         SetQuestSlotState(slot, QUEST_STATE_COMPLETE);
@@ -18436,6 +18424,14 @@ void Player::_LoadQuestStatus(PreparedQueryResult result)
 
                     ++slot;
                 }
+
+                // Resize quest objective data to proper size
+                int32 maxStorageIndex = 0;
+                for (QuestObjective const& obj : quest->GetObjectives())
+                    if (obj.StorageIndex > maxStorageIndex)
+                        maxStorageIndex = obj.StorageIndex;
+
+                questStatusData.ObjectiveData.resize(maxStorageIndex + 1);
 
                 TC_LOG_DEBUG("entities.player.loading", "Player::_LoadQuestStatus: Quest status is {{{}}} for quest {{{}}} for player ({})", questStatusData.Status, quest_id, GetGUID().ToString());
             }
@@ -18471,6 +18467,7 @@ void Player::_LoadQuestStatusObjectives(PreparedQueryResult result)
                 if (objectiveItr != quest->Objectives.end())
                 {
                     int32 data = fields[2].GetInt32();
+                    questStatusData.ObjectiveData[storageIndex] = data;
                     if (!objectiveItr->IsStoringFlag())
                         SetQuestSlotCounter(questStatusData.Slot, storageIndex, data);
                     else if (data)
@@ -19850,8 +19847,7 @@ void Player::_SaveQuestStatus(CharacterDatabaseTransaction trans)
                 stmt->setUInt32(1, statusItr->first);
                 stmt->setUInt8(2, uint8(qData.Status));
                 stmt->setBool(3, qData.Explored);
-                stmt->setInt64(4, GetQuestSlotAcceptTime(qData.Slot));
-                stmt->setInt64(5, GetQuestSlotEndTime(qData.Slot));
+                stmt->setInt64(4, GetQuestSlotEndTime(qData.Slot));
                 trans->Append(stmt);
 
                 // Save objectives
