@@ -26,6 +26,7 @@
 #include "Config.h"
 #include "DatabaseEnv.h"
 #include "DB2Stores.h"
+#include "GuildFinderMgr.h"
 #include "GameTime.h"
 #include "GuildMgr.h"
 #include "GuildPackets.h"
@@ -1236,6 +1237,8 @@ void Guild::Disband()
     trans->Append(stmt);
 
     CharacterDatabase.CommitTransaction(trans);
+
+    sGuildFinderMgr->DeleteGuild(GetGUID());
 
     sGuildMgr->RemoveGuild(m_id);
 }
