@@ -550,7 +550,7 @@ public:
             if (cInfo->flags_extra & flag)
                 handler->PSendSysMessage("%s (0x%X)", EnumUtils::ToTitle(flag), flag);
 
-        handler->PSendSysMessage(LANG_NPCINFO_MECHANIC_IMMUNE, mechanicImmuneMask);
+        handler->PSendSysMessage(LANG_NPCINFO_NPC_FLAGS, npcflags);
         for (NPCFlags flag : EnumUtils::Iterate<NPCFlags>())
             if (target->HasNpcFlag(flag))
                 handler->PSendSysMessage("* %s (0x%X)", EnumUtils::ToTitle(flag), flag);
