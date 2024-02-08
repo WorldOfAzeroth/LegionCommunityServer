@@ -600,13 +600,16 @@ int32 SpellEffectInfo::CalcBaseValue(WorldObject const* caster, Unit const* targ
         ExpectedStatType stat = GetScalingExpectedStat();
         if (stat != ExpectedStatType::None)
         {
-            if(caster)
-            {
-                GtNpcManaCostScalerEntry const* spellScaler = sNpcManaCostScalerGameTable.GetRow(_spellInfo->SpellLevel);
-                GtNpcManaCostScalerEntry const* casterScaler = sNpcManaCostScalerGameTable.GetRow(caster->ToUnit()->GetLevel());
-                if (spellScaler && casterScaler)
-                    value *= casterScaler->Scaler / spellScaler->Scaler;
-            }
+            int32 level = 1;
+            if (target && _spellInfo->HasAttribute(SPELL_ATTR8_USE_TARGETS_LEVEL_FOR_SPELL_SCALING))
+                level = target->GetLevel();
+            else if (caster && caster->IsUnit())
+                level = caster->ToUnit()->GetLevel();
+
+            GtNpcManaCostScalerEntry const* spellScaler = sNpcManaCostScalerGameTable.GetRow(level);
+            GtNpcManaCostScalerEntry const* casterScaler = sNpcManaCostScalerGameTable.GetRow(level);
+            if (spellScaler && casterScaler)
+                value *= casterScaler->Scaler / spellScaler->Scaler;
         }
         return int32(round(value));
     }
