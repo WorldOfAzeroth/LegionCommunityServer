@@ -107,27 +107,31 @@ UPDATE quest_template SET RewardNextQuest = 44663 WHERE ID = 44473;
 DELETE FROM `phase_area` WHERE `AreaId` = 4982 AND `PhaseId` IN (7554, 7553, 7425, 7531);
 
 
-INSERT INTO `phase_area` (`AreaId`,`PhaseId`,`Comment`) VALUES
-(4982, 7554, 'Pre-Broken Shore Durotar Harbor'),
-(4982, 7553, 'Pre-Broken Shore Durotar Harbor'),
-(4982, 7425, 'Pre-Broken Shore Durotar Harbor'),
-(4982, 7531, 'Pre-Broken Shore Durotar Harbor');
+-- Phasing
+DELETE FROM `phase_area` WHERE `AreaId` in (4982,374) AND `PhaseId` IN (7554, 7553, 7425, 7531);
 
-DELETE FROM  `phase_name` WHERE `ID` IN (7554, 13306);
+
+INSERT INTO `phase_area` (`AreaId`,`PhaseId`,`Comment`) VALUES
+(374, 7554, 'Pre-Broken Shore Durotar Harbor'),
+(4982, 7553, 'Pre-Broken Shore Durotar'),
+(4982, 7425, 'Pre-Broken Shore Durotar'),
+(4982, 7531, 'Pre-Broken Shore Durotar');
+
+DELETE FROM  `phase_name` WHERE `ID` IN (7554, 7553, 7425,7531);
 INSERT INTO `phase_name` (`ID`,`Name`) VALUES
 (7554, 'Pre-Broken Shore Durotar Habor'),
-(7553, 'Pre-Broken Shore Durotar Habor'),
-(7425, 'Pre-Broken Shore Durotar Habor'),
-(7531, 'Pre-Broken Shore Durotar Habor');
+(7553, 'Pre-Broken Shore Durotar'),
+(7425, 'Broken Shore Durotar'),
+(7531, 'Broken Shore Durotar');
 
 
-DELETE FROM `conditions` WHERE (`SourceTypeOrReferenceId` = 26 AND `SourceGroup` IN (7554, 7553, 7425) AND `SourceEntry` = 4982);
+DELETE FROM `conditions` WHERE (`SourceTypeOrReferenceId` = 26 AND `SourceGroup` IN (7554, 7553, 7425,7531) AND `SourceEntry` in(4982, 374));
 INSERT INTO `conditions` (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry`, `SourceId`, `ElseGroup`,
                           `ConditionTypeOrReference`, `ConditionTarget`, `ConditionValue1`, `ConditionValue2`,
                           `ConditionValue3`, `NegativeCondition`, `Comment`)
-VALUES (26, 7554, 4982, 0, 0, 47, 0, 43926, 8 | 2 | 64, 0, 0,'Apply Phase 7554 if Quest 43926 is taken | completed | rewarded'),
+VALUES (26, 7554, 374, 0, 0, 47, 0, 43926, 8 | 2 | 64, 0, 0,'Apply Phase 7554 if Quest 43926 is taken | completed | rewarded'),
        (26, 7553, 4982, 0, 0, 47, 0, 43926, 8 | 2 | 64, 0, 0,'Apply Phase 7553 if Quest 43926 is taken | completed | rewarded'),
-       (26, 7554, 4982, 0, 0, 47, 0, 40518, 64, 0, 1, 'Apply Phase 7554 if Quest 40518 is not rewarded'),
+       (26, 7554, 374, 0, 0, 47, 0, 40518, 64, 0, 1, 'Apply Phase 7554 if Quest 40518 is not rewarded'),
        (26, 7553, 4982, 0, 0, 47, 0, 40518, 64, 0, 1, 'Apply Phase 7553 if Quest 40518 is not rewarded'),
        (26, 7425, 4982, 0, 0, 47, 0, 40522, 8 | 2 | 64, 0, 0,'Apply Phase 7425 if Quest 40519 is taken | completed | rewarded'),
        (26, 7425, 4982, 0, 0, 47, 0, 40976, 64, 0, 1, 'Apply Phase 7425 if Quest 40976 is not rewarded'),
