@@ -954,6 +954,47 @@ bool AuctionEntry::LoadFromDB(Field* fields)
         TC_LOG_ERROR("misc", "Auction %u has not a existing item : " UI64FMTD, Id, itemGUIDLow);
         return false;
     }
+
+    player->ModifyMoney(-int64(totalPrice));
+    player->SaveInventoryAndGoldToDB(trans);
+
+    for (MailedItemsBatch const& batch : items)
+    {
+        MailDraft mail(AuctionHouseMgr::BuildCommodityAuctionMailSubject(AuctionMailType::Won, itemId, batch.Quantity),
+            AuctionHouseMgr::BuildAuctionWonMailBody(*uniqueSeller, batch.TotalPrice, batch.Quantity));
+
+        for (std::size_t i = 0; i < batch.ItemsCount; ++i)
+        {
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_AUCTION_ITEMS_BY_ITEM);
+            stmt->setUInt64(0, batch.Items[i]->GetGUID().GetCounter());
+            trans->Append(stmt);
+
+            batch.Items[i]->SetOwnerGUID(player->GetGUID());
+            batch.Items[i]->SaveToDB(trans);
+            mail.AddItem(batch.Items[i]);
+        }
+
+        mail.SendMailTo(trans, player, this, MAIL_CHECK_MASK_COPIED);
+    }
+
+    WorldPackets::AuctionHouse::AuctionWonNotification packet;
+    packet.Info.Initialize(auctions[0], items[0].Items[0]);
+    player->SendDirectMessage(packet.Write());
+
+    for (std::size_t i = 0; i < auctions.size(); ++i)
+    {
+        if (removedItemsFromAuction[i] == auctions[i]->Items.size())
+            RemoveAuction(trans, auctions[i]); // bought all items
+        else if (removedItemsFromAuction[i])
+        {
+            auto lastRemovedItem = auctions[i]->Items.begin() + removedItemsFromAuction[i];
+            for (auto itr = auctions[i]->Items.begin(); itr != lastRemovedItem; ++itr)
+                sAuctionMgr->RemoveAItem((*itr)->GetGUID());
+
+            auctions[i]->Items.erase(auctions[i]->Items.begin(), lastRemovedItem);
+        }
+    }
+
     return true;
 }
 
