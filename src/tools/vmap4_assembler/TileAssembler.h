@@ -108,7 +108,6 @@ namespace VMAP
         private:
             std::string iDestDir;
             std::string iSrcDir;
-            MapData mapData;
             std::set<std::string> spawnedModelFiles;
 
         public:
@@ -116,7 +115,8 @@ namespace VMAP
             virtual ~TileAssembler();
 
             bool convertWorld2();
-            bool readMapSpawns();
+            bool convertMap(MapSpawns& data);
+            static bool readMapSpawns(FILE* dirf, MapSpawns* data);
             bool calculateTransformedBound(ModelSpawn &spawn);
             void exportGameobjectModels();
 

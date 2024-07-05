@@ -180,8 +180,7 @@ void Doodad::Extract(ADT::MDDF const& doodadDef, char const* ModelInstName, uint
     if (mapID != originalMapId)
         tcflags |= MOD_PARENT_SPAWN;
 
-    //write mapID, Flags, NameSet, UniqueId, Pos, Rot, Scale, name
-    fwrite(&mapID, sizeof(uint32), 1, pDirfile);
+    //write Flags, NameSet, UniqueId, Pos, Rot, Scale, name
     fwrite(&tcflags, sizeof(uint8), 1, pDirfile);
     fwrite(&nameSet, sizeof(uint8), 1, pDirfile);
     fwrite(&uniqueId, sizeof(uint32), 1, pDirfile);
@@ -290,16 +289,15 @@ void Doodad::ExtractSet(WMODoodadData const& doodadData, ADT::MODF const& wmo, b
         if (mapID != originalMapId)
             tcflags |= MOD_PARENT_SPAWN;
 
-        //write mapID, Flags, NameSet, UniqueId, Pos, Rot, Scale, name
-        fwrite(&mapID, sizeof(uint32), 1, pDirfile);
-        fwrite(&tcflags, sizeof(uint8), 1, pDirfile);
-        fwrite(&nameSet, sizeof(uint8), 1, pDirfile);
-        fwrite(&uniqueId, sizeof(uint32), 1, pDirfile);
-        fwrite(&position, sizeof(Vec3D), 1, pDirfile);
-        fwrite(&rotation, sizeof(Vec3D), 1, pDirfile);
-        fwrite(&doodad.Scale, sizeof(float), 1, pDirfile);
-        fwrite(&nlen, sizeof(uint32), 1, pDirfile);
-        fwrite(ModelInstName, sizeof(char), nlen, pDirfile);
+            //write Flags, NameSet, UniqueId, Pos, Rot, Scale, name
+            fwrite(&tcflags, sizeof(uint8), 1, pDirfile);
+            fwrite(&nameSet, sizeof(uint8), 1, pDirfile);
+            fwrite(&uniqueId, sizeof(uint32), 1, pDirfile);
+            fwrite(&position, sizeof(Vec3D), 1, pDirfile);
+            fwrite(&rotation, sizeof(Vec3D), 1, pDirfile);
+            fwrite(&doodad.Scale, sizeof(float), 1, pDirfile);
+            fwrite(&nlen, sizeof(uint32), 1, pDirfile);
+            fwrite(ModelInstName.c_str(), sizeof(char), nlen, pDirfile);
 
         if (dirfileCache)
         {

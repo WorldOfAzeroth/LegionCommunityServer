@@ -17,11 +17,14 @@
 
 #include "TileAssembler.h"
 #include "BoundingIntervalHierarchy.h"
+#include "IteratorPair.h"
 #include "MapTree.h"
+#include "Memory.h"
+#include "StringConvert.h"
 #include "StringFormat.h"
 #include "VMapDefinitions.h"
-#include <boost/filesystem.hpp>
-#include <iomanip>
+#include <boost/filesystem/directory.hpp>
+#include <boost/filesystem/operations.hpp>
 #include <set>
 #include <sstream>
 
@@ -49,7 +52,6 @@ namespace VMAP
     TileAssembler::TileAssembler(const std::string& pSrcDirName, const std::string& pDestDirName)
         : iDestDir(pDestDirName), iSrcDir(pSrcDirName)
     {
-        boost::filesystem::create_directories(iDestDir);
     }
 
     TileAssembler::~TileAssembler()
@@ -58,174 +60,244 @@ namespace VMAP
 
     bool TileAssembler::convertWorld2()
     {
-        bool success = readMapSpawns();
-        if (!success)
+        boost::system::error_code ec;
+        Trinity::IteratorPair dirBin(boost::filesystem::directory_iterator(iSrcDir + "/dir_bin", ec), {});
+        if (ec)
+        {
+            printf("Failed to open input %s/dir_bin: %s\n", iSrcDir.c_str(), ec.message().c_str());
             return false;
+        }
 
-        float constexpr invTileSize = 1.0f / 533.33333f;
+        if (!boost::filesystem::create_directories(iDestDir, ec))
+        {
+            boost::system::error_code existsErr;
+            if (!boost::filesystem::exists(iDestDir, existsErr))
+            {
+                printf("Failed to create output directory %s: %s\n", iDestDir.c_str(), ec.message().c_str());
+                return false;
+            }
+            // else already exists - this is fine, continue
+        }
+
+        std::deque<boost::filesystem::path> mapSpawnFiles;
+        for (boost::filesystem::directory_entry const& directoryEntry : dirBin)
+        {
+            if (!boost::filesystem::is_regular_file(directoryEntry))
+                continue;
+
+            mapSpawnFiles.push_back(directoryEntry.path());
+        }
 
         // export Map data
-        while (!mapData.empty())
+        while (!mapSpawnFiles.empty())
         {
-            MapSpawns data = std::move(mapData.front());
-            mapData.pop_front();
+            boost::filesystem::path file = std::move(mapSpawnFiles.front());
+            mapSpawnFiles.pop_front();
 
-            // build global map tree
-            std::vector<ModelSpawn*> mapSpawns;
-            mapSpawns.reserve(data.UniqueEntries.size());
-            printf("Calculating model bounds for map %u...\n", data.MapId);
-            for (auto entry = data.UniqueEntries.begin(); entry != data.UniqueEntries.end(); ++entry)
+            auto dirf = Trinity::make_unique_ptr_with_deleter(fopen(file.string().c_str(), "rb"), &::fclose);
+            if (!dirf)
             {
-                // M2 models don't have a bound set in WDT/ADT placement data, they're not used for LoS but are needed for pathfinding
-                if (entry->second.flags & MOD_M2)
-                    if (!calculateTransformedBound(entry->second))
-                        continue;
-
-                mapSpawns.push_back(&entry->second);
-                spawnedModelFiles.insert(entry->second.name);
-
-                std::map<uint32, std::set<TileSpawn>>& tileEntries = (entry->second.flags & MOD_PARENT_SPAWN) ? data.ParentTileEntries : data.TileEntries;
-
-                G3D::AABox const& bounds = entry->second.iBound;
-                G3D::Vector2int16 low(int16(bounds.low().x * invTileSize), int16(bounds.low().y * invTileSize));
-                G3D::Vector2int16 high(int16(bounds.high().x * invTileSize), int16(bounds.high().y * invTileSize));
-                for (int x = low.x; x <= high.x; ++x)
-                    for (int y = low.y; y <= high.y; ++y)
-                        tileEntries[StaticMapTree::packTileID(x, y)].emplace(entry->second.ID, entry->second.flags);
-            }
-
-            printf("Creating map tree for map %u...\n", data.MapId);
-            BIH pTree;
-
-            try
-            {
-                pTree.build(mapSpawns, BoundsTrait<ModelSpawn*>::getBounds);
-            }
-            catch (std::exception& e)
-            {
-                printf("Exception ""%s"" when calling pTree.build", e.what());
+                printf("Could not read dir_bin file!\n");
                 return false;
             }
 
-            // ===> possibly move this code to StaticMapTree class
-
-            // write map tree file
-            std::stringstream mapfilename;
-            mapfilename << iDestDir << '/' << std::setfill('0') << std::setw(4) << data.MapId << ".vmtree";
-            FILE* mapfile = fopen(mapfilename.str().c_str(), "wb");
-            if (!mapfile)
+            Optional<uint32> mapId = Trinity::StringTo<uint32>(file.filename().string());
+            if (!mapId)
             {
-                success = false;
-                printf("Cannot open %s\n", mapfilename.str().c_str());
-                break;
+                printf("Invalid Map ID %s\n", file.filename().string().c_str());
+                return false;
             }
 
-            //general info
-            if (success && fwrite(VMAP_MAGIC, 1, 8, mapfile) != 8) success = false;
-            // Nodes
-            if (success && fwrite("NODE", 4, 1, mapfile) != 1) success = false;
-            if (success) success = pTree.writeToFile(mapfile);
+            printf("spawning Map %u\n", *mapId);
 
-            // spawn id to index map
-            uint32 mapSpawnsSize = mapSpawns.size();
-            if (success && fwrite("SIDX", 4, 1, mapfile) != 1) success = false;
-            if (success && fwrite(&mapSpawnsSize, sizeof(uint32), 1, mapfile) != 1) success = false;
-            for (uint32 i = 0; i < mapSpawnsSize; ++i)
-            {
-                if (success && fwrite(&mapSpawns[i]->ID, sizeof(uint32), 1, mapfile) != 1) success = false;
-            }
+            MapSpawns data;
+            data.MapId = *mapId;
+            if (!readMapSpawns(dirf.get(), &data))
+                return false;
 
-            fclose(mapfile);
-
-            // <====
-
-            // write map tile files, similar to ADT files, only with extra BIH tree node info
-            for (auto tileItr = data.TileEntries.begin(); tileItr != data.TileEntries.end(); ++tileItr)
-            {
-                uint32 x, y;
-                StaticMapTree::unpackTileID(tileItr->first, x, y);
-                std::string tileFileName = Trinity::StringFormat("{}/{:04}_{:02}_{:02}.vmtile", iDestDir, data.MapId, y, x);
-                if (FILE* tileFile = fopen(tileFileName.c_str(), "wb"))
-                {
-                    std::set<TileSpawn> const& parentTileEntries = data.ParentTileEntries[tileItr->first];
-
-                    uint32 nSpawns = tileItr->second.size() + parentTileEntries.size();
-
-                    // file header
-                    if (success && fwrite(VMAP_MAGIC, 1, 8, tileFile) != 8) success = false;
-                    // write number of tile spawns
-                    if (success && fwrite(&nSpawns, sizeof(uint32), 1, tileFile) != 1) success = false;
-                    // write tile spawns
-                    for (auto spawnItr = tileItr->second.begin(); spawnItr != tileItr->second.end() && success; ++spawnItr)
-                        success = ModelSpawn::writeToFile(tileFile, data.UniqueEntries[spawnItr->Id]);
-
-                    for (auto spawnItr = parentTileEntries.begin(); spawnItr != parentTileEntries.end() && success; ++spawnItr)
-                        success = ModelSpawn::writeToFile(tileFile, data.UniqueEntries[spawnItr->Id]);
-
-                    fclose(tileFile);
-                }
-            }
+            if (!convertMap(data))
+                return false;
         }
 
         // add an object models, listed in temp_gameobject_models file
         exportGameobjectModels();
         // export objects
-        std::cout << "\nConverting Model Files" << std::endl;
+        printf("\nConverting Model Files\n");
         for (std::string const& spawnedModelFile : spawnedModelFiles)
         {
-            std::cout << "Converting " << spawnedModelFile << std::endl;
+            printf("Converting %s\n", spawnedModelFile.c_str());
             if (!convertRawFile(spawnedModelFile))
             {
-                std::cout << "error converting " << spawnedModelFile << std::endl;
-                success = false;
+                printf("error converting %s\n", spawnedModelFile.c_str());
                 break;
             }
         }
 
-        return success;
+        return true;
     }
 
-    bool TileAssembler::readMapSpawns()
+    bool TileAssembler::convertMap(MapSpawns& data)
     {
-        std::string fname = iSrcDir + "/dir_bin";
-        FILE* dirf = fopen(fname.c_str(), "rb");
-        if (!dirf)
+        float constexpr invTileSize = 1.0f / 533.33333f;
+
+        // build global map tree
+        std::vector<ModelSpawn*> mapSpawns;
+        mapSpawns.reserve(data.UniqueEntries.size());
+        printf("Calculating model bounds for map %u...\n", data.MapId);
+        for (auto& [spawnId, spawn] : data.UniqueEntries)
         {
-            printf("Could not read dir_bin file!\n");
+            // M2 models don't have a bound set in WDT/ADT placement data, they're not used for LoS but are needed for pathfinding
+            if (!(spawn.flags & MOD_HAS_BOUND))
+                if (!calculateTransformedBound(spawn))
+                    continue;
+
+            mapSpawns.push_back(&spawn);
+            spawnedModelFiles.insert(spawn.name);
+
+            std::map<uint32, std::set<uint32>>& tileEntries = (spawn.flags & MOD_PARENT_SPAWN) ? data.ParentTileEntries : data.TileEntries;
+
+            G3D::AABox const& bounds = spawn.iBound;
+            G3D::Vector2int16 low(int16(bounds.low().x * invTileSize), int16(bounds.low().y * invTileSize));
+            G3D::Vector2int16 high(int16(bounds.high().x * invTileSize), int16(bounds.high().y * invTileSize));
+            for (int x = low.x; x <= high.x; ++x)
+                for (int y = low.y; y <= high.y; ++y)
+                    tileEntries[StaticMapTree::packTileID(x, y)].insert(spawnId);
+        }
+
+        printf("Creating map tree for map %u...\n", data.MapId);
+        BIH pTree;
+
+        try
+        {
+            pTree.build(mapSpawns, BoundsTrait<ModelSpawn*>::getBounds);
+        }
+        catch (std::exception& e)
+        {
+            printf(R"(Exception "%s" when calling pTree.build)", e.what());
             return false;
         }
-        printf("Read coordinate mapping...\n");
-        uint32 mapID, check;
-        std::map<uint32, MapSpawns> data;
-        while (!feof(dirf))
+
+        std::unordered_map<uint32, uint32> modelNodeIdx;
+        for (uint32 i = 0; i < mapSpawns.size(); ++i)
+            modelNodeIdx.try_emplace(mapSpawns[i]->ID, i);
+
+        // write map tree file
+        std::string mapfilename = Trinity::StringFormat("{}/{:04}.vmtree", iDestDir, data.MapId);
+        auto mapfile = Trinity::make_unique_ptr_with_deleter(fopen(mapfilename.c_str(), "wb"), &::fclose);
+        if (!mapfile)
         {
-            // read mapID, Flags, NameSet, UniqueId, Pos, Rot, Scale, Bound_lo, Bound_hi, name
-            check = fread(&mapID, sizeof(uint32), 1, dirf);
-            if (check == 0) // EoF...
-                break;
-
-            ModelSpawn spawn;
-            if (!ModelSpawn::readFromFile(dirf, spawn))
-                break;
-
-            auto map_iter = data.emplace(std::piecewise_construct, std::forward_as_tuple(mapID), std::forward_as_tuple());
-            if (map_iter.second)
-            {
-                map_iter.first->second.MapId = mapID;
-                printf("spawning Map %u\n", mapID);
-            }
-
-            map_iter.first->second.UniqueEntries.emplace(spawn.ID, spawn);
+            printf("Cannot open %s\n", mapfilename.c_str());
+            return false;
         }
 
-        mapData.resize(data.size());
-        auto dst = mapData.begin();
-        for (auto src = data.begin(); src != data.end(); ++src, ++dst)
-            *dst = std::move(src->second);
+        //general info
+        if (fwrite(VMAP_MAGIC, 1, 8, mapfile.get()) != 8)
+            return false;
+        // Nodes
+        if (fwrite("NODE", 4, 1, mapfile.get()) != 1)
+            return false;
+        if (!pTree.writeToFile(mapfile.get()))
+            return false;
 
-        bool success = (ferror(dirf) == 0);
-        fclose(dirf);
-        return success;
+        mapfile = nullptr;
+
+        // <====
+
+        // write map tile files, similar to ADT files, only with extra BIH tree node info
+        for (auto const& [tileId, spawns] : data.TileEntries)
+        {
+            uint32 x, y;
+            StaticMapTree::unpackTileID(tileId, x, y);
+            std::string tileFileName = Trinity::StringFormat("{}/{:04}_{:02}_{:02}.vmtile", iDestDir, data.MapId, y, x);
+            auto tileFile = Trinity::make_unique_ptr_with_deleter(fopen(tileFileName.c_str(), "wb"), &::fclose);
+            std::string tileSpawnIndicesFileName = Trinity::StringFormat("{}/{:04}_{:02}_{:02}.vmtileidx", iDestDir, data.MapId, y, x);
+            auto tileSpawnIndicesFile = Trinity::make_unique_ptr_with_deleter(fopen(tileSpawnIndicesFileName.c_str(), "wb"), &::fclose);
+            if (tileFile && tileSpawnIndicesFile)
+            {
+                std::set<uint32> const& parentTileEntries = data.ParentTileEntries[tileId];
+
+                uint32 nSpawns = spawns.size() + parentTileEntries.size();
+
+                // file header
+                if (fwrite(VMAP_MAGIC, 1, 8, tileFile.get()) != 8)
+                    return false;
+                if (fwrite(VMAP_MAGIC, 1, 8, tileSpawnIndicesFile.get()) != 8)
+                    return false;
+
+                // write number of tile spawns
+                if (fwrite(&nSpawns, sizeof(uint32), 1, tileFile.get()) != 1)
+                    return false;
+                if (fwrite(&nSpawns, sizeof(uint32), 1, tileSpawnIndicesFile.get()) != 1)
+                    return false;
+
+                // write tile spawns
+                for (uint32 spawnId : spawns)
+                {
+                    if (!ModelSpawn::writeToFile(tileFile.get(), data.UniqueEntries[spawnId]))
+                        return false;
+                    if (fwrite(&modelNodeIdx[spawnId], sizeof(uint32), 1, tileSpawnIndicesFile.get()) != 1)
+                        return false;
+                }
+
+                for (uint32 spawnId : parentTileEntries)
+                {
+                    if (!ModelSpawn::writeToFile(tileFile.get(), data.UniqueEntries[spawnId]))
+                        return false;
+                    if (fwrite(&modelNodeIdx[spawnId], sizeof(uint32), 1, tileSpawnIndicesFile.get()) != 1)
+                        return false;
+                }
+            }
+        }
+
+        for (auto const& [tileId, spawns] : data.ParentTileEntries)
+        {
+            if (data.TileEntries.contains(tileId))
+                continue;
+
+            uint32 x, y;
+            StaticMapTree::unpackTileID(tileId, x, y);
+            std::string tileSpawnIndicesFileName = Trinity::StringFormat("{}/{:04}_{:02}_{:02}.vmtileidx", iDestDir, data.MapId, y, x);
+            auto tileSpawnIndicesFile = Trinity::make_unique_ptr_with_deleter(fopen(tileSpawnIndicesFileName.c_str(), "wb"), &::fclose);
+            if (tileSpawnIndicesFile)
+            {
+                uint32 nSpawns = spawns.size();
+
+                // file header
+                if (fwrite(VMAP_MAGIC, 1, 8, tileSpawnIndicesFile.get()) != 8)
+                    return false;
+
+                // write number of tile spawns
+                if (fwrite(&nSpawns, sizeof(uint32), 1, tileSpawnIndicesFile.get()) != 1)
+                    return false;
+
+                // write tile spawns
+                for (uint32 spawnId : spawns)
+                    if (fwrite(&modelNodeIdx[spawnId], sizeof(uint32), 1, tileSpawnIndicesFile.get()) != 1)
+                        return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool TileAssembler::readMapSpawns(FILE* dirf, MapSpawns* data)
+    {
+        while (!feof(dirf))
+        {
+            // read Flags, NameSet, UniqueId, Pos, Rot, Scale, Bound_lo, Bound_hi, name
+            ModelSpawn spawn;
+            if (!ModelSpawn::readFromFile(dirf, spawn))
+            {
+                if (feof(dirf))
+                    break;
+
+                return false;
+            }
+
+            data->UniqueEntries.emplace(spawn.ID, spawn);
+        }
+
+        return true;
     }
 
     bool TileAssembler::calculateTransformedBound(ModelSpawn &spawn)
