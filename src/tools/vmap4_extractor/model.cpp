@@ -18,6 +18,7 @@
 #include "vmapexport.h"
 #include "Errors.h"
 #include "model.h"
+#include "StringFormat.h"
 #include "wmo.h"
 #include "adtfile.h"
 #include "cascfile.h"
@@ -27,11 +28,10 @@
 #include <cstdio>
 #include <limits>
 
-extern CASC::StorageHandle CascStorage;
+extern std::shared_ptr<CASC::StorageHandle> CascStorage;
 
-Model::Model(std::string &filename) : filename(filename), vertices(nullptr), indices(nullptr)
+Model::Model(std::string &filename) : filename(filename), header(), vertices(nullptr), indices(nullptr)
 {
-    memset(&header, 0, sizeof(header));
 }
 
 bool Model::open()
@@ -70,8 +70,10 @@ bool Model::open()
             vertices[i] = fixCoordSystem(vertices[i]);
         f.seek(m2start);
         f.seekRelative(header.ofsBoundingTriangles);
-        indices = new uint16[header.nBoundingTriangles];
-        f.read(indices,header.nBoundingTriangles*2);
+        indices = new uint32[header.nBoundingTriangles];
+        std::unique_ptr<uint16[]> tempindices = std::make_unique<uint16[]>(header.nBoundingTriangles);
+        f.read(tempindices.get(), header.nBoundingTriangles * 2);
+        std::copy_n(tempindices.get(), header.nBoundingTriangles, indices);
         f.close();
     }
     else
@@ -85,11 +87,11 @@ bool Model::open()
 
 bool Model::ConvertToVMAPModel(const char * outfilename)
 {
-    int N[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
-    FILE* output=fopen(outfilename, "wb");
+    int N[12] = { };
+    FILE* output = fopen(outfilename, "wb");
     if (!output)
     {
-        printf("Can't create the output file '%s'\n",outfilename);
+        printf("Can't create the output file '%s'\n", outfilename);
         return false;
     }
     fwrite(VMAP::RAW_VMAP_MAGIC, 8, 1, output);
@@ -97,7 +99,10 @@ bool Model::ConvertToVMAPModel(const char * outfilename)
     fwrite(&nVertices, sizeof(int), 1, output);
     uint32 nofgroups = 1;
     fwrite(&nofgroups, sizeof(uint32), 1, output);
-    fwrite(N, 4 * 3, 1, output);// rootwmoid, flags, groupid
+    fwrite(N, 4, 1, output);// RootWMOID
+    ModelFlags tcFlags = ModelFlags::IsM2;
+    fwrite(&tcFlags, sizeof(ModelFlags), 1, output);
+    fwrite(N, 4 * 2, 1, output);// mogpFlags, groupWMOID
     fwrite(&bounds, sizeof(AaBox3D), 1, output);//bbox, only needed for WMO currently
     fwrite(N, 4, 1, output);// liquidflags
     fwrite("GRP ", 4, 1, output);
@@ -108,7 +113,7 @@ bool Model::ConvertToVMAPModel(const char * outfilename)
     fwrite(&branches, sizeof(branches), 1, output);
     uint32 nIndexes = header.nBoundingTriangles;
     fwrite(&nIndexes, sizeof(uint32), 1, output);
-    fwrite("INDX",4, 1, output);
+    fwrite("INDX", 4, 1, output);
     wsize = sizeof(uint32) + sizeof(unsigned short) * nIndexes;
     fwrite(&wsize, sizeof(int), 1, output);
     fwrite(&nIndexes, sizeof(uint32), 1, output);
@@ -118,19 +123,19 @@ bool Model::ConvertToVMAPModel(const char * outfilename)
         {
             if ((i % 3) - 1 == 0 && i + 1 < nIndexes)
             {
-                uint16 tmp = indices[i];
+                uint32 tmp = indices[i];
                 indices[i] = indices[i + 1];
                 indices[i + 1] = tmp;
             }
         }
-        fwrite(indices, sizeof(unsigned short), nIndexes, output);
+        fwrite(indices, sizeof(uint32), nIndexes, output);
     }
 
     fwrite("VERT", 4, 1, output);
     wsize = sizeof(int) + sizeof(float) * 3 * nVertices;
     fwrite(&wsize, sizeof(int), 1, output);
     fwrite(&nVertices, sizeof(int), 1, output);
-    if (nVertices >0)
+    if (nVertices > 0)
     {
         for (uint32 vpos = 0; vpos < nVertices; ++vpos)
         {
@@ -139,7 +144,7 @@ bool Model::ConvertToVMAPModel(const char * outfilename)
             vertices[vpos].z = tmp;
         }
 
-        fwrite(vertices, sizeof(float)*3, nVertices, output);
+        fwrite(vertices, sizeof(float) * 3, nVertices, output);
     }
 
     fclose(output);
@@ -154,9 +159,8 @@ Vec3D fixCoordSystem(Vec3D const& v)
 
 void Doodad::Extract(ADT::MDDF const& doodadDef, char const* ModelInstName, uint32 mapID, uint32 originalMapId, FILE* pDirfile, std::vector<ADTOutputCache>* dirfileCache)
 {
-    char tempname[1036];
-    sprintf(tempname, "%s/%s", szWorkDirWmo, ModelInstName);
-    FILE* input = fopen(tempname, "r+b");
+    std::string tempname = Trinity::StringFormat("{}/{}", szWorkDirWmo, ModelInstName);
+    FILE* input = fopen(tempname.c_str(), "r+b");
 
     if (!input)
         return;
@@ -175,8 +179,8 @@ void Doodad::Extract(ADT::MDDF const& doodadDef, char const* ModelInstName, uint
     Vec3D position = fixCoords(doodadDef.Position);
 
     uint8 nameSet = 0;// not used for models
-    uint32 uniqueId = GenerateUniqueObjectId(doodadDef.UniqueId, 0);
-    uint8 tcflags = MOD_M2;
+    uint32 uniqueId = GenerateUniqueObjectId(doodadDef.UniqueId, 0, false);
+    uint8 tcflags = 0;
     if (mapID != originalMapId)
         tcflags |= MOD_PARENT_SPAWN;
 
@@ -221,7 +225,7 @@ void Doodad::Extract(ADT::MDDF const& doodadDef, char const* ModelInstName, uint
 void Doodad::ExtractSet(WMODoodadData const& doodadData, ADT::MODF const& wmo, bool isGlobalWmo, uint32 mapID, uint32 originalMapId,
     FILE* pDirfile, std::vector<ADTOutputCache>* dirfileCache)
 {
-    if (wmo.DoodadSet >= doodadData.Sets.size())
+    if (doodadData.Sets.empty())
         return;
 
     G3D::Vector3 wmoPosition(wmo.Position.z, wmo.Position.x, wmo.Position.y);
@@ -231,63 +235,61 @@ void Doodad::ExtractSet(WMODoodadData const& doodadData, ADT::MODF const& wmo, b
         wmoPosition += G3D::Vector3(533.33333f * 32, 533.33333f * 32, 0.0f);
 
     uint16 doodadId = 0;
-    WMO::MODS const& doodadSetData = doodadData.Sets[wmo.DoodadSet];
-    for (uint16 doodadIndex : doodadData.References)
+    auto extractSingleSet = [&](WMO::MODS const& doodadSetData)
     {
-        if (doodadIndex < doodadSetData.StartIndex ||
-            doodadIndex >= doodadSetData.StartIndex + doodadSetData.Count)
-            continue;
-
-        WMO::MODD const& doodad = doodadData.Spawns[doodadIndex];
-
-        char ModelInstName[1024];
-        sprintf(ModelInstName, "%s", GetPlainName(&doodadData.Paths[doodad.NameIndex]));
-        uint32 nlen = strlen(ModelInstName);
-        FixNameCase(ModelInstName, nlen);
-        FixNameSpaces(ModelInstName, nlen);
-        if (nlen > 3)
+        for (uint16 doodadIndex : doodadData.References)
         {
-            char const* extension = &ModelInstName[nlen - 4];
-            if (!strcmp(extension, ".mdx") || !strcmp(extension, ".mdl"))
-            {
-                ModelInstName[nlen - 2] = '2';
-                ModelInstName[nlen - 1] = '\0';
-            }
-        }
+            if (doodadIndex < doodadSetData.StartIndex ||
+                doodadIndex >= doodadSetData.StartIndex + doodadSetData.Count)
+                continue;
 
-        char tempname[1036];
-        sprintf(tempname, "%s/%s", szWorkDirWmo, ModelInstName);
-        FILE* input = fopen(tempname, "r+b");
-        if (!input)
-            continue;
+            WMO::MODD const& doodad = doodadData.Spawns[doodadIndex];
 
-        fseek(input, 8, SEEK_SET); // get the correct no of vertices
-        int nVertices;
-        int count = fread(&nVertices, sizeof(int), 1, input);
-        fclose(input);
+            std::string ModelInstName;
+            if (doodadData.Paths)
+                ModelInstName = GetPlainName(&doodadData.Paths[doodad.NameIndex]);
+            else if (doodadData.FileDataIds)
+                ModelInstName = Trinity::StringFormat("FILE{:08X}.xxx", doodadData.FileDataIds[doodad.NameIndex]);
+            else
+                ASSERT(false);
 
-        if (count != 1 || nVertices == 0)
-            continue;
+            uint32 nlen = ModelInstName.length();
+            NormalizeFileName(ModelInstName.data(), nlen);
+            if (ModelInstName.ends_with(".mdx") || ModelInstName.ends_with(".mdl"))
+                ModelInstName.replace(ModelInstName.length() - 2, 2, "2");
 
-        ASSERT(doodadId < std::numeric_limits<uint16>::max());
-        ++doodadId;
+            std::string tempname = Trinity::StringFormat("{}/{}", szWorkDirWmo, ModelInstName);
+            FILE* input = fopen(tempname.c_str(), "r+b");
+            if (!input)
+                continue;
 
-        G3D::Vector3 position = wmoPosition + (wmoRotation * G3D::Vector3(doodad.Position.x, doodad.Position.y, doodad.Position.z));
+            fseek(input, 8, SEEK_SET); // get the correct no of vertices
+            int nVertices;
+            int count = fread(&nVertices, sizeof(int), 1, input);
+            fclose(input);
 
-        Vec3D rotation;
-        (G3D::Quat(doodad.Rotation.X, doodad.Rotation.Y, doodad.Rotation.Z, doodad.Rotation.W)
-            .toRotationMatrix() * wmoRotation)
-            .toEulerAnglesXYZ(rotation.z, rotation.x, rotation.y);
+            if (count != 1 || nVertices == 0)
+                continue;
 
-        rotation.z = G3D::toDegrees(rotation.z);
-        rotation.x = G3D::toDegrees(rotation.x);
-        rotation.y = G3D::toDegrees(rotation.y);
+            ASSERT(doodadId < std::numeric_limits<uint16>::max());
+            ++doodadId;
 
-        uint8 nameSet = 0;     // not used for models
-        uint32 uniqueId = GenerateUniqueObjectId(wmo.UniqueId, doodadId);
-        uint8 tcflags = MOD_M2;
-        if (mapID != originalMapId)
-            tcflags |= MOD_PARENT_SPAWN;
+            G3D::Vector3 position = wmoPosition + (wmoRotation * G3D::Vector3(doodad.Position.x, doodad.Position.y, doodad.Position.z));
+
+            Vec3D rotation;
+            (G3D::Quat(doodad.Rotation.X, doodad.Rotation.Y, doodad.Rotation.Z, doodad.Rotation.W)
+                .toRotationMatrix() * wmoRotation)
+                .toEulerAnglesXYZ(rotation.z, rotation.x, rotation.y);
+
+            rotation.z = G3D::toDegrees(rotation.z);
+            rotation.x = G3D::toDegrees(rotation.x);
+            rotation.y = G3D::toDegrees(rotation.y);
+
+            uint8 nameSet = 0;     // not used for models
+            uint32 uniqueId = GenerateUniqueObjectId(wmo.UniqueId, doodadId, false);
+            uint8 tcflags = 0;
+            if (mapID != originalMapId)
+                tcflags |= MOD_PARENT_SPAWN;
 
             //write Flags, NameSet, UniqueId, Pos, Rot, Scale, name
             fwrite(&tcflags, sizeof(uint8), 1, pDirfile);
@@ -299,30 +301,37 @@ void Doodad::ExtractSet(WMODoodadData const& doodadData, ADT::MODF const& wmo, b
             fwrite(&nlen, sizeof(uint32), 1, pDirfile);
             fwrite(ModelInstName.c_str(), sizeof(char), nlen, pDirfile);
 
-        if (dirfileCache)
-        {
-            dirfileCache->emplace_back();
-            ADTOutputCache& cacheModelData = dirfileCache->back();
-            cacheModelData.Flags = tcflags & ~MOD_PARENT_SPAWN;
-            cacheModelData.Data.resize(
-                sizeof(uint8) +     // nameSet
-                sizeof(uint32) +    // uniqueId
-                sizeof(Vec3D) +     // position
-                sizeof(Vec3D) +     // rotation
-                sizeof(float) +     // doodad.Scale
-                sizeof(uint32) +    // nlen
-                nlen);              // ModelInstName
+            if (dirfileCache)
+            {
+                dirfileCache->emplace_back();
+                ADTOutputCache& cacheModelData = dirfileCache->back();
+                cacheModelData.Flags = tcflags & ~MOD_PARENT_SPAWN;
+                cacheModelData.Data.resize(
+                    sizeof(uint8) +     // nameSet
+                    sizeof(uint32) +    // uniqueId
+                    sizeof(Vec3D) +     // position
+                    sizeof(Vec3D) +     // rotation
+                    sizeof(float) +     // doodad.Scale
+                    sizeof(uint32) +    // nlen
+                    nlen);              // ModelInstName
 
-            uint8* cacheData = cacheModelData.Data.data();
-            CACHE_WRITE(&nameSet, sizeof(uint8), 1, cacheData);
-            CACHE_WRITE(&uniqueId, sizeof(uint32), 1, cacheData);
-            CACHE_WRITE(&position, sizeof(Vec3D), 1, cacheData);
-            CACHE_WRITE(&rotation, sizeof(Vec3D), 1, cacheData);
-            CACHE_WRITE(&doodad.Scale, sizeof(float), 1, cacheData);
-            CACHE_WRITE(&nlen, sizeof(uint32), 1, cacheData);
-            CACHE_WRITE(ModelInstName, sizeof(char), nlen, cacheData);
+                uint8* cacheData = cacheModelData.Data.data();
+                CACHE_WRITE(&nameSet, sizeof(uint8), 1, cacheData);
+                CACHE_WRITE(&uniqueId, sizeof(uint32), 1, cacheData);
+                CACHE_WRITE(&position, sizeof(Vec3D), 1, cacheData);
+                CACHE_WRITE(&rotation, sizeof(Vec3D), 1, cacheData);
+                CACHE_WRITE(&doodad.Scale, sizeof(float), 1, cacheData);
+                CACHE_WRITE(&nlen, sizeof(uint32), 1, cacheData);
+                CACHE_WRITE(ModelInstName.c_str(), sizeof(char), nlen, cacheData);
+            }
         }
-    }
+    };
+
+    // first doodad set is always active
+    extractSingleSet(doodadData.Sets[0]);
+
+    if (wmo.DoodadSet != 0 && wmo.DoodadSet < doodadData.Sets.size())
+        extractSingleSet(doodadData.Sets[wmo.DoodadSet]);
 }
 
 #undef CACHE_WRITE

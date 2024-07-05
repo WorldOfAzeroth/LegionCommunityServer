@@ -24,7 +24,6 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <string>
-#include <thread>
 
 namespace po = boost::program_options;
 
@@ -35,10 +34,9 @@ namespace po = boost::program_options;
  * @param [in] argv raw command line arguments
  * @param [out] src raw data dir
  * @param [out] dest vmap dest dir
- * @param [out] threads number of threads to use
  * @return Non-empty optional if program should exit immediately (holds exit code in that case)
  */
-Optional<int> HandleArgs(int argc, char* argv[], std::string* src, std::string* dest, uint32* threads);
+Optional<int> HandleArgs(int argc, char* argv[], std::string* src, std::string* dest);
 
 int main(int argc, char* argv[])
 {
@@ -47,15 +45,14 @@ int main(int argc, char* argv[])
     Trinity::Locale::Init();
 
     std::string src, dest;
-    uint32 threads = 0;
-    if (Optional<int> exitCode = HandleArgs(argc, argv, &src, &dest, &threads))
+    if (Optional<int> exitCode = HandleArgs(argc, argv, &src, &dest))
         return *exitCode;
 
     Trinity::Banner::Show("VMAP assembler", [](char const* text) { std::cout << text << std::endl; }, nullptr);
 
     std::cout << "using " << src << " as source directory and writing output to " << dest << std::endl;
 
-    VMAP::TileAssembler ta(src, dest, threads);
+    VMAP::TileAssembler ta(std::move(src), std::move(dest));
 
     if (!ta.convertWorld2())
     {
@@ -67,11 +64,10 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-Optional<int> HandleArgs(int argc, char* argv[], std::string* src, std::string* dest, uint32* threads)
+Optional<int> HandleArgs(int argc, char* argv[], std::string* src, std::string* dest)
 {
     po::options_description visible("Usage: vmap4assembler [OPTION]... [SRC] [DEST]\n\nWhere OPTION can be any of");
     visible.add_options()
-        ("threads", po::value<uint32>(threads)->default_value(std::thread::hardware_concurrency()), "number of threads to use")
         ("help,h", "print usage message")
         ("version,v", "print version build info");
 
