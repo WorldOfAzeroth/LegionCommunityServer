@@ -17,21 +17,17 @@
 
 #include "TileAssembler.h"
 #include "BoundingIntervalHierarchy.h"
+#include "Duration.h"
 #include "IteratorPair.h"
 #include "MapTree.h"
 #include "Memory.h"
 #include "StringConvert.h"
 #include "StringFormat.h"
+#include "ThreadPool.h"
 #include "VMapDefinitions.h"
 #include <boost/filesystem/directory.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <set>
-#include <sstream>
-
-using G3D::Vector3;
-using G3D::AABox;
-using G3D::inf;
-using std::pair;
 
 template<> struct BoundsTrait<VMAP::ModelSpawn*>
 {
@@ -40,21 +36,17 @@ template<> struct BoundsTrait<VMAP::ModelSpawn*>
 
 namespace VMAP
 {
-    Vector3 ModelPosition::transform(Vector3 const& pIn) const
+    G3D::Vector3 ModelPosition::transform(G3D::Vector3 const& pIn) const
     {
-        Vector3 out = pIn * iScale;
+        G3D::Vector3 out = pIn * iScale;
         out = iRotation * out;
         return out;
     }
 
     //=================================================================
 
-    TileAssembler::TileAssembler(const std::string& pSrcDirName, const std::string& pDestDirName)
-        : iDestDir(pDestDirName), iSrcDir(pSrcDirName)
-    {
-    }
-
-    TileAssembler::~TileAssembler()
+    TileAssembler::TileAssembler(std::string srcDirName, std::string destDirName, uint32 threads)
+        : iSrcDir(std::move(srcDirName)), iDestDir(std::move(destDirName)), iThreads(threads)
     {
     }
 
@@ -79,45 +71,68 @@ namespace VMAP
             // else already exists - this is fine, continue
         }
 
-        std::deque<boost::filesystem::path> mapSpawnFiles;
+        // export Map data
+        Trinity::ThreadPool threadPool(iThreads);
+        bool aborted = false;
+        std::once_flag abortedFlag;
+        auto abortThreads = [&threadPool, &aborted, &abortedFlag]
+        {
+            std::call_once(abortedFlag, [&] { threadPool.Stop(); aborted = true; });
+        };
+
+        // Every worker thread gets its dedicated output container to avoid having to synchronize access
+        std::atomic<std::size_t> workerIndexGen;
+        std::vector<std::set<std::string>> spawnedModelFilesByThread(iThreads);
+
+        std::atomic<std::size_t> mapsToProcess;
+
         for (boost::filesystem::directory_entry const& directoryEntry : dirBin)
         {
             if (!boost::filesystem::is_regular_file(directoryEntry))
                 continue;
 
-            mapSpawnFiles.push_back(directoryEntry.path());
+            ++mapsToProcess;
+            threadPool.PostWork([this, file = directoryEntry.path(), &abortThreads, &workerIndexGen, &spawnedModelFilesByThread, &mapsToProcess]
+            {
+                thread_local std::size_t workerIndex = workerIndexGen++;
+                --mapsToProcess;
+
+                auto dirf = Trinity::make_unique_ptr_with_deleter(fopen(file.string().c_str(), "rb"), &::fclose);
+                if (!dirf)
+                {
+                    printf("Could not read dir_bin file!\n");
+                    return abortThreads();
+                }
+
+                Optional<uint32> mapId = Trinity::StringTo<uint32>(file.filename().string());
+                if (!mapId)
+                {
+                    printf("Invalid Map ID %s\n", file.filename().string().c_str());
+                    return abortThreads();
+                }
+
+                printf("spawning Map %u\n", *mapId);
+
+                MapSpawns data;
+                data.MapId = *mapId;
+                if (!readMapSpawns(dirf.get(), &data))
+                    return abortThreads();
+
+                if (!convertMap(data))
+                    return abortThreads();
+
+                spawnedModelFilesByThread[workerIndex].merge(data.SpawnedModelFiles);
+            });
         }
 
-        // export Map data
-        while (!mapSpawnFiles.empty())
-        {
-            boost::filesystem::path file = std::move(mapSpawnFiles.front());
-            mapSpawnFiles.pop_front();
+        while (mapsToProcess && !aborted)
+            std::this_thread::sleep_for(1s);
 
-            auto dirf = Trinity::make_unique_ptr_with_deleter(fopen(file.string().c_str(), "rb"), &::fclose);
-            if (!dirf)
-            {
-                printf("Could not read dir_bin file!\n");
-                return false;
-            }
+        if (aborted)
+            return false;
 
-            Optional<uint32> mapId = Trinity::StringTo<uint32>(file.filename().string());
-            if (!mapId)
-            {
-                printf("Invalid Map ID %s\n", file.filename().string().c_str());
-                return false;
-            }
-
-            printf("spawning Map %u\n", *mapId);
-
-            MapSpawns data;
-            data.MapId = *mapId;
-            if (!readMapSpawns(dirf.get(), &data))
-                return false;
-
-            if (!convertMap(data))
-                return false;
-        }
+        for (std::set<std::string>& modelsForThread : spawnedModelFilesByThread)
+            spawnedModelFiles.merge(modelsForThread);
 
         // add an object models, listed in temp_gameobject_models file
         exportGameobjectModels();
@@ -125,18 +140,26 @@ namespace VMAP
         printf("\nConverting Model Files\n");
         for (std::string const& spawnedModelFile : spawnedModelFiles)
         {
-            printf("Converting %s\n", spawnedModelFile.c_str());
-            if (!convertRawFile(spawnedModelFile))
+            threadPool.PostWork([&]
             {
-                printf("error converting %s\n", spawnedModelFile.c_str());
-                break;
-            }
+                printf("Converting %s\n", spawnedModelFile.c_str());
+                if (!convertRawFile(spawnedModelFile))
+                {
+                    printf("error converting %s\n", spawnedModelFile.c_str());
+                    abortThreads();
+                }
+            });
         }
+
+        threadPool.Join();
+
+        if (aborted)
+            return false;
 
         return true;
     }
 
-    bool TileAssembler::convertMap(MapSpawns& data)
+    bool TileAssembler::convertMap(MapSpawns& data) const
     {
         float constexpr invTileSize = 1.0f / 533.33333f;
 
@@ -152,7 +175,6 @@ namespace VMAP
                     continue;
 
             mapSpawns.push_back(&spawn);
-            spawnedModelFiles.insert(spawn.name);
 
             std::map<uint32, std::set<uint32>>& tileEntries = (spawn.flags & MOD_PARENT_SPAWN) ? data.ParentTileEntries : data.TileEntries;
 
@@ -295,12 +317,13 @@ namespace VMAP
             }
 
             data->UniqueEntries.emplace(spawn.ID, spawn);
+            data->SpawnedModelFiles.insert(spawn.name);
         }
 
         return true;
     }
 
-    bool TileAssembler::calculateTransformedBound(ModelSpawn &spawn)
+    bool TileAssembler::calculateTransformedBound(ModelSpawn &spawn) const
     {
         std::string modelFilename(iSrcDir);
         modelFilename.push_back('/');
@@ -319,7 +342,7 @@ namespace VMAP
         if (groups != 1)
             printf("Warning: '%s' does not seem to be a M2 model!\n", modelFilename.c_str());
 
-        AABox rotated_bounds;
+        G3D::AABox rotated_bounds;
         for (int i = 0; i < 8; ++i)
             rotated_bounds.merge(modelPosition.transform(raw_model.groupsArray[0].bounds.corner(i)));
 
@@ -353,6 +376,7 @@ namespace VMAP
 
         // write WorldModel
         WorldModel model;
+        model.setFlags(raw_model.Flags);
         model.setRootWmoID(raw_model.RootWMOID);
         if (!raw_model.groupsArray.empty())
         {
@@ -363,8 +387,8 @@ namespace VMAP
             {
                 GroupModel_Raw& raw_group = raw_model.groupsArray[g];
                 groupsArray.push_back(GroupModel(raw_group.mogpflags, raw_group.GroupWMOID, raw_group.bounds));
-                groupsArray.back().setMeshData(raw_group.vertexArray, raw_group.triangles);
-                groupsArray.back().setLiquidData(raw_group.liquid);
+                groupsArray.back().setMeshData(std::move(raw_group.vertexArray), std::move(raw_group.triangles));
+                groupsArray.back().setLiquidData(raw_group.liquid.release());
             }
 
             model.setGroupModels(groupsArray);
@@ -377,41 +401,33 @@ namespace VMAP
 
     void TileAssembler::exportGameobjectModels()
     {
-        FILE* model_list = fopen((iSrcDir + "/" + "temp_gameobject_models").c_str(), "rb");
+        auto model_list = Trinity::make_unique_ptr_with_deleter(fopen((iSrcDir + "/" + "temp_gameobject_models").c_str(), "rb"), &::fclose);
         if (!model_list)
             return;
 
         char ident[8];
-        if (fread(ident, 1, 8, model_list) != 8 || memcmp(ident, VMAP::RAW_VMAP_MAGIC, 8) != 0)
-        {
-            fclose(model_list);
+        if (fread(ident, 1, 8, model_list.get()) != 8 || memcmp(ident, VMAP::RAW_VMAP_MAGIC, 8) != 0)
             return;
-        }
 
-        FILE* model_list_copy = fopen((iDestDir + "/" + GAMEOBJECT_MODELS).c_str(), "wb");
+        auto model_list_copy = Trinity::make_unique_ptr_with_deleter(fopen((iDestDir + "/" + GAMEOBJECT_MODELS).c_str(), "wb"), &::fclose);
         if (!model_list_copy)
-        {
-            fclose(model_list);
             return;
-        }
 
-        fwrite(VMAP::VMAP_MAGIC, 1, 8, model_list_copy);
+        fwrite(VMAP::VMAP_MAGIC, 1, 8, model_list_copy.get());
 
         uint32 name_length, displayId;
-        uint8 isWmo;
         char buff[500];
         while (true)
         {
-            if (fread(&displayId, sizeof(uint32), 1, model_list) != 1)
-                if (feof(model_list))   // EOF flag is only set after failed reading attempt
+            if (fread(&displayId, sizeof(uint32), 1, model_list.get()) != 1)
+                if (feof(model_list.get()))   // EOF flag is only set after failed reading attempt
                     break;
 
-            if (fread(&isWmo, sizeof(uint8), 1, model_list) != 1
-                || fread(&name_length, sizeof(uint32), 1, model_list) != 1
+            if (fread(&name_length, sizeof(uint32), 1, model_list.get()) != 1
                 || name_length >= sizeof(buff)
-                || fread(&buff, sizeof(char), name_length, model_list) != name_length)
+                || fread(&buff, sizeof(char), name_length, model_list.get()) != name_length)
             {
-                std::cout << "\nFile 'temp_gameobject_models' seems to be corrupted" << std::endl;
+                printf("\nFile 'temp_gameobject_models' seems to be corrupted\n");
                 break;
             }
 
@@ -422,42 +438,36 @@ namespace VMAP
                 continue;
 
             spawnedModelFiles.insert(model_name);
-            AABox bounds;
+            G3D::AABox bounds;
             for (GroupModel_Raw const& groupModel : raw_model.groupsArray)
                 for (G3D::Vector3 const& vertice : groupModel.vertexArray)
                     bounds.merge(vertice);
 
             if (bounds.isEmpty())
             {
-                std::cout << "\nModel " << std::string(buff, name_length) << " has empty bounding box" << std::endl;
+                printf("\nModel %s has empty bounding box\n", model_name.c_str());
                 continue;
             }
 
             if (!bounds.isFinite())
             {
-                std::cout << "\nModel " << std::string(buff, name_length) << " has invalid bounding box" << std::endl;
+                printf("\nModel %s has invalid bounding box\n", model_name.c_str());
                 continue;
             }
 
-            fwrite(&displayId, sizeof(uint32), 1, model_list_copy);
-            fwrite(&isWmo, sizeof(uint8), 1, model_list_copy);
-            fwrite(&name_length, sizeof(uint32), 1, model_list_copy);
-            fwrite(&buff, sizeof(char), name_length, model_list_copy);
-            fwrite(&bounds.low(), sizeof(Vector3), 1, model_list_copy);
-            fwrite(&bounds.high(), sizeof(Vector3), 1, model_list_copy);
+            fwrite(&displayId, sizeof(uint32), 1, model_list_copy.get());
+            fwrite(&name_length, sizeof(uint32), 1, model_list_copy.get());
+            fwrite(&buff, sizeof(char), name_length, model_list_copy.get());
+            fwrite(&bounds.low(), sizeof(G3D::Vector3), 1, model_list_copy.get());
+            fwrite(&bounds.high(), sizeof(G3D::Vector3), 1, model_list_copy.get());
         }
-
-        fclose(model_list);
-        fclose(model_list_copy);
     }
 
 // temporary use defines to simplify read/check code (close file and return at fail)
-#define READ_OR_RETURN(V, S) if (fread((V), (S), 1, rf) != 1) { \
-                                fclose(rf); printf("%s readfail, op = %s\n", __FUNCTION__, #V); return(false); }
-#define READ_OR_RETURN_WITH_DELETE(V, S) if (fread((V), (S), 1, rf) != 1) { \
-                                fclose(rf); printf("%s readfail, op = %s\n", __FUNCTION__, #V); delete[] V; return(false); };
-#define CMP_OR_RETURN(V, S)  if (strcmp((V), (S)) != 0)        { \
-                                fclose(rf); printf("%s cmpfail, %s!=%s\n", __FUNCTION__, V, S);return(false); }
+#define READ_OR_RETURN(V, S) if (fread((V), (S), 1, rf) != 1) do { \
+                                printf("%s readfail, op = %s\n", __FUNCTION__, #V); return false; } while(false)
+#define CMP_OR_RETURN(V, S)  if (strcmp((V), (S)) != 0)       do { \
+                                printf("%s cmpfail, %s!=%s\n", __FUNCTION__, V, S);return false; } while(false)
 
     bool GroupModel_Raw::Read(FILE* rf)
     {
@@ -468,10 +478,10 @@ namespace VMAP
         READ_OR_RETURN(&mogpflags, sizeof(uint32));
         READ_OR_RETURN(&GroupWMOID, sizeof(uint32));
 
-        Vector3 vec1, vec2;
-        READ_OR_RETURN(&vec1, sizeof(Vector3));
+        G3D::Vector3 vec1, vec2;
+        READ_OR_RETURN(&vec1, sizeof(G3D::Vector3));
 
-        READ_OR_RETURN(&vec2, sizeof(Vector3));
+        READ_OR_RETURN(&vec2, sizeof(G3D::Vector3));
         bounds.set(vec1, vec2);
 
         READ_OR_RETURN(&liquidflags, sizeof(uint32));
@@ -482,7 +492,7 @@ namespace VMAP
         CMP_OR_RETURN(blockId, "GRP ");
         READ_OR_RETURN(&blocksize, sizeof(int));
         READ_OR_RETURN(&branches, sizeof(uint32));
-        for (uint32 b=0; b<branches; ++b)
+        for (uint32 b = 0; b < branches; ++b)
         {
             uint32 indexes;
             // indexes for each branch (not used jet)
@@ -495,15 +505,13 @@ namespace VMAP
         READ_OR_RETURN(&blocksize, sizeof(int));
         uint32 nindexes;
         READ_OR_RETURN(&nindexes, sizeof(uint32));
-        if (nindexes >0)
+        if (nindexes > 0)
         {
-            uint16 *indexarray = new uint16[nindexes];
-            READ_OR_RETURN_WITH_DELETE(indexarray, nindexes*sizeof(uint16));
+            std::unique_ptr<uint32[]> indexarray = std::make_unique<uint32[]>(nindexes);
+            READ_OR_RETURN(indexarray.get(), nindexes * sizeof(uint32));
             triangles.reserve(nindexes / 3);
-            for (uint32 i=0; i<nindexes; i+=3)
-                triangles.push_back(MeshTriangle(indexarray[i], indexarray[i+1], indexarray[i+2]));
-
-            delete[] indexarray;
+            for (uint32 i = 0; i < nindexes; i += 3)
+                triangles.push_back({ .idx0 = indexarray[i], .idx1 = indexarray[i + 1], .idx2 = indexarray[i + 2] });
         }
 
         // ---- vectors
@@ -513,14 +521,12 @@ namespace VMAP
         uint32 nvectors;
         READ_OR_RETURN(&nvectors, sizeof(uint32));
 
-        if (nvectors >0)
+        if (nvectors > 0)
         {
-            float *vectorarray = new float[nvectors*3];
-            READ_OR_RETURN_WITH_DELETE(vectorarray, nvectors*sizeof(float)*3);
-            for (uint32 i=0; i<nvectors; ++i)
-                vertexArray.push_back( Vector3(vectorarray + 3*i) );
-
-            delete[] vectorarray;
+            std::unique_ptr<float[]> vectorarray = std::make_unique<float[]>(nvectors * 3);
+            READ_OR_RETURN(vectorarray.get(), nvectors * sizeof(float) * 3);
+            for (uint32 i = 0; i < nvectors; ++i)
+                vertexArray.push_back(G3D::Vector3(&vectorarray[3 * i]));
         }
         // ----- liquid
         liquid = nullptr;
@@ -535,7 +541,7 @@ namespace VMAP
             {
                 WMOLiquidHeader hlq;
                 READ_OR_RETURN(&hlq, sizeof(WMOLiquidHeader));
-                liquid = new WmoLiquid(hlq.xtiles, hlq.ytiles, Vector3(hlq.pos_x, hlq.pos_y, hlq.pos_z), liquidType);
+                liquid.reset(new WmoLiquid(hlq.xtiles, hlq.ytiles, G3D::Vector3(hlq.pos_x, hlq.pos_y, hlq.pos_z), liquidType));
                 uint32 size = hlq.xverts * hlq.yverts;
                 READ_OR_RETURN(liquid->GetHeightStorage(), size * sizeof(float));
                 size = hlq.xtiles * hlq.ytiles;
@@ -543,7 +549,7 @@ namespace VMAP
             }
             else
             {
-                liquid = new WmoLiquid(0, 0, Vector3::zero(), liquidType);
+                liquid.reset(new WmoLiquid(0, 0, G3D::Vector3::zero(), liquidType));
                 liquid->GetHeightStorage()[0] = bounds.high().z;
             }
         }
@@ -551,19 +557,16 @@ namespace VMAP
         return true;
     }
 
-    GroupModel_Raw::~GroupModel_Raw()
-    {
-        delete liquid;
-    }
-
     bool WorldModel_Raw::Read(const char * path)
     {
-        FILE* rf = fopen(path, "rb");
-        if (!rf)
+        auto file = Trinity::make_unique_ptr_with_deleter(fopen(path, "rb"), &::fclose);
+        if (!file)
         {
             printf("ERROR: Can't open raw model file: %s\n", path);
             return false;
         }
+
+        FILE* rf = file.get();
 
         char ident[9];
         ident[8] = '\0';
@@ -578,14 +581,13 @@ namespace VMAP
         uint32 groups;
         READ_OR_RETURN(&groups, sizeof(uint32));
         READ_OR_RETURN(&RootWMOID, sizeof(uint32));
+        READ_OR_RETURN(&Flags, sizeof(Flags));
 
         groupsArray.resize(groups);
         bool succeed = true;
         for (uint32 g = 0; g < groups && succeed; ++g)
             succeed = groupsArray[g].Read(rf);
 
-        if (succeed) /// rf will be freed inside Read if the function had any errors.
-            fclose(rf);
         return succeed;
     }
 
