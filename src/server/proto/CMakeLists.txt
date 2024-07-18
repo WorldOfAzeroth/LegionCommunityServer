@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+# This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -20,8 +20,6 @@ endif()
 
 GroupSources(${CMAKE_CURRENT_SOURCE_DIR})
 
-add_definitions(-DTRINITY_API_EXPORT_PROTO)
-
 add_library(proto
   ${PRIVATE_SOURCES}
 )
@@ -30,13 +28,19 @@ CollectIncludeDirectories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   PUBLIC_INCLUDES
   # Exclude
-  ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders)
+  ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders
+  ${CMAKE_CURRENT_SOURCE_DIR}/Client/api
+  ${CMAKE_CURRENT_SOURCE_DIR}/Client/global_extensions)
 
 target_include_directories(proto
   PUBLIC
     ${PUBLIC_INCLUDES}
   PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR})
+
+set_target_properties(proto
+  PROPERTIES
+    DEFINE_SYMBOL TRINITY_API_EXPORT_PROTO)
 
 target_link_libraries(proto
   PRIVATE
@@ -45,12 +49,6 @@ target_link_libraries(proto
   PUBLIC
     common
     protobuf)
-
-if (MSVC)
-  target_compile_definitions(protobuf
-    PRIVATE
-      -D_SCL_SECURE_NO_WARNINGS)
-endif()
 
 set_target_properties(proto
   PROPERTIES

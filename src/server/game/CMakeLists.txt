@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+# This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -14,13 +14,11 @@ CollectSourceFiles(
   # Exclude
   ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders)
 
-if (USE_COREPCH)
+if(USE_COREPCH)
   set(PRIVATE_PCH_HEADER PrecompiledHeaders/gamePCH.h)
-endif ()
+endif()
 
 GroupSources(${CMAKE_CURRENT_SOURCE_DIR})
-
-add_definitions(-DTRINITY_API_EXPORT_GAME)
 
 CollectIncludeDirectories(
   ${CMAKE_CURRENT_SOURCE_DIR}
@@ -48,6 +46,10 @@ target_include_directories(game
   PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR})
 
+set_target_properties(game
+  PROPERTIES
+    DEFINE_SYMBOL TRINITY_API_EXPORT_GAME)
+
 target_link_libraries(game
   PRIVATE
     trinity-core-interface
@@ -60,12 +62,12 @@ set_target_properties(game
       FOLDER
         "server")
 
-if( BUILD_SHARED_LIBS )
-  if( UNIX )
+if(BUILD_SHARED_LIBS)
+  if(UNIX)
     install(TARGETS game
       LIBRARY
         DESTINATION lib)
-  elseif( WIN32 )
+  elseif(WIN32)
     install(TARGETS game
       RUNTIME
         DESTINATION "${CMAKE_INSTALL_PREFIX}")
@@ -73,6 +75,6 @@ if( BUILD_SHARED_LIBS )
 endif()
 
 # Generate precompiled header
-if (USE_COREPCH)
+if(USE_COREPCH)
   add_cxx_pch(game ${PRIVATE_PCH_HEADER})
-endif ()
+endif()
