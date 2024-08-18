@@ -22,6 +22,7 @@
 #include "DB2Stores.h"
 #include "Log.h"
 #include "Player.h"
+#include "RealmList.h"
 #include "World.h"
 #include "WorldSession.h"
 
@@ -268,9 +269,15 @@ ObjectGuid ChannelMgr::CreateCustomChannelGuid()
 ObjectGuid ChannelMgr::CreateBuiltinChannelGuid(uint32 channelId, AreaTableEntry const* zoneEntry /*= nullptr*/) const
 {
     ChatChannelsEntry const* channelEntry = sChatChannelsStore.AssertEntry(channelId);
-    uint32 zoneId = zoneEntry ? zoneEntry->ID : 0;
-    if (channelEntry->Flags & (CHANNEL_DBC_FLAG_GLOBAL | CHANNEL_DBC_FLAG_CITY_ONLY))
-        zoneId = 0;
+    uint32 zoneId = 0;
+    if (zoneEntry && channelEntry->GetFlags().HasFlag(ChatChannelFlags::ZoneBased) && !channelEntry->GetFlags().HasFlag(ChatChannelFlags::LinkedChannel))
+        zoneId = zoneEntry->ID;
+
+    if (channelEntry->GetFlags().HasFlag(ChatChannelFlags::GlobalForTournament))
+        if (std::shared_ptr<Realm const> currentRealm = sRealmList->GetCurrentRealm())
+            if (Cfg_CategoriesEntry const* category = sCfgCategoriesStore.LookupEntry(currentRealm->Timezone))
+                if (category->GetFlags().HasFlag(CfgCategoriesFlags::Tournament))
+                    zoneId = 0;
 
     return ObjectGuid::Create<HighGuid::ChatChannel>(true, (channelEntry->Flags & CHANNEL_DBC_FLAG_CITY_ONLY2) != 0, zoneId, _team == ALLIANCE ? 3 : 5, channelId);
 }

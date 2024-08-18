@@ -81,7 +81,7 @@
 #include "PlayerDump.h"
 #include "PoolMgr.h"
 #include "QuestPools.h"
-#include "Realm.h"
+#include "RealmList.h"
 #include "ScenarioMgr.h"
 #include "ScriptMgr.h"
 #include "ScriptReloadMgr.h"
@@ -243,12 +243,8 @@ void World::SetClosed(bool val)
 
 void World::LoadDBAllowedSecurityLevel()
 {
-    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_REALMLIST_SECURITY_LEVEL);
-    stmt->setInt32(0, int32(realm.Id.Realm));
-    PreparedQueryResult result = LoginDatabase.Query(stmt);
-
-    if (result)
-        SetPlayerSecurityLimit(AccountTypes(result->Fetch()->GetUInt8()));
+    if (std::shared_ptr<Realm const> currentRealm = sRealmList->GetCurrentRealm())
+        SetPlayerSecurityLimit(currentRealm->AllowedSecurityLevel);
 }
 
 void World::SetPlayerSecurityLimit(AccountTypes _sec)
@@ -428,7 +424,12 @@ void World::AddSession_(WorldSession* s)
     {
         float popu = (float)GetActiveSessionCount();              // updated number of users on the server
         popu /= pLimit;
-        popu *= 2;
+
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_REALM_POPULATION);
+        stmt->setFloat(0, popu);
+        stmt->setUInt32(1, sRealmList->GetCurrentRealmId().Realm);
+        LoginDatabase.Execute(stmt);
+
         TC_LOG_INFO("misc", "Server Population ({}).", popu);
     }
 }
@@ -1713,7 +1714,7 @@ void World::LoadConfigSettings(bool reload)
 /// Initialize the World
 void World::SetInitialWorldSettings()
 {
-    sLog->SetRealmId(realm.Id.Realm);
+    sLog->SetRealmId(sRealmList->GetCurrentRealmId().Realm);
 
     ///- Server startup begin
     uint32 startupBegin = getMSTime();
@@ -1772,7 +1773,7 @@ void World::SetInitialWorldSettings()
     uint32 server_type = IsFFAPvPRealm() ? uint32(REALM_TYPE_PVP) : getIntConfig(CONFIG_GAME_TYPE);
     uint32 realm_zone = getIntConfig(CONFIG_REALM_ZONE);
 
-    LoginDatabase.PExecute("UPDATE realmlist SET icon = {}, timezone = {} WHERE id = '{}'", server_type, realm_zone, realm.Id.Realm);      // One-time query
+    LoginDatabase.PExecute("UPDATE realmlist SET icon = {}, timezone = {} WHERE id = '{}'", server_type, realm_zone, sRealmList->GetCurrentRealmId().Realm);      // One-time query
 
     TC_LOG_INFO("server.loading", "Initialize data stores...");
     ///- Load DB2s
@@ -2355,7 +2356,7 @@ void World::SetInitialWorldSettings()
     GameTime::UpdateGameTimers();
 
     LoginDatabase.PExecute("INSERT INTO uptime (realmid, starttime, uptime, revision) VALUES({}, {}, 0, '{}')",
-                            realm.Id.Realm, uint32(GameTime::GetStartTime()), GitRevision::GetFullVersion());       // One-time query
+        sRealmList->GetCurrentRealmId().Realm, uint32(GameTime::GetStartTime()), GitRevision::GetFullVersion());    // One-time query
 
     m_timers[WUPDATE_AUCTIONS].SetInterval(MINUTE*IN_MILLISECONDS);
     m_timers[WUPDATE_AUCTIONS_PENDING].SetInterval(250);
@@ -2504,7 +2505,7 @@ void World::LoadAutobroadcasts()
     m_Autobroadcasts.clear();
 
     LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_AUTOBROADCAST);
-    stmt->setInt32(0, realm.Id.Realm);
+    stmt->setInt32(0, sRealmList->GetCurrentRealmId().Realm);
     PreparedQueryResult result = LoginDatabase.Query(stmt);
 
     if (!result)
@@ -2680,7 +2681,7 @@ void World::Update(uint32 diff)
 
         stmt->setUInt32(0, tmpDiff);
         stmt->setUInt16(1, uint16(maxOnlinePlayers));
-        stmt->setUInt32(2, realm.Id.Realm);
+        stmt->setUInt32(2, sRealmList->GetCurrentRealmId().Realm);
         stmt->setUInt32(3, uint32(GameTime::GetStartTime()));
 
         LoginDatabase.Execute(stmt);
@@ -2698,7 +2699,7 @@ void World::Update(uint32 diff)
 
             stmt->setUInt32(0, getIntConfig(CONFIG_LOGDB_CLEARTIME));
             stmt->setUInt32(1, uint32(GameTime::GetGameTime()));
-            stmt->setUInt32(2, realm.Id.Realm);
+            stmt->setUInt32(2, sRealmList->GetCurrentRealmId().Realm);
 
             LoginDatabase.Execute(stmt);
         }
@@ -3458,7 +3459,7 @@ void World::_UpdateRealmCharCount(PreparedQueryResult resultCharCount)
         LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_REP_REALM_CHARACTERS);
         stmt->setUInt8(0, charCount);
         stmt->setUInt32(1, accountId);
-        stmt->setUInt32(2, realm.Id.Realm);
+        stmt->setUInt32(2, sRealmList->GetCurrentRealmId().Realm);
         trans->Append(stmt);
 
         LoginDatabase.CommitTransaction(trans);
@@ -3860,11 +3861,9 @@ void World::RemoveOldCorpses()
 }
 
 
-Realm realm;
-
 uint32 GetVirtualRealmAddress()
 {
-    return realm.Id.GetAddress();
+    return sRealmList->GetCurrentRealmId().GetAddress();
 }
 
 CliCommandHolder::CliCommandHolder(void* callbackArg, char const* command, Print zprint, CommandFinished commandFinished)

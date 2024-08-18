@@ -15,12 +15,10 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "BattlegroundBFG.h"
-
-BattlegroundBFG::BattlegroundBFG(BattlegroundTemplate const* battlegroundTemplate) : Battleground(battlegroundTemplate)
-{
-}
+#include "ClubUtils.h"
+#include "RealmList.h"
 
 BattlegroundBFG::~BattlegroundBFG()
 {
+    return guid.GetCounter() | (uint64(sRealmList->GetCurrentRealmId().Realm & 0xFFF) << 48);
 }

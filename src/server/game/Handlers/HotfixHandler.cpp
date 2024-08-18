@@ -57,7 +57,18 @@ void WorldSession::HandleDBQueryBulk(WorldPackets::Hotfix::DBQueryBulk& dbQuery)
 
 void WorldSession::SendAvailableHotfixes(int32 version)
 {
-    SendPacket(WorldPackets::Hotfix::AvailableHotfixes(version, sDB2Manager.GetHotfixData()).Write());
+    WorldPackets::Hotfix::AvailableHotfixes availableHotfixes;
+    availableHotfixes.VirtualRealmAddress = GetVirtualRealmAddress();
+
+    for (auto const& [pushId, push] : sDB2Manager.GetHotfixData())
+    {
+        if (!(push.AvailableLocalesMask & (1 << GetSessionDbcLocale())))
+            continue;
+
+        availableHotfixes.Hotfixes.insert(push.Records.front().ID);
+    }
+
+    SendPacket(availableHotfixes.Write());
 }
 
 void WorldSession::HandleHotfixRequest(WorldPackets::Hotfix::HotfixRequest& hotfixQuery)
