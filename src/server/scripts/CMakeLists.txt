@@ -168,8 +168,8 @@ foreach(SCRIPT_MODULE ${SCRIPT_MODULE_LIST})
 
     set_target_properties(${SCRIPT_MODULE_PROJECT_NAME}
       PROPERTIES
-        FOLDER
-          "scripts")
+        COMPILE_WARNING_AS_ERROR ${WITH_WARNINGS_AS_ERRORS}
+        FOLDER "scripts")
 
     if(UNIX)
       install(TARGETS ${SCRIPT_MODULE_PROJECT_NAME}
@@ -214,8 +214,8 @@ target_link_libraries(scripts
 
 set_target_properties(scripts
   PROPERTIES
-    FOLDER
-      "scripts")
+    COMPILE_WARNING_AS_ERROR ${WITH_WARNINGS_AS_ERRORS}
+    FOLDER "server")
 
 # Generate precompiled header
 if(USE_SCRIPTPCH)
