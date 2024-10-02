@@ -25,6 +25,7 @@
 #include "VMapDefinitions.h"
 #include <boost/filesystem/directory.hpp>
 #include <boost/filesystem/operations.hpp>
+#include <mutex>
 #include <set>
 
 template<> struct BoundsTrait<VMAP::ModelSpawn*>
