@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -24,6 +23,7 @@
 #include "DBFilesClientList.h"
 #include "ExtractorDB2LoadInfo.h"
 #include "MapDefines.h"
+#include "MapUtils.h"
 #include "StringFormat.h"
 #include "adt.h"
 #include "wdt.h"
@@ -48,7 +48,8 @@ typedef struct
 
 struct LiquidMaterialEntry
 {
-    int8 LVF;
+    EnumFlag<LiquidMaterialFlags> Flags = { { } };
+    int8 LVF = 0;
 };
 
 struct LiquidObjectEntry
@@ -287,6 +288,7 @@ void ReadLiquidMaterialTable()
     {
         DB2Record record = db2.GetRecord(x);
         LiquidMaterialEntry& liquidType = LiquidMaterials[record.GetId()];
+        liquidType.Flags = static_cast<LiquidMaterialFlags>(record.GetUInt32("Flags"));
         liquidType.LVF = record.GetUInt8("LVF");
     }
 
@@ -601,6 +603,13 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
                 if (!h)
                     continue;
 
+                liquid_entry[i][j] = h2o->GetLiquidType(h);
+                LiquidTypeEntry const& liquidTypeEntry = LiquidTypes.at(liquid_entry[i][j]);
+
+                if (LiquidMaterialEntry const* liquidMaterial = Trinity::Containers::MapGetValuePtr(LiquidMaterials, liquidTypeEntry.MaterialID))
+                    if (liquidMaterial->Flags.HasFlag(LiquidMaterialFlags::VisualOnly))
+                        continue;
+
                 adt_liquid_attributes attrs = h2o->GetLiquidAttributes(i, j);
 
                 int32 count = 0;
@@ -620,8 +629,7 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
                     }
                 }
 
-                liquid_entry[i][j] = h2o->GetLiquidType(h);
-                switch (LiquidTypes.at(liquid_entry[i][j]).SoundBank)
+                switch (liquidTypeEntry.SoundBank)
                 {
                     case LIQUID_TYPE_WATER: liquid_flags[i][j] |= map_liquidHeaderTypeFlags::Water; break;
                     case LIQUID_TYPE_OCEAN: liquid_flags[i][j] |= map_liquidHeaderTypeFlags::Ocean; if (!ignoreDeepWater && attrs.Deep) liquid_flags[i][j] |= map_liquidHeaderTypeFlags::DarkWater; break;

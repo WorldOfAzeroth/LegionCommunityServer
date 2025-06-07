@@ -43,4 +43,6 @@ bool ExtractSingleModel(std::string& fname);
 
 void ExtractGameobjectModels();
 
+bool IsLiquidIgnored(uint32 liquidTypeId);
+
 #endif
