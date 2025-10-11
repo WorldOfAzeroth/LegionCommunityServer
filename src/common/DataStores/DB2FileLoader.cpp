@@ -20,8 +20,15 @@
 #include "Common.h"
 #include "DB2Meta.h"
 #include "Errors.h"
-#include "Log.h"
-#include <sstream>
+#include "StringFormat.h"
+#include <fmt/ranges.h>
+#include <limits>
+#include <memory>
+#include <system_error>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+#include <cstring>
 
 enum class DB2ColumnCompression : uint32
 {

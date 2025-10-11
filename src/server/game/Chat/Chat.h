@@ -56,13 +56,19 @@ class TC_GAME_API ChatHandler
         template<typename... Args>
         void PSendSysMessage(const char* fmt, Args&&... args)
         {
-            SendSysMessage(fmt::sprintf(fmt, std::forward<Args>(args)...));
+            SendSysMessage(StringVPrintf(fmt, fmt::make_printf_args(args...)));
         }
 
         template<typename... Args>
         void PSendSysMessage(uint32 entry, Args&&... args)
         {
-            SendSysMessage(PGetParseString(entry, std::forward<Args>(args)...).c_str());
+            SendSysMessage(PGetParseString(entry, std::forward<Args>(args)...));
+        }
+
+        template<typename... Args>
+        static std::string PGetParseString(std::string_view fmt, Args&&... args)
+        {
+            return StringVPrintf(fmt, fmt::make_printf_args(args...));
         }
 
         template<typename... Args>
