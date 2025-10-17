@@ -19,6 +19,7 @@
 #include "DB2FileLoader.h"
 #include "DB2FileSystemSource.h"
 #include "ExtractorDB2LoadInfo.h"
+#include "Locales.h"
 #include "MapBuilder.h"
 #include "PathCommon.h"
 #include "Timer.h"
@@ -59,11 +60,9 @@ namespace MMAP
     }
 }
 
-using namespace MMAP;
-
 bool checkDirectories(bool debugOutput, std::vector<std::string>& dbcLocales)
 {
-    if (getDirContents(dbcLocales, "dbc") == LISTFILE_DIRECTORY_NOT_FOUND || dbcLocales.empty())
+    if (MMAP::getDirContents(dbcLocales, "dbc") == MMAP::LISTFILE_DIRECTORY_NOT_FOUND || dbcLocales.empty())
     {
         printf("'dbc' directory is empty or does not exist\n");
         return false;
@@ -71,21 +70,21 @@ bool checkDirectories(bool debugOutput, std::vector<std::string>& dbcLocales)
 
     std::vector<std::string> dirFiles;
 
-    if (getDirContents(dirFiles, "maps") == LISTFILE_DIRECTORY_NOT_FOUND || dirFiles.empty())
+    if (MMAP::getDirContents(dirFiles, "maps") == MMAP::LISTFILE_DIRECTORY_NOT_FOUND || dirFiles.empty())
     {
         printf("'maps' directory is empty or does not exist\n");
         return false;
     }
 
     dirFiles.clear();
-    if (getDirContents(dirFiles, "vmaps", "*.vmtree") == LISTFILE_DIRECTORY_NOT_FOUND || dirFiles.empty())
+    if (MMAP::getDirContents(dirFiles, "vmaps/0000", "*.vmtree") == MMAP::LISTFILE_DIRECTORY_NOT_FOUND || dirFiles.empty())
     {
         printf("'vmaps' directory is empty or does not exist\n");
         return false;
     }
 
     dirFiles.clear();
-    if (getDirContents(dirFiles, "mmaps") == LISTFILE_DIRECTORY_NOT_FOUND)
+    if (MMAP::getDirContents(dirFiles, "mmaps") == MMAP::LISTFILE_DIRECTORY_NOT_FOUND)
     {
         if (!boost::filesystem::create_directory("mmaps"))
         {
@@ -97,7 +96,7 @@ bool checkDirectories(bool debugOutput, std::vector<std::string>& dbcLocales)
     dirFiles.clear();
     if (debugOutput)
     {
-        if (getDirContents(dirFiles, "meshes") == LISTFILE_DIRECTORY_NOT_FOUND)
+        if (MMAP::getDirContents(dirFiles, "meshes") == MMAP::LISTFILE_DIRECTORY_NOT_FOUND)
         {
             if (!boost::filesystem::create_directory("meshes"))
             {
@@ -330,7 +329,7 @@ std::unordered_map<uint32, uint8> LoadLiquid(std::string const& locale, bool sil
     DB2FileSystemSource liquidTypeSource((boost::filesystem::path("dbc") / locale / "LiquidType.db2").string());
     try
     {
-        liquidDb2.Load(&liquidTypeSource, LiquidTypeLoadInfo::Instance());
+        liquidDb2.Load(&liquidTypeSource, &LiquidTypeLoadInfo::Instance);
         for (uint32 x = 0; x < liquidDb2.GetRecordCount(); ++x)
         {
             DB2Record record = liquidDb2.GetRecord(x);
@@ -358,7 +357,7 @@ std::unordered_map<uint32, std::vector<uint32>> LoadMap(std::string const& local
     DB2FileSystemSource mapSource((boost::filesystem::path("dbc") / locale / "Map.db2").string());
     try
     {
-        mapDb2.Load(&mapSource, MapLoadInfo::Instance());
+        mapDb2.Load(&mapSource, &MapLoadInfo::Instance);
         for (uint32 x = 0; x < mapDb2.GetRecordCount(); ++x)
         {
             DB2Record record = mapDb2.GetRecord(x);
@@ -372,7 +371,7 @@ std::unordered_map<uint32, std::vector<uint32>> LoadMap(std::string const& local
             if (parentMapId != -1)
                 mapData[parentMapId].push_back(record.GetId());
 
-            MapEntry& map = sMapStore[record.GetId()];
+            MMAP::MapEntry& map = MMAP::sMapStore[record.GetId()];
             map.MapType = record.GetUInt8("MapType");
             map.InstanceType = record.GetUInt8("InstanceType");
             map.ParentMapID = parentMapId;
@@ -392,6 +391,10 @@ std::unordered_map<uint32, std::vector<uint32>> LoadMap(std::string const& local
 
 int main(int argc, char** argv)
 {
+    Trinity::VerifyOsVersion();
+
+    Trinity::Locale::Init();
+
     Trinity::Banner::Show("MMAP generator", [](char const* text) { printf("%s\n", text); }, nullptr);
 
     unsigned int threads = std::thread::hardware_concurrency();
@@ -436,7 +439,7 @@ int main(int argc, char** argv)
 
     _mapDataForVmapInitialization = LoadMap(dbcLocales[0], silent, -4);
 
-    MapBuilder builder(maxAngle, maxAngleNotSteep, skipLiquid, skipContinents, skipJunkMaps,
+    MMAP::MapBuilder builder(maxAngle, maxAngleNotSteep, skipLiquid, skipContinents, skipJunkMaps,
                        skipBattlegrounds, debugOutput, bigBaseUnit, mapnum, offMeshInputPath, threads);
 
     uint32 start = getMSTime();
@@ -453,3 +456,9 @@ int main(int argc, char** argv)
         printf("Finished. MMAPS were built in %s\n", secsToTimeString(GetMSTimeDiffToNow(start) / 1000).c_str());
     return 0;
 }
+
+#if TRINITY_PLATFORM == TRINITY_PLATFORM_WINDOWS
+#include "WheatyExceptionReport.h"
+// must be at end of file because of init_seg pragma
+INIT_CRASH_HANDLER();
+#endif
