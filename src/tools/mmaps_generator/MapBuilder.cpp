@@ -1031,6 +1031,9 @@ namespace MMAP
         if (header.mmapVersion != MMAP_VERSION)
             return false;
 
+        if (m_debugOutput)
+            return false;
+
         return true;
     }
 
