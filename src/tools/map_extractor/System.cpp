@@ -838,7 +838,7 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
     }
     else
     {
-        int minX = 255, minY = 255;
+        int minX = ADT_GRID_SIZE, minY = ADT_GRID_SIZE;
         int maxX = 0, maxY = 0;
         maxHeight = -20000;
         minHeight = 20000;
@@ -873,6 +873,9 @@ bool ConvertADT(std::string const& inputPath, std::string const& outputPath, int
         liquidHeader.width   = maxX - minX + 1 + 1;
         liquidHeader.height  = maxY - minY + 1 + 1;
         liquidHeader.liquidLevel = minHeight;
+
+        if (minY > maxY || minX > maxX)
+            liquidHeader.flags |= map_liquidHeaderFlags::NoHeight;
 
         if (maxHeight == minHeight)
             liquidHeader.flags |= map_liquidHeaderFlags::NoHeight;
