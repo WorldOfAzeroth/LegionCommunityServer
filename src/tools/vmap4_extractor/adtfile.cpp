@@ -16,68 +16,56 @@
  */
 
 #include "adtfile.h"
+#include "Common.h"
 #include "Memory.h"
 #include "StringFormat.h"
+#include "Util.h"
 #include "vmapexport.h"
 #include <cstdio>
 
-char const* GetPlainName(char const* FileName)
+std::string_view GetPlainName(std::string_view fileName)
 {
-    const char * szTemp;
+    std::size_t lastSeparatorPos = fileName.find_last_of("\\/"sv);
 
-    if((szTemp = strrchr(FileName, '\\')) != nullptr)
-        FileName = szTemp + 1;
-    return FileName;
+    if (lastSeparatorPos != std::string_view::npos)
+        fileName.remove_prefix(lastSeparatorPos + 1);
+
+    return fileName;
 }
 
-char* GetPlainName(char* FileName)
+void NormalizeFileName(std::string& name)
 {
-    char * szTemp;
+    if (name.starts_with("FILE"sv)) // name is FileDataId formatted, do not normalize
+        return;
 
-    if((szTemp = strrchr(FileName, '\\')) != nullptr)
-        FileName = szTemp + 1;
-    return FileName;
-}
-
-void FixNameCase(char* name, size_t len)
-{
-    char* ptr = name + len - 1;
+    auto ptr = name.begin() + (name.length() - 1);
 
     //extension in lowercase
-    for (; *ptr != '.' && ptr >= name; --ptr)
-        *ptr |= 0x20;
-
-    for (; ptr >= name; --ptr)
-    {
-        if (ptr > name && *ptr >= 'A' && *ptr <= 'Z' && isalpha(*(ptr - 1)))
+    for (; *ptr != '.' && ptr >= name.begin(); --ptr)
+        if (*ptr >= 'A' && *ptr <= 'Z')
             *ptr |= 0x20;
-        else if ((ptr == name || !isalpha(*(ptr - 1))) && *ptr >= 'a' && *ptr <= 'z')
+
+    for (; ptr >= name.begin(); --ptr)
+    {
+        if (ptr > name.begin() && *ptr >= 'A' && *ptr <= 'Z' && isalpha(*(ptr - 1)))
+            *ptr |= 0x20;
+        else if ((ptr == name.begin() || !isalpha(*(ptr - 1))) && *ptr >= 'a' && *ptr <= 'z')
             *ptr &= ~0x20;
+        else if (*ptr == ' ')
+            *ptr = '_';
     }
 }
 
-void FixNameSpaces(char* name, size_t len)
-{
-    if (len < 3)
-        return;
+extern std::shared_ptr<CASC::Storage> CascStorage;
 
-    for (size_t i = 0; i < len - 3; i++)
-        if (name[i] == ' ')
-            name[i] = '_';
+ADTFile::ADTFile(std::string const& filename, bool cache) : _file(CascStorage, filename.c_str(), false)
+{
+    cacheable = cache;
+    dirfileCache = nullptr;
 }
 
-char* GetExtension(char* FileName)
+ADTFile::ADTFile(uint32 fileDataId, std::string const& description, bool cache) : _file(CascStorage, fileDataId, description, false)
 {
-    if (char* szTemp = strrchr(FileName, '.'))
-        return szTemp;
-    return nullptr;
-}
-
-extern CASC::StorageHandle CascStorage;
-
-ADTFile::ADTFile(char* filename, bool cache) : _file(CascStorage, filename, false)
-{
-    Adtfilename.append(filename);
     cacheable = cache;
     dirfileCache = nullptr;
 }
@@ -92,7 +80,7 @@ bool ADTFile::init(uint32 map_num, uint32 originalMapId)
 
     uint32 size;
     std::string dirname = Trinity::StringFormat("{}/dir_bin/{:04}", szWorkDirWmo, map_num);
-    auto dirfile = Trinity::make_unique_ptr_with_deleter(fopen(dirname.c_str(), "ab"), &::fclose);
+    auto dirfile = Trinity::make_unique_ptr_with_deleter<&::fclose>(fopen(dirname.c_str(), "ab"));
     if(!dirfile)
     {
         printf("Can't open dirfile!'%s'\n", dirname.c_str());
@@ -112,58 +100,36 @@ bool ADTFile::init(uint32 map_num, uint32 originalMapId)
 
         size_t nextpos = _file.getPos() + size;
 
-        if (!strcmp(fourcc,"MCIN"))
-        {
-        }
-        else if (!strcmp(fourcc,"MTEX"))
-        {
-        }
-        else if (!strcmp(fourcc,"MMDX"))
+        if (!strcmp(fourcc,"MMDX"))
         {
             if (size)
             {
-                char* buf = new char[size];
-                _file.read(buf, size);
-                char* p = buf;
-                while (p < buf + size)
+                char* p = _file.getPointer();
+                _file.seekRelative(size);
+                char* end = _file.getPointer();
+                while (p < end)
                 {
-                    std::string path(p);
+                    std::size_t length = std::ranges::distance(p, CStringSentinel.Checked(end));
+                    ModelInstanceNames.emplace_back(p, length);
 
-                    char* s = GetPlainName(p);
-                    FixNameCase(s, strlen(s));
-                    FixNameSpaces(s, strlen(s));
-
-                    ModelInstanceNames.emplace_back(s);
-
-                    ExtractSingleModel(path);
-
-                    p += strlen(p) + 1;
+                    p += length + 1;
                 }
-                delete[] buf;
             }
         }
         else if (!strcmp(fourcc,"MWMO"))
         {
             if (size)
             {
-                char* buf = new char[size];
-                _file.read(buf, size);
-                char* p = buf;
-                while (p < buf + size)
+                char* p = _file.getPointer();
+                _file.seekRelative(size);
+                char* end = _file.getPointer();
+                while (p < end)
                 {
-                    std::string path(p);
+                    std::size_t length = std::ranges::distance(p, CStringSentinel.Checked(end));
+                    WmoInstanceNames.emplace_back(p, length);
 
-                    char* s = GetPlainName(p);
-                    FixNameCase(s, strlen(s));
-                    FixNameSpaces(s, strlen(s));
-
-                    WmoInstanceNames.emplace_back(s);
-
-                    ExtractSingleWmo(path);
-
-                    p += strlen(p) + 1;
+                    p += length + 1;
                 }
-                delete[] buf;
             }
         }
         //======================
@@ -234,7 +200,7 @@ bool ADTFile::initFromCache(uint32 map_num, uint32 originalMapId)
         return true;
 
     std::string dirname = Trinity::StringFormat("{}/dir_bin/{:04}", szWorkDirWmo, map_num);
-    auto dirfile = Trinity::make_unique_ptr_with_deleter(fopen(dirname.c_str(), "ab"), &::fclose);
+    auto dirfile = Trinity::make_unique_ptr_with_deleter<&::fclose>(fopen(dirname.c_str(), "ab"));
     if (!dirfile)
     {
         printf("Can't open dirfile!'%s'\n", dirname.c_str());
