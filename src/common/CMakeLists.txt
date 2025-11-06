@@ -12,16 +12,26 @@ CollectSourceFiles(
   ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE_SOURCES
   # Exclude
-  ${CMAKE_CURRENT_SOURCE_DIR}/Debugging
+  ${CMAKE_CURRENT_SOURCE_DIR}/Debugging/Windows
   ${CMAKE_CURRENT_SOURCE_DIR}/Platform
-  ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders)
+  ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders
+  ${CMAKE_CURRENT_SOURCE_DIR}/mmaps_common
+  ${CMAKE_CURRENT_SOURCE_DIR}/network)
 
-# Manually set sources for Debugging directory as we don't want to include WheatyExceptionReport in common project
-# It needs to be included both in authserver and worldserver for the static global variable to be properly initialized
-# and to handle crash logs on windows
-list(APPEND PRIVATE_SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/Debugging/Errors.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Debugging/Errors.h)
+if(WIN32)
+  CollectSourceFiles(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Debugging/Windows
+    WINDOWS_DEBUGGING_SOURCES)
+  list(APPEND PRIVATE_SOURCES
+    ${WINDOWS_DEBUGGING_SOURCES})
+  CollectSourceFiles(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Platform/Windows
+    WINDOWS_PLATFORM_SOURCES)
+  list(APPEND PRIVATE_SOURCES
+    ${WINDOWS_PLATFORM_SOURCES})
+  unset(WINDOWS_DEBUGGING_SOURCES)
+  unset(WINDOWS_PLATFORM_SOURCES)
+endif()
 
 if(USE_COREPCH)
   set(PRIVATE_PCH_HEADER PrecompiledHeaders/commonPCH.h)
@@ -37,7 +47,9 @@ CollectIncludeDirectories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   PUBLIC_INCLUDES
   # Exclude
-  ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders)
+  ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders
+  ${CMAKE_CURRENT_SOURCE_DIR}/mmaps_common
+  ${CMAKE_CURRENT_SOURCE_DIR}/network)
 
 target_include_directories(common
   PUBLIC
@@ -47,10 +59,6 @@ target_include_directories(common
   PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR})
 
-set_target_properties(common
-  PROPERTIES
-    DEFINE_SYMBOL TRINITY_API_EXPORT_COMMON)
-
 target_link_libraries(common
   PRIVATE
     trinity-core-interface
@@ -59,20 +67,22 @@ target_link_libraries(common
     boost
     fmt
     g3dlib
-    Detour
     sfmt
     utf8cpp
     openssl
     valgrind
     threads
-    jemalloc)
-
-add_dependencies(common revision_data.h)
+    jemalloc
+    openssl_ed25519
+    short_alloc)
 
 set_target_properties(common
-    PROPERTIES
-      FOLDER
-        "server")
+  PROPERTIES
+    COMPILE_WARNING_AS_ERROR ${WITH_WARNINGS_AS_ERRORS}
+    DEFINE_SYMBOL TRINITY_API_EXPORT_COMMON
+    FOLDER "server")
+
+add_dependencies(common revision_data.h)
 
 if(BUILD_SHARED_LIBS)
   if(UNIX)
@@ -90,3 +100,10 @@ endif()
 if(USE_COREPCH)
   add_cxx_pch(common ${PRIVATE_PCH_HEADER})
 endif()
+
+unset(PRIVATE_SOURCES)
+unset(PRIVATE_PCH_HEADER)
+unset(PUBLIC_INCLUDES)
+
+add_subdirectory(mmaps_common)
+add_subdirectory(network)
