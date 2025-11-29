@@ -28,7 +28,7 @@ set_target_properties(gsoap PROPERTIES LINKER_LANGUAGE CXX)
 
 target_compile_definitions(gsoap
   PUBLIC
-    -DWITH_OPENSSL)
+    WITH_OPENSSL)
 
 target_link_libraries(gsoap
   PRIVATE
@@ -45,5 +45,5 @@ if (MSVC)
   # Little fix for MSVC / Windows platforms
   target_compile_definitions(gsoap
     PRIVATE
-      -D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=0)
+      _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=0)
 endif()

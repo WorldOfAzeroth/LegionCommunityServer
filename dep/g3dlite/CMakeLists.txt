@@ -74,6 +74,12 @@ target_sources(g3dlib
       include/G3D/Vector3.h
       include/G3D/Vector4.h)
 
+if((CMAKE_SYSTEM_NAME MATCHES "Linux" AND NOT NOJEM) OR TSAN)
+  target_compile_definitions(g3dlib
+    PRIVATE
+      NO_BUFFERPOOL)
+endif()
+
 target_link_libraries(g3dlib
   PRIVATE
     trinity-dependency-interface
@@ -85,3 +91,14 @@ set_target_properties(g3dlib
     PROPERTIES
       FOLDER
         "dep")
+
+# Generate precompiled header
+if(USE_COREPCH)
+  list(APPEND g3dlib_PCH_HEADERS
+    [["G3D/Any.h"]]
+    [["G3D/Array.h"]]
+    [["G3D/BinaryOutput.h"]]
+    [["G3D/Vector3.h"]])
+
+  add_cxx_pch(g3dlib "${g3dlib_PCH_HEADERS}")
+endif()

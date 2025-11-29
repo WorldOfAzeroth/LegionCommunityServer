@@ -42,7 +42,7 @@ target_sources(sfmt
       SFMT-sse2-msc.h)
 
 # using the standard Mersenne exponent 19937
-target_compile_definitions(sfmt PUBLIC -DSFMT_MEXP=19937)
+target_compile_definitions(sfmt PUBLIC SFMT_MEXP=19937)
 
 # enable SIMD instructions if available
 include(CheckCXXCompilerFlag)
@@ -73,11 +73,11 @@ else ()
 endif ()
 
 if (HAVE_NEON)
-  target_compile_definitions(sfmt PUBLIC -DHAVE_NEON)
+  target_compile_definitions(sfmt PUBLIC HAVE_NEON)
 endif ()
 
 if (HAVE_SSE2)
-  target_compile_definitions(sfmt PUBLIC -DHAVE_SSE2)
+  target_compile_definitions(sfmt PUBLIC HAVE_SSE2)
 endif ()
 
 set_target_properties(sfmt PROPERTIES LINKER_LANGUAGE CXX)

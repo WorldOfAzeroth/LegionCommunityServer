@@ -41,7 +41,7 @@ target_sources(argon2
 
 target_compile_definitions(argon2
   PRIVATE
-    -DARGON2_NO_THREADS)
+    ARGON2_NO_THREADS)
 
 set_target_properties(argon2 PROPERTIES LINKER_LANGUAGE CXX)
 
