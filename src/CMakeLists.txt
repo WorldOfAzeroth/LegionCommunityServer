@@ -18,9 +18,6 @@ endif()
 add_subdirectory(genrev)
 add_subdirectory(common)
 
-if(SERVERS)
-  add_subdirectory(server)
-endif(SERVERS)
 
 if(TOOLS)
   add_subdirectory(tools)

@@ -71,6 +71,7 @@ struct WMODoodadData
 {
     std::vector<WMO::MODS> Sets;
     std::unique_ptr<char[]> Paths;
+    std::unique_ptr<uint32[]> FileDataIds;
     std::vector<WMO::MODD> Spawns;
     std::unordered_set<uint16> References;
 };
@@ -86,6 +87,7 @@ public:
     float bbcorn2[3];
     uint16 flags, numLod;
 
+    std::vector<char> GroupNames;
     WMODoodadData DoodadData;
     std::unordered_set<uint32> ValidDoodadNames;
     std::vector<uint32> groupFileDataIDs;
@@ -123,10 +125,8 @@ private:
 public:
     // MOGP
 
-
-    char* MOPY;
-    uint16* MOVI;
-    uint16* MoviEx;
+    std::unique_ptr<uint16[]> MPY2;
+    std::unique_ptr<uint32[]> MOVX;
     float* MOVT;
     uint16* MOBA;
     int* MobaEx;
@@ -142,8 +142,11 @@ public:
     uint16 nBatchA;
     uint16 nBatchB;
     uint32 nBatchC, fogIdx, groupLiquid, groupWMOID;
+    uint32 mogpFlags2;
+    int16 parentOrFirstChildSplitGroupIndex;
+    int16 nextSplitChildGroupIndex;
 
-    int mopy_size, moba_size;
+    int moba_size;
     int LiquEx_size;
     unsigned int nVertices; // number when loaded
     int nTriangles; // number when loaded
@@ -152,11 +155,14 @@ public:
     std::vector<uint16> DoodadReferences;
 
     WMOGroup(std::string const& filename);
+    WMOGroup(WMOGroup&&) = default;
+    WMOGroup& operator=(WMOGroup&&) = default;
     ~WMOGroup();
 
     bool open(WMORoot* rootWMO);
     int ConvertToVMAPGroupWmo(FILE* output, bool preciseVectorData);
     uint32 GetLiquidTypeId(uint32 liquidTypeId);
+    bool ShouldSkip(WMORoot const* root) const;
 };
 
 namespace MapObject

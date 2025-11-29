@@ -83,3 +83,4 @@ if(USE_COREPCH)
 endif()
 
 add_subdirectory(mmaps_common)
+add_subdirectory(network)

@@ -18,11 +18,19 @@
 #include "Timezone.h"
 #include "Hash.h"
 #include "MapUtils.h"
-#include "StringConvert.h"
-#include <boost/locale/date_time_facet.hpp>
-#include <boost/locale/generator.hpp>
-#include <chrono>
+#include "Tuples.h"
+#include <algorithm>
+#include <array>
 #include <unordered_map>
+
+#if TRINITY_PLATFORM == TRINITY_PLATFORM_WINDOWS
+#include "StringConvert.h"
+#else
+#include "Locales.h"
+#include "Util.h"
+#include <boost/locale/date_time_facet.hpp>
+#include <memory>
+#endif
 
 namespace
 {
@@ -95,7 +103,11 @@ std::unordered_map<uint32, Minutes, std::identity> InitTimezoneHashDb()
     return hashToOffset;
 }
 
-std::unordered_map<uint32, Minutes, std::identity> const _timezoneOffsetsByHash = InitTimezoneHashDb();
+std::unordered_map<uint32, Minutes, std::identity> const& GetTimezoneOffsetsByHash()
+{
+    static std::unordered_map<uint32, Minutes, std::identity> timezoneMap = InitTimezoneHashDb();
+    return timezoneMap;
+}
 
 using ClientSupportedTimezone = std::pair<Minutes, std::string>;
 std::array<ClientSupportedTimezone, 11> const _clientSupportedTimezones =
@@ -118,7 +130,7 @@ namespace Trinity::Timezone
 {
 Minutes GetOffsetByHash(uint32 hash)
 {
-    if (Minutes const* offset = Containers::MapGetValuePtr(_timezoneOffsetsByHash, hash))
+    if (Minutes const* offset = Containers::MapGetValuePtr(GetTimezoneOffsetsByHash(), hash))
         return *offset;
 
     return 0min;
@@ -150,8 +162,7 @@ std::string GetSystemZoneName()
 #if TRINITY_PLATFORM == TRINITY_PLATFORM_WINDOWS
     return std::string(std::chrono::current_zone()->name());
 #else
-    static std::locale calendarLocale = boost::locale::generator().generate("");
-    std::unique_ptr<boost::locale::abstract_calendar> p(std::use_facet<class boost::locale::calendar_facet>(calendarLocale).create_calendar());
+    std::unique_ptr<boost::locale::abstract_calendar> p(std::use_facet<class boost::locale::calendar_facet>(Locale::GetCalendarLocale()).create_calendar());
     return p->get_timezone();
 #endif
 }
@@ -159,20 +170,13 @@ std::string GetSystemZoneName()
 std::string_view FindClosestClientSupportedTimezone(std::string_view currentTimezone, Minutes currentTimezoneOffset)
 {
     // try exact match
-    auto itr = std::find_if(_clientSupportedTimezones.begin(), _clientSupportedTimezones.end(), [currentTimezone](ClientSupportedTimezone const& tz)
-    {
-        return tz.second == currentTimezone;
-    });
+    auto itr = std::ranges::find(_clientSupportedTimezones, currentTimezone, Trinity::TupleElement<1>);
     if (itr != _clientSupportedTimezones.end())
         return itr->second;
 
     // try closest offset
-    itr = std::min_element(_clientSupportedTimezones.begin(), _clientSupportedTimezones.end(), [currentTimezoneOffset](ClientSupportedTimezone const& left, ClientSupportedTimezone const& right)
-    {
-        Minutes leftDiff = left.first - currentTimezoneOffset;
-        Minutes rightDiff = right.first - currentTimezoneOffset;
-        return std::abs(leftDiff.count()) < std::abs(rightDiff.count());
-    });
+    itr = std::ranges::min_element(_clientSupportedTimezones, std::ranges::less(),
+        [currentTimezoneOffset](ClientSupportedTimezone const& ctz) { return std::chrono::abs(ctz.first - currentTimezoneOffset); });
 
     return itr->second;
 }
