@@ -53,7 +53,7 @@
 #include "Transport.h"
 #include "Vehicle.h"
 #include "VMapFactory.h"
-#include "VMapManager2.h"
+#include "VMapManager.h"
 #include "Weather.h"
 #include "WeatherMgr.h"
 #include "World.h"
