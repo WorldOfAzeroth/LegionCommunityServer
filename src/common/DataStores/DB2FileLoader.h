@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -18,15 +18,16 @@
 #ifndef DB2_FILE_LOADER_H
 #define DB2_FILE_LOADER_H
 
-#include "Define.h"
+#include "Common.h"
+#include <exception>
 #include <string>
-#include <vector>
 
 class DB2FileLoaderImpl;
 struct DB2FieldMeta;
 struct DB2Meta;
 
 #pragma pack(push, 1)
+
 struct DB2Header
 {
     uint32 Signature;
@@ -54,22 +55,37 @@ struct DB2Header
 };
 #pragma pack(pop)
 
+
+struct DB2FieldMeta
+{
+    bool IsSigned;
+    DBCFormer Type;
+    char const* Name;
+};
+
 struct TC_COMMON_API DB2FileLoadInfo
 {
-    DB2FileLoadInfo();
-    DB2FileLoadInfo(DB2FieldMeta const* fields, std::size_t fieldCount, DB2Meta const* meta);
+    constexpr explicit DB2FileLoadInfo(DB2FieldMeta const* fields, std::size_t fieldCount, DB2Meta const* meta)
+        : Fields(fields), FieldCount(fieldCount), Meta(meta) { }
 
     uint32 GetStringFieldCount(bool localizedOnly) const;
     std::pair<int32/*fieldIndex*/, int32/*arrayIndex*/> GetFieldIndexByName(char const* fieldName) const;
+    int32 GetFieldIndexByMetaIndex(uint32 metaIndex) const;
 
     DB2FieldMeta const* Fields;
     std::size_t FieldCount;
     DB2Meta const* Meta;
-    std::string TypesString;
 };
+
 
 struct TC_COMMON_API DB2FileSource
 {
+    DB2FileSource();
+    DB2FileSource(DB2FileSource const& other) = delete;
+    DB2FileSource(DB2FileSource&& other) noexcept = delete;
+    DB2FileSource& operator=(DB2FileSource const& other) = delete;
+    DB2FileSource& operator=(DB2FileSource&& other) noexcept = delete;
+
     virtual ~DB2FileSource();
 
     // Returns true when the source is open for reading
@@ -82,6 +98,8 @@ struct TC_COMMON_API DB2FileSource
     // Returns current read position in file
     virtual int64 GetPosition() const = 0;
 
+    virtual bool SetPosition(int64 position) = 0;
+
     virtual int64 GetFileSize() const = 0;
 
     virtual char const* GetFileName() const = 0;
@@ -92,9 +110,13 @@ class TC_COMMON_API DB2Record
 {
 public:
     DB2Record(DB2FileLoaderImpl const& db2, uint32 recordIndex, std::size_t* fieldOffsets);
+    DB2Record(DB2Record const& other);
+    DB2Record(DB2Record&& other) noexcept;
+    DB2Record& operator=(DB2Record const& other) = delete;
+    DB2Record& operator=(DB2Record&& other) noexcept = delete;
     ~DB2Record();
 
-    operator bool();
+    explicit operator bool() const;
 
     uint32 GetId() const;
 
@@ -148,6 +170,10 @@ class TC_COMMON_API DB2FileLoader
 {
 public:
     DB2FileLoader();
+    DB2FileLoader(DB2FileLoader const& other) = delete;
+    DB2FileLoader(DB2FileLoader&& other) noexcept = delete;
+    DB2FileLoader& operator=(DB2FileLoader const& other) = delete;
+    DB2FileLoader& operator=(DB2FileLoader&& other) noexcept = delete;
     ~DB2FileLoader();
 
     void Load(DB2FileSource* source, DB2FileLoadInfo const* loadInfo);

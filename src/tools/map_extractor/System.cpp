@@ -1203,16 +1203,6 @@ bool ExtractDB2File(uint32 fileDataId, char const* cascFileName, int locale, boo
         return false;
     }
 
-    DB2FileLoader db2;
-    try
-    {
-        db2.LoadHeaders(&source, nullptr);
-    }
-    catch (std::exception const& e)
-    {
-        printf("Can't read DB2 headers of '%s': %s\n", cascFileName, e.what());
-        return false;
-    }
 
     std::string outputFileName = outputPath.string();
     auto output = Trinity::make_unique_ptr_with_deleter<&::fclose>(fopen(outputFileName.c_str(), "wb"));
@@ -1222,26 +1212,10 @@ bool ExtractDB2File(uint32 fileDataId, char const* cascFileName, int locale, boo
         return false;
     }
 
-    DB2Header header = db2.GetHeader();
-
-    int64 posAfterHeaders = 0;
-    posAfterHeaders += fwrite(&header, 1, sizeof(header), output.get());
-
-    // erase TactId from header if key is known
-    for (uint32 i = 0; i < header.SectionCount; ++i)
-    {
-        DB2SectionHeader sectionHeader = db2.GetSectionHeader(i);
-        if (sectionHeader.TactId && CascStorage->HasTactKey(sectionHeader.TactId))
-            sectionHeader.TactId = DUMMY_KNOWN_TACT_ID;
-
-        posAfterHeaders += fwrite(&sectionHeader, 1, sizeof(sectionHeader), output.get());
-    }
 
     char buffer[0x10000];
     uint32 readBatchSize = 0x10000;
     uint32 readBytes;
-    source.SetPosition(posAfterHeaders);
-
     do
     {
         readBytes = 0;
@@ -1297,7 +1271,7 @@ void ExtractDBFilesClient(int l)
 
     }
 
-    printf("Extracted %u files\n\n", count);
+    printf("Extracted %u dbc/db2 files\n\n", count);
 }
 
 void ExtractCameraFiles()
@@ -1343,40 +1317,40 @@ void ExtractGameTables()
 
     printf("output path %s\n", outputPath.string().c_str());
 
-    char const* GameTables[] =
+    static constexpr DB2FileInfo GameTables[] =
     {
-        "GameTables\\ArmorMitigationByLvl.txt",
-        "GameTables\\ArtifactKnowledgeMultiplier.txt",
-        "GameTables\\ArtifactLevelXP.txt",
-        "GameTables\\BarberShopCostBase.txt",
-        "GameTables\\BaseMp.txt",
-        "GameTables\\BattlePetTypeDamageMod.txt",
-        "GameTables\\BattlePetXP.txt",
-        "GameTables\\ChallengeModeDamage.txt",
-        "GameTables\\ChallengeModeHealth.txt",
-        "GameTables\\CombatRatings.txt",
-        "GameTables\\CombatRatingsMultByILvl.txt",
-        "GameTables\\HonorLevel.txt",
-        "GameTables\\HpPerSta.txt",
-        "GameTables\\ItemSocketCostPerLevel.txt",
-        "GameTables\\NpcDamageByClass.txt",
-        "GameTables\\NpcDamageByClassExp1.txt",
-        "GameTables\\NpcDamageByClassExp2.txt",
-        "GameTables\\NpcDamageByClassExp3.txt",
-        "GameTables\\NpcDamageByClassExp4.txt",
-        "GameTables\\NpcDamageByClassExp5.txt",
-        "GameTables\\NpcDamageByClassExp6.txt",
-        "GameTables\\NPCManaCostScaler.txt",
-        "GameTables\\NpcTotalHp.txt",
-        "GameTables\\NpcTotalHpExp1.txt",
-        "GameTables\\NpcTotalHpExp2.txt",
-        "GameTables\\NpcTotalHpExp3.txt",
-        "GameTables\\NpcTotalHpExp4.txt",
-        "GameTables\\NpcTotalHpExp5.txt",
-        "GameTables\\NpcTotalHpExp6.txt",
-        "GameTables\\SandboxScaling.txt",
-        "GameTables\\SpellScaling.txt",
-        "GameTables\\xp.txt",
+        { .FileDataId = 1385707, .Name = "ArmorMitigationByLvl.txt" },
+        { .FileDataId = 1582086, .Name = "ArtifactKnowledgeMultiplier.txt" },
+        { .FileDataId = 1391662, .Name = "ArtifactLevelXP.txt" },
+        { .FileDataId = 1391663, .Name = "BarberShopCostBase.txt" },
+        { .FileDataId = 1391664, .Name = "BaseMp.txt" },
+        { .FileDataId = 1391665, .Name = "BattlePetTypeDamageMod.txt" },
+        { .FileDataId = 1391666, .Name = "BattlePetXP.txt" },
+        { .FileDataId = 1391667, .Name = "ChallengeModeDamage.txt" },
+        { .FileDataId = 1391668, .Name = "ChallengeModeHealth.txt" },
+        { .FileDataId = 1391669, .Name = "CombatRatings.txt" },
+        { .FileDataId = 1391670, .Name = "CombatRatingsMultByILvl.txt" },
+        { .FileDataId = 1391671, .Name = "HonorLevel.txt" },
+        { .FileDataId = 1391642, .Name = "HpPerSta.txt" },
+        { .FileDataId = 1391643, .Name = "ItemSocketCostPerLevel.txt" },
+        { .FileDataId = 1391644, .Name = "NpcDamageByClass.txt" },
+        { .FileDataId = 1391645, .Name = "NpcDamageByClassExp1.txt" },
+        { .FileDataId = 1391646, .Name = "NpcDamageByClassExp2.txt" },
+        { .FileDataId = 1391647, .Name = "NpcDamageByClassExp3.txt" },
+        { .FileDataId = 1391648, .Name = "NpcDamageByClassExp4.txt" },
+        { .FileDataId = 1391659, .Name = "NpcDamageByClassExp5.txt" },
+        { .FileDataId = 1391650, .Name = "NpcDamageByClassExp6.txt" },
+        { .FileDataId = 1391651, .Name = "NPCManaCostScaler.txt" },
+        { .FileDataId = 1391652, .Name = "NpcTotalHp.txt" },
+        { .FileDataId = 1391653, .Name = "NpcTotalHpExp1.txt" },
+        { .FileDataId = 1391654, .Name = "NpcTotalHpExp2.txt" },
+        { .FileDataId = 1391655, .Name = "NpcTotalHpExp3.txt" },
+        { .FileDataId = 1391656, .Name = "NpcTotalHpExp4.txt" },
+        { .FileDataId = 1391657, .Name = "NpcTotalHpExp5.txt" },
+        { .FileDataId = 1391658, .Name = "NpcTotalHpExp6.txt" },
+        { .FileDataId = 1391659, .Name = "SandboxScaling.txt" },
+        { .FileDataId = 1391660, .Name = "SpellScaling.txt" },
+        { .FileDataId = 1391661, .Name = "xp.txt" }
     };
 
     uint32 count = 0;
