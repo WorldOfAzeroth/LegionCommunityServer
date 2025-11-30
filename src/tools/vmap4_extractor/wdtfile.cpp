@@ -29,8 +29,8 @@
 
 extern std::shared_ptr<CASC::Storage> CascStorage;
 
-WDTFile::WDTFile(uint32 fileDataId, std::string const& description, std::string mapName, bool cache)
-    : _file(CascStorage, fileDataId, description), _header(), _adtInfo(), _mapName(std::move(mapName)),
+WDTFile::WDTFile(std::string fileName, std::string mapName, bool cache)
+    : _file(CascStorage, fileName.c_str()), _header(), _adtInfo(), _mapName(std::move(mapName)),
     _adtCache(cache ? std::make_unique<ADTCache>() : nullptr)
 {
 }

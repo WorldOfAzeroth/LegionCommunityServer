@@ -72,8 +72,8 @@ struct GameobjectDisplayInfoLoadInfo
         .FileDataId         = 1266277,
         .IndexField         = -1,
         .ParentIndexField   = -1,
-        .FieldCount         = 9,
-        .FileFieldCount     = 9,
+        .FieldCount         = 5,
+        .FileFieldCount     = 5,
         .LayoutHash         = 0x9F2098D1,
         .Fields             = MetaFields
     };

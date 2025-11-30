@@ -59,7 +59,6 @@ struct LiquidTypeEntry
 struct MapEntry
 {
     uint32 Id = 0;
-    int32 WdtFileDataId = 0;
     int16 ParentMapID = 0;
     std::string Name;
     std::string Directory;
@@ -329,8 +328,8 @@ void ParsMapFiles()
         steps[mapEntry.ChildDepth].push_back(&mapEntry);
 
         // preload WDTs
-        std::string description = Trinity::StringFormat("WDT for map {} - {} (FileDataID {})", mapEntry.Id, mapEntry.Name, mapEntry.WdtFileDataId);
-        auto itr = wdts.try_emplace(mapEntry.Id, mapEntry.WdtFileDataId, description, mapEntry.Directory, mapEntry.IsParent).first;
+        std::string fileName = Trinity::StringFormat("World\\Maps\\{}\\{}.wdt", mapEntry.Directory.c_str(), mapEntry.Directory.c_str());
+        auto itr = wdts.try_emplace(mapEntry.Id, fileName, mapEntry.Directory, mapEntry.IsParent).first;
         if (!itr->second.init(mapEntry.Id))
             wdts.erase(itr);
     }
@@ -426,7 +425,6 @@ void ReadMapTable()
 
         MapEntry& map = map_ids.emplace_back();
         map.Id = record.GetId();
-        map.WdtFileDataId = record.GetInt32("WdtFileDataID");
         map.ParentMapID = int16(record.GetUInt16("ParentMapID"));
         map.Name = record.GetString("MapName");
         map.Directory = record.GetString("Directory");
@@ -462,8 +460,6 @@ void ReadMapTable()
             parentMapId = parent.ParentMapID;
         }
     }
-
-    std::erase_if(map_ids, [](MapEntry const& map) { return !map.WdtFileDataId; });
 
     printf("Done! (" SZFMTD " maps loaded)\n", map_ids.size());
 }
