@@ -24,6 +24,7 @@
 #include <array>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <openssl/evp.h>
 
 class BigNumber;
@@ -34,13 +35,8 @@ namespace Trinity::Impl
     {
         typedef EVP_MD const* (*HashCreator)();
 
-#if defined(OPENSSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER < 0x10100000L
-        static EVP_MD_CTX* MakeCTX() noexcept { return EVP_MD_CTX_create(); }
-        static void DestroyCTX(EVP_MD_CTX* ctx) { EVP_MD_CTX_destroy(ctx); }
-#else
         static EVP_MD_CTX* MakeCTX() noexcept { return EVP_MD_CTX_new(); }
         static void DestroyCTX(EVP_MD_CTX* ctx) { EVP_MD_CTX_free(ctx); }
-#endif
     };
 
     template <GenericHashImpl::HashCreator HashCreator, size_t DigestLength>
@@ -58,8 +54,8 @@ namespace Trinity::Impl
                 return hash.GetDigest();
             }
 
-            template <typename... Ts>
-            static auto GetDigestOf(Ts&&... pack) -> std::enable_if_t<!(std::is_integral_v<std::decay_t<Ts>> || ...), Digest>
+            template <typename... Ts, std::enable_if_t<std::conjunction_v<std::negation<std::is_integral<Ts>>...>, int32> = 0>
+            static Digest GetDigestOf(Ts&&... pack)
             {
                 GenericHash hash;
                 (hash.UpdateData(std::forward<Ts>(pack)), ...);

@@ -388,18 +388,14 @@ protected:
 TC_GAME_API ByteBuffer& operator<<(ByteBuffer& buf, ObjectGuid const& guid);
 TC_GAME_API ByteBuffer& operator>>(ByteBuffer& buf, ObjectGuid&       guid);
 
-namespace std
+template<>
+struct std::hash<ObjectGuid>
 {
-    template<>
-    struct hash<ObjectGuid>
+    size_t operator()(ObjectGuid const& key) const noexcept
     {
-    public:
-        size_t operator()(ObjectGuid const& key) const noexcept
-        {
-            return key.GetHash();
-        }
-    };
-}
+        return key.GetHash();
+    }
+};
 
 namespace Trinity
 {
