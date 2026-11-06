@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -15,31 +15,71 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef Service_h__
-#define Service_h__
+#ifndef TRINITYCORE_BNET_SERVICE_H
+#define TRINITYCORE_BNET_SERVICE_H
 
-#include "Session.h"
+#include "MessageBuffer.h"
+#include <functional>
+#include <string>
 
-namespace bgs { namespace protocol { } }
+namespace google::protobuf
+{
+class Message;
+}
+
+namespace bgs::protocol { }
 using namespace bgs::protocol;
 
 namespace Battlenet
 {
-    template<class T>
-    class Service : public T
-    {
-    public:
-        Service(Session* session) : T(true), _session(session) { }
+    class Session;
 
+    class ServiceBaseCaller
+    {
     protected:
-        void SendRequest(uint32 serviceHash, uint32 methodId, google::protobuf::Message const* request, std::function<void(MessageBuffer)> callback) override { _session->SendRequest(serviceHash, methodId, request, std::move(callback)); }
-        void SendRequest(uint32 serviceHash, uint32 methodId, google::protobuf::Message const* request) override { _session->SendRequest(serviceHash, methodId, request); }
-        void SendResponse(uint32 /*serviceHash*/, uint32 /*methodId*/, uint32 token, uint32 status) override { _session->SendResponse(token, status); }
-        void SendResponse(uint32 /*serviceHash*/, uint32 /*methodId*/, uint32 token, google::protobuf::Message const* response) override { _session->SendResponse(token, response); }
-        std::string GetCallerInfo() const override { return _session->GetClientInfo(); }
+        explicit ServiceBaseCaller(Session* session) : _session(session) { }
+
+        void SendRequest(uint32 serviceHash, uint32 methodId, google::protobuf::Message const* request, std::function<void(MessageBuffer)>&& callback);
+        void SendRequest(uint32 serviceHash, uint32 methodId, google::protobuf::Message const* request);
+        void SendResponse(uint32 serviceHash, uint32 methodId, uint32 token, uint32 status);
+        void SendResponse(uint32 serviceHash, uint32 methodId, uint32 token, google::protobuf::Message const* response);
+        std::string GetCallerInfo() const;
 
         Session* _session;
     };
+
+    template<class T>
+    class Service : public T, public ServiceBaseCaller
+    {
+    public:
+        explicit Service(Session* session) : T(true), ServiceBaseCaller(session) { }
+
+    protected:
+        void SendRequest(uint32 serviceHash, uint32 methodId, google::protobuf::Message const* request, std::function<void(MessageBuffer)> callback) override
+        {
+            ServiceBaseCaller::SendRequest(serviceHash, methodId, request, std::move(callback));
+        }
+
+        void SendRequest(uint32 serviceHash, uint32 methodId, google::protobuf::Message const* request) override
+        {
+            ServiceBaseCaller::SendRequest(serviceHash, methodId, request);
+        }
+
+        void SendResponse(uint32 serviceHash, uint32 methodId, uint32 token, uint32 status) override
+        {
+            ServiceBaseCaller::SendResponse(serviceHash, methodId, token, status);
+        }
+
+        void SendResponse(uint32 serviceHash, uint32 methodId, uint32 token, google::protobuf::Message const* response) override
+        {
+            ServiceBaseCaller::SendResponse(serviceHash, methodId, token, response);
+        }
+
+        std::string GetCallerInfo() const override
+        {
+            return ServiceBaseCaller::GetCallerInfo();
+        }
+    };
 }
 
-#endif // Service_h__
+#endif // TRINITYCORE_BNET_SERVICE_H

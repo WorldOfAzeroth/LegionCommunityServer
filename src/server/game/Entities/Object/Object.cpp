@@ -787,14 +787,13 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const
         }
         if (HasRuneState)
         {
-            float baseCd = float(player->GetRuneBaseCooldown());
             uint32 maxRunes = uint32(player->GetMaxPower(POWER_RUNES));
 
-            *data << uint8((1 << maxRunes) - 1);
-            *data << uint8(player->GetRunesState());
-            *data << uint32(maxRunes);
+            data << uint8((1 << maxRunes) - 1);
+            data << uint8(player->GetRunesState());
+            data << uint32(maxRunes);
             for (uint32 i = 0; i < maxRunes; ++i)
-                *data << uint8((baseCd - float(player->GetRuneCooldown(i))) / baseCd * 255);
+                data << uint8(player->GetRuneCooldown(i) * 255.0f);
         }
     }
 }
@@ -2569,13 +2568,8 @@ TempSummon* Map::SummonCreature(uint32 entry, Position const& pos, SummonPropert
     TransportBase* transport = summoner ? summoner->GetTransport() : nullptr;
     if (transport)
     {
-        float x, y, z, o;
-        pos.GetPosition(x, y, z, o);
-        transport->CalculatePassengerOffset(x, y, z, &o);
-        summon->m_movementInfo.transport.pos.Relocate(x, y, z, o);
-
         // This object must be added to transport before adding to map for the client to properly display it
-        transport->AddPassenger(summon);
+        transport->AddPassenger(summon, transport->GetPositionOffsetTo(pos));
     }
 
     if (summoner && !(properties && properties->GetFlags().HasFlag(SummonPropertiesFlags::IgnoreSummonerPhase)))

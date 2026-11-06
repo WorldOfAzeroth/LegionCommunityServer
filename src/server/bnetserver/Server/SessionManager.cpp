@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -16,27 +16,6 @@
  */
 
 #include "SessionManager.h"
-#include "DatabaseEnv.h"
-#include "Util.h"
-
-bool Battlenet::SessionManager::StartNetwork(Trinity::Asio::IoContext& ioContext, std::string const& bindIp, uint16 port, int threadCount)
-{
-    if (!BaseSocketMgr::StartNetwork(ioContext, bindIp, port, threadCount))
-        return false;
-
-    _acceptor->AsyncAcceptWithCallback<&OnSocketAccept>();
-    return true;
-}
-
-NetworkThread<Battlenet::Session>* Battlenet::SessionManager::CreateThreads() const
-{
-    return new NetworkThread<Session>[GetNetworkThreadCount()];
-}
-
-void Battlenet::SessionManager::OnSocketAccept(tcp::socket&& sock, uint32 threadIndex)
-{
-    sSessionMgr.OnSocketOpen(std::forward<tcp::socket>(sock), threadIndex);
-}
 
 Battlenet::SessionManager& Battlenet::SessionManager::Instance()
 {

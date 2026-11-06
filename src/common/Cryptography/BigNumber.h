@@ -39,8 +39,8 @@ class TC_COMMON_API BigNumber
         BigNumber(uint32 v) : BigNumber() { SetDword(v); }
         BigNumber(int32 v) : BigNumber() { SetDword(v); }
         BigNumber(std::string const& v) : BigNumber() { SetHexStr(v); }
-        template <size_t Size>
-        BigNumber(std::array<uint8, Size> const& v, bool littleEndian = true) : BigNumber() { SetBinary(v.data(), Size, littleEndian); }
+        template <BigNumberBinaryInput Container>
+        BigNumber(Container const& binary, bool littleEndian = true) : BigNumber() { SetBinary(std::ranges::data(binary), std::ranges::size(binary), littleEndian); }
 
         ~BigNumber();
 

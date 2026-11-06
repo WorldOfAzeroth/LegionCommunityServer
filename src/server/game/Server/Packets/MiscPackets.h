@@ -444,17 +444,18 @@ namespace WorldPackets
         class StartMirrorTimer final : public ServerPacket
         {
         public:
-            StartMirrorTimer() : ServerPacket(SMSG_START_MIRROR_TIMER, 21) { }
-            StartMirrorTimer(int32 timer, int32 value, int32 maxValue, int32 scale, int32 spellID, bool paused) :
-                ServerPacket(SMSG_START_MIRROR_TIMER, 21), Scale(scale), MaxValue(maxValue), Timer(timer), SpellID(spellID), Value(value), Paused(paused) { }
+            explicit StartMirrorTimer() : ServerPacket(SMSG_START_MIRROR_TIMER, 1 + 4 + 4 + 4 + 4 + 1) { }
+            explicit StartMirrorTimer(uint8 timer, int32 value, int32 maxValue, int32 scale, int32 spellID, bool paused)
+                : ServerPacket(SMSG_START_MIRROR_TIMER, 1 + 4 + 4 + 4 + 4 + 1),
+                Timer(timer), Value(value), MaxValue(maxValue), Scale(scale), SpellID(spellID), Paused(paused) { }
 
             WorldPacket const* Write() override;
 
-            int32 Scale = 0;
-            int32 MaxValue = 0;
-            int32 Timer = 0;
-            int32 SpellID = 0;
+            uint8 Timer = 0;
             int32 Value = 0;
+            int32 MaxValue = 0;
+            int32 Scale = 0;
+            int32 SpellID = 0;
             bool Paused = false;
         };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -16,20 +16,51 @@
  */
 
 #include "ServiceDispatcher.h"
+#include "AccountService.h"
+#include "AuthenticationService.h"
+#include "ConnectionService.h"
+#include "GameUtilitiesService.h"
+#include "Log.h"
+#include "Session.h"
+#include "Client/api/client/v1/block_list_listener.pb.h"
+#include "Client/api/client/v1/block_list_service.pb.h"
+#include "Client/api/client/v1/club_membership_service.pb.h"
+#include "Client/api/client/v1/club_service.pb.h"
+#include "Client/api/client/v2/friends_service.pb.h"
+#include "Client/api/client/v2/notification_service.pb.h"
+#include "Client/api/client/v2/presence_service.pb.h"
+#include "Client/api/client/v2/report_service.pb.h"
+#include "Client/api/client/v2/whisper_service.pb.h"
+#include "Client/api/client/v3/report_service.pb.h"
+#include "Client/friends_service.pb.h"
+#include "Client/notification_service.pb.h"
+#include "Client/presence_service.pb.h"
+#include "Client/report_service.pb.h"
+#include "Client/resource_service.pb.h"
 
 Battlenet::ServiceDispatcher::ServiceDispatcher()
 {
-    AddService<Services::Account>();
-    AddService<Services::Authentication>();
-    AddService<Service<challenge::v1::ChallengeService>>();
-    AddService<Service<channel::v1::ChannelService>>();
-    AddService<Services::Connection>();
+    AddService<Services::V1::Account>();
+    AddService<Services::V2::Account>();
+    AddService<Services::V1::Authentication>();
+    AddService<Services::V2::Authentication>();
+    AddService<Service<block_list::v1::client::BlockListService>>();
+    AddService<Service<club_membership::v1::client::ClubMembershipService>>();
+    AddService<Service<club::v1::client::ClubService>>();
+    AddService<Services::V1::Connection>();
     AddService<Service<friends::v1::FriendsService>>();
-    AddService<Services::GameUtilities>();
+    AddService<Service<friends::v2::client::FriendsService>>();
+    AddService<Services::V1::GameUtilities>();
+    AddService<Services::V2::GameUtilities>();
+    AddService<Service<notification::v1::NotificationService>>();
+    AddService<Service<notification::v2::client::NotificationService>>();
     AddService<Service<presence::v1::PresenceService>>();
+    AddService<Service<presence::v2::client::PresenceService>>();
     AddService<Service<report::v1::ReportService>>();
+    AddService<Service<report::v2::ReportService>>();
+    AddService<Service<report::v3::client::ReportService>>();
     AddService<Service<resources::v1::ResourcesService>>();
-    AddService<Service<user_manager::v1::UserManagerService>>();
+    AddService<Service<whisper::v2::client::WhisperService>>();
 }
 
 void Battlenet::ServiceDispatcher::Dispatch(Session* session, uint32 serviceHash, uint32 token, uint32 methodId, MessageBuffer buffer)

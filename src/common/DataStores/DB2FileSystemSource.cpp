@@ -45,6 +45,11 @@ int64 DB2FileSystemSource::GetPosition() const
     return ftell(_file);
 }
 
+bool DB2FileSystemSource::SetPosition(int64 position)
+{
+    return fseek(_file, position, SEEK_SET) == 0;
+}
+
 int64 DB2FileSystemSource::GetFileSize() const
 {
     boost::system::error_code error;
@@ -55,4 +60,9 @@ int64 DB2FileSystemSource::GetFileSize() const
 char const* DB2FileSystemSource::GetFileName() const
 {
     return _fileName.c_str();
+}
+
+DB2EncryptedSectionHandling DB2FileSystemSource::HandleEncryptedSection(DB2SectionHeader const& /*sectionHeader*/) const
+{
+    return DB2EncryptedSectionHandling::Skip;
 }

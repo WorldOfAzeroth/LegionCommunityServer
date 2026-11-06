@@ -190,7 +190,7 @@ void BattlegroundMgr::BuildBattlegroundStatusHeader(WorldPackets::Battleground::
     header->Ticket.Time = joinTime;
     header->QueueID = queueId.GetPacked();
     header->RangeMin = 0; // seems to always be 0
-    header->RangeMax = DEFAULT_MAX_LEVEL; // alwyas max level of current expansion. Might be limited to account
+    header->RangeMax = GetMaxLevelForExpansion(CURRENT_EXPANSION); // alwyas max level of current expansion. Might be limited to account
     header->TeamSize = queueId.TeamSize;
     header->InstanceID = 0; // seems to always be 0
     header->RegisteredMatch = queueId.Rated;

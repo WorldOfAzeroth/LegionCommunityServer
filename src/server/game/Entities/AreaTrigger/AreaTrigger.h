@@ -167,7 +167,6 @@ class TC_GAME_API AreaTrigger : public WorldObject, public GridObject<AreaTrigge
         void SearchUnitInCylinder(std::vector<Unit*>& targetList);
         void SearchUnitInDisk(std::vector<Unit*>& targetList);
         void SearchUnitInBoundedPlane(std::vector<Unit*>& targetList);
-        bool CheckIsInPolygon2D(Position const* pos) const;
         void HandleUnitEnterExit(std::vector<Unit*> const& targetList);
 
         void DoActions(Unit* unit);

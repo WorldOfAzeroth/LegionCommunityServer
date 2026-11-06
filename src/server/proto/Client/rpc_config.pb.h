@@ -71,19 +71,6 @@ class TC_PROTO_API RPCMethodConfig : public ::google::protobuf::Message {
   // implements Message ----------------------------------------------
 
   RPCMethodConfig* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const RPCMethodConfig& from);
-  void MergeFrom(const RPCMethodConfig& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -127,14 +114,14 @@ class TC_PROTO_API RPCMethodConfig : public ::google::protobuf::Message {
   inline ::google::protobuf::uint32 fixed_call_cost() const;
   inline void set_fixed_call_cost(::google::protobuf::uint32 value);
 
-  // optional uint32 fixed_packet_size = 4 [default = 0];
+  // optional uint32 fixed_packet_size = 4;
   inline bool has_fixed_packet_size() const;
   inline void clear_fixed_packet_size();
   static const int kFixedPacketSizeFieldNumber = 4;
   inline ::google::protobuf::uint32 fixed_packet_size() const;
   inline void set_fixed_packet_size(::google::protobuf::uint32 value);
 
-  // optional float variable_multiplier = 5 [default = 0];
+  // optional float variable_multiplier = 5;
   inline bool has_variable_multiplier() const;
   inline void clear_variable_multiplier();
   static const int kVariableMultiplierFieldNumber = 5;
@@ -190,7 +177,7 @@ class TC_PROTO_API RPCMethodConfig : public ::google::protobuf::Message {
   inline ::google::protobuf::uint32 cap_balance() const;
   inline void set_cap_balance(::google::protobuf::uint32 value);
 
-  // optional float income_per_second = 13 [default = 0];
+  // optional float income_per_second = 13;
   inline bool has_income_per_second() const;
   inline void clear_income_per_second();
   static const int kIncomePerSecondFieldNumber = 13;
@@ -300,19 +287,6 @@ class TC_PROTO_API RPCMeterConfig : public ::google::protobuf::Message {
   // implements Message ----------------------------------------------
 
   RPCMeterConfig* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const RPCMeterConfig& from);
-  void MergeFrom(const RPCMeterConfig& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -358,7 +332,7 @@ class TC_PROTO_API RPCMeterConfig : public ::google::protobuf::Message {
   inline ::google::protobuf::uint32 cap_balance() const;
   inline void set_cap_balance(::google::protobuf::uint32 value);
 
-  // optional float startup_period = 5 [default = 0];
+  // optional float startup_period = 5;
   inline bool has_startup_period() const;
   inline void clear_startup_period();
   static const int kStartupPeriodFieldNumber = 5;
@@ -422,19 +396,6 @@ class TC_PROTO_API ProtocolAlias : public ::google::protobuf::Message {
   // implements Message ----------------------------------------------
 
   ProtocolAlias* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const ProtocolAlias& from);
-  void MergeFrom(const ProtocolAlias& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -521,19 +482,6 @@ class TC_PROTO_API ServiceAliases : public ::google::protobuf::Message {
   // implements Message ----------------------------------------------
 
   ServiceAliases* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const ServiceAliases& from);
-  void MergeFrom(const ServiceAliases& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -575,9 +523,7 @@ class TC_PROTO_API ServiceAliases : public ::google::protobuf::Message {
 };
 // ===================================================================
 
-
 // ===================================================================
-
 
 // ===================================================================
 
@@ -759,7 +705,7 @@ inline void RPCMethodConfig::set_fixed_call_cost(::google::protobuf::uint32 valu
   // @@protoc_insertion_point(field_set:bgs.protocol.config.RPCMethodConfig.fixed_call_cost)
 }
 
-// optional uint32 fixed_packet_size = 4 [default = 0];
+// optional uint32 fixed_packet_size = 4;
 inline bool RPCMethodConfig::has_fixed_packet_size() const {
   return (_has_bits_[0] & 0x00000008u) != 0;
 }
@@ -783,7 +729,7 @@ inline void RPCMethodConfig::set_fixed_packet_size(::google::protobuf::uint32 va
   // @@protoc_insertion_point(field_set:bgs.protocol.config.RPCMethodConfig.fixed_packet_size)
 }
 
-// optional float variable_multiplier = 5 [default = 0];
+// optional float variable_multiplier = 5;
 inline bool RPCMethodConfig::has_variable_multiplier() const {
   return (_has_bits_[0] & 0x00000010u) != 0;
 }
@@ -975,7 +921,7 @@ inline void RPCMethodConfig::set_cap_balance(::google::protobuf::uint32 value) {
   // @@protoc_insertion_point(field_set:bgs.protocol.config.RPCMethodConfig.cap_balance)
 }
 
-// optional float income_per_second = 13 [default = 0];
+// optional float income_per_second = 13;
 inline bool RPCMethodConfig::has_income_per_second() const {
   return (_has_bits_[0] & 0x00001000u) != 0;
 }
@@ -1153,7 +1099,7 @@ inline void RPCMeterConfig::set_cap_balance(::google::protobuf::uint32 value) {
   // @@protoc_insertion_point(field_set:bgs.protocol.config.RPCMeterConfig.cap_balance)
 }
 
-// optional float startup_period = 5 [default = 0];
+// optional float startup_period = 5;
 inline bool RPCMeterConfig::has_startup_period() const {
   return (_has_bits_[0] & 0x00000010u) != 0;
 }
@@ -1367,7 +1313,6 @@ ServiceAliases::mutable_protocol_alias() {
   return &protocol_alias_;
 }
 
-
 // @@protoc_insertion_point(namespace_scope)
 
 }  // namespace config
@@ -1377,8 +1322,6 @@ ServiceAliases::mutable_protocol_alias() {
 #ifndef SWIG
 namespace google {
 namespace protobuf {
-
-
 }  // namespace google
 }  // namespace protobuf
 #endif  // SWIG

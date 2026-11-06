@@ -20,14 +20,18 @@
 
 #include "Define.h"
 
-namespace Trinity::Crypto
+namespace Trinity
+{
+namespace Crypto
 {
     struct Constants
     {
         static constexpr size_t MD5_DIGEST_LENGTH_BYTES = 16;
         static constexpr size_t SHA1_DIGEST_LENGTH_BYTES = 20;
         static constexpr size_t SHA256_DIGEST_LENGTH_BYTES = 32;
+        static constexpr size_t SHA512_DIGEST_LENGTH_BYTES = 64;
     };
+}
 }
 
 #endif

@@ -94,7 +94,7 @@ void RestMgr::AddRestBonus(RestTypes restType, float restBonus)
     SetRestBonus(restType, totalRestBonus);
 }
 
-void RestMgr::SetRestFlag(RestFlag restFlag, uint32 triggerID)
+void RestMgr::SetRestFlag(RestFlag restFlag)
 {
     uint32 oldRestMask = _restFlagMask;
     _restFlagMask |= restFlag;
@@ -104,9 +104,6 @@ void RestMgr::SetRestFlag(RestFlag restFlag, uint32 triggerID)
         _restTime = GameTime::GetGameTime();
         _player->SetPlayerFlag(PLAYER_FLAGS_RESTING);
     }
-
-    if (triggerID)
-        _innAreaTriggerId = triggerID;
 }
 
 void RestMgr::RemoveRestFlag(RestFlag restFlag)

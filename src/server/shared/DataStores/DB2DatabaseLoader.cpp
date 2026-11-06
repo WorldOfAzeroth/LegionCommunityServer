@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -21,20 +21,16 @@
 #include "DB2Meta.h"
 #include "Errors.h"
 #include "Log.h"
-
-
-
-DB2LoadInfo::DB2LoadInfo(DB2FieldMeta const* fields, std::size_t fieldCount, DB2Meta const* meta, HotfixDatabaseStatements statement)
-    : DB2FileLoadInfo(fields, fieldCount, meta), Statement(statement)
-{
-}
+#include <cstring>
 
 static char const* nullStr = "";
 
-char* DB2DatabaseLoader::Load(uint32& records, char**& indexTable, std::vector<char*>& stringPool)
+char* DB2DatabaseLoader::Load(bool custom, uint32& records, char**& indexTable, std::vector<char*>& stringPool, uint32& minId)
 {
     // Even though this query is executed only once, prepared statement is used to send data from mysql server in binary format
-    PreparedQueryResult result = HotfixDatabase.Query(HotfixDatabase.GetPreparedStatement(_loadInfo->Statement));
+    HotfixDatabasePreparedStatement* stmt = HotfixDatabase.GetPreparedStatement(_loadInfo->Statement);
+    stmt->setBool(0, !custom);
+    PreparedQueryResult result = HotfixDatabase.Query(stmt);
     if (!result)
         return nullptr;
 
@@ -49,10 +45,10 @@ char* DB2DatabaseLoader::Load(uint32& records, char**& indexTable, std::vector<c
     std::size_t stringFields = _loadInfo->GetStringFieldCount(false);
 
     // Resize index table
-    // database query *MUST* contain ORDER BY `index_field` DESC clause
-    uint32 indexTableSize = (*result)[indexField].GetUInt32() + 1;
-    if (indexTableSize < records)
-        indexTableSize = records;
+    uint32 indexTableSize = records;
+    if (PreparedQueryResult maxIdResult = HotfixDatabase.Query(HotfixDatabase.GetPreparedStatement(HotfixDatabaseStatements(_loadInfo->Statement + HOTFIX_MAX_ID_STMT_OFFSET))))
+        if (uint32((*maxIdResult)[0].GetUInt64()) > records)
+            indexTableSize = uint32((*maxIdResult)[0].GetUInt64());
 
     if (indexTableSize > records)
     {
@@ -69,7 +65,7 @@ char* DB2DatabaseLoader::Load(uint32& records, char**& indexTable, std::vector<c
     if (stringFields)
         stringPool.reserve(std::max<uint64>(stringPool.capacity(), stringPool.size() + stringFields * result->GetRowCount() + 1));
 
-    uint32 newRecords = 0;
+    std::size_t newRecords = 0;
 
     do
     {
@@ -98,7 +94,7 @@ char* DB2DatabaseLoader::Load(uint32& records, char**& indexTable, std::vector<c
 
         for (uint32 x = 0; x < _loadInfo->Meta->FieldCount; ++x)
         {
-            for (uint32 z = 0; z < _loadInfo->Meta->ArraySizes[x]; ++z)
+            for (uint32 z = 0; z < _loadInfo->Meta->Fields[x].ArraySize; ++z)
             {
                 switch (_loadInfo->Fields[f].Type)
                 {
@@ -130,7 +126,7 @@ char* DB2DatabaseLoader::Load(uint32& records, char**& indexTable, std::vector<c
                                 localeStr = nullStr;
 
                         // Value in database in main table field must be for enUS locale
-                        if (char* str = AddString(&slot->Str[LOCALE_enUS], fields[f].GetString()))
+                        if (char* str = AddString(&slot->Str[LOCALE_enUS], fields[f].GetStringView()))
                             stringPool.push_back(str);
 
                         offset += sizeof(LocalizedString);
@@ -141,7 +137,7 @@ char* DB2DatabaseLoader::Load(uint32& records, char**& indexTable, std::vector<c
                         char const** slot = (char const**)(&dataValue[offset]);
 
                         // Value in database in main table field must be for enUS locale
-                        if (char* str = AddString(slot, fields[f].GetString()))
+                        if (char* str = AddString(slot, fields[f].GetStringView()))
                             stringPool.push_back(str);
                         else
                             *slot = nullStr;
@@ -150,8 +146,8 @@ char* DB2DatabaseLoader::Load(uint32& records, char**& indexTable, std::vector<c
                         break;
                     }
                     default:
-                        ABORT_MSG("Unknown format character '%c' found in %s meta for field %s",
-                            _loadInfo->Fields[f].Type, _storageName.c_str(), _loadInfo->Fields[f].Name);
+                        ABORT_MSG("Unknown format character '%c' found in " STRING_VIEW_FMT " meta for field %s",
+                            _loadInfo->Fields[f].Type, STRING_VIEW_FMT_ARG(_storageName), _loadInfo->Fields[f].Name);
                         break;
                 }
                 ++f;
@@ -173,8 +169,12 @@ char* DB2DatabaseLoader::Load(uint32& records, char**& indexTable, std::vector<c
     memcpy(dataTable, tempDataTable, newRecords * recordSize);
 
     // insert new records to index table
-    for (uint32 i = 0; i < newRecords; ++i)
-        indexTable[newIndexes[i]] = &dataTable[i * recordSize];
+    for (std::size_t i = 0; i < newRecords; ++i)
+    {
+        uint32 newId = newIndexes[i];
+        indexTable[newId] = &dataTable[i * recordSize];
+        minId = std::min(minId, newId);
+    }
 
     delete[] tempDataTable;
     delete[] newIndexes;
@@ -184,10 +184,11 @@ char* DB2DatabaseLoader::Load(uint32& records, char**& indexTable, std::vector<c
     return dataTable;
 }
 
-void DB2DatabaseLoader::LoadStrings(LocaleConstant locale, uint32 records, char** indexTable, std::vector<char*>& stringPool)
+void DB2DatabaseLoader::LoadStrings(bool custom, LocaleConstant locale, uint32 records, char** indexTable, std::vector<char*>& stringPool)
 {
-    HotfixDatabasePreparedStatement* stmt = HotfixDatabase.GetPreparedStatement(HotfixDatabaseStatements(_loadInfo->Statement + 1));
-    stmt->setString(0, localeNames[locale]);
+    HotfixDatabasePreparedStatement* stmt = HotfixDatabase.GetPreparedStatement(HotfixDatabaseStatements(_loadInfo->Statement + HOTFIX_LOCALE_STMT_OFFSET));
+    stmt->setBool(0, !custom);
+    stmt->setString(1, std::string_view(localeNames[locale]));
     PreparedQueryResult result = HotfixDatabase.Query(stmt);
     if (!result)
         return;
@@ -223,7 +224,7 @@ void DB2DatabaseLoader::LoadStrings(LocaleConstant locale, uint32 records, char*
 
             for (uint32 x = 0; x < fieldCount; ++x)
             {
-                for (uint32 z = 0; z < _loadInfo->Meta->ArraySizes[x]; ++z)
+                for (uint32 z = 0; z < _loadInfo->Meta->Fields[x].ArraySize; ++z)
                 {
                     switch (_loadInfo->Fields[fieldIndex].Type)
                     {
@@ -244,7 +245,7 @@ void DB2DatabaseLoader::LoadStrings(LocaleConstant locale, uint32 records, char*
                         {
                             // fill only not filled entries
                             LocalizedString* db2str = (LocalizedString*)(&dataValue[offset]);
-                            if (char* str = AddString(&db2str->Str[locale], fields[1 + stringFieldNumInRecord].GetString()))
+                            if (char* str = AddString(&db2str->Str[locale], fields[1 + stringFieldNumInRecord].GetStringView()))
                                 stringPool.push_back(str);
 
                             ++stringFieldNumInRecord;
@@ -255,8 +256,8 @@ void DB2DatabaseLoader::LoadStrings(LocaleConstant locale, uint32 records, char*
                             offset += sizeof(char*);
                             break;
                         default:
-                            ABORT_MSG("Unknown format character '%c' found in %s meta for field %s",
-                                _loadInfo->Fields[fieldIndex].Type, _storageName.c_str(), _loadInfo->Fields[fieldIndex].Name);
+                            ABORT_MSG("Unknown format character '%c' found in " STRING_VIEW_FMT " meta for field %s",
+                                _loadInfo->Fields[fieldIndex].Type, STRING_VIEW_FMT_ARG(_storageName), _loadInfo->Fields[fieldIndex].Name);
                             break;
                     }
                     ++fieldIndex;
@@ -271,12 +272,12 @@ void DB2DatabaseLoader::LoadStrings(LocaleConstant locale, uint32 records, char*
     } while (result->NextRow());
 }
 
-char* DB2DatabaseLoader::AddString(char const** holder, std::string const& value)
+char* DB2DatabaseLoader::AddString(char const** holder, std::string_view value)
 {
     if (!value.empty())
     {
         char* str = new char[value.length() + 1];
-        memcpy(str, value.c_str(), value.length());
+        memcpy(str, value.data(), value.length());
         str[value.length()] = '\0';
         *holder = str;
         return str;

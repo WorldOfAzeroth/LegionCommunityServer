@@ -340,6 +340,7 @@ typedef std::unordered_map<uint32, DB2Manager::MountTypeXCapabilitySet> MountCap
 typedef std::unordered_map<uint32, DB2Manager::MountXDisplayContainer> MountDisplaysCointainer;
 typedef std::unordered_map<uint32, std::array<std::vector<NameGenEntry const*>, 2>> NameGenContainer;
 typedef std::array<std::vector<Trinity::wregex>, TOTAL_LOCALES + 1> NameValidationRegexContainer;
+typedef std::unordered_map<uint32 /*pathID*/, std::vector<DBCPosition3D>> PathNodesContainer;
 typedef std::unordered_map<uint32, std::vector<uint32>> PhaseGroupContainer;
 typedef std::array<PowerTypeEntry const*, MAX_POWERS> PowerTypesContainer;
 typedef std::vector<PvpTalentEntry const*> PvpTalentsByPosition[MAX_CLASSES][MAX_PVP_TALENT_TIERS][MAX_PVP_TALENT_COLUMNS];
@@ -359,6 +360,25 @@ typedef std::unordered_map<uint32, WorldSafeLocsEntry const*> WorldSafeLocContai
 
 namespace
 {
+    struct ClassPowerData
+    {
+        ClassPowerData()
+        {
+            IndexByType.fill(MAX_POWERS_PER_CLASS);
+        }
+
+        ClassPowerTypes TypeByIndex;
+        std::array<uint8, MAX_POWERS> IndexByType;
+    };
+
+    struct UiMapBounds
+    {
+        // these coords are mixed when calculated and used... its a mess
+        float Bounds[4];
+        bool IsUiAssignment;
+        bool IsUiLink;
+    };
+
     StorageMap _stores;
     std::map<uint64, int32> _hotfixData;
 
@@ -369,7 +389,7 @@ namespace
     std::set<std::tuple<uint8, uint8, uint32>> _characterFacialHairStyles;
     std::multimap<std::tuple<uint8, uint8, CharBaseSectionVariation>, CharSectionsEntry const*> _charSections;
     CharStartOutfitContainer _charStartOutfits;
-    uint32 _powersByClass[MAX_CLASSES][MAX_POWERS];
+    std::array<ClassPowerData, MAX_CLASSES> _powersByClass;
     ChrSpecializationByIndexContainer _chrSpecializationsByIndex;
     ChrSpecialzationByClassContainer _defaultChrSpecializationsByClass;
     CurvePointsContainer _curvePoints;
@@ -401,6 +421,7 @@ namespace
     NameGenContainer _nameGenData;
     NameValidationRegexContainer _nameValidators;
     std::unordered_map<uint32, ParagonReputationEntry const*> _paragonReputations;
+    PathNodesContainer _pathNodes;
     PhaseGroupContainer _phasesByGroup;
     PowerTypesContainer _powerTypes;
     std::unordered_map<uint32, uint8> _pvpItemBonus;
@@ -680,6 +701,7 @@ uint32 DB2Manager::LoadStores(std::string const& dataPath, LocaleConstant defaul
     LOAD_DB2(sLFGDungeonsStore);
     LOAD_DB2(sLightStore);
     LOAD_DB2(sLiquidTypeStore);
+    LOAD_DB2(sLocationStore);
     LOAD_DB2(sLockStore);
     LOAD_DB2(sMailTemplateStore);
     LOAD_DB2(sMapStore);
@@ -696,6 +718,8 @@ uint32 DB2Manager::LoadStores(std::string const& dataPath, LocaleConstant defaul
     LOAD_DB2(sNamesReservedLocaleStore);
     LOAD_DB2(sOverrideSpellDataStore);
     LOAD_DB2(sParagonReputationStore);
+    LOAD_DB2(sPathStore);
+    LOAD_DB2(sPathNodeStore);
     LOAD_DB2(sPhaseStore);
     LOAD_DB2(sPhaseXPhaseGroupStore);
     LOAD_DB2(sPlayerConditionStore);
@@ -877,20 +901,14 @@ uint32 DB2Manager::LoadStores(std::string const& dataPath, LocaleConstant defaul
         for (ChrClassesXPowerTypesEntry const* power : sChrClassesXPowerTypesStore)
             powers.insert(power);
 
-        for (uint32 i = 0; i < MAX_CLASSES; ++i)
-            for (uint32 j = 0; j < MAX_POWERS; ++j)
-                _powersByClass[i][j] = MAX_POWERS;
-
         for (ChrClassesXPowerTypesEntry const* power : powers)
         {
-            uint32 index = 0;
-            for (uint32 j = 0; j < MAX_POWERS; ++j)
-                if (_powersByClass[power->ClassID][j] != MAX_POWERS)
-                    ++index;
-
             ASSERT(power->ClassID < MAX_CLASSES);
             ASSERT(power->PowerType < MAX_POWERS);
-            _powersByClass[power->ClassID][power->PowerType] = index;
+
+            uint8 index = _powersByClass[power->ClassID].TypeByIndex.PowerTypeCount++;
+            _powersByClass[power->ClassID].TypeByIndex.PowerType[index] = Powers(power->PowerType);
+            _powersByClass[power->ClassID].IndexByType[power->PowerType] = index;
         }
     }
 
@@ -1086,6 +1104,26 @@ uint32 DB2Manager::LoadStores(std::string const& dataPath, LocaleConstant defaul
     for (ParagonReputationEntry const* paragonReputation : sParagonReputationStore)
         if (sFactionStore.HasRecord(paragonReputation->FactionID))
             _paragonReputations[paragonReputation->FactionID] = paragonReputation;
+
+    {
+        std::unordered_map<uint32 /*pathID*/, std::vector<PathNodeEntry const*>> unsortedNodes;
+        for (PathNodeEntry const* pathNode : sPathNodeStore)
+            if (sPathStore.LookupEntry(pathNode->PathID))
+                if (sLocationStore.LookupEntry(pathNode->LocationID))
+                    unsortedNodes[pathNode->PathID].push_back(pathNode);
+
+        for (auto& [pathId, pathNodes] : unsortedNodes)
+        {
+            std::sort(pathNodes.begin(), pathNodes.end(), [](PathNodeEntry const* node1, PathNodeEntry const* node2) { return node1->Sequence < node2->Sequence; });
+            std::vector<DBCPosition3D>& nodes = _pathNodes[pathId];
+            nodes.resize(pathNodes.size());
+            std::transform(pathNodes.begin(), pathNodes.end(), nodes.begin(), [](PathNodeEntry const* node)
+            {
+                LocationEntry const* location = sLocationStore.AssertEntry(node->LocationID);
+                return location->Pos;
+            });
+        }
+    }
 
     for (PhaseXPhaseGroupEntry const* group : sPhaseXPhaseGroupStore)
         if (PhaseEntry const* phase = sPhaseStore.LookupEntry(group->PhaseID))
@@ -1458,9 +1496,14 @@ char const* DB2Manager::GetClassName(uint8 class_, LocaleConstant locale /*= DEF
     return classEntry->Name[DEFAULT_LOCALE];
 }
 
-uint32 DB2Manager::GetPowerIndexByClass(Powers power, uint32 classId) const
+ClassPowerTypes DB2Manager::GetPowerTypesByClass(uint32 classId)
 {
-    return _powersByClass[classId][power];
+    return _powersByClass[classId].TypeByIndex;
+}
+
+uint32 DB2Manager::GetPowerIndexByClass(Powers power, uint32 classId)
+{
+    return _powersByClass[classId].IndexByType[power];
 }
 
 char const* DB2Manager::GetChrRaceName(uint8 race, LocaleConstant locale /*= DEFAULT_LOCALE*/)
@@ -2073,6 +2116,11 @@ uint8 DB2Manager::GetMaxPrestige() const
 ParagonReputationEntry const* DB2Manager::GetParagonReputation(uint32 factionId) const
 {
     return Trinity::Containers::MapGetValuePtr(_paragonReputations, factionId);
+}
+
+std::vector<DBCPosition3D> const* DB2Manager::GetNodesForPath(uint32 pathId) const
+{
+    return Trinity::Containers::MapGetValuePtr(_pathNodes, pathId);
 }
 
 PVPDifficultyEntry const* DB2Manager::GetBattlegroundBracketByLevel(uint32 mapid, uint32 level)

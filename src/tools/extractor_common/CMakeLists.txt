@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+# This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -8,19 +8,21 @@
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-CollectSourceFiles(
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE_SOURCES)
+add_library(extractor_common STATIC)
 
-add_library(extractor_common STATIC ${PRIVATE_SOURCES})
+CollectAndAddSourceFiles(
+  extractor_common
+  ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(extractor_common
   PRIVATE
     trinity-core-interface
   PUBLIC
     casc
-    common)
+    common
+    network)
 
-target_include_directories(extractor_common
-  PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR})
+set_target_properties(extractor_common
+  PROPERTIES
+    COMPILE_WARNING_AS_ERROR ${WITH_WARNINGS_AS_ERRORS}
+    FOLDER "tools")

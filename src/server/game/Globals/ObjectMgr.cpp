@@ -6543,6 +6543,27 @@ Quest const* ObjectMgr::GetQuestTemplate(uint32 quest_id) const
     return Trinity::Containers::MapGetValuePtr(_questTemplates, quest_id);
 }
 
+std::vector<Position> ObjectMgr::GetVerticesForAreaTrigger(AreaTriggerEntry const* areaTrigger) const
+{
+    std::vector<Position> vertices;
+    if (areaTrigger && areaTrigger->ShapeType == 3 /* Polygon */)
+    {
+        if (std::vector<DBCPosition3D> const* pathNodes = sDB2Manager.GetNodesForPath(areaTrigger->ShapeID))
+        {
+            vertices.resize(pathNodes->size());
+            std::transform(pathNodes->cbegin(), pathNodes->cend(), vertices.begin(), [](DBCPosition3D dbcPosition)
+            {
+                return Position(dbcPosition.X, dbcPosition.Y, dbcPosition.Z);
+            });
+        }
+
+        // Drop first node (areatrigger position)
+        vertices.erase(vertices.begin());
+    }
+
+    return vertices;
+}
+
 void ObjectMgr::LoadGraveyardZones()
 {
     uint32 oldMSTime = getMSTime();
@@ -9690,7 +9711,8 @@ void ObjectMgr::LoadCreatureClassLevelStats()
     }
     while (result->NextRow());
 
-    for (uint8 unitLevel = 1; unitLevel <= DEFAULT_MAX_LEVEL + 3; ++unitLevel)
+    uint32 maxLevel = GetMaxLevelForExpansion(CURRENT_EXPANSION);
+    for (uint8 unitLevel = 1; unitLevel <= maxLevel + 3; ++unitLevel)
     {
         for (uint8 unitClass = 1; unitClass <= MAX_UNIT_CLASSES; ++unitClass)
         {

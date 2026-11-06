@@ -32,18 +32,19 @@
 #define SKIP_SPLINE_POINT_DISTANCE_SQ (40.f * 40.f)
 #define PLAYER_FLIGHT_SPEED 32.0f
 
-FlightPathMovementGenerator::FlightPathMovementGenerator()
+FlightPathMovementGenerator::FlightPathMovementGenerator(Optional<float> speed,
+    Scripting::v2::ActionResultSetter<MovementStopReason>&& scriptResult)
 {
-    _currentNode = 0;
+    _speed = speed;
     _endGridX = 0.0f;
     _endGridY = 0.0f;
     _endMapId = 0;
     _preloadTargetNode = 0;
 
-    Mode = MOTION_MODE_DEFAULT;
     Priority = MOTION_PRIORITY_HIGHEST;
     Flags = MOVEMENTGENERATOR_FLAG_INITIALIZATION_PENDING;
     BaseUnitState = UNIT_STATE_IN_FLIGHT;
+    ScriptResult = std::move(scriptResult);
 }
 
 MovementGeneratorType FlightPathMovementGenerator::GetMovementGeneratorType() const
@@ -60,16 +61,17 @@ bool FlightPathMovementGenerator::GetResetPosition(Unit* /*owner*/, float& x, fl
     return true;
 }
 
-void FlightPathMovementGenerator::DoInitialize(Player* owner)
+bool FlightPathMovementGenerator::DoInitialize(Player* owner)
 {
     RemoveFlag(MOVEMENTGENERATOR_FLAG_INITIALIZATION_PENDING | MOVEMENTGENERATOR_FLAG_DEACTIVATED);
     AddFlag(MOVEMENTGENERATOR_FLAG_INITIALIZED);
 
-    DoReset(owner);
+    bool returnValue = DoReset(owner);
     InitEndGridInfo();
+    return returnValue;
 }
 
-void FlightPathMovementGenerator::DoReset(Player* owner)
+bool FlightPathMovementGenerator::DoReset(Player* owner)
 {
     RemoveFlag(MOVEMENTGENERATOR_FLAG_DEACTIVATED);
 
@@ -82,24 +84,24 @@ void FlightPathMovementGenerator::DoReset(Player* owner)
     if (currentNodeId == end)
     {
         TC_LOG_DEBUG("movement.flightpath", "FlightPathMovementGenerator::DoReset: trying to start a flypath from the end point. {}", owner->GetDebugInfo());
-        return;
+        return false;
     }
 
     Movement::MoveSplineInit init(owner);
+    init.Path().reserve(end - currentNodeId + 1);
     // Providing a starting vertex since the taxi paths do not provide such
-    init.Path().push_back(G3D::Vector3(owner->GetPositionX(), owner->GetPositionY(), owner->GetPositionZ()));
+    init.Path().emplace_back(owner->GetPositionX(), owner->GetPositionY(), owner->GetPositionZ());
     for (uint32 i = currentNodeId; i != end; ++i)
-    {
-        G3D::Vector3 vertice(_path[i]->Loc.X, _path[i]->Loc.Y, _path[i]->Loc.Z);
-        init.Path().push_back(vertice);
-    }
+        init.Path().emplace_back(_path[i]->Loc.X, _path[i]->Loc.Y, _path[i]->Loc.Z);
+
     init.SetFirstPointId(GetCurrentNode());
     init.SetFly();
     init.SetSmooth();
     init.SetUncompressed();
     init.SetWalk(true);
-    init.SetVelocity(PLAYER_FLIGHT_SPEED);
+    init.SetVelocity(_speed.value_or(PLAYER_FLIGHT_SPEED));
     init.Launch();
+    return true;
 }
 
 bool FlightPathMovementGenerator::DoUpdate(Player* owner, uint32 /*diff*/)
@@ -152,7 +154,7 @@ void FlightPathMovementGenerator::DoDeactivate(Player* /*owner*/)
     AddFlag(MOVEMENTGENERATOR_FLAG_DEACTIVATED);
 }
 
-void FlightPathMovementGenerator::DoFinalize(Player* owner, bool active, bool/* movementInform*/)
+void FlightPathMovementGenerator::DoFinalize(Player* owner, bool active, bool movementInform)
 {
     AddFlag(MOVEMENTGENERATOR_FLAG_FINALIZED);
     if (!active)
@@ -179,6 +181,9 @@ void FlightPathMovementGenerator::DoFinalize(Player* owner, bool active, bool/* 
     }
 
     owner->RemovePlayerFlag(PLAYER_FLAGS_TAXI_BENCHMARK);
+
+    if (movementInform)
+        SetScriptResult(MovementStopReason::Finished);
 }
 
 uint32 FlightPathMovementGenerator::GetPathAtMapEnd() const

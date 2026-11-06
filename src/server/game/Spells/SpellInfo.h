@@ -503,7 +503,8 @@ class TC_GAME_API SpellInfo
         bool IsAffected(uint32 familyName, flag128 const& familyFlags) const;
 
         bool IsAffectedBySpellMods() const;
-        bool IsAffectedBySpellMod(SpellModifier const* mod) const;
+        int32 IsAffectedBySpellMod(SpellModifier const* mod) const;
+        bool IsUpdatingTemporaryAuraValuesBySpellMod() const;
 
         bool CanPierceImmuneAura(SpellInfo const* auraSpellInfo) const;
         bool CanDispelAura(SpellInfo const* auraSpellInfo) const;

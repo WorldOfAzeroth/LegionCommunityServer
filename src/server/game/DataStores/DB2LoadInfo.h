@@ -3232,6 +3232,22 @@ struct LiquidTypeLoadInfo
     }
 };
 
+struct LocationLoadInfo
+{
+    static constexpr DB2FieldMeta Fields[7] =
+    {
+        { false, FT_INT, "ID" },
+        { false, FT_FLOAT, "PosX" },
+        { false, FT_FLOAT, "PosY" },
+        { false, FT_FLOAT, "PosZ" },
+        { false, FT_FLOAT, "Rot1" },
+        { false, FT_FLOAT, "Rot2" },
+        { false, FT_FLOAT, "Rot3" },
+    };
+
+    static constexpr DB2LoadInfo Instance{ Fields, 7, &LocationMeta::Instance, HOTFIX_SEL_LOCATION };
+};
+
 struct LockLoadInfo
 {
     static DB2LoadInfo const* Instance()
@@ -3560,6 +3576,36 @@ struct ParagonReputationLoadInfo
         static DB2LoadInfo const loadInfo(&fields[0], std::extent<decltype(fields)>::value, ParagonReputationMeta::Instance(), HOTFIX_SEL_PARAGON_REPUTATION);
         return &loadInfo;
     }
+};
+
+struct PathLoadInfo
+{
+    static constexpr DB2FieldMeta Fields[8] =
+    {
+        { false, FT_INT, "ID" },
+        { false, FT_BYTE, "Type" },
+        { false, FT_BYTE, "SplineType" },
+        { false, FT_BYTE, "Red" },
+        { false, FT_BYTE, "Green" },
+        { false, FT_BYTE, "Blue" },
+        { false, FT_BYTE, "Alpha" },
+        { false, FT_BYTE, "Flags" },
+    };
+
+    static constexpr DB2LoadInfo Instance{ Fields, 8, &PathMeta::Instance, HOTFIX_SEL_PATH };
+};
+
+struct PathNodeLoadInfo
+{
+    static constexpr DB2FieldMeta Fields[4] =
+    {
+        { false, FT_INT, "ID" },
+        { false, FT_SHORT, "PathID" },
+        { true, FT_SHORT, "Sequence" },
+        { true, FT_INT, "LocationID" },
+    };
+
+    static constexpr DB2LoadInfo Instance{ Fields, 4, &PathNodeMeta::Instance, HOTFIX_SEL_PATH_NODE };
 };
 
 struct PhaseLoadInfo

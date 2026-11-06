@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -16,12 +16,8 @@
  */
 
 #include "DB2Meta.h"
+#include "Common.h"
 #include "Errors.h"
-
-DB2Meta::DB2Meta(int32 indexField, uint32 fieldCount, uint32 layoutHash, char const* types, uint8 const* arraySizes, int32 parentIndexField)
-    : IndexField(indexField), ParentIndexField(parentIndexField), FieldCount(fieldCount), LayoutHash(layoutHash), Types(types), ArraySizes(arraySizes)
-{
-}
 
 bool DB2Meta::HasIndexFieldInData() const
 {
@@ -38,9 +34,15 @@ uint32 DB2Meta::GetRecordSize() const
     uint32 size = 0;
     for (uint32 i = 0; i < FieldCount; ++i)
     {
-        for (uint8 j = 0; j < ArraySizes[i]; ++j)
+        for (uint8 j = 0; j < Fields[i].ArraySize; ++j)
         {
-            switch (Types[i])
+            if (i >= FileFieldCount && int32(i) == ParentIndexField)
+            {
+                size += 4;
+                continue;
+            }
+
+            switch (Fields[i].Type)
             {
                 case FT_BYTE:
                     size += 1;
@@ -62,7 +64,8 @@ uint32 DB2Meta::GetRecordSize() const
                     size += sizeof(char*);
                     break;
                 default:
-                    ASSERT(false, "Unsupported column type specified %c", Types[i]);
+                    ABORT_MSG("Unsupported column type specified %c", Fields[i].Type);
+                    break;
             }
         }
     }
@@ -82,9 +85,15 @@ uint32 DB2Meta::GetIndexFieldOffset() const
 
     for (int32 i = 0; i < IndexField; ++i)
     {
-        for (uint8 j = 0; j < ArraySizes[i]; ++j)
+        for (uint8 j = 0; j < Fields[i].ArraySize; ++j)
         {
-            switch (Types[i])
+            if (i >= int32(FileFieldCount) && i == ParentIndexField)
+            {
+                offset += 4;
+                continue;
+            }
+
+            switch (Fields[i].Type)
             {
                 case FT_BYTE:
                     offset += 1;
@@ -106,7 +115,7 @@ uint32 DB2Meta::GetIndexFieldOffset() const
                     offset += sizeof(char*);
                     break;
                 default:
-                    ABORT_MSG("Unsupported column type specified %c", Types[i]);
+                    ABORT_MSG("Unsupported column type specified %c", Fields[i].Type);
                     break;
             }
         }
@@ -126,9 +135,9 @@ int32 DB2Meta::GetParentIndexFieldOffset() const
 
     for (int32 i = 0; i < ParentIndexField; ++i)
     {
-        for (uint8 j = 0; j < ArraySizes[i]; ++j)
+        for (uint8 j = 0; j < Fields[i].ArraySize; ++j)
         {
-            switch (Types[i])
+            switch (Fields[i].Type)
             {
                 case FT_BYTE:
                     offset += 1;
@@ -150,7 +159,7 @@ int32 DB2Meta::GetParentIndexFieldOffset() const
                     offset += sizeof(char*);
                     break;
                 default:
-                    ASSERT(false, "Unsupported column type specified %c", Types[i]);
+                    ABORT_MSG("Unsupported column type specified %c", Fields[i].Type);
                     break;
             }
         }
@@ -166,7 +175,7 @@ uint32 DB2Meta::GetDbIndexField() const
 
     uint32 index = 0;
     for (uint32 i = 0; i < FieldCount && i < uint32(IndexField); ++i)
-        index += ArraySizes[i];
+        index += Fields[i].ArraySize;
 
     return index;
 }
@@ -175,7 +184,7 @@ uint32 DB2Meta::GetDbFieldCount() const
 {
     uint32 fields = 0;
     for (uint32 i = 0; i < FieldCount; ++i)
-        fields += ArraySizes[i];
+        fields += Fields[i].ArraySize;
 
     if (!HasIndexFieldInData())
         ++fields;
@@ -183,8 +192,23 @@ uint32 DB2Meta::GetDbFieldCount() const
     return fields;
 }
 
-DB2FieldMeta::DB2FieldMeta(bool isSigned, DBCFormer type, char const* name)
-    : IsSigned(isSigned), Type(type), Name(name)
+bool DB2Meta::IsSignedField(uint32 field) const
 {
-}
+    switch (Fields[field].Type)
+    {
+        case FT_STRING:
+        case FT_STRING_NOT_LOCALIZED:
+        case FT_FLOAT:
+            return false;
+        case FT_INT:
+        case FT_BYTE:
+        case FT_SHORT:
+        case FT_LONG:
+        default:
+            break;
+    }
+    if (field == uint32(IndexField) || field == uint32(ParentIndexField))
+        return false;
 
+    return Fields[field].IsSigned;
+}

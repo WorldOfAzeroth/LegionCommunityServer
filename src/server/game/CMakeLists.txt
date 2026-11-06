@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+# This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -8,24 +8,12 @@
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-CollectSourceFiles(
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE_SOURCES
-  # Exclude
-  ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders)
-
-if (USE_COREPCH)
-  set(PRIVATE_PCH_HEADER PrecompiledHeaders/gamePCH.h)
-endif ()
-
 GroupSources(${CMAKE_CURRENT_SOURCE_DIR})
-
-add_definitions(-DTRINITY_API_EXPORT_GAME)
 
 CollectIncludeDirectories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   PUBLIC_INCLUDES
-  # Exclude
+  EXCLUDE
   ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders)
 
 # Provide an interface target for the game project to allow
@@ -39,10 +27,15 @@ target_include_directories(game-interface
 target_link_libraries(game-interface
   INTERFACE
     shared
-    Detour)
+    mmaps_common)
 
-add_library(game
-  ${PRIVATE_SOURCES})
+add_library(game)
+
+CollectAndAddSourceFiles(
+  game
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  EXCLUDE
+  ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders)
 
 target_include_directories(game
   PRIVATE
@@ -51,21 +44,27 @@ target_include_directories(game
 target_link_libraries(game
   PRIVATE
     trinity-core-interface
-    efsw
   PUBLIC
     game-interface)
 
-set_target_properties(game
-    PROPERTIES
-      FOLDER
-        "server")
+if(TARGET efsw)
+  target_link_libraries(game
+    PRIVATE
+      efsw)
+endif()
 
-if( BUILD_SHARED_LIBS )
-  if( UNIX )
+set_target_properties(game
+  PROPERTIES
+    COMPILE_WARNING_AS_ERROR ${WITH_WARNINGS_AS_ERRORS}
+    DEFINE_SYMBOL TRINITY_API_EXPORT_GAME
+    FOLDER "server")
+
+if(BUILD_SHARED_LIBS)
+  if(UNIX)
     install(TARGETS game
       LIBRARY
         DESTINATION lib)
-  elseif( WIN32 )
+  elseif(WIN32)
     install(TARGETS game
       RUNTIME
         DESTINATION "${CMAKE_INSTALL_PREFIX}")
@@ -73,6 +72,6 @@ if( BUILD_SHARED_LIBS )
 endif()
 
 # Generate precompiled header
-if (USE_COREPCH)
-  add_cxx_pch(game ${PRIVATE_PCH_HEADER})
-endif ()
+if(USE_COREPCH)
+  add_cxx_pch(game PrecompiledHeaders/gamePCH.h)
+endif()

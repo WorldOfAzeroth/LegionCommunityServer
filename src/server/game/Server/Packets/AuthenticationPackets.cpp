@@ -331,3 +331,8 @@ void WorldPackets::Auth::ConnectToFailed::Read()
     Serial = _worldPacket.read<ConnectToSerial>();
     _worldPacket >> Con;
 }
+
+void WorldPackets::Auth::QueuedMessagesEnd::Read()
+{
+    _worldPacket >> Timestamp;
+}

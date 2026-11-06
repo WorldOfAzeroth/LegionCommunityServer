@@ -24,8 +24,6 @@
 #include <google/protobuf/repeated_field.h>
 #include <google/protobuf/extension_set.h>
 #include <google/protobuf/unknown_field_set.h>
-#include "account_types.pb.h"
-#include "content_handle_types.pb.h"
 #include "entity_types.pb.h"
 #include "rpc_types.pb.h"
 #include "ServiceBase.h"
@@ -44,307 +42,18 @@ void TC_PROTO_API protobuf_AddDesc_authentication_5fservice_2eproto();
 void protobuf_AssignDesc_authentication_5fservice_2eproto();
 void protobuf_ShutdownFile_authentication_5fservice_2eproto();
 
-class ModuleLoadRequest;
-class ModuleNotification;
-class ModuleMessageRequest;
 class LogonRequest;
 class LogonResult;
-class GenerateSSOTokenRequest;
-class GenerateSSOTokenResponse;
 class LogonUpdateRequest;
 class LogonQueueUpdateRequest;
-class AccountSettingsNotification;
 class ServerStateChangeRequest;
 class VersionInfo;
 class VersionInfoNotification;
-class MemModuleLoadRequest;
-class MemModuleLoadResponse;
-class SelectGameAccountRequest;
-class GameAccountSelectedRequest;
 class GenerateWebCredentialsRequest;
 class GenerateWebCredentialsResponse;
 class VerifyWebCredentialsRequest;
 
 // ===================================================================
-
-class TC_PROTO_API ModuleLoadRequest : public ::google::protobuf::Message {
- public:
-  ModuleLoadRequest();
-  virtual ~ModuleLoadRequest();
-
-  ModuleLoadRequest(const ModuleLoadRequest& from);
-
-  inline ModuleLoadRequest& operator=(const ModuleLoadRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _unknown_fields_;
-  }
-
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return &_unknown_fields_;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const ModuleLoadRequest& default_instance();
-
-  void Swap(ModuleLoadRequest* other);
-
-  // implements Message ----------------------------------------------
-
-  ModuleLoadRequest* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const ModuleLoadRequest& from);
-  void MergeFrom(const ModuleLoadRequest& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  public:
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // required .bgs.protocol.ContentHandle module_handle = 1;
-  inline bool has_module_handle() const;
-  inline void clear_module_handle();
-  static const int kModuleHandleFieldNumber = 1;
-  inline const ::bgs::protocol::ContentHandle& module_handle() const;
-  inline ::bgs::protocol::ContentHandle* mutable_module_handle();
-  inline ::bgs::protocol::ContentHandle* release_module_handle();
-  inline void set_allocated_module_handle(::bgs::protocol::ContentHandle* module_handle);
-
-  // optional bytes message = 2;
-  inline bool has_message() const;
-  inline void clear_message();
-  static const int kMessageFieldNumber = 2;
-  inline const ::std::string& message() const;
-  inline void set_message(const ::std::string& value);
-  inline void set_message(const char* value);
-  inline void set_message(const void* value, size_t size);
-  inline ::std::string* mutable_message();
-  inline ::std::string* release_message();
-  inline void set_allocated_message(::std::string* message);
-
-  // @@protoc_insertion_point(class_scope:bgs.protocol.authentication.v1.ModuleLoadRequest)
- private:
-  inline void set_has_module_handle();
-  inline void clear_has_module_handle();
-  inline void set_has_message();
-  inline void clear_has_message();
-
-  ::google::protobuf::UnknownFieldSet _unknown_fields_;
-
-  ::google::protobuf::uint32 _has_bits_[1];
-  mutable int _cached_size_;
-  ::bgs::protocol::ContentHandle* module_handle_;
-  ::std::string* message_;
-  friend void TC_PROTO_API protobuf_AddDesc_authentication_5fservice_2eproto();
-  friend void protobuf_AssignDesc_authentication_5fservice_2eproto();
-  friend void protobuf_ShutdownFile_authentication_5fservice_2eproto();
-
-  void InitAsDefaultInstance();
-  static ModuleLoadRequest* default_instance_;
-};
-// -------------------------------------------------------------------
-
-class TC_PROTO_API ModuleNotification : public ::google::protobuf::Message {
- public:
-  ModuleNotification();
-  virtual ~ModuleNotification();
-
-  ModuleNotification(const ModuleNotification& from);
-
-  inline ModuleNotification& operator=(const ModuleNotification& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _unknown_fields_;
-  }
-
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return &_unknown_fields_;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const ModuleNotification& default_instance();
-
-  void Swap(ModuleNotification* other);
-
-  // implements Message ----------------------------------------------
-
-  ModuleNotification* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const ModuleNotification& from);
-  void MergeFrom(const ModuleNotification& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  public:
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // optional int32 module_id = 2;
-  inline bool has_module_id() const;
-  inline void clear_module_id();
-  static const int kModuleIdFieldNumber = 2;
-  inline ::google::protobuf::int32 module_id() const;
-  inline void set_module_id(::google::protobuf::int32 value);
-
-  // optional uint32 result = 3;
-  inline bool has_result() const;
-  inline void clear_result();
-  static const int kResultFieldNumber = 3;
-  inline ::google::protobuf::uint32 result() const;
-  inline void set_result(::google::protobuf::uint32 value);
-
-  // @@protoc_insertion_point(class_scope:bgs.protocol.authentication.v1.ModuleNotification)
- private:
-  inline void set_has_module_id();
-  inline void clear_has_module_id();
-  inline void set_has_result();
-  inline void clear_has_result();
-
-  ::google::protobuf::UnknownFieldSet _unknown_fields_;
-
-  ::google::protobuf::uint32 _has_bits_[1];
-  mutable int _cached_size_;
-  ::google::protobuf::int32 module_id_;
-  ::google::protobuf::uint32 result_;
-  friend void TC_PROTO_API protobuf_AddDesc_authentication_5fservice_2eproto();
-  friend void protobuf_AssignDesc_authentication_5fservice_2eproto();
-  friend void protobuf_ShutdownFile_authentication_5fservice_2eproto();
-
-  void InitAsDefaultInstance();
-  static ModuleNotification* default_instance_;
-};
-// -------------------------------------------------------------------
-
-class TC_PROTO_API ModuleMessageRequest : public ::google::protobuf::Message {
- public:
-  ModuleMessageRequest();
-  virtual ~ModuleMessageRequest();
-
-  ModuleMessageRequest(const ModuleMessageRequest& from);
-
-  inline ModuleMessageRequest& operator=(const ModuleMessageRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _unknown_fields_;
-  }
-
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return &_unknown_fields_;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const ModuleMessageRequest& default_instance();
-
-  void Swap(ModuleMessageRequest* other);
-
-  // implements Message ----------------------------------------------
-
-  ModuleMessageRequest* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const ModuleMessageRequest& from);
-  void MergeFrom(const ModuleMessageRequest& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  public:
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // required int32 module_id = 1;
-  inline bool has_module_id() const;
-  inline void clear_module_id();
-  static const int kModuleIdFieldNumber = 1;
-  inline ::google::protobuf::int32 module_id() const;
-  inline void set_module_id(::google::protobuf::int32 value);
-
-  // optional bytes message = 2;
-  inline bool has_message() const;
-  inline void clear_message();
-  static const int kMessageFieldNumber = 2;
-  inline const ::std::string& message() const;
-  inline void set_message(const ::std::string& value);
-  inline void set_message(const char* value);
-  inline void set_message(const void* value, size_t size);
-  inline ::std::string* mutable_message();
-  inline ::std::string* release_message();
-  inline void set_allocated_message(::std::string* message);
-
-  // @@protoc_insertion_point(class_scope:bgs.protocol.authentication.v1.ModuleMessageRequest)
- private:
-  inline void set_has_module_id();
-  inline void clear_has_module_id();
-  inline void set_has_message();
-  inline void clear_has_message();
-
-  ::google::protobuf::UnknownFieldSet _unknown_fields_;
-
-  ::google::protobuf::uint32 _has_bits_[1];
-  mutable int _cached_size_;
-  ::std::string* message_;
-  ::google::protobuf::int32 module_id_;
-  friend void TC_PROTO_API protobuf_AddDesc_authentication_5fservice_2eproto();
-  friend void protobuf_AssignDesc_authentication_5fservice_2eproto();
-  friend void protobuf_ShutdownFile_authentication_5fservice_2eproto();
-
-  void InitAsDefaultInstance();
-  static ModuleMessageRequest* default_instance_;
-};
-// -------------------------------------------------------------------
 
 class TC_PROTO_API LogonRequest : public ::google::protobuf::Message {
  public:
@@ -374,19 +83,6 @@ class TC_PROTO_API LogonRequest : public ::google::protobuf::Message {
   // implements Message ----------------------------------------------
 
   LogonRequest* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const LogonRequest& from);
-  void MergeFrom(const LogonRequest& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -473,38 +169,12 @@ class TC_PROTO_API LogonRequest : public ::google::protobuf::Message {
   inline bool public_computer() const;
   inline void set_public_computer(bool value);
 
-  // optional bytes sso_id = 8;
-  inline bool has_sso_id() const;
-  inline void clear_sso_id();
-  static const int kSsoIdFieldNumber = 8;
-  inline const ::std::string& sso_id() const;
-  inline void set_sso_id(const ::std::string& value);
-  inline void set_sso_id(const char* value);
-  inline void set_sso_id(const void* value, size_t size);
-  inline ::std::string* mutable_sso_id();
-  inline ::std::string* release_sso_id();
-  inline void set_allocated_sso_id(::std::string* sso_id);
-
-  // optional bool disconnect_on_cookie_fail = 9 [default = false];
-  inline bool has_disconnect_on_cookie_fail() const;
-  inline void clear_disconnect_on_cookie_fail();
-  static const int kDisconnectOnCookieFailFieldNumber = 9;
-  inline bool disconnect_on_cookie_fail() const;
-  inline void set_disconnect_on_cookie_fail(bool value);
-
   // optional bool allow_logon_queue_notifications = 10 [default = false];
   inline bool has_allow_logon_queue_notifications() const;
   inline void clear_allow_logon_queue_notifications();
   static const int kAllowLogonQueueNotificationsFieldNumber = 10;
   inline bool allow_logon_queue_notifications() const;
   inline void set_allow_logon_queue_notifications(bool value);
-
-  // optional bool web_client_verification = 11 [default = false];
-  inline bool has_web_client_verification() const;
-  inline void clear_web_client_verification();
-  static const int kWebClientVerificationFieldNumber = 11;
-  inline bool web_client_verification() const;
-  inline void set_web_client_verification(bool value);
 
   // optional bytes cached_web_credentials = 12;
   inline bool has_cached_web_credentials() const;
@@ -542,6 +212,30 @@ class TC_PROTO_API LogonRequest : public ::google::protobuf::Message {
   inline ::std::string* release_device_id();
   inline void set_allocated_device_id(::std::string* device_id);
 
+  // optional string phone_number = 16;
+  inline bool has_phone_number() const;
+  inline void clear_phone_number();
+  static const int kPhoneNumberFieldNumber = 16;
+  inline const ::std::string& phone_number() const;
+  inline void set_phone_number(const ::std::string& value);
+  inline void set_phone_number(const char* value);
+  inline void set_phone_number(const char* value, size_t size);
+  inline ::std::string* mutable_phone_number();
+  inline ::std::string* release_phone_number();
+  inline void set_allocated_phone_number(::std::string* phone_number);
+
+  // optional string auth_platform = 17;
+  inline bool has_auth_platform() const;
+  inline void clear_auth_platform();
+  static const int kAuthPlatformFieldNumber = 17;
+  inline const ::std::string& auth_platform() const;
+  inline void set_auth_platform(const ::std::string& value);
+  inline void set_auth_platform(const char* value);
+  inline void set_auth_platform(const char* value, size_t size);
+  inline ::std::string* mutable_auth_platform();
+  inline ::std::string* release_auth_platform();
+  inline void set_allocated_auth_platform(::std::string* auth_platform);
+
   // @@protoc_insertion_point(class_scope:bgs.protocol.authentication.v1.LogonRequest)
  private:
   inline void set_has_program();
@@ -558,20 +252,18 @@ class TC_PROTO_API LogonRequest : public ::google::protobuf::Message {
   inline void clear_has_application_version();
   inline void set_has_public_computer();
   inline void clear_has_public_computer();
-  inline void set_has_sso_id();
-  inline void clear_has_sso_id();
-  inline void set_has_disconnect_on_cookie_fail();
-  inline void clear_has_disconnect_on_cookie_fail();
   inline void set_has_allow_logon_queue_notifications();
   inline void clear_has_allow_logon_queue_notifications();
-  inline void set_has_web_client_verification();
-  inline void clear_has_web_client_verification();
   inline void set_has_cached_web_credentials();
   inline void clear_has_cached_web_credentials();
   inline void set_has_user_agent();
   inline void clear_has_user_agent();
   inline void set_has_device_id();
   inline void clear_has_device_id();
+  inline void set_has_phone_number();
+  inline void clear_has_phone_number();
+  inline void set_has_auth_platform();
+  inline void clear_has_auth_platform();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -582,15 +274,14 @@ class TC_PROTO_API LogonRequest : public ::google::protobuf::Message {
   ::std::string* locale_;
   ::std::string* email_;
   ::std::string* version_;
-  ::std::string* sso_id_;
   ::google::protobuf::int32 application_version_;
   bool public_computer_;
-  bool disconnect_on_cookie_fail_;
   bool allow_logon_queue_notifications_;
-  bool web_client_verification_;
   ::std::string* cached_web_credentials_;
   ::std::string* user_agent_;
   ::std::string* device_id_;
+  ::std::string* phone_number_;
+  ::std::string* auth_platform_;
   friend void TC_PROTO_API protobuf_AddDesc_authentication_5fservice_2eproto();
   friend void protobuf_AssignDesc_authentication_5fservice_2eproto();
   friend void protobuf_ShutdownFile_authentication_5fservice_2eproto();
@@ -628,19 +319,6 @@ class TC_PROTO_API LogonResult : public ::google::protobuf::Message {
   // implements Message ----------------------------------------------
 
   LogonResult* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const LogonResult& from);
-  void MergeFrom(const LogonResult& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -755,6 +433,18 @@ class TC_PROTO_API LogonResult : public ::google::protobuf::Message {
   inline bool restricted_mode() const;
   inline void set_restricted_mode(bool value);
 
+  // optional string client_id = 11;
+  inline bool has_client_id() const;
+  inline void clear_client_id();
+  static const int kClientIdFieldNumber = 11;
+  inline const ::std::string& client_id() const;
+  inline void set_client_id(const ::std::string& value);
+  inline void set_client_id(const char* value);
+  inline void set_client_id(const char* value, size_t size);
+  inline ::std::string* mutable_client_id();
+  inline ::std::string* release_client_id();
+  inline void set_allocated_client_id(::std::string* client_id);
+
   // @@protoc_insertion_point(class_scope:bgs.protocol.authentication.v1.LogonResult)
  private:
   inline void set_has_error_code();
@@ -773,6 +463,8 @@ class TC_PROTO_API LogonResult : public ::google::protobuf::Message {
   inline void clear_has_session_key();
   inline void set_has_restricted_mode();
   inline void clear_has_restricted_mode();
+  inline void set_has_client_id();
+  inline void clear_has_client_id();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -787,6 +479,7 @@ class TC_PROTO_API LogonResult : public ::google::protobuf::Message {
   ::std::string* battle_tag_;
   ::std::string* geoip_country_;
   ::std::string* session_key_;
+  ::std::string* client_id_;
   bool restricted_mode_;
   friend void TC_PROTO_API protobuf_AddDesc_authentication_5fservice_2eproto();
   friend void protobuf_AssignDesc_authentication_5fservice_2eproto();
@@ -794,184 +487,6 @@ class TC_PROTO_API LogonResult : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static LogonResult* default_instance_;
-};
-// -------------------------------------------------------------------
-
-class TC_PROTO_API GenerateSSOTokenRequest : public ::google::protobuf::Message {
- public:
-  GenerateSSOTokenRequest();
-  virtual ~GenerateSSOTokenRequest();
-
-  GenerateSSOTokenRequest(const GenerateSSOTokenRequest& from);
-
-  inline GenerateSSOTokenRequest& operator=(const GenerateSSOTokenRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _unknown_fields_;
-  }
-
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return &_unknown_fields_;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const GenerateSSOTokenRequest& default_instance();
-
-  void Swap(GenerateSSOTokenRequest* other);
-
-  // implements Message ----------------------------------------------
-
-  GenerateSSOTokenRequest* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const GenerateSSOTokenRequest& from);
-  void MergeFrom(const GenerateSSOTokenRequest& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  public:
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // optional fixed32 program = 1;
-  inline bool has_program() const;
-  inline void clear_program();
-  static const int kProgramFieldNumber = 1;
-  inline ::google::protobuf::uint32 program() const;
-  inline void set_program(::google::protobuf::uint32 value);
-
-  // @@protoc_insertion_point(class_scope:bgs.protocol.authentication.v1.GenerateSSOTokenRequest)
- private:
-  inline void set_has_program();
-  inline void clear_has_program();
-
-  ::google::protobuf::UnknownFieldSet _unknown_fields_;
-
-  ::google::protobuf::uint32 _has_bits_[1];
-  mutable int _cached_size_;
-  ::google::protobuf::uint32 program_;
-  friend void TC_PROTO_API protobuf_AddDesc_authentication_5fservice_2eproto();
-  friend void protobuf_AssignDesc_authentication_5fservice_2eproto();
-  friend void protobuf_ShutdownFile_authentication_5fservice_2eproto();
-
-  void InitAsDefaultInstance();
-  static GenerateSSOTokenRequest* default_instance_;
-};
-// -------------------------------------------------------------------
-
-class TC_PROTO_API GenerateSSOTokenResponse : public ::google::protobuf::Message {
- public:
-  GenerateSSOTokenResponse();
-  virtual ~GenerateSSOTokenResponse();
-
-  GenerateSSOTokenResponse(const GenerateSSOTokenResponse& from);
-
-  inline GenerateSSOTokenResponse& operator=(const GenerateSSOTokenResponse& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _unknown_fields_;
-  }
-
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return &_unknown_fields_;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const GenerateSSOTokenResponse& default_instance();
-
-  void Swap(GenerateSSOTokenResponse* other);
-
-  // implements Message ----------------------------------------------
-
-  GenerateSSOTokenResponse* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const GenerateSSOTokenResponse& from);
-  void MergeFrom(const GenerateSSOTokenResponse& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  public:
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // optional bytes sso_id = 1;
-  inline bool has_sso_id() const;
-  inline void clear_sso_id();
-  static const int kSsoIdFieldNumber = 1;
-  inline const ::std::string& sso_id() const;
-  inline void set_sso_id(const ::std::string& value);
-  inline void set_sso_id(const char* value);
-  inline void set_sso_id(const void* value, size_t size);
-  inline ::std::string* mutable_sso_id();
-  inline ::std::string* release_sso_id();
-  inline void set_allocated_sso_id(::std::string* sso_id);
-
-  // optional bytes sso_secret = 2;
-  inline bool has_sso_secret() const;
-  inline void clear_sso_secret();
-  static const int kSsoSecretFieldNumber = 2;
-  inline const ::std::string& sso_secret() const;
-  inline void set_sso_secret(const ::std::string& value);
-  inline void set_sso_secret(const char* value);
-  inline void set_sso_secret(const void* value, size_t size);
-  inline ::std::string* mutable_sso_secret();
-  inline ::std::string* release_sso_secret();
-  inline void set_allocated_sso_secret(::std::string* sso_secret);
-
-  // @@protoc_insertion_point(class_scope:bgs.protocol.authentication.v1.GenerateSSOTokenResponse)
- private:
-  inline void set_has_sso_id();
-  inline void clear_has_sso_id();
-  inline void set_has_sso_secret();
-  inline void clear_has_sso_secret();
-
-  ::google::protobuf::UnknownFieldSet _unknown_fields_;
-
-  ::google::protobuf::uint32 _has_bits_[1];
-  mutable int _cached_size_;
-  ::std::string* sso_id_;
-  ::std::string* sso_secret_;
-  friend void TC_PROTO_API protobuf_AddDesc_authentication_5fservice_2eproto();
-  friend void protobuf_AssignDesc_authentication_5fservice_2eproto();
-  friend void protobuf_ShutdownFile_authentication_5fservice_2eproto();
-
-  void InitAsDefaultInstance();
-  static GenerateSSOTokenResponse* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -1003,19 +518,6 @@ class TC_PROTO_API LogonUpdateRequest : public ::google::protobuf::Message {
   // implements Message ----------------------------------------------
 
   LogonUpdateRequest* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const LogonUpdateRequest& from);
-  void MergeFrom(const LogonUpdateRequest& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -1082,19 +584,6 @@ class TC_PROTO_API LogonQueueUpdateRequest : public ::google::protobuf::Message 
   // implements Message ----------------------------------------------
 
   LogonQueueUpdateRequest* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const LogonQueueUpdateRequest& from);
-  void MergeFrom(const LogonQueueUpdateRequest& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -1153,128 +642,6 @@ class TC_PROTO_API LogonQueueUpdateRequest : public ::google::protobuf::Message 
 };
 // -------------------------------------------------------------------
 
-class TC_PROTO_API AccountSettingsNotification : public ::google::protobuf::Message {
- public:
-  AccountSettingsNotification();
-  virtual ~AccountSettingsNotification();
-
-  AccountSettingsNotification(const AccountSettingsNotification& from);
-
-  inline AccountSettingsNotification& operator=(const AccountSettingsNotification& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _unknown_fields_;
-  }
-
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return &_unknown_fields_;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const AccountSettingsNotification& default_instance();
-
-  void Swap(AccountSettingsNotification* other);
-
-  // implements Message ----------------------------------------------
-
-  AccountSettingsNotification* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const AccountSettingsNotification& from);
-  void MergeFrom(const AccountSettingsNotification& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  public:
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // repeated .bgs.protocol.account.v1.AccountLicense licenses = 1;
-  inline int licenses_size() const;
-  inline void clear_licenses();
-  static const int kLicensesFieldNumber = 1;
-  inline const ::bgs::protocol::account::v1::AccountLicense& licenses(int index) const;
-  inline ::bgs::protocol::account::v1::AccountLicense* mutable_licenses(int index);
-  inline ::bgs::protocol::account::v1::AccountLicense* add_licenses();
-  inline const ::google::protobuf::RepeatedPtrField< ::bgs::protocol::account::v1::AccountLicense >&
-      licenses() const;
-  inline ::google::protobuf::RepeatedPtrField< ::bgs::protocol::account::v1::AccountLicense >*
-      mutable_licenses();
-
-  // optional bool is_using_rid = 2;
-  inline bool has_is_using_rid() const;
-  inline void clear_is_using_rid();
-  static const int kIsUsingRidFieldNumber = 2;
-  inline bool is_using_rid() const;
-  inline void set_is_using_rid(bool value);
-
-  // optional bool is_playing_from_igr = 3;
-  inline bool has_is_playing_from_igr() const;
-  inline void clear_is_playing_from_igr();
-  static const int kIsPlayingFromIgrFieldNumber = 3;
-  inline bool is_playing_from_igr() const;
-  inline void set_is_playing_from_igr(bool value);
-
-  // optional bool can_receive_voice = 4;
-  inline bool has_can_receive_voice() const;
-  inline void clear_can_receive_voice();
-  static const int kCanReceiveVoiceFieldNumber = 4;
-  inline bool can_receive_voice() const;
-  inline void set_can_receive_voice(bool value);
-
-  // optional bool can_send_voice = 5;
-  inline bool has_can_send_voice() const;
-  inline void clear_can_send_voice();
-  static const int kCanSendVoiceFieldNumber = 5;
-  inline bool can_send_voice() const;
-  inline void set_can_send_voice(bool value);
-
-  // @@protoc_insertion_point(class_scope:bgs.protocol.authentication.v1.AccountSettingsNotification)
- private:
-  inline void set_has_is_using_rid();
-  inline void clear_has_is_using_rid();
-  inline void set_has_is_playing_from_igr();
-  inline void clear_has_is_playing_from_igr();
-  inline void set_has_can_receive_voice();
-  inline void clear_has_can_receive_voice();
-  inline void set_has_can_send_voice();
-  inline void clear_has_can_send_voice();
-
-  ::google::protobuf::UnknownFieldSet _unknown_fields_;
-
-  ::google::protobuf::uint32 _has_bits_[1];
-  mutable int _cached_size_;
-  ::google::protobuf::RepeatedPtrField< ::bgs::protocol::account::v1::AccountLicense > licenses_;
-  bool is_using_rid_;
-  bool is_playing_from_igr_;
-  bool can_receive_voice_;
-  bool can_send_voice_;
-  friend void TC_PROTO_API protobuf_AddDesc_authentication_5fservice_2eproto();
-  friend void protobuf_AssignDesc_authentication_5fservice_2eproto();
-  friend void protobuf_ShutdownFile_authentication_5fservice_2eproto();
-
-  void InitAsDefaultInstance();
-  static AccountSettingsNotification* default_instance_;
-};
-// -------------------------------------------------------------------
-
 class TC_PROTO_API ServerStateChangeRequest : public ::google::protobuf::Message {
  public:
   ServerStateChangeRequest();
@@ -1303,19 +670,6 @@ class TC_PROTO_API ServerStateChangeRequest : public ::google::protobuf::Message
   // implements Message ----------------------------------------------
 
   ServerStateChangeRequest* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const ServerStateChangeRequest& from);
-  void MergeFrom(const ServerStateChangeRequest& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -1392,19 +746,6 @@ class TC_PROTO_API VersionInfo : public ::google::protobuf::Message {
   // implements Message ----------------------------------------------
 
   VersionInfo* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const VersionInfo& from);
-  void MergeFrom(const VersionInfo& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -1506,19 +847,6 @@ class TC_PROTO_API VersionInfoNotification : public ::google::protobuf::Message 
   // implements Message ----------------------------------------------
 
   VersionInfoNotification* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const VersionInfoNotification& from);
-  void MergeFrom(const VersionInfoNotification& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -1559,373 +887,6 @@ class TC_PROTO_API VersionInfoNotification : public ::google::protobuf::Message 
 };
 // -------------------------------------------------------------------
 
-class TC_PROTO_API MemModuleLoadRequest : public ::google::protobuf::Message {
- public:
-  MemModuleLoadRequest();
-  virtual ~MemModuleLoadRequest();
-
-  MemModuleLoadRequest(const MemModuleLoadRequest& from);
-
-  inline MemModuleLoadRequest& operator=(const MemModuleLoadRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _unknown_fields_;
-  }
-
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return &_unknown_fields_;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const MemModuleLoadRequest& default_instance();
-
-  void Swap(MemModuleLoadRequest* other);
-
-  // implements Message ----------------------------------------------
-
-  MemModuleLoadRequest* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const MemModuleLoadRequest& from);
-  void MergeFrom(const MemModuleLoadRequest& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  public:
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // required .bgs.protocol.ContentHandle handle = 1;
-  inline bool has_handle() const;
-  inline void clear_handle();
-  static const int kHandleFieldNumber = 1;
-  inline const ::bgs::protocol::ContentHandle& handle() const;
-  inline ::bgs::protocol::ContentHandle* mutable_handle();
-  inline ::bgs::protocol::ContentHandle* release_handle();
-  inline void set_allocated_handle(::bgs::protocol::ContentHandle* handle);
-
-  // required bytes key = 2;
-  inline bool has_key() const;
-  inline void clear_key();
-  static const int kKeyFieldNumber = 2;
-  inline const ::std::string& key() const;
-  inline void set_key(const ::std::string& value);
-  inline void set_key(const char* value);
-  inline void set_key(const void* value, size_t size);
-  inline ::std::string* mutable_key();
-  inline ::std::string* release_key();
-  inline void set_allocated_key(::std::string* key);
-
-  // required bytes input = 3;
-  inline bool has_input() const;
-  inline void clear_input();
-  static const int kInputFieldNumber = 3;
-  inline const ::std::string& input() const;
-  inline void set_input(const ::std::string& value);
-  inline void set_input(const char* value);
-  inline void set_input(const void* value, size_t size);
-  inline ::std::string* mutable_input();
-  inline ::std::string* release_input();
-  inline void set_allocated_input(::std::string* input);
-
-  // @@protoc_insertion_point(class_scope:bgs.protocol.authentication.v1.MemModuleLoadRequest)
- private:
-  inline void set_has_handle();
-  inline void clear_has_handle();
-  inline void set_has_key();
-  inline void clear_has_key();
-  inline void set_has_input();
-  inline void clear_has_input();
-
-  ::google::protobuf::UnknownFieldSet _unknown_fields_;
-
-  ::google::protobuf::uint32 _has_bits_[1];
-  mutable int _cached_size_;
-  ::bgs::protocol::ContentHandle* handle_;
-  ::std::string* key_;
-  ::std::string* input_;
-  friend void TC_PROTO_API protobuf_AddDesc_authentication_5fservice_2eproto();
-  friend void protobuf_AssignDesc_authentication_5fservice_2eproto();
-  friend void protobuf_ShutdownFile_authentication_5fservice_2eproto();
-
-  void InitAsDefaultInstance();
-  static MemModuleLoadRequest* default_instance_;
-};
-// -------------------------------------------------------------------
-
-class TC_PROTO_API MemModuleLoadResponse : public ::google::protobuf::Message {
- public:
-  MemModuleLoadResponse();
-  virtual ~MemModuleLoadResponse();
-
-  MemModuleLoadResponse(const MemModuleLoadResponse& from);
-
-  inline MemModuleLoadResponse& operator=(const MemModuleLoadResponse& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _unknown_fields_;
-  }
-
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return &_unknown_fields_;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const MemModuleLoadResponse& default_instance();
-
-  void Swap(MemModuleLoadResponse* other);
-
-  // implements Message ----------------------------------------------
-
-  MemModuleLoadResponse* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const MemModuleLoadResponse& from);
-  void MergeFrom(const MemModuleLoadResponse& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  public:
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // required bytes data = 1;
-  inline bool has_data() const;
-  inline void clear_data();
-  static const int kDataFieldNumber = 1;
-  inline const ::std::string& data() const;
-  inline void set_data(const ::std::string& value);
-  inline void set_data(const char* value);
-  inline void set_data(const void* value, size_t size);
-  inline ::std::string* mutable_data();
-  inline ::std::string* release_data();
-  inline void set_allocated_data(::std::string* data);
-
-  // @@protoc_insertion_point(class_scope:bgs.protocol.authentication.v1.MemModuleLoadResponse)
- private:
-  inline void set_has_data();
-  inline void clear_has_data();
-
-  ::google::protobuf::UnknownFieldSet _unknown_fields_;
-
-  ::google::protobuf::uint32 _has_bits_[1];
-  mutable int _cached_size_;
-  ::std::string* data_;
-  friend void TC_PROTO_API protobuf_AddDesc_authentication_5fservice_2eproto();
-  friend void protobuf_AssignDesc_authentication_5fservice_2eproto();
-  friend void protobuf_ShutdownFile_authentication_5fservice_2eproto();
-
-  void InitAsDefaultInstance();
-  static MemModuleLoadResponse* default_instance_;
-};
-// -------------------------------------------------------------------
-
-class TC_PROTO_API SelectGameAccountRequest : public ::google::protobuf::Message {
- public:
-  SelectGameAccountRequest();
-  virtual ~SelectGameAccountRequest();
-
-  SelectGameAccountRequest(const SelectGameAccountRequest& from);
-
-  inline SelectGameAccountRequest& operator=(const SelectGameAccountRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _unknown_fields_;
-  }
-
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return &_unknown_fields_;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const SelectGameAccountRequest& default_instance();
-
-  void Swap(SelectGameAccountRequest* other);
-
-  // implements Message ----------------------------------------------
-
-  SelectGameAccountRequest* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const SelectGameAccountRequest& from);
-  void MergeFrom(const SelectGameAccountRequest& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  public:
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // required .bgs.protocol.EntityId game_account_id = 1;
-  inline bool has_game_account_id() const;
-  inline void clear_game_account_id();
-  static const int kGameAccountIdFieldNumber = 1;
-  inline const ::bgs::protocol::EntityId& game_account_id() const;
-  inline ::bgs::protocol::EntityId* mutable_game_account_id();
-  inline ::bgs::protocol::EntityId* release_game_account_id();
-  inline void set_allocated_game_account_id(::bgs::protocol::EntityId* game_account_id);
-
-  // @@protoc_insertion_point(class_scope:bgs.protocol.authentication.v1.SelectGameAccountRequest)
- private:
-  inline void set_has_game_account_id();
-  inline void clear_has_game_account_id();
-
-  ::google::protobuf::UnknownFieldSet _unknown_fields_;
-
-  ::google::protobuf::uint32 _has_bits_[1];
-  mutable int _cached_size_;
-  ::bgs::protocol::EntityId* game_account_id_;
-  friend void TC_PROTO_API protobuf_AddDesc_authentication_5fservice_2eproto();
-  friend void protobuf_AssignDesc_authentication_5fservice_2eproto();
-  friend void protobuf_ShutdownFile_authentication_5fservice_2eproto();
-
-  void InitAsDefaultInstance();
-  static SelectGameAccountRequest* default_instance_;
-};
-// -------------------------------------------------------------------
-
-class TC_PROTO_API GameAccountSelectedRequest : public ::google::protobuf::Message {
- public:
-  GameAccountSelectedRequest();
-  virtual ~GameAccountSelectedRequest();
-
-  GameAccountSelectedRequest(const GameAccountSelectedRequest& from);
-
-  inline GameAccountSelectedRequest& operator=(const GameAccountSelectedRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _unknown_fields_;
-  }
-
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return &_unknown_fields_;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const GameAccountSelectedRequest& default_instance();
-
-  void Swap(GameAccountSelectedRequest* other);
-
-  // implements Message ----------------------------------------------
-
-  GameAccountSelectedRequest* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const GameAccountSelectedRequest& from);
-  void MergeFrom(const GameAccountSelectedRequest& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  public:
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // required uint32 result = 1;
-  inline bool has_result() const;
-  inline void clear_result();
-  static const int kResultFieldNumber = 1;
-  inline ::google::protobuf::uint32 result() const;
-  inline void set_result(::google::protobuf::uint32 value);
-
-  // optional .bgs.protocol.EntityId game_account_id = 2;
-  inline bool has_game_account_id() const;
-  inline void clear_game_account_id();
-  static const int kGameAccountIdFieldNumber = 2;
-  inline const ::bgs::protocol::EntityId& game_account_id() const;
-  inline ::bgs::protocol::EntityId* mutable_game_account_id();
-  inline ::bgs::protocol::EntityId* release_game_account_id();
-  inline void set_allocated_game_account_id(::bgs::protocol::EntityId* game_account_id);
-
-  // @@protoc_insertion_point(class_scope:bgs.protocol.authentication.v1.GameAccountSelectedRequest)
- private:
-  inline void set_has_result();
-  inline void clear_has_result();
-  inline void set_has_game_account_id();
-  inline void clear_has_game_account_id();
-
-  ::google::protobuf::UnknownFieldSet _unknown_fields_;
-
-  ::google::protobuf::uint32 _has_bits_[1];
-  mutable int _cached_size_;
-  ::bgs::protocol::EntityId* game_account_id_;
-  ::google::protobuf::uint32 result_;
-  friend void TC_PROTO_API protobuf_AddDesc_authentication_5fservice_2eproto();
-  friend void protobuf_AssignDesc_authentication_5fservice_2eproto();
-  friend void protobuf_ShutdownFile_authentication_5fservice_2eproto();
-
-  void InitAsDefaultInstance();
-  static GameAccountSelectedRequest* default_instance_;
-};
-// -------------------------------------------------------------------
-
 class TC_PROTO_API GenerateWebCredentialsRequest : public ::google::protobuf::Message {
  public:
   GenerateWebCredentialsRequest();
@@ -1954,19 +915,6 @@ class TC_PROTO_API GenerateWebCredentialsRequest : public ::google::protobuf::Me
   // implements Message ----------------------------------------------
 
   GenerateWebCredentialsRequest* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const GenerateWebCredentialsRequest& from);
-  void MergeFrom(const GenerateWebCredentialsRequest& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -2033,19 +981,6 @@ class TC_PROTO_API GenerateWebCredentialsResponse : public ::google::protobuf::M
   // implements Message ----------------------------------------------
 
   GenerateWebCredentialsResponse* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const GenerateWebCredentialsResponse& from);
-  void MergeFrom(const GenerateWebCredentialsResponse& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -2117,19 +1052,6 @@ class TC_PROTO_API VerifyWebCredentialsRequest : public ::google::protobuf::Mess
   // implements Message ----------------------------------------------
 
   VerifyWebCredentialsRequest* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const VerifyWebCredentialsRequest& from);
-  void MergeFrom(const VerifyWebCredentialsRequest& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -2178,6 +1100,10 @@ class TC_PROTO_API AuthenticationListener : public ServiceBase
  public:
 
   explicit AuthenticationListener(bool use_original_hash);
+  AuthenticationListener(AuthenticationListener const&) = delete;
+  AuthenticationListener(AuthenticationListener&&) = delete;
+  AuthenticationListener& operator=(AuthenticationListener const&) = delete;
+  AuthenticationListener& operator=(AuthenticationListener&&) = delete;
   virtual ~AuthenticationListener();
 
   typedef std::integral_constant<uint32, 0x71240E35u> OriginalHash;
@@ -2186,37 +1112,14 @@ class TC_PROTO_API AuthenticationListener : public ServiceBase
   static google::protobuf::ServiceDescriptor const* descriptor();
 
   // client methods --------------------------------------------------
+  void OnServerStateChange(::bgs::protocol::authentication::v1::ServerStateChangeRequest const* request, bool client = false, bool server = false);
+  void OnLogonComplete(::bgs::protocol::authentication::v1::LogonResult const* request, bool client = false, bool server = false);
+  void OnLogonUpdate(::bgs::protocol::authentication::v1::LogonUpdateRequest const* request, bool client = false, bool server = false);
+  void OnVersionInfoUpdated(::bgs::protocol::authentication::v1::VersionInfoNotification const* request, bool client = false, bool server = false);
+  void OnLogonQueueUpdate(::bgs::protocol::authentication::v1::LogonQueueUpdateRequest const* request, bool client = false, bool server = false);
+  void OnLogonQueueEnd(::bgs::protocol::NoData const* request, bool client = false, bool server = false);
 
-  void OnModuleLoad(::bgs::protocol::authentication::v1::ModuleLoadRequest const* request);
-  void OnModuleMessage(::bgs::protocol::authentication::v1::ModuleMessageRequest const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback);
-  void OnServerStateChange(::bgs::protocol::authentication::v1::ServerStateChangeRequest const* request);
-  void OnLogonComplete(::bgs::protocol::authentication::v1::LogonResult const* request);
-  void OnMemModuleLoad(::bgs::protocol::authentication::v1::MemModuleLoadRequest const* request, std::function<void(::bgs::protocol::authentication::v1::MemModuleLoadResponse const*)> responseCallback);
-  void OnLogonUpdate(::bgs::protocol::authentication::v1::LogonUpdateRequest const* request);
-  void OnVersionInfoUpdated(::bgs::protocol::authentication::v1::VersionInfoNotification const* request);
-  void OnLogonQueueUpdate(::bgs::protocol::authentication::v1::LogonQueueUpdateRequest const* request);
-  void OnLogonQueueEnd(::bgs::protocol::NoData const* request);
-  void OnGameAccountSelected(::bgs::protocol::authentication::v1::GameAccountSelectedRequest const* request);
-  // server methods --------------------------------------------------
-
-  void CallServerMethod(uint32 token, uint32 methodId, MessageBuffer buffer) override final;
-
- protected:
-  virtual uint32 HandleOnModuleLoad(::bgs::protocol::authentication::v1::ModuleLoadRequest const* request);
-  virtual uint32 HandleOnModuleMessage(::bgs::protocol::authentication::v1::ModuleMessageRequest const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation);
-  virtual uint32 HandleOnServerStateChange(::bgs::protocol::authentication::v1::ServerStateChangeRequest const* request);
-  virtual uint32 HandleOnLogonComplete(::bgs::protocol::authentication::v1::LogonResult const* request);
-  virtual uint32 HandleOnMemModuleLoad(::bgs::protocol::authentication::v1::MemModuleLoadRequest const* request, ::bgs::protocol::authentication::v1::MemModuleLoadResponse* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation);
-  virtual uint32 HandleOnLogonUpdate(::bgs::protocol::authentication::v1::LogonUpdateRequest const* request);
-  virtual uint32 HandleOnVersionInfoUpdated(::bgs::protocol::authentication::v1::VersionInfoNotification const* request);
-  virtual uint32 HandleOnLogonQueueUpdate(::bgs::protocol::authentication::v1::LogonQueueUpdateRequest const* request);
-  virtual uint32 HandleOnLogonQueueEnd(::bgs::protocol::NoData const* request);
-  virtual uint32 HandleOnGameAccountSelected(::bgs::protocol::authentication::v1::GameAccountSelectedRequest const* request);
-
- private:
-  uint32 service_hash_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(AuthenticationListener);
+  void CallServerMethod(uint32 token, uint32 methodId, MessageBuffer buffer) final;
 };
 
 // -------------------------------------------------------------------
@@ -2226,6 +1129,10 @@ class TC_PROTO_API AuthenticationService : public ServiceBase
  public:
 
   explicit AuthenticationService(bool use_original_hash);
+  AuthenticationService(AuthenticationService const&) = delete;
+  AuthenticationService(AuthenticationService&&) = delete;
+  AuthenticationService& operator=(AuthenticationService const&) = delete;
+  AuthenticationService& operator=(AuthenticationService&&) = delete;
   virtual ~AuthenticationService();
 
   typedef std::integral_constant<uint32, 0xDECFC01u> OriginalHash;
@@ -2233,317 +1140,23 @@ class TC_PROTO_API AuthenticationService : public ServiceBase
 
   static google::protobuf::ServiceDescriptor const* descriptor();
 
-  // client methods --------------------------------------------------
-
-  void Logon(::bgs::protocol::authentication::v1::LogonRequest const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback);
-  void ModuleNotify(::bgs::protocol::authentication::v1::ModuleNotification const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback);
-  void ModuleMessage(::bgs::protocol::authentication::v1::ModuleMessageRequest const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback);
-  void SelectGameAccount_DEPRECATED(::bgs::protocol::EntityId const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback);
-  void GenerateSSOToken(::bgs::protocol::authentication::v1::GenerateSSOTokenRequest const* request, std::function<void(::bgs::protocol::authentication::v1::GenerateSSOTokenResponse const*)> responseCallback);
-  void SelectGameAccount(::bgs::protocol::authentication::v1::SelectGameAccountRequest const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback);
-  void VerifyWebCredentials(::bgs::protocol::authentication::v1::VerifyWebCredentialsRequest const* request, std::function<void(::bgs::protocol::NoData const*)> responseCallback);
-  void GenerateWebCredentials(::bgs::protocol::authentication::v1::GenerateWebCredentialsRequest const* request, std::function<void(::bgs::protocol::authentication::v1::GenerateWebCredentialsResponse const*)> responseCallback);
-  // server methods --------------------------------------------------
-
-  void CallServerMethod(uint32 token, uint32 methodId, MessageBuffer buffer) override final;
+  void CallServerMethod(uint32 token, uint32 methodId, MessageBuffer buffer) final;
 
  protected:
+  // server methods --------------------------------------------------
   virtual uint32 HandleLogon(::bgs::protocol::authentication::v1::LogonRequest const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation);
-  virtual uint32 HandleModuleNotify(::bgs::protocol::authentication::v1::ModuleNotification const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation);
-  virtual uint32 HandleModuleMessage(::bgs::protocol::authentication::v1::ModuleMessageRequest const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation);
-  virtual uint32 HandleSelectGameAccount_DEPRECATED(::bgs::protocol::EntityId const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation);
-  virtual uint32 HandleGenerateSSOToken(::bgs::protocol::authentication::v1::GenerateSSOTokenRequest const* request, ::bgs::protocol::authentication::v1::GenerateSSOTokenResponse* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation);
-  virtual uint32 HandleSelectGameAccount(::bgs::protocol::authentication::v1::SelectGameAccountRequest const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation);
   virtual uint32 HandleVerifyWebCredentials(::bgs::protocol::authentication::v1::VerifyWebCredentialsRequest const* request, ::bgs::protocol::NoData* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation);
   virtual uint32 HandleGenerateWebCredentials(::bgs::protocol::authentication::v1::GenerateWebCredentialsRequest const* request, ::bgs::protocol::authentication::v1::GenerateWebCredentialsResponse* response, std::function<void(ServiceBase*, uint32, ::google::protobuf::Message const*)>& continuation);
 
  private:
-  uint32 service_hash_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(AuthenticationService);
+  void ParseAndHandleLogon(uint32 token, uint32 methodId, MessageBuffer& buffer);
+  void ParseAndHandleVerifyWebCredentials(uint32 token, uint32 methodId, MessageBuffer& buffer);
+  void ParseAndHandleGenerateWebCredentials(uint32 token, uint32 methodId, MessageBuffer& buffer);
 };
 
 // ===================================================================
 
-
 // ===================================================================
-
-// ModuleLoadRequest
-
-// required .bgs.protocol.ContentHandle module_handle = 1;
-inline bool ModuleLoadRequest::has_module_handle() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void ModuleLoadRequest::set_has_module_handle() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void ModuleLoadRequest::clear_has_module_handle() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void ModuleLoadRequest::clear_module_handle() {
-  if (module_handle_ != NULL) module_handle_->::bgs::protocol::ContentHandle::Clear();
-  clear_has_module_handle();
-}
-inline const ::bgs::protocol::ContentHandle& ModuleLoadRequest::module_handle() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.ModuleLoadRequest.module_handle)
-  return module_handle_ != NULL ? *module_handle_ : *default_instance_->module_handle_;
-}
-inline ::bgs::protocol::ContentHandle* ModuleLoadRequest::mutable_module_handle() {
-  set_has_module_handle();
-  if (module_handle_ == NULL) module_handle_ = new ::bgs::protocol::ContentHandle;
-  // @@protoc_insertion_point(field_mutable:bgs.protocol.authentication.v1.ModuleLoadRequest.module_handle)
-  return module_handle_;
-}
-inline ::bgs::protocol::ContentHandle* ModuleLoadRequest::release_module_handle() {
-  clear_has_module_handle();
-  ::bgs::protocol::ContentHandle* temp = module_handle_;
-  module_handle_ = NULL;
-  return temp;
-}
-inline void ModuleLoadRequest::set_allocated_module_handle(::bgs::protocol::ContentHandle* module_handle) {
-  delete module_handle_;
-  module_handle_ = module_handle;
-  if (module_handle) {
-    set_has_module_handle();
-  } else {
-    clear_has_module_handle();
-  }
-  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.authentication.v1.ModuleLoadRequest.module_handle)
-}
-
-// optional bytes message = 2;
-inline bool ModuleLoadRequest::has_message() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
-}
-inline void ModuleLoadRequest::set_has_message() {
-  _has_bits_[0] |= 0x00000002u;
-}
-inline void ModuleLoadRequest::clear_has_message() {
-  _has_bits_[0] &= ~0x00000002u;
-}
-inline void ModuleLoadRequest::clear_message() {
-  if (message_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    message_->clear();
-  }
-  clear_has_message();
-}
-inline const ::std::string& ModuleLoadRequest::message() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.ModuleLoadRequest.message)
-  return *message_;
-}
-inline void ModuleLoadRequest::set_message(const ::std::string& value) {
-  set_has_message();
-  if (message_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    message_ = new ::std::string;
-  }
-  message_->assign(value);
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.ModuleLoadRequest.message)
-}
-inline void ModuleLoadRequest::set_message(const char* value) {
-  set_has_message();
-  if (message_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    message_ = new ::std::string;
-  }
-  message_->assign(value);
-  // @@protoc_insertion_point(field_set_char:bgs.protocol.authentication.v1.ModuleLoadRequest.message)
-}
-inline void ModuleLoadRequest::set_message(const void* value, size_t size) {
-  set_has_message();
-  if (message_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    message_ = new ::std::string;
-  }
-  message_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.authentication.v1.ModuleLoadRequest.message)
-}
-inline ::std::string* ModuleLoadRequest::mutable_message() {
-  set_has_message();
-  if (message_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    message_ = new ::std::string;
-  }
-  // @@protoc_insertion_point(field_mutable:bgs.protocol.authentication.v1.ModuleLoadRequest.message)
-  return message_;
-}
-inline ::std::string* ModuleLoadRequest::release_message() {
-  clear_has_message();
-  if (message_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    return NULL;
-  } else {
-    ::std::string* temp = message_;
-    message_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-    return temp;
-  }
-}
-inline void ModuleLoadRequest::set_allocated_message(::std::string* message) {
-  if (message_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    delete message_;
-  }
-  if (message) {
-    set_has_message();
-    message_ = message;
-  } else {
-    clear_has_message();
-    message_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.authentication.v1.ModuleLoadRequest.message)
-}
-
-// -------------------------------------------------------------------
-
-// ModuleNotification
-
-// optional int32 module_id = 2;
-inline bool ModuleNotification::has_module_id() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void ModuleNotification::set_has_module_id() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void ModuleNotification::clear_has_module_id() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void ModuleNotification::clear_module_id() {
-  module_id_ = 0;
-  clear_has_module_id();
-}
-inline ::google::protobuf::int32 ModuleNotification::module_id() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.ModuleNotification.module_id)
-  return module_id_;
-}
-inline void ModuleNotification::set_module_id(::google::protobuf::int32 value) {
-  set_has_module_id();
-  module_id_ = value;
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.ModuleNotification.module_id)
-}
-
-// optional uint32 result = 3;
-inline bool ModuleNotification::has_result() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
-}
-inline void ModuleNotification::set_has_result() {
-  _has_bits_[0] |= 0x00000002u;
-}
-inline void ModuleNotification::clear_has_result() {
-  _has_bits_[0] &= ~0x00000002u;
-}
-inline void ModuleNotification::clear_result() {
-  result_ = 0u;
-  clear_has_result();
-}
-inline ::google::protobuf::uint32 ModuleNotification::result() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.ModuleNotification.result)
-  return result_;
-}
-inline void ModuleNotification::set_result(::google::protobuf::uint32 value) {
-  set_has_result();
-  result_ = value;
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.ModuleNotification.result)
-}
-
-// -------------------------------------------------------------------
-
-// ModuleMessageRequest
-
-// required int32 module_id = 1;
-inline bool ModuleMessageRequest::has_module_id() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void ModuleMessageRequest::set_has_module_id() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void ModuleMessageRequest::clear_has_module_id() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void ModuleMessageRequest::clear_module_id() {
-  module_id_ = 0;
-  clear_has_module_id();
-}
-inline ::google::protobuf::int32 ModuleMessageRequest::module_id() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.ModuleMessageRequest.module_id)
-  return module_id_;
-}
-inline void ModuleMessageRequest::set_module_id(::google::protobuf::int32 value) {
-  set_has_module_id();
-  module_id_ = value;
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.ModuleMessageRequest.module_id)
-}
-
-// optional bytes message = 2;
-inline bool ModuleMessageRequest::has_message() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
-}
-inline void ModuleMessageRequest::set_has_message() {
-  _has_bits_[0] |= 0x00000002u;
-}
-inline void ModuleMessageRequest::clear_has_message() {
-  _has_bits_[0] &= ~0x00000002u;
-}
-inline void ModuleMessageRequest::clear_message() {
-  if (message_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    message_->clear();
-  }
-  clear_has_message();
-}
-inline const ::std::string& ModuleMessageRequest::message() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.ModuleMessageRequest.message)
-  return *message_;
-}
-inline void ModuleMessageRequest::set_message(const ::std::string& value) {
-  set_has_message();
-  if (message_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    message_ = new ::std::string;
-  }
-  message_->assign(value);
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.ModuleMessageRequest.message)
-}
-inline void ModuleMessageRequest::set_message(const char* value) {
-  set_has_message();
-  if (message_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    message_ = new ::std::string;
-  }
-  message_->assign(value);
-  // @@protoc_insertion_point(field_set_char:bgs.protocol.authentication.v1.ModuleMessageRequest.message)
-}
-inline void ModuleMessageRequest::set_message(const void* value, size_t size) {
-  set_has_message();
-  if (message_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    message_ = new ::std::string;
-  }
-  message_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.authentication.v1.ModuleMessageRequest.message)
-}
-inline ::std::string* ModuleMessageRequest::mutable_message() {
-  set_has_message();
-  if (message_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    message_ = new ::std::string;
-  }
-  // @@protoc_insertion_point(field_mutable:bgs.protocol.authentication.v1.ModuleMessageRequest.message)
-  return message_;
-}
-inline ::std::string* ModuleMessageRequest::release_message() {
-  clear_has_message();
-  if (message_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    return NULL;
-  } else {
-    ::std::string* temp = message_;
-    message_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-    return temp;
-  }
-}
-inline void ModuleMessageRequest::set_allocated_message(::std::string* message) {
-  if (message_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    delete message_;
-  }
-  if (message) {
-    set_has_message();
-    message_ = message;
-  } else {
-    clear_has_message();
-    message_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.authentication.v1.ModuleMessageRequest.message)
-}
-
-// -------------------------------------------------------------------
 
 // LogonRequest
 
@@ -2975,115 +1588,15 @@ inline void LogonRequest::set_public_computer(bool value) {
   // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.LogonRequest.public_computer)
 }
 
-// optional bytes sso_id = 8;
-inline bool LogonRequest::has_sso_id() const {
-  return (_has_bits_[0] & 0x00000080u) != 0;
-}
-inline void LogonRequest::set_has_sso_id() {
-  _has_bits_[0] |= 0x00000080u;
-}
-inline void LogonRequest::clear_has_sso_id() {
-  _has_bits_[0] &= ~0x00000080u;
-}
-inline void LogonRequest::clear_sso_id() {
-  if (sso_id_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    sso_id_->clear();
-  }
-  clear_has_sso_id();
-}
-inline const ::std::string& LogonRequest::sso_id() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.LogonRequest.sso_id)
-  return *sso_id_;
-}
-inline void LogonRequest::set_sso_id(const ::std::string& value) {
-  set_has_sso_id();
-  if (sso_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    sso_id_ = new ::std::string;
-  }
-  sso_id_->assign(value);
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.LogonRequest.sso_id)
-}
-inline void LogonRequest::set_sso_id(const char* value) {
-  set_has_sso_id();
-  if (sso_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    sso_id_ = new ::std::string;
-  }
-  sso_id_->assign(value);
-  // @@protoc_insertion_point(field_set_char:bgs.protocol.authentication.v1.LogonRequest.sso_id)
-}
-inline void LogonRequest::set_sso_id(const void* value, size_t size) {
-  set_has_sso_id();
-  if (sso_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    sso_id_ = new ::std::string;
-  }
-  sso_id_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.authentication.v1.LogonRequest.sso_id)
-}
-inline ::std::string* LogonRequest::mutable_sso_id() {
-  set_has_sso_id();
-  if (sso_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    sso_id_ = new ::std::string;
-  }
-  // @@protoc_insertion_point(field_mutable:bgs.protocol.authentication.v1.LogonRequest.sso_id)
-  return sso_id_;
-}
-inline ::std::string* LogonRequest::release_sso_id() {
-  clear_has_sso_id();
-  if (sso_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    return NULL;
-  } else {
-    ::std::string* temp = sso_id_;
-    sso_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-    return temp;
-  }
-}
-inline void LogonRequest::set_allocated_sso_id(::std::string* sso_id) {
-  if (sso_id_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    delete sso_id_;
-  }
-  if (sso_id) {
-    set_has_sso_id();
-    sso_id_ = sso_id;
-  } else {
-    clear_has_sso_id();
-    sso_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.authentication.v1.LogonRequest.sso_id)
-}
-
-// optional bool disconnect_on_cookie_fail = 9 [default = false];
-inline bool LogonRequest::has_disconnect_on_cookie_fail() const {
-  return (_has_bits_[0] & 0x00000100u) != 0;
-}
-inline void LogonRequest::set_has_disconnect_on_cookie_fail() {
-  _has_bits_[0] |= 0x00000100u;
-}
-inline void LogonRequest::clear_has_disconnect_on_cookie_fail() {
-  _has_bits_[0] &= ~0x00000100u;
-}
-inline void LogonRequest::clear_disconnect_on_cookie_fail() {
-  disconnect_on_cookie_fail_ = false;
-  clear_has_disconnect_on_cookie_fail();
-}
-inline bool LogonRequest::disconnect_on_cookie_fail() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.LogonRequest.disconnect_on_cookie_fail)
-  return disconnect_on_cookie_fail_;
-}
-inline void LogonRequest::set_disconnect_on_cookie_fail(bool value) {
-  set_has_disconnect_on_cookie_fail();
-  disconnect_on_cookie_fail_ = value;
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.LogonRequest.disconnect_on_cookie_fail)
-}
-
 // optional bool allow_logon_queue_notifications = 10 [default = false];
 inline bool LogonRequest::has_allow_logon_queue_notifications() const {
-  return (_has_bits_[0] & 0x00000200u) != 0;
+  return (_has_bits_[0] & 0x00000080u) != 0;
 }
 inline void LogonRequest::set_has_allow_logon_queue_notifications() {
-  _has_bits_[0] |= 0x00000200u;
+  _has_bits_[0] |= 0x00000080u;
 }
 inline void LogonRequest::clear_has_allow_logon_queue_notifications() {
-  _has_bits_[0] &= ~0x00000200u;
+  _has_bits_[0] &= ~0x00000080u;
 }
 inline void LogonRequest::clear_allow_logon_queue_notifications() {
   allow_logon_queue_notifications_ = false;
@@ -3099,39 +1612,15 @@ inline void LogonRequest::set_allow_logon_queue_notifications(bool value) {
   // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.LogonRequest.allow_logon_queue_notifications)
 }
 
-// optional bool web_client_verification = 11 [default = false];
-inline bool LogonRequest::has_web_client_verification() const {
-  return (_has_bits_[0] & 0x00000400u) != 0;
-}
-inline void LogonRequest::set_has_web_client_verification() {
-  _has_bits_[0] |= 0x00000400u;
-}
-inline void LogonRequest::clear_has_web_client_verification() {
-  _has_bits_[0] &= ~0x00000400u;
-}
-inline void LogonRequest::clear_web_client_verification() {
-  web_client_verification_ = false;
-  clear_has_web_client_verification();
-}
-inline bool LogonRequest::web_client_verification() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.LogonRequest.web_client_verification)
-  return web_client_verification_;
-}
-inline void LogonRequest::set_web_client_verification(bool value) {
-  set_has_web_client_verification();
-  web_client_verification_ = value;
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.LogonRequest.web_client_verification)
-}
-
 // optional bytes cached_web_credentials = 12;
 inline bool LogonRequest::has_cached_web_credentials() const {
-  return (_has_bits_[0] & 0x00000800u) != 0;
+  return (_has_bits_[0] & 0x00000100u) != 0;
 }
 inline void LogonRequest::set_has_cached_web_credentials() {
-  _has_bits_[0] |= 0x00000800u;
+  _has_bits_[0] |= 0x00000100u;
 }
 inline void LogonRequest::clear_has_cached_web_credentials() {
-  _has_bits_[0] &= ~0x00000800u;
+  _has_bits_[0] &= ~0x00000100u;
 }
 inline void LogonRequest::clear_cached_web_credentials() {
   if (cached_web_credentials_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
@@ -3201,13 +1690,13 @@ inline void LogonRequest::set_allocated_cached_web_credentials(::std::string* ca
 
 // optional string user_agent = 14;
 inline bool LogonRequest::has_user_agent() const {
-  return (_has_bits_[0] & 0x00001000u) != 0;
+  return (_has_bits_[0] & 0x00000200u) != 0;
 }
 inline void LogonRequest::set_has_user_agent() {
-  _has_bits_[0] |= 0x00001000u;
+  _has_bits_[0] |= 0x00000200u;
 }
 inline void LogonRequest::clear_has_user_agent() {
-  _has_bits_[0] &= ~0x00001000u;
+  _has_bits_[0] &= ~0x00000200u;
 }
 inline void LogonRequest::clear_user_agent() {
   if (user_agent_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
@@ -3277,13 +1766,13 @@ inline void LogonRequest::set_allocated_user_agent(::std::string* user_agent) {
 
 // optional string device_id = 15;
 inline bool LogonRequest::has_device_id() const {
-  return (_has_bits_[0] & 0x00002000u) != 0;
+  return (_has_bits_[0] & 0x00000400u) != 0;
 }
 inline void LogonRequest::set_has_device_id() {
-  _has_bits_[0] |= 0x00002000u;
+  _has_bits_[0] |= 0x00000400u;
 }
 inline void LogonRequest::clear_has_device_id() {
-  _has_bits_[0] &= ~0x00002000u;
+  _has_bits_[0] &= ~0x00000400u;
 }
 inline void LogonRequest::clear_device_id() {
   if (device_id_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
@@ -3349,6 +1838,158 @@ inline void LogonRequest::set_allocated_device_id(::std::string* device_id) {
     device_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
   // @@protoc_insertion_point(field_set_allocated:bgs.protocol.authentication.v1.LogonRequest.device_id)
+}
+
+// optional string phone_number = 16;
+inline bool LogonRequest::has_phone_number() const {
+  return (_has_bits_[0] & 0x00000800u) != 0;
+}
+inline void LogonRequest::set_has_phone_number() {
+  _has_bits_[0] |= 0x00000800u;
+}
+inline void LogonRequest::clear_has_phone_number() {
+  _has_bits_[0] &= ~0x00000800u;
+}
+inline void LogonRequest::clear_phone_number() {
+  if (phone_number_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    phone_number_->clear();
+  }
+  clear_has_phone_number();
+}
+inline const ::std::string& LogonRequest::phone_number() const {
+  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.LogonRequest.phone_number)
+  return *phone_number_;
+}
+inline void LogonRequest::set_phone_number(const ::std::string& value) {
+  set_has_phone_number();
+  if (phone_number_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    phone_number_ = new ::std::string;
+  }
+  phone_number_->assign(value);
+  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.LogonRequest.phone_number)
+}
+inline void LogonRequest::set_phone_number(const char* value) {
+  set_has_phone_number();
+  if (phone_number_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    phone_number_ = new ::std::string;
+  }
+  phone_number_->assign(value);
+  // @@protoc_insertion_point(field_set_char:bgs.protocol.authentication.v1.LogonRequest.phone_number)
+}
+inline void LogonRequest::set_phone_number(const char* value, size_t size) {
+  set_has_phone_number();
+  if (phone_number_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    phone_number_ = new ::std::string;
+  }
+  phone_number_->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.authentication.v1.LogonRequest.phone_number)
+}
+inline ::std::string* LogonRequest::mutable_phone_number() {
+  set_has_phone_number();
+  if (phone_number_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    phone_number_ = new ::std::string;
+  }
+  // @@protoc_insertion_point(field_mutable:bgs.protocol.authentication.v1.LogonRequest.phone_number)
+  return phone_number_;
+}
+inline ::std::string* LogonRequest::release_phone_number() {
+  clear_has_phone_number();
+  if (phone_number_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    return NULL;
+  } else {
+    ::std::string* temp = phone_number_;
+    phone_number_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    return temp;
+  }
+}
+inline void LogonRequest::set_allocated_phone_number(::std::string* phone_number) {
+  if (phone_number_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    delete phone_number_;
+  }
+  if (phone_number) {
+    set_has_phone_number();
+    phone_number_ = phone_number;
+  } else {
+    clear_has_phone_number();
+    phone_number_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  }
+  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.authentication.v1.LogonRequest.phone_number)
+}
+
+// optional string auth_platform = 17;
+inline bool LogonRequest::has_auth_platform() const {
+  return (_has_bits_[0] & 0x00001000u) != 0;
+}
+inline void LogonRequest::set_has_auth_platform() {
+  _has_bits_[0] |= 0x00001000u;
+}
+inline void LogonRequest::clear_has_auth_platform() {
+  _has_bits_[0] &= ~0x00001000u;
+}
+inline void LogonRequest::clear_auth_platform() {
+  if (auth_platform_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    auth_platform_->clear();
+  }
+  clear_has_auth_platform();
+}
+inline const ::std::string& LogonRequest::auth_platform() const {
+  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.LogonRequest.auth_platform)
+  return *auth_platform_;
+}
+inline void LogonRequest::set_auth_platform(const ::std::string& value) {
+  set_has_auth_platform();
+  if (auth_platform_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    auth_platform_ = new ::std::string;
+  }
+  auth_platform_->assign(value);
+  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.LogonRequest.auth_platform)
+}
+inline void LogonRequest::set_auth_platform(const char* value) {
+  set_has_auth_platform();
+  if (auth_platform_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    auth_platform_ = new ::std::string;
+  }
+  auth_platform_->assign(value);
+  // @@protoc_insertion_point(field_set_char:bgs.protocol.authentication.v1.LogonRequest.auth_platform)
+}
+inline void LogonRequest::set_auth_platform(const char* value, size_t size) {
+  set_has_auth_platform();
+  if (auth_platform_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    auth_platform_ = new ::std::string;
+  }
+  auth_platform_->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.authentication.v1.LogonRequest.auth_platform)
+}
+inline ::std::string* LogonRequest::mutable_auth_platform() {
+  set_has_auth_platform();
+  if (auth_platform_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    auth_platform_ = new ::std::string;
+  }
+  // @@protoc_insertion_point(field_mutable:bgs.protocol.authentication.v1.LogonRequest.auth_platform)
+  return auth_platform_;
+}
+inline ::std::string* LogonRequest::release_auth_platform() {
+  clear_has_auth_platform();
+  if (auth_platform_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    return NULL;
+  } else {
+    ::std::string* temp = auth_platform_;
+    auth_platform_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    return temp;
+  }
+}
+inline void LogonRequest::set_allocated_auth_platform(::std::string* auth_platform) {
+  if (auth_platform_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    delete auth_platform_;
+  }
+  if (auth_platform) {
+    set_has_auth_platform();
+    auth_platform_ = auth_platform;
+  } else {
+    clear_has_auth_platform();
+    auth_platform_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  }
+  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.authentication.v1.LogonRequest.auth_platform)
 }
 
 // -------------------------------------------------------------------
@@ -3832,188 +2473,80 @@ inline void LogonResult::set_restricted_mode(bool value) {
   // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.LogonResult.restricted_mode)
 }
 
-// -------------------------------------------------------------------
-
-// GenerateSSOTokenRequest
-
-// optional fixed32 program = 1;
-inline bool GenerateSSOTokenRequest::has_program() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
+// optional string client_id = 11;
+inline bool LogonResult::has_client_id() const {
+  return (_has_bits_[0] & 0x00000400u) != 0;
 }
-inline void GenerateSSOTokenRequest::set_has_program() {
-  _has_bits_[0] |= 0x00000001u;
+inline void LogonResult::set_has_client_id() {
+  _has_bits_[0] |= 0x00000400u;
 }
-inline void GenerateSSOTokenRequest::clear_has_program() {
-  _has_bits_[0] &= ~0x00000001u;
+inline void LogonResult::clear_has_client_id() {
+  _has_bits_[0] &= ~0x00000400u;
 }
-inline void GenerateSSOTokenRequest::clear_program() {
-  program_ = 0u;
-  clear_has_program();
-}
-inline ::google::protobuf::uint32 GenerateSSOTokenRequest::program() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.GenerateSSOTokenRequest.program)
-  return program_;
-}
-inline void GenerateSSOTokenRequest::set_program(::google::protobuf::uint32 value) {
-  set_has_program();
-  program_ = value;
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.GenerateSSOTokenRequest.program)
-}
-
-// -------------------------------------------------------------------
-
-// GenerateSSOTokenResponse
-
-// optional bytes sso_id = 1;
-inline bool GenerateSSOTokenResponse::has_sso_id() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void GenerateSSOTokenResponse::set_has_sso_id() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void GenerateSSOTokenResponse::clear_has_sso_id() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void GenerateSSOTokenResponse::clear_sso_id() {
-  if (sso_id_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    sso_id_->clear();
+inline void LogonResult::clear_client_id() {
+  if (client_id_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_id_->clear();
   }
-  clear_has_sso_id();
+  clear_has_client_id();
 }
-inline const ::std::string& GenerateSSOTokenResponse::sso_id() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.GenerateSSOTokenResponse.sso_id)
-  return *sso_id_;
+inline const ::std::string& LogonResult::client_id() const {
+  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.LogonResult.client_id)
+  return *client_id_;
 }
-inline void GenerateSSOTokenResponse::set_sso_id(const ::std::string& value) {
-  set_has_sso_id();
-  if (sso_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    sso_id_ = new ::std::string;
+inline void LogonResult::set_client_id(const ::std::string& value) {
+  set_has_client_id();
+  if (client_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_id_ = new ::std::string;
   }
-  sso_id_->assign(value);
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.GenerateSSOTokenResponse.sso_id)
+  client_id_->assign(value);
+  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.LogonResult.client_id)
 }
-inline void GenerateSSOTokenResponse::set_sso_id(const char* value) {
-  set_has_sso_id();
-  if (sso_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    sso_id_ = new ::std::string;
+inline void LogonResult::set_client_id(const char* value) {
+  set_has_client_id();
+  if (client_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_id_ = new ::std::string;
   }
-  sso_id_->assign(value);
-  // @@protoc_insertion_point(field_set_char:bgs.protocol.authentication.v1.GenerateSSOTokenResponse.sso_id)
+  client_id_->assign(value);
+  // @@protoc_insertion_point(field_set_char:bgs.protocol.authentication.v1.LogonResult.client_id)
 }
-inline void GenerateSSOTokenResponse::set_sso_id(const void* value, size_t size) {
-  set_has_sso_id();
-  if (sso_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    sso_id_ = new ::std::string;
+inline void LogonResult::set_client_id(const char* value, size_t size) {
+  set_has_client_id();
+  if (client_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_id_ = new ::std::string;
   }
-  sso_id_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.authentication.v1.GenerateSSOTokenResponse.sso_id)
+  client_id_->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.authentication.v1.LogonResult.client_id)
 }
-inline ::std::string* GenerateSSOTokenResponse::mutable_sso_id() {
-  set_has_sso_id();
-  if (sso_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    sso_id_ = new ::std::string;
+inline ::std::string* LogonResult::mutable_client_id() {
+  set_has_client_id();
+  if (client_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_id_ = new ::std::string;
   }
-  // @@protoc_insertion_point(field_mutable:bgs.protocol.authentication.v1.GenerateSSOTokenResponse.sso_id)
-  return sso_id_;
+  // @@protoc_insertion_point(field_mutable:bgs.protocol.authentication.v1.LogonResult.client_id)
+  return client_id_;
 }
-inline ::std::string* GenerateSSOTokenResponse::release_sso_id() {
-  clear_has_sso_id();
-  if (sso_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+inline ::std::string* LogonResult::release_client_id() {
+  clear_has_client_id();
+  if (client_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     return NULL;
   } else {
-    ::std::string* temp = sso_id_;
-    sso_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    ::std::string* temp = client_id_;
+    client_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
     return temp;
   }
 }
-inline void GenerateSSOTokenResponse::set_allocated_sso_id(::std::string* sso_id) {
-  if (sso_id_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    delete sso_id_;
+inline void LogonResult::set_allocated_client_id(::std::string* client_id) {
+  if (client_id_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    delete client_id_;
   }
-  if (sso_id) {
-    set_has_sso_id();
-    sso_id_ = sso_id;
+  if (client_id) {
+    set_has_client_id();
+    client_id_ = client_id;
   } else {
-    clear_has_sso_id();
-    sso_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    clear_has_client_id();
+    client_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
-  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.authentication.v1.GenerateSSOTokenResponse.sso_id)
-}
-
-// optional bytes sso_secret = 2;
-inline bool GenerateSSOTokenResponse::has_sso_secret() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
-}
-inline void GenerateSSOTokenResponse::set_has_sso_secret() {
-  _has_bits_[0] |= 0x00000002u;
-}
-inline void GenerateSSOTokenResponse::clear_has_sso_secret() {
-  _has_bits_[0] &= ~0x00000002u;
-}
-inline void GenerateSSOTokenResponse::clear_sso_secret() {
-  if (sso_secret_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    sso_secret_->clear();
-  }
-  clear_has_sso_secret();
-}
-inline const ::std::string& GenerateSSOTokenResponse::sso_secret() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.GenerateSSOTokenResponse.sso_secret)
-  return *sso_secret_;
-}
-inline void GenerateSSOTokenResponse::set_sso_secret(const ::std::string& value) {
-  set_has_sso_secret();
-  if (sso_secret_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    sso_secret_ = new ::std::string;
-  }
-  sso_secret_->assign(value);
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.GenerateSSOTokenResponse.sso_secret)
-}
-inline void GenerateSSOTokenResponse::set_sso_secret(const char* value) {
-  set_has_sso_secret();
-  if (sso_secret_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    sso_secret_ = new ::std::string;
-  }
-  sso_secret_->assign(value);
-  // @@protoc_insertion_point(field_set_char:bgs.protocol.authentication.v1.GenerateSSOTokenResponse.sso_secret)
-}
-inline void GenerateSSOTokenResponse::set_sso_secret(const void* value, size_t size) {
-  set_has_sso_secret();
-  if (sso_secret_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    sso_secret_ = new ::std::string;
-  }
-  sso_secret_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.authentication.v1.GenerateSSOTokenResponse.sso_secret)
-}
-inline ::std::string* GenerateSSOTokenResponse::mutable_sso_secret() {
-  set_has_sso_secret();
-  if (sso_secret_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    sso_secret_ = new ::std::string;
-  }
-  // @@protoc_insertion_point(field_mutable:bgs.protocol.authentication.v1.GenerateSSOTokenResponse.sso_secret)
-  return sso_secret_;
-}
-inline ::std::string* GenerateSSOTokenResponse::release_sso_secret() {
-  clear_has_sso_secret();
-  if (sso_secret_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    return NULL;
-  } else {
-    ::std::string* temp = sso_secret_;
-    sso_secret_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-    return temp;
-  }
-}
-inline void GenerateSSOTokenResponse::set_allocated_sso_secret(::std::string* sso_secret) {
-  if (sso_secret_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    delete sso_secret_;
-  }
-  if (sso_secret) {
-    set_has_sso_secret();
-    sso_secret_ = sso_secret;
-  } else {
-    clear_has_sso_secret();
-    sso_secret_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.authentication.v1.GenerateSSOTokenResponse.sso_secret)
+  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.authentication.v1.LogonResult.client_id)
 }
 
 // -------------------------------------------------------------------
@@ -4118,136 +2651,6 @@ inline void LogonQueueUpdateRequest::set_eta_deviation_in_sec(::google::protobuf
   set_has_eta_deviation_in_sec();
   eta_deviation_in_sec_ = value;
   // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.LogonQueueUpdateRequest.eta_deviation_in_sec)
-}
-
-// -------------------------------------------------------------------
-
-// AccountSettingsNotification
-
-// repeated .bgs.protocol.account.v1.AccountLicense licenses = 1;
-inline int AccountSettingsNotification::licenses_size() const {
-  return licenses_.size();
-}
-inline void AccountSettingsNotification::clear_licenses() {
-  licenses_.Clear();
-}
-inline const ::bgs::protocol::account::v1::AccountLicense& AccountSettingsNotification::licenses(int index) const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.AccountSettingsNotification.licenses)
-  return licenses_.Get(index);
-}
-inline ::bgs::protocol::account::v1::AccountLicense* AccountSettingsNotification::mutable_licenses(int index) {
-  // @@protoc_insertion_point(field_mutable:bgs.protocol.authentication.v1.AccountSettingsNotification.licenses)
-  return licenses_.Mutable(index);
-}
-inline ::bgs::protocol::account::v1::AccountLicense* AccountSettingsNotification::add_licenses() {
-  // @@protoc_insertion_point(field_add:bgs.protocol.authentication.v1.AccountSettingsNotification.licenses)
-  return licenses_.Add();
-}
-inline const ::google::protobuf::RepeatedPtrField< ::bgs::protocol::account::v1::AccountLicense >&
-AccountSettingsNotification::licenses() const {
-  // @@protoc_insertion_point(field_list:bgs.protocol.authentication.v1.AccountSettingsNotification.licenses)
-  return licenses_;
-}
-inline ::google::protobuf::RepeatedPtrField< ::bgs::protocol::account::v1::AccountLicense >*
-AccountSettingsNotification::mutable_licenses() {
-  // @@protoc_insertion_point(field_mutable_list:bgs.protocol.authentication.v1.AccountSettingsNotification.licenses)
-  return &licenses_;
-}
-
-// optional bool is_using_rid = 2;
-inline bool AccountSettingsNotification::has_is_using_rid() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
-}
-inline void AccountSettingsNotification::set_has_is_using_rid() {
-  _has_bits_[0] |= 0x00000002u;
-}
-inline void AccountSettingsNotification::clear_has_is_using_rid() {
-  _has_bits_[0] &= ~0x00000002u;
-}
-inline void AccountSettingsNotification::clear_is_using_rid() {
-  is_using_rid_ = false;
-  clear_has_is_using_rid();
-}
-inline bool AccountSettingsNotification::is_using_rid() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.AccountSettingsNotification.is_using_rid)
-  return is_using_rid_;
-}
-inline void AccountSettingsNotification::set_is_using_rid(bool value) {
-  set_has_is_using_rid();
-  is_using_rid_ = value;
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.AccountSettingsNotification.is_using_rid)
-}
-
-// optional bool is_playing_from_igr = 3;
-inline bool AccountSettingsNotification::has_is_playing_from_igr() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
-}
-inline void AccountSettingsNotification::set_has_is_playing_from_igr() {
-  _has_bits_[0] |= 0x00000004u;
-}
-inline void AccountSettingsNotification::clear_has_is_playing_from_igr() {
-  _has_bits_[0] &= ~0x00000004u;
-}
-inline void AccountSettingsNotification::clear_is_playing_from_igr() {
-  is_playing_from_igr_ = false;
-  clear_has_is_playing_from_igr();
-}
-inline bool AccountSettingsNotification::is_playing_from_igr() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.AccountSettingsNotification.is_playing_from_igr)
-  return is_playing_from_igr_;
-}
-inline void AccountSettingsNotification::set_is_playing_from_igr(bool value) {
-  set_has_is_playing_from_igr();
-  is_playing_from_igr_ = value;
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.AccountSettingsNotification.is_playing_from_igr)
-}
-
-// optional bool can_receive_voice = 4;
-inline bool AccountSettingsNotification::has_can_receive_voice() const {
-  return (_has_bits_[0] & 0x00000008u) != 0;
-}
-inline void AccountSettingsNotification::set_has_can_receive_voice() {
-  _has_bits_[0] |= 0x00000008u;
-}
-inline void AccountSettingsNotification::clear_has_can_receive_voice() {
-  _has_bits_[0] &= ~0x00000008u;
-}
-inline void AccountSettingsNotification::clear_can_receive_voice() {
-  can_receive_voice_ = false;
-  clear_has_can_receive_voice();
-}
-inline bool AccountSettingsNotification::can_receive_voice() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.AccountSettingsNotification.can_receive_voice)
-  return can_receive_voice_;
-}
-inline void AccountSettingsNotification::set_can_receive_voice(bool value) {
-  set_has_can_receive_voice();
-  can_receive_voice_ = value;
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.AccountSettingsNotification.can_receive_voice)
-}
-
-// optional bool can_send_voice = 5;
-inline bool AccountSettingsNotification::has_can_send_voice() const {
-  return (_has_bits_[0] & 0x00000010u) != 0;
-}
-inline void AccountSettingsNotification::set_has_can_send_voice() {
-  _has_bits_[0] |= 0x00000010u;
-}
-inline void AccountSettingsNotification::clear_has_can_send_voice() {
-  _has_bits_[0] &= ~0x00000010u;
-}
-inline void AccountSettingsNotification::clear_can_send_voice() {
-  can_send_voice_ = false;
-  clear_has_can_send_voice();
-}
-inline bool AccountSettingsNotification::can_send_voice() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.AccountSettingsNotification.can_send_voice)
-  return can_send_voice_;
-}
-inline void AccountSettingsNotification::set_can_send_voice(bool value) {
-  set_has_can_send_voice();
-  can_send_voice_ = value;
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.AccountSettingsNotification.can_send_voice)
 }
 
 // -------------------------------------------------------------------
@@ -4501,397 +2904,6 @@ inline void VersionInfoNotification::set_allocated_version_info(::bgs::protocol:
 
 // -------------------------------------------------------------------
 
-// MemModuleLoadRequest
-
-// required .bgs.protocol.ContentHandle handle = 1;
-inline bool MemModuleLoadRequest::has_handle() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void MemModuleLoadRequest::set_has_handle() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void MemModuleLoadRequest::clear_has_handle() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void MemModuleLoadRequest::clear_handle() {
-  if (handle_ != NULL) handle_->::bgs::protocol::ContentHandle::Clear();
-  clear_has_handle();
-}
-inline const ::bgs::protocol::ContentHandle& MemModuleLoadRequest::handle() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.MemModuleLoadRequest.handle)
-  return handle_ != NULL ? *handle_ : *default_instance_->handle_;
-}
-inline ::bgs::protocol::ContentHandle* MemModuleLoadRequest::mutable_handle() {
-  set_has_handle();
-  if (handle_ == NULL) handle_ = new ::bgs::protocol::ContentHandle;
-  // @@protoc_insertion_point(field_mutable:bgs.protocol.authentication.v1.MemModuleLoadRequest.handle)
-  return handle_;
-}
-inline ::bgs::protocol::ContentHandle* MemModuleLoadRequest::release_handle() {
-  clear_has_handle();
-  ::bgs::protocol::ContentHandle* temp = handle_;
-  handle_ = NULL;
-  return temp;
-}
-inline void MemModuleLoadRequest::set_allocated_handle(::bgs::protocol::ContentHandle* handle) {
-  delete handle_;
-  handle_ = handle;
-  if (handle) {
-    set_has_handle();
-  } else {
-    clear_has_handle();
-  }
-  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.authentication.v1.MemModuleLoadRequest.handle)
-}
-
-// required bytes key = 2;
-inline bool MemModuleLoadRequest::has_key() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
-}
-inline void MemModuleLoadRequest::set_has_key() {
-  _has_bits_[0] |= 0x00000002u;
-}
-inline void MemModuleLoadRequest::clear_has_key() {
-  _has_bits_[0] &= ~0x00000002u;
-}
-inline void MemModuleLoadRequest::clear_key() {
-  if (key_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    key_->clear();
-  }
-  clear_has_key();
-}
-inline const ::std::string& MemModuleLoadRequest::key() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.MemModuleLoadRequest.key)
-  return *key_;
-}
-inline void MemModuleLoadRequest::set_key(const ::std::string& value) {
-  set_has_key();
-  if (key_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    key_ = new ::std::string;
-  }
-  key_->assign(value);
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.MemModuleLoadRequest.key)
-}
-inline void MemModuleLoadRequest::set_key(const char* value) {
-  set_has_key();
-  if (key_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    key_ = new ::std::string;
-  }
-  key_->assign(value);
-  // @@protoc_insertion_point(field_set_char:bgs.protocol.authentication.v1.MemModuleLoadRequest.key)
-}
-inline void MemModuleLoadRequest::set_key(const void* value, size_t size) {
-  set_has_key();
-  if (key_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    key_ = new ::std::string;
-  }
-  key_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.authentication.v1.MemModuleLoadRequest.key)
-}
-inline ::std::string* MemModuleLoadRequest::mutable_key() {
-  set_has_key();
-  if (key_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    key_ = new ::std::string;
-  }
-  // @@protoc_insertion_point(field_mutable:bgs.protocol.authentication.v1.MemModuleLoadRequest.key)
-  return key_;
-}
-inline ::std::string* MemModuleLoadRequest::release_key() {
-  clear_has_key();
-  if (key_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    return NULL;
-  } else {
-    ::std::string* temp = key_;
-    key_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-    return temp;
-  }
-}
-inline void MemModuleLoadRequest::set_allocated_key(::std::string* key) {
-  if (key_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    delete key_;
-  }
-  if (key) {
-    set_has_key();
-    key_ = key;
-  } else {
-    clear_has_key();
-    key_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.authentication.v1.MemModuleLoadRequest.key)
-}
-
-// required bytes input = 3;
-inline bool MemModuleLoadRequest::has_input() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
-}
-inline void MemModuleLoadRequest::set_has_input() {
-  _has_bits_[0] |= 0x00000004u;
-}
-inline void MemModuleLoadRequest::clear_has_input() {
-  _has_bits_[0] &= ~0x00000004u;
-}
-inline void MemModuleLoadRequest::clear_input() {
-  if (input_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    input_->clear();
-  }
-  clear_has_input();
-}
-inline const ::std::string& MemModuleLoadRequest::input() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.MemModuleLoadRequest.input)
-  return *input_;
-}
-inline void MemModuleLoadRequest::set_input(const ::std::string& value) {
-  set_has_input();
-  if (input_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    input_ = new ::std::string;
-  }
-  input_->assign(value);
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.MemModuleLoadRequest.input)
-}
-inline void MemModuleLoadRequest::set_input(const char* value) {
-  set_has_input();
-  if (input_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    input_ = new ::std::string;
-  }
-  input_->assign(value);
-  // @@protoc_insertion_point(field_set_char:bgs.protocol.authentication.v1.MemModuleLoadRequest.input)
-}
-inline void MemModuleLoadRequest::set_input(const void* value, size_t size) {
-  set_has_input();
-  if (input_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    input_ = new ::std::string;
-  }
-  input_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.authentication.v1.MemModuleLoadRequest.input)
-}
-inline ::std::string* MemModuleLoadRequest::mutable_input() {
-  set_has_input();
-  if (input_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    input_ = new ::std::string;
-  }
-  // @@protoc_insertion_point(field_mutable:bgs.protocol.authentication.v1.MemModuleLoadRequest.input)
-  return input_;
-}
-inline ::std::string* MemModuleLoadRequest::release_input() {
-  clear_has_input();
-  if (input_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    return NULL;
-  } else {
-    ::std::string* temp = input_;
-    input_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-    return temp;
-  }
-}
-inline void MemModuleLoadRequest::set_allocated_input(::std::string* input) {
-  if (input_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    delete input_;
-  }
-  if (input) {
-    set_has_input();
-    input_ = input;
-  } else {
-    clear_has_input();
-    input_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.authentication.v1.MemModuleLoadRequest.input)
-}
-
-// -------------------------------------------------------------------
-
-// MemModuleLoadResponse
-
-// required bytes data = 1;
-inline bool MemModuleLoadResponse::has_data() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void MemModuleLoadResponse::set_has_data() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void MemModuleLoadResponse::clear_has_data() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void MemModuleLoadResponse::clear_data() {
-  if (data_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    data_->clear();
-  }
-  clear_has_data();
-}
-inline const ::std::string& MemModuleLoadResponse::data() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.MemModuleLoadResponse.data)
-  return *data_;
-}
-inline void MemModuleLoadResponse::set_data(const ::std::string& value) {
-  set_has_data();
-  if (data_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    data_ = new ::std::string;
-  }
-  data_->assign(value);
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.MemModuleLoadResponse.data)
-}
-inline void MemModuleLoadResponse::set_data(const char* value) {
-  set_has_data();
-  if (data_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    data_ = new ::std::string;
-  }
-  data_->assign(value);
-  // @@protoc_insertion_point(field_set_char:bgs.protocol.authentication.v1.MemModuleLoadResponse.data)
-}
-inline void MemModuleLoadResponse::set_data(const void* value, size_t size) {
-  set_has_data();
-  if (data_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    data_ = new ::std::string;
-  }
-  data_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.authentication.v1.MemModuleLoadResponse.data)
-}
-inline ::std::string* MemModuleLoadResponse::mutable_data() {
-  set_has_data();
-  if (data_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    data_ = new ::std::string;
-  }
-  // @@protoc_insertion_point(field_mutable:bgs.protocol.authentication.v1.MemModuleLoadResponse.data)
-  return data_;
-}
-inline ::std::string* MemModuleLoadResponse::release_data() {
-  clear_has_data();
-  if (data_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    return NULL;
-  } else {
-    ::std::string* temp = data_;
-    data_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-    return temp;
-  }
-}
-inline void MemModuleLoadResponse::set_allocated_data(::std::string* data) {
-  if (data_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    delete data_;
-  }
-  if (data) {
-    set_has_data();
-    data_ = data;
-  } else {
-    clear_has_data();
-    data_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.authentication.v1.MemModuleLoadResponse.data)
-}
-
-// -------------------------------------------------------------------
-
-// SelectGameAccountRequest
-
-// required .bgs.protocol.EntityId game_account_id = 1;
-inline bool SelectGameAccountRequest::has_game_account_id() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void SelectGameAccountRequest::set_has_game_account_id() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void SelectGameAccountRequest::clear_has_game_account_id() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void SelectGameAccountRequest::clear_game_account_id() {
-  if (game_account_id_ != NULL) game_account_id_->::bgs::protocol::EntityId::Clear();
-  clear_has_game_account_id();
-}
-inline const ::bgs::protocol::EntityId& SelectGameAccountRequest::game_account_id() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.SelectGameAccountRequest.game_account_id)
-  return game_account_id_ != NULL ? *game_account_id_ : *default_instance_->game_account_id_;
-}
-inline ::bgs::protocol::EntityId* SelectGameAccountRequest::mutable_game_account_id() {
-  set_has_game_account_id();
-  if (game_account_id_ == NULL) game_account_id_ = new ::bgs::protocol::EntityId;
-  // @@protoc_insertion_point(field_mutable:bgs.protocol.authentication.v1.SelectGameAccountRequest.game_account_id)
-  return game_account_id_;
-}
-inline ::bgs::protocol::EntityId* SelectGameAccountRequest::release_game_account_id() {
-  clear_has_game_account_id();
-  ::bgs::protocol::EntityId* temp = game_account_id_;
-  game_account_id_ = NULL;
-  return temp;
-}
-inline void SelectGameAccountRequest::set_allocated_game_account_id(::bgs::protocol::EntityId* game_account_id) {
-  delete game_account_id_;
-  game_account_id_ = game_account_id;
-  if (game_account_id) {
-    set_has_game_account_id();
-  } else {
-    clear_has_game_account_id();
-  }
-  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.authentication.v1.SelectGameAccountRequest.game_account_id)
-}
-
-// -------------------------------------------------------------------
-
-// GameAccountSelectedRequest
-
-// required uint32 result = 1;
-inline bool GameAccountSelectedRequest::has_result() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void GameAccountSelectedRequest::set_has_result() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void GameAccountSelectedRequest::clear_has_result() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void GameAccountSelectedRequest::clear_result() {
-  result_ = 0u;
-  clear_has_result();
-}
-inline ::google::protobuf::uint32 GameAccountSelectedRequest::result() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.GameAccountSelectedRequest.result)
-  return result_;
-}
-inline void GameAccountSelectedRequest::set_result(::google::protobuf::uint32 value) {
-  set_has_result();
-  result_ = value;
-  // @@protoc_insertion_point(field_set:bgs.protocol.authentication.v1.GameAccountSelectedRequest.result)
-}
-
-// optional .bgs.protocol.EntityId game_account_id = 2;
-inline bool GameAccountSelectedRequest::has_game_account_id() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
-}
-inline void GameAccountSelectedRequest::set_has_game_account_id() {
-  _has_bits_[0] |= 0x00000002u;
-}
-inline void GameAccountSelectedRequest::clear_has_game_account_id() {
-  _has_bits_[0] &= ~0x00000002u;
-}
-inline void GameAccountSelectedRequest::clear_game_account_id() {
-  if (game_account_id_ != NULL) game_account_id_->::bgs::protocol::EntityId::Clear();
-  clear_has_game_account_id();
-}
-inline const ::bgs::protocol::EntityId& GameAccountSelectedRequest::game_account_id() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.authentication.v1.GameAccountSelectedRequest.game_account_id)
-  return game_account_id_ != NULL ? *game_account_id_ : *default_instance_->game_account_id_;
-}
-inline ::bgs::protocol::EntityId* GameAccountSelectedRequest::mutable_game_account_id() {
-  set_has_game_account_id();
-  if (game_account_id_ == NULL) game_account_id_ = new ::bgs::protocol::EntityId;
-  // @@protoc_insertion_point(field_mutable:bgs.protocol.authentication.v1.GameAccountSelectedRequest.game_account_id)
-  return game_account_id_;
-}
-inline ::bgs::protocol::EntityId* GameAccountSelectedRequest::release_game_account_id() {
-  clear_has_game_account_id();
-  ::bgs::protocol::EntityId* temp = game_account_id_;
-  game_account_id_ = NULL;
-  return temp;
-}
-inline void GameAccountSelectedRequest::set_allocated_game_account_id(::bgs::protocol::EntityId* game_account_id) {
-  delete game_account_id_;
-  game_account_id_ = game_account_id;
-  if (game_account_id) {
-    set_has_game_account_id();
-  } else {
-    clear_has_game_account_id();
-  }
-  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.authentication.v1.GameAccountSelectedRequest.game_account_id)
-}
-
-// -------------------------------------------------------------------
-
 // GenerateWebCredentialsRequest
 
 // optional fixed32 program = 1;
@@ -5078,7 +3090,6 @@ inline void VerifyWebCredentialsRequest::set_allocated_web_credentials(::std::st
   // @@protoc_insertion_point(field_set_allocated:bgs.protocol.authentication.v1.VerifyWebCredentialsRequest.web_credentials)
 }
 
-
 // @@protoc_insertion_point(namespace_scope)
 
 }  // namespace v1
@@ -5089,8 +3100,6 @@ inline void VerifyWebCredentialsRequest::set_allocated_web_credentials(::std::st
 #ifndef SWIG
 namespace google {
 namespace protobuf {
-
-
 }  // namespace google
 }  // namespace protobuf
 #endif  // SWIG

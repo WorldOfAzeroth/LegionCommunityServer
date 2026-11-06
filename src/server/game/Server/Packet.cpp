@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -29,7 +29,7 @@ WorldPackets::ServerPacket::ServerPacket(OpcodeServer opcode, size_t initialSize
 
 void WorldPackets::ServerPacket::Read()
 {
-    ASSERT(!"Read not implemented for server packets.");
+    ABORT_MSG("Read not implemented for server packets.");
 }
 
 WorldPackets::ClientPacket::ClientPacket(OpcodeClient expectedOpcode, WorldPacket&& packet) : Packet(std::move(packet))
@@ -43,7 +43,7 @@ WorldPackets::ClientPacket::ClientPacket(WorldPacket&& packet) : Packet(std::mov
 
 WorldPacket const* WorldPackets::ClientPacket::Write()
 {
-    ASSERT(!"Write not allowed for client packets.");
+    ABORT_MSG("Write not allowed for client packets.");
     // Shut up some compilers
     return nullptr;
 }

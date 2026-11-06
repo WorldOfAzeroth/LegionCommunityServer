@@ -19,8 +19,8 @@
 #define ADT_H
 
 #include "cascfile.h"
-#include "wmo.h"
-#include "model.h"
+#include "vec3d.h"
+#include <vector>
 
 #pragma pack(push, 1)
 namespace ADT
@@ -60,11 +60,11 @@ class ADTFile
 {
 private:
     CASCFile _file;
-    std::string Adtfilename;
     bool cacheable;
     std::vector<ADTOutputCache>* dirfileCache;
 public:
-    ADTFile(char* filename, bool cache);
+    ADTFile(std::string const& filename, bool cache);
+    ADTFile(uint32 fileDataId, std::string const& description, bool cache);
     ~ADTFile();
     std::vector<std::string> WmoInstanceNames;
     std::vector<std::string> ModelInstanceNames;
@@ -72,11 +72,7 @@ public:
     bool initFromCache(uint32 map_num, uint32 originalMapId);
 };
 
-char const* GetPlainName(char const* FileName);
-char* GetPlainName(char* FileName);
-char* GetExtension(char* FileName);
-void FixNameCase(char* name, size_t len);
-void FixNameSpaces(char* name, size_t len);
-//void fixMapNamen(char *name, size_t len);
+std::string_view GetPlainName(std::string_view fileName);
+void NormalizeFileName(std::string& fileName);
 
 #endif

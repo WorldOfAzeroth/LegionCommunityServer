@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -937,6 +936,219 @@ void WorldSession::SaveTutorialsData(CharacterDatabaseTransaction& trans)
     _tutorialsChanged &= ~TUTORIALS_FLAG_CHANGED;
 }
 
+void WorldSession::LoadInstanceTimeRestrictions(PreparedQueryResult result)
+{
+    if (!result)
+        return;
+
+    SystemTimePoint now = GameTime::GetSystemTime();
+    do
+    {
+        Field* fields = result->Fetch();
+        SystemTimePoint restrictionExpireTime = SystemTimePoint::clock::from_time_t(fields[1].GetUInt64());
+        if (restrictionExpireTime > now)
+            _instanceResetTimes.try_emplace(fields[0].GetUInt32(), restrictionExpireTime);
+    } while (result->NextRow());
+}
+
+void WorldSession::SaveInstanceTimeRestrictions(CharacterDatabaseTransaction trans)
+{
+    if (_instanceResetTimes.empty())
+        return;
+
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ACCOUNT_INSTANCE_LOCK_TIMES);
+    stmt->setUInt32(0, GetAccountId());
+    trans->Append(stmt);
+
+    for (auto const& [instanceId, restrictionExpireTime] : _instanceResetTimes)
+    {
+        stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_ACCOUNT_INSTANCE_LOCK_TIMES);
+        stmt->setUInt32(0, GetAccountId());
+        stmt->setUInt32(1, instanceId);
+        stmt->setUInt64(2, SystemTimePoint::clock::to_time_t(restrictionExpireTime));
+        trans->Append(stmt);
+    }
+}
+
+bool WorldSession::UpdateAndCheckInstanceCount(uint32 instanceId)
+{
+    UpdateInstanceEnterTimes();
+
+    if (_instanceResetTimes.size() < sWorld->getIntConfig(CONFIG_MAX_INSTANCES_PER_HOUR))
+        return true;
+
+    if (instanceId == 0)
+        return false;
+
+    return _instanceResetTimes.contains(instanceId);
+}
+
+void WorldSession::AddInstanceEnterTime(uint32 instanceId, SystemTimePoint enterTime)
+{
+    _instanceResetTimes.try_emplace(instanceId, enterTime + 1h);
+}
+
+void WorldSession::UpdateInstanceEnterTimes()
+{
+    Trinity::Containers::EraseIf(_instanceResetTimes, [now = GameTime::GetSystemTime()](std::pair<uint32 const, SystemTimePoint> const& value)
+    {
+        return value.second < now;
+    });
+}
+
+void WorldSession::LoadPlayerDataAccount(PreparedQueryResult const& elementsResult, PreparedQueryResult const& flagsResult)
+{
+    if (elementsResult)
+    {
+        do
+        {
+            DEFINE_FIELD_ACCESSOR_CACHE_ANONYMOUS(PreparedResultSet, (playerDataElementAccountId)(floatValue)(int64Value)) fields { *elementsResult };
+
+            PlayerDataElementAccountEntry const* entry = sPlayerDataElementAccountStore.LookupEntry(fields.playerDataElementAccountId().GetUInt32());
+            if (!entry)
+                continue;
+
+            PlayerDataAccount::Element& element = _playerDataAccount.Elements.emplace_back();
+            element.Id = entry->ID;
+            element.NeedSave = false;
+
+            switch (entry->GetType())
+            {
+                case PlayerDataElementType::Int64:
+                    element.Int64Value = fields.int64Value().GetInt64();
+                    break;
+                case PlayerDataElementType::Float:
+                    element.FloatValue = fields.floatValue().GetFloat();
+                    break;
+                default:
+                    break;
+            }
+        } while (elementsResult->NextRow());
+    }
+
+    if (flagsResult)
+    {
+        do
+        {
+            DEFINE_FIELD_ACCESSOR_CACHE_ANONYMOUS(PreparedResultSet, (storageIndex)(mask)) fields { *flagsResult };
+
+            Trinity::Containers::EnsureWritableVectorIndex(_playerDataAccount.Flags, fields.storageIndex().GetUInt32()) = { .Value = fields.mask().GetUInt64(), .NeedSave = false };
+        } while (flagsResult->NextRow());
+    }
+}
+
+void WorldSession::SavePlayerDataAccount(LoginDatabaseTransaction const& transaction)
+{
+    LoginDatabasePreparedStatement* stmt;
+    for (PlayerDataAccount::Element& element : _playerDataAccount.Elements)
+    {
+        if (!element.NeedSave)
+            continue;
+
+        stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_BNET_PLAYER_DATA_ELEMENTS_ACCOUNT);
+        stmt->setUInt32(0, GetBattlenetAccountId());
+        stmt->setUInt32(1, element.Id);
+        transaction->Append(stmt);
+
+        element.NeedSave = false;
+
+        PlayerDataElementAccountEntry const* entry = sPlayerDataElementAccountStore.LookupEntry(element.Id);
+        if (!entry)
+            continue;
+
+        switch (entry->GetType())
+        {
+            case PlayerDataElementType::Int64:
+                if (!element.Int64Value)
+                    continue;
+                stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_BNET_PLAYER_DATA_ELEMENTS_ACCOUNT);
+                stmt->setUInt32(0, GetBattlenetAccountId());
+                stmt->setUInt32(1, element.Id);
+                stmt->setNull(2);
+                stmt->setInt64(3, element.Int64Value);
+                transaction->Append(stmt);
+                break;
+            case PlayerDataElementType::Float:
+                if (!element.FloatValue)
+                    continue;
+                stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_BNET_PLAYER_DATA_ELEMENTS_ACCOUNT);
+                stmt->setUInt32(0, GetBattlenetAccountId());
+                stmt->setUInt32(1, element.Id);
+                stmt->setFloat(2, element.FloatValue);
+                stmt->setNull(3);
+                transaction->Append(stmt);
+                break;
+        }
+    }
+
+    for (std::size_t i = 0; i < _playerDataAccount.Flags.size(); ++i)
+    {
+        PlayerDataAccount::Flag& flag = _playerDataAccount.Flags[i];
+        if (!flag.NeedSave)
+            continue;
+
+        stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_BNET_PLAYER_DATA_FLAGS_ACCOUNT);
+        stmt->setUInt32(0, GetBattlenetAccountId());
+        stmt->setUInt32(1, i);
+        transaction->Append(stmt);
+
+        flag.NeedSave = false;
+
+        if (!flag.Value)
+            continue;
+
+        stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_BNET_PLAYER_DATA_FLAGS_ACCOUNT);
+        stmt->setUInt32(0, GetBattlenetAccountId());
+        stmt->setUInt32(1, i);
+        stmt->setUInt64(2, flag.Value);
+        transaction->Append(stmt);
+    }
+}
+
+void WorldSession::SetPlayerDataElementAccount(uint32 dataElementId, float value)
+{
+    auto elementItr = std::ranges::find(_playerDataAccount.Elements, dataElementId, &PlayerDataAccount::Element::Id);
+    if (elementItr == _playerDataAccount.Elements.end())
+    {
+        elementItr = _playerDataAccount.Elements.emplace(_playerDataAccount.Elements.end());
+        elementItr->Id = dataElementId;
+    }
+
+    elementItr->NeedSave = true;
+    elementItr->FloatValue = value;
+}
+
+void WorldSession::SetPlayerDataElementAccount(uint32 dataElementId, int64 value)
+{
+    auto elementItr = std::ranges::find(_playerDataAccount.Elements, dataElementId, &PlayerDataAccount::Element::Id);
+    if (elementItr == _playerDataAccount.Elements.end())
+    {
+        elementItr = _playerDataAccount.Elements.emplace(_playerDataAccount.Elements.end());
+        elementItr->Id = dataElementId;
+    }
+
+    elementItr->NeedSave = true;
+    elementItr->Int64Value = value;
+}
+
+void WorldSession::SetPlayerDataFlagAccount(uint32 dataFlagId, bool on)
+{
+    PlayerDataFlagAccountEntry const* entry = sPlayerDataFlagAccountStore.LookupEntry(dataFlagId);
+    if (!entry)
+        return;
+
+    uint32 fieldOffset = entry->StorageIndex / PLAYER_DATA_FLAG_VALUE_BITS;
+    uint64 flagValue = UI64LIT(1) << (entry->StorageIndex % PLAYER_DATA_FLAG_VALUE_BITS);
+
+    PlayerDataAccount::Flag& flag = Trinity::Containers::EnsureWritableVectorIndex(_playerDataAccount.Flags, fieldOffset);
+    if (on)
+        flag.Value |= flagValue;
+    else
+        flag.Value &= ~flagValue;
+
+    flag.NeedSave = true;
+}
+
 bool WorldSession::IsAddonRegistered(std::string_view prefix) const
 {
     if (!_filterAddonMessages) // if we have hit the softcap (64) nothing should be filtered
@@ -1046,6 +1258,7 @@ public:
     {
         GLOBAL_ACCOUNT_DATA = 0,
         TUTORIALS,
+        INSTANCE_TIMES,
 
         MAX_QUERIES
     };
@@ -1063,6 +1276,10 @@ public:
         stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_TUTORIALS);
         stmt->setUInt32(0, accountId);
         ok = SetPreparedQuery(TUTORIALS, stmt) && ok;
+
+        stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_ACCOUNT_INSTANCELOCKTIMES);
+        stmt->setUInt32(0, accountId);
+        ok = SetPreparedQuery(INSTANCE_TIMES, stmt) && ok;
 
         return ok;
     }
@@ -1170,6 +1387,7 @@ void WorldSession::InitializeSessionCallback(LoginDatabaseQueryHolder const& hol
 {
     LoadAccountData(realmHolder.GetPreparedResult(AccountInfoQueryHolderPerRealm::GLOBAL_ACCOUNT_DATA), GLOBAL_CACHE_MASK);
     LoadTutorialsData(realmHolder.GetPreparedResult(AccountInfoQueryHolderPerRealm::TUTORIALS));
+    LoadInstanceTimeRestrictions(realmHolder.GetPreparedResult(AccountInfoQueryHolderPerRealm::INSTANCE_TIMES));
     _collectionMgr->LoadAccountToys(holder.GetPreparedResult(AccountInfoQueryHolder::GLOBAL_ACCOUNT_TOYS));
     _collectionMgr->LoadAccountHeirlooms(holder.GetPreparedResult(AccountInfoQueryHolder::GLOBAL_ACCOUNT_HEIRLOOMS));
     _collectionMgr->LoadAccountMounts(holder.GetPreparedResult(AccountInfoQueryHolder::MOUNTS));
@@ -1529,21 +1747,14 @@ void WorldSession::SendTimeSync()
     timeSyncRequest.SequenceIndex = _timeSyncNextCounter;
     SendPacket(timeSyncRequest.Write());
 
-    _pendingTimeSyncRequests[_timeSyncNextCounter] = getMSTime();
+    RegisterTimeSync(_timeSyncNextCounter);
 
     // Schedule next sync in 10 sec (except for the 2 first packets, which are spaced by only 5s)
     _timeSyncTimer = _timeSyncNextCounter == 0 ? 5000 : 10000;
     _timeSyncNextCounter++;
 }
 
-uint32 WorldSession::AdjustClientMovementTime(uint32 time) const
+void WorldSession::RegisterTimeSync(uint32 counter)
 {
-    int64 movementTime = int64(time) + _timeSyncClockDelta;
-    if (_timeSyncClockDelta == 0 || movementTime < 0 || movementTime > 0xFFFFFFFF)
-    {
-        TC_LOG_WARN("misc", "The computed movement time using clockDelta is erronous. Using fallback instead");
-        return GameTime::GetGameTimeMS();
-    }
-    else
-        return uint32(movementTime);
+    _pendingTimeSyncRequests[counter] = getMSTime();
 }

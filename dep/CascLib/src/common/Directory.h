@@ -14,15 +14,21 @@
 //-----------------------------------------------------------------------------
 // Scanning a directory
 
-typedef bool (*INDEX_FILE_FOUND)(const TCHAR * szFileName, PDWORD IndexArray, PDWORD OldIndexArray, void * pvContext);
+// If the callback returns false, the directory enumeration stops
+typedef bool (*DIRECTORY_CALLBACK)(LPCTSTR szPathName, void * pvContext);
 
-bool DirectoryExists(const TCHAR * szDirectory);
+bool DirectoryExists(
+    LPCTSTR szDirectory
+    );
 
-int ScanIndexDirectory(
-    const TCHAR * szIndexPath,
-    INDEX_FILE_FOUND pfnOnFileFound,
-    PDWORD IndexArray,
-    PDWORD OldIndexArray,
+bool MakeDirectory(
+    LPCTSTR szDirectory
+    );
+
+DWORD ScanDirectory(
+    LPCTSTR szDirectory,
+    DIRECTORY_CALLBACK PfnFolderCallback,       // Can be NULL if the caller doesn't care about folders
+    DIRECTORY_CALLBACK PfnFileCallback,         // Can be NULL if the caller doesn't care about files
     void * pvContext
     );
 

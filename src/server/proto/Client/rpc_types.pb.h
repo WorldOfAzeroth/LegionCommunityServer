@@ -23,11 +23,12 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/repeated_field.h>
 #include <google/protobuf/extension_set.h>
-#include <google/protobuf/generated_enum_reflection.h>
 #include <google/protobuf/unknown_field_set.h>
-#include "global_extensions/method_options.pb.h"  // IWYU pragma: export
-#include "global_extensions/service_options.pb.h"  // IWYU pragma: export
 #include "global_extensions/field_options.pb.h"  // IWYU pragma: export
+#include "global_extensions/file_options.pb.h"  // IWYU pragma: export
+#include "global_extensions/method_options.pb.h"  // IWYU pragma: export
+#include "global_extensions/message_options.pb.h"  // IWYU pragma: export
+#include "global_extensions/service_options.pb.h"  // IWYU pragma: export
 #include "Define.h" // for TC_PROTO_API
 // @@protoc_insertion_point(includes)
 
@@ -45,29 +46,10 @@ class ProcessId;
 class ObjectAddress;
 class NoData;
 class ErrorInfo;
-class TraceInfo;
+class FanoutTarget;
+class Span;
 class Header;
 
-enum TraceInfo_Sampling {
-  TraceInfo_Sampling_YES = 0,
-  TraceInfo_Sampling_NO = 1,
-  TraceInfo_Sampling_DEFER = 2
-};
-TC_PROTO_API bool TraceInfo_Sampling_IsValid(int value);
-const TraceInfo_Sampling TraceInfo_Sampling_Sampling_MIN = TraceInfo_Sampling_YES;
-const TraceInfo_Sampling TraceInfo_Sampling_Sampling_MAX = TraceInfo_Sampling_DEFER;
-const int TraceInfo_Sampling_Sampling_ARRAYSIZE = TraceInfo_Sampling_Sampling_MAX + 1;
-
-TC_PROTO_API const ::google::protobuf::EnumDescriptor* TraceInfo_Sampling_descriptor();
-inline const ::std::string& TraceInfo_Sampling_Name(TraceInfo_Sampling value) {
-  return ::google::protobuf::internal::NameOfEnum(
-    TraceInfo_Sampling_descriptor(), value);
-}
-inline bool TraceInfo_Sampling_Parse(
-    const ::std::string& name, TraceInfo_Sampling* value) {
-  return ::google::protobuf::internal::ParseNamedEnum<TraceInfo_Sampling>(
-    TraceInfo_Sampling_descriptor(), name, value);
-}
 // ===================================================================
 
 class TC_PROTO_API NO_RESPONSE : public ::google::protobuf::Message {
@@ -98,19 +80,6 @@ class TC_PROTO_API NO_RESPONSE : public ::google::protobuf::Message {
   // implements Message ----------------------------------------------
 
   NO_RESPONSE* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const NO_RESPONSE& from);
-  void MergeFrom(const NO_RESPONSE& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -167,19 +136,6 @@ class TC_PROTO_API Address : public ::google::protobuf::Message {
   // implements Message ----------------------------------------------
 
   Address* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const Address& from);
-  void MergeFrom(const Address& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -261,19 +217,6 @@ class TC_PROTO_API ProcessId : public ::google::protobuf::Message {
   // implements Message ----------------------------------------------
 
   ProcessId* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const ProcessId& from);
-  void MergeFrom(const ProcessId& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -350,19 +293,6 @@ class TC_PROTO_API ObjectAddress : public ::google::protobuf::Message {
   // implements Message ----------------------------------------------
 
   ObjectAddress* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const ObjectAddress& from);
-  void MergeFrom(const ObjectAddress& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -441,19 +371,6 @@ class TC_PROTO_API NoData : public ::google::protobuf::Message {
   // implements Message ----------------------------------------------
 
   NoData* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const NoData& from);
-  void MergeFrom(const NoData& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -510,19 +427,6 @@ class TC_PROTO_API ErrorInfo : public ::google::protobuf::Message {
   // implements Message ----------------------------------------------
 
   ErrorInfo* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const ErrorInfo& from);
-  void MergeFrom(const ErrorInfo& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -593,14 +497,14 @@ class TC_PROTO_API ErrorInfo : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
-class TC_PROTO_API TraceInfo : public ::google::protobuf::Message {
+class TC_PROTO_API FanoutTarget : public ::google::protobuf::Message {
  public:
-  TraceInfo();
-  virtual ~TraceInfo();
+  FanoutTarget();
+  virtual ~FanoutTarget();
 
-  TraceInfo(const TraceInfo& from);
+  FanoutTarget(const FanoutTarget& from);
 
-  inline TraceInfo& operator=(const TraceInfo& from) {
+  inline FanoutTarget& operator=(const FanoutTarget& from) {
     CopyFrom(from);
     return *this;
   }
@@ -614,26 +518,13 @@ class TC_PROTO_API TraceInfo : public ::google::protobuf::Message {
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const TraceInfo& default_instance();
+  static const FanoutTarget& default_instance();
 
-  void Swap(TraceInfo* other);
+  void Swap(FanoutTarget* other);
 
   // implements Message ----------------------------------------------
 
-  TraceInfo* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const TraceInfo& from);
-  void MergeFrom(const TraceInfo& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  FanoutTarget* New() const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -644,49 +535,108 @@ class TC_PROTO_API TraceInfo : public ::google::protobuf::Message {
 
   // nested types ----------------------------------------------------
 
-  typedef TraceInfo_Sampling Sampling;
-  static const Sampling YES = TraceInfo_Sampling_YES;
-  static const Sampling NO = TraceInfo_Sampling_NO;
-  static const Sampling DEFER = TraceInfo_Sampling_DEFER;
-  static inline bool Sampling_IsValid(int value) {
-    return TraceInfo_Sampling_IsValid(value);
+  // accessors -------------------------------------------------------
+
+  // optional string client_id = 1;
+  inline bool has_client_id() const;
+  inline void clear_client_id();
+  static const int kClientIdFieldNumber = 1;
+  inline const ::std::string& client_id() const;
+  inline void set_client_id(const ::std::string& value);
+  inline void set_client_id(const char* value);
+  inline void set_client_id(const char* value, size_t size);
+  inline ::std::string* mutable_client_id();
+  inline ::std::string* release_client_id();
+  inline void set_allocated_client_id(::std::string* client_id);
+
+  // optional bytes key = 2;
+  inline bool has_key() const;
+  inline void clear_key();
+  static const int kKeyFieldNumber = 2;
+  inline const ::std::string& key() const;
+  inline void set_key(const ::std::string& value);
+  inline void set_key(const char* value);
+  inline void set_key(const void* value, size_t size);
+  inline ::std::string* mutable_key();
+  inline ::std::string* release_key();
+  inline void set_allocated_key(::std::string* key);
+
+  // optional uint64 object_id = 3;
+  inline bool has_object_id() const;
+  inline void clear_object_id();
+  static const int kObjectIdFieldNumber = 3;
+  inline ::google::protobuf::uint64 object_id() const;
+  inline void set_object_id(::google::protobuf::uint64 value);
+
+  // @@protoc_insertion_point(class_scope:bgs.protocol.FanoutTarget)
+ private:
+  inline void set_has_client_id();
+  inline void clear_has_client_id();
+  inline void set_has_key();
+  inline void clear_has_key();
+  inline void set_has_object_id();
+  inline void clear_has_object_id();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::google::protobuf::uint32 _has_bits_[1];
+  mutable int _cached_size_;
+  ::std::string* client_id_;
+  ::std::string* key_;
+  ::google::protobuf::uint64 object_id_;
+  friend void TC_PROTO_API protobuf_AddDesc_rpc_5ftypes_2eproto();
+  friend void protobuf_AssignDesc_rpc_5ftypes_2eproto();
+  friend void protobuf_ShutdownFile_rpc_5ftypes_2eproto();
+
+  void InitAsDefaultInstance();
+  static FanoutTarget* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class TC_PROTO_API Span : public ::google::protobuf::Message {
+ public:
+  Span();
+  virtual ~Span();
+
+  Span(const Span& from);
+
+  inline Span& operator=(const Span& from) {
+    CopyFrom(from);
+    return *this;
   }
-  static const Sampling Sampling_MIN =
-    TraceInfo_Sampling_Sampling_MIN;
-  static const Sampling Sampling_MAX =
-    TraceInfo_Sampling_Sampling_MAX;
-  static const int Sampling_ARRAYSIZE =
-    TraceInfo_Sampling_Sampling_ARRAYSIZE;
-  static inline const ::google::protobuf::EnumDescriptor*
-  Sampling_descriptor() {
-    return TraceInfo_Sampling_descriptor();
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
   }
-  static inline const ::std::string& Sampling_Name(Sampling value) {
-    return TraceInfo_Sampling_Name(value);
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
   }
-  static inline bool Sampling_Parse(const ::std::string& name,
-      Sampling* value) {
-    return TraceInfo_Sampling_Parse(name, value);
-  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const Span& default_instance();
+
+  void Swap(Span* other);
+
+  // implements Message ----------------------------------------------
+
+  Span* New() const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
 
   // accessors -------------------------------------------------------
 
-  // optional string session_id = 1;
-  inline bool has_session_id() const;
-  inline void clear_session_id();
-  static const int kSessionIdFieldNumber = 1;
-  inline const ::std::string& session_id() const;
-  inline void set_session_id(const ::std::string& value);
-  inline void set_session_id(const char* value);
-  inline void set_session_id(const char* value, size_t size);
-  inline ::std::string* mutable_session_id();
-  inline ::std::string* release_session_id();
-  inline void set_allocated_session_id(::std::string* session_id);
-
-  // optional string trace_id = 2;
+  // optional string trace_id = 1;
   inline bool has_trace_id() const;
   inline void clear_trace_id();
-  static const int kTraceIdFieldNumber = 2;
+  static const int kTraceIdFieldNumber = 1;
   inline const ::std::string& trace_id() const;
   inline void set_trace_id(const ::std::string& value);
   inline void set_trace_id(const char* value);
@@ -695,65 +645,22 @@ class TC_PROTO_API TraceInfo : public ::google::protobuf::Message {
   inline ::std::string* release_trace_id();
   inline void set_allocated_trace_id(::std::string* trace_id);
 
-  // optional string span_id = 3;
-  inline bool has_span_id() const;
-  inline void clear_span_id();
-  static const int kSpanIdFieldNumber = 3;
-  inline const ::std::string& span_id() const;
-  inline void set_span_id(const ::std::string& value);
-  inline void set_span_id(const char* value);
-  inline void set_span_id(const char* value, size_t size);
-  inline ::std::string* mutable_span_id();
-  inline ::std::string* release_span_id();
-  inline void set_allocated_span_id(::std::string* span_id);
-
-  // optional string parent_span_id = 4;
-  inline bool has_parent_span_id() const;
-  inline void clear_parent_span_id();
-  static const int kParentSpanIdFieldNumber = 4;
-  inline const ::std::string& parent_span_id() const;
-  inline void set_parent_span_id(const ::std::string& value);
-  inline void set_parent_span_id(const char* value);
-  inline void set_parent_span_id(const char* value, size_t size);
-  inline ::std::string* mutable_parent_span_id();
-  inline ::std::string* release_parent_span_id();
-  inline void set_allocated_parent_span_id(::std::string* parent_span_id);
-
-  // optional .bgs.protocol.TraceInfo.Sampling sampling = 5 [default = DEFER];
-  inline bool has_sampling() const;
-  inline void clear_sampling();
-  static const int kSamplingFieldNumber = 5;
-  inline ::bgs::protocol::TraceInfo_Sampling sampling() const;
-  inline void set_sampling(::bgs::protocol::TraceInfo_Sampling value);
-
-  // @@protoc_insertion_point(class_scope:bgs.protocol.TraceInfo)
+  // @@protoc_insertion_point(class_scope:bgs.protocol.Span)
  private:
-  inline void set_has_session_id();
-  inline void clear_has_session_id();
   inline void set_has_trace_id();
   inline void clear_has_trace_id();
-  inline void set_has_span_id();
-  inline void clear_has_span_id();
-  inline void set_has_parent_span_id();
-  inline void clear_has_parent_span_id();
-  inline void set_has_sampling();
-  inline void clear_has_sampling();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   ::google::protobuf::uint32 _has_bits_[1];
   mutable int _cached_size_;
-  ::std::string* session_id_;
   ::std::string* trace_id_;
-  ::std::string* span_id_;
-  ::std::string* parent_span_id_;
-  int sampling_;
   friend void TC_PROTO_API protobuf_AddDesc_rpc_5ftypes_2eproto();
   friend void protobuf_AssignDesc_rpc_5ftypes_2eproto();
   friend void protobuf_ShutdownFile_rpc_5ftypes_2eproto();
 
   void InitAsDefaultInstance();
-  static TraceInfo* default_instance_;
+  static Span* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -785,19 +692,6 @@ class TC_PROTO_API Header : public ::google::protobuf::Message {
   // implements Message ----------------------------------------------
 
   Header* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const Header& from);
-  void MergeFrom(const Header& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -897,14 +791,104 @@ class TC_PROTO_API Header : public ::google::protobuf::Message {
   inline ::google::protobuf::uint32 service_hash() const;
   inline void set_service_hash(::google::protobuf::uint32 value);
 
-  // optional .bgs.protocol.TraceInfo trace_info = 12;
-  inline bool has_trace_info() const;
-  inline void clear_trace_info();
-  static const int kTraceInfoFieldNumber = 12;
-  inline const ::bgs::protocol::TraceInfo& trace_info() const;
-  inline ::bgs::protocol::TraceInfo* mutable_trace_info();
-  inline ::bgs::protocol::TraceInfo* release_trace_info();
-  inline void set_allocated_trace_info(::bgs::protocol::TraceInfo* trace_info);
+  // optional string ciid = 13;
+  inline bool has_ciid() const;
+  inline void clear_ciid();
+  static const int kCiidFieldNumber = 13;
+  inline const ::std::string& ciid() const;
+  inline void set_ciid(const ::std::string& value);
+  inline void set_ciid(const char* value);
+  inline void set_ciid(const char* value, size_t size);
+  inline ::std::string* mutable_ciid();
+  inline ::std::string* release_ciid();
+  inline void set_allocated_ciid(::std::string* ciid);
+
+  // repeated .bgs.protocol.FanoutTarget fanout_target = 14;
+  inline int fanout_target_size() const;
+  inline void clear_fanout_target();
+  static const int kFanoutTargetFieldNumber = 14;
+  inline const ::bgs::protocol::FanoutTarget& fanout_target(int index) const;
+  inline ::bgs::protocol::FanoutTarget* mutable_fanout_target(int index);
+  inline ::bgs::protocol::FanoutTarget* add_fanout_target();
+  inline const ::google::protobuf::RepeatedPtrField< ::bgs::protocol::FanoutTarget >&
+      fanout_target() const;
+  inline ::google::protobuf::RepeatedPtrField< ::bgs::protocol::FanoutTarget >*
+      mutable_fanout_target();
+
+  // repeated string ciid_fanout_target = 15;
+  inline int ciid_fanout_target_size() const;
+  inline void clear_ciid_fanout_target();
+  static const int kCiidFanoutTargetFieldNumber = 15;
+  inline const ::std::string& ciid_fanout_target(int index) const;
+  inline ::std::string* mutable_ciid_fanout_target(int index);
+  inline void set_ciid_fanout_target(int index, const ::std::string& value);
+  inline void set_ciid_fanout_target(int index, const char* value);
+  inline void set_ciid_fanout_target(int index, const char* value, size_t size);
+  inline ::std::string* add_ciid_fanout_target();
+  inline void add_ciid_fanout_target(const ::std::string& value);
+  inline void add_ciid_fanout_target(const char* value);
+  inline void add_ciid_fanout_target(const char* value, size_t size);
+  inline const ::google::protobuf::RepeatedPtrField< ::std::string>& ciid_fanout_target() const;
+  inline ::google::protobuf::RepeatedPtrField< ::std::string>* mutable_ciid_fanout_target();
+
+  // optional bytes client_record = 16;
+  inline bool has_client_record() const;
+  inline void clear_client_record();
+  static const int kClientRecordFieldNumber = 16;
+  inline const ::std::string& client_record() const;
+  inline void set_client_record(const ::std::string& value);
+  inline void set_client_record(const char* value);
+  inline void set_client_record(const void* value, size_t size);
+  inline ::std::string* mutable_client_record();
+  inline ::std::string* release_client_record();
+  inline void set_allocated_client_record(::std::string* client_record);
+
+  // optional bytes original_sender = 17;
+  inline bool has_original_sender() const;
+  inline void clear_original_sender();
+  static const int kOriginalSenderFieldNumber = 17;
+  inline const ::std::string& original_sender() const;
+  inline void set_original_sender(const ::std::string& value);
+  inline void set_original_sender(const char* value);
+  inline void set_original_sender(const void* value, size_t size);
+  inline ::std::string* mutable_original_sender();
+  inline ::std::string* release_original_sender();
+  inline void set_allocated_original_sender(::std::string* original_sender);
+
+  // optional uint32 sender_token = 18;
+  inline bool has_sender_token() const;
+  inline void clear_sender_token();
+  static const int kSenderTokenFieldNumber = 18;
+  inline ::google::protobuf::uint32 sender_token() const;
+  inline void set_sender_token(::google::protobuf::uint32 value);
+
+  // optional uint32 router_label = 19;
+  inline bool has_router_label() const;
+  inline void clear_router_label();
+  static const int kRouterLabelFieldNumber = 19;
+  inline ::google::protobuf::uint32 router_label() const;
+  inline void set_router_label(::google::protobuf::uint32 value);
+
+  // optional string error_reason = 20;
+  inline bool has_error_reason() const;
+  inline void clear_error_reason();
+  static const int kErrorReasonFieldNumber = 20;
+  inline const ::std::string& error_reason() const;
+  inline void set_error_reason(const ::std::string& value);
+  inline void set_error_reason(const char* value);
+  inline void set_error_reason(const char* value, size_t size);
+  inline ::std::string* mutable_error_reason();
+  inline ::std::string* release_error_reason();
+  inline void set_allocated_error_reason(::std::string* error_reason);
+
+  // optional .bgs.protocol.Span span = 21;
+  inline bool has_span() const;
+  inline void clear_span();
+  static const int kSpanFieldNumber = 21;
+  inline const ::bgs::protocol::Span& span() const;
+  inline ::bgs::protocol::Span* mutable_span();
+  inline ::bgs::protocol::Span* release_span();
+  inline void set_allocated_span(::bgs::protocol::Span* span);
 
   // @@protoc_insertion_point(class_scope:bgs.protocol.Header)
  private:
@@ -926,8 +910,20 @@ class TC_PROTO_API Header : public ::google::protobuf::Message {
   inline void clear_has_is_response();
   inline void set_has_service_hash();
   inline void clear_has_service_hash();
-  inline void set_has_trace_info();
-  inline void clear_has_trace_info();
+  inline void set_has_ciid();
+  inline void clear_has_ciid();
+  inline void set_has_client_record();
+  inline void clear_has_client_record();
+  inline void set_has_original_sender();
+  inline void clear_has_original_sender();
+  inline void set_has_sender_token();
+  inline void clear_has_sender_token();
+  inline void set_has_router_label();
+  inline void clear_has_router_label();
+  inline void set_has_error_reason();
+  inline void clear_has_error_reason();
+  inline void set_has_span();
+  inline void clear_has_span();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -943,8 +939,16 @@ class TC_PROTO_API Header : public ::google::protobuf::Message {
   bool is_response_;
   ::google::protobuf::uint64 timeout_;
   ::google::protobuf::RepeatedPtrField< ::bgs::protocol::ProcessId > forward_targets_;
-  ::bgs::protocol::TraceInfo* trace_info_;
+  ::std::string* ciid_;
+  ::google::protobuf::RepeatedPtrField< ::bgs::protocol::FanoutTarget > fanout_target_;
+  ::google::protobuf::RepeatedPtrField< ::std::string> ciid_fanout_target_;
   ::google::protobuf::uint32 service_hash_;
+  ::google::protobuf::uint32 sender_token_;
+  ::std::string* client_record_;
+  ::std::string* original_sender_;
+  ::std::string* error_reason_;
+  ::bgs::protocol::Span* span_;
+  ::google::protobuf::uint32 router_label_;
   friend void TC_PROTO_API protobuf_AddDesc_rpc_5ftypes_2eproto();
   friend void protobuf_AssignDesc_rpc_5ftypes_2eproto();
   friend void protobuf_ShutdownFile_rpc_5ftypes_2eproto();
@@ -954,9 +958,7 @@ class TC_PROTO_API Header : public ::google::protobuf::Message {
 };
 // ===================================================================
 
-
 // ===================================================================
-
 
 // ===================================================================
 
@@ -1310,137 +1312,241 @@ inline void ErrorInfo::set_method_id(::google::protobuf::uint32 value) {
 
 // -------------------------------------------------------------------
 
-// TraceInfo
+// FanoutTarget
 
-// optional string session_id = 1;
-inline bool TraceInfo::has_session_id() const {
+// optional string client_id = 1;
+inline bool FanoutTarget::has_client_id() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void TraceInfo::set_has_session_id() {
+inline void FanoutTarget::set_has_client_id() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void TraceInfo::clear_has_session_id() {
+inline void FanoutTarget::clear_has_client_id() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void TraceInfo::clear_session_id() {
-  if (session_id_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    session_id_->clear();
+inline void FanoutTarget::clear_client_id() {
+  if (client_id_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_id_->clear();
   }
-  clear_has_session_id();
+  clear_has_client_id();
 }
-inline const ::std::string& TraceInfo::session_id() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.TraceInfo.session_id)
-  return *session_id_;
+inline const ::std::string& FanoutTarget::client_id() const {
+  // @@protoc_insertion_point(field_get:bgs.protocol.FanoutTarget.client_id)
+  return *client_id_;
 }
-inline void TraceInfo::set_session_id(const ::std::string& value) {
-  set_has_session_id();
-  if (session_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    session_id_ = new ::std::string;
+inline void FanoutTarget::set_client_id(const ::std::string& value) {
+  set_has_client_id();
+  if (client_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_id_ = new ::std::string;
   }
-  session_id_->assign(value);
-  // @@protoc_insertion_point(field_set:bgs.protocol.TraceInfo.session_id)
+  client_id_->assign(value);
+  // @@protoc_insertion_point(field_set:bgs.protocol.FanoutTarget.client_id)
 }
-inline void TraceInfo::set_session_id(const char* value) {
-  set_has_session_id();
-  if (session_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    session_id_ = new ::std::string;
+inline void FanoutTarget::set_client_id(const char* value) {
+  set_has_client_id();
+  if (client_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_id_ = new ::std::string;
   }
-  session_id_->assign(value);
-  // @@protoc_insertion_point(field_set_char:bgs.protocol.TraceInfo.session_id)
+  client_id_->assign(value);
+  // @@protoc_insertion_point(field_set_char:bgs.protocol.FanoutTarget.client_id)
 }
-inline void TraceInfo::set_session_id(const char* value, size_t size) {
-  set_has_session_id();
-  if (session_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    session_id_ = new ::std::string;
+inline void FanoutTarget::set_client_id(const char* value, size_t size) {
+  set_has_client_id();
+  if (client_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_id_ = new ::std::string;
   }
-  session_id_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.TraceInfo.session_id)
+  client_id_->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.FanoutTarget.client_id)
 }
-inline ::std::string* TraceInfo::mutable_session_id() {
-  set_has_session_id();
-  if (session_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    session_id_ = new ::std::string;
+inline ::std::string* FanoutTarget::mutable_client_id() {
+  set_has_client_id();
+  if (client_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_id_ = new ::std::string;
   }
-  // @@protoc_insertion_point(field_mutable:bgs.protocol.TraceInfo.session_id)
-  return session_id_;
+  // @@protoc_insertion_point(field_mutable:bgs.protocol.FanoutTarget.client_id)
+  return client_id_;
 }
-inline ::std::string* TraceInfo::release_session_id() {
-  clear_has_session_id();
-  if (session_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+inline ::std::string* FanoutTarget::release_client_id() {
+  clear_has_client_id();
+  if (client_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     return NULL;
   } else {
-    ::std::string* temp = session_id_;
-    session_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    ::std::string* temp = client_id_;
+    client_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
     return temp;
   }
 }
-inline void TraceInfo::set_allocated_session_id(::std::string* session_id) {
-  if (session_id_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    delete session_id_;
+inline void FanoutTarget::set_allocated_client_id(::std::string* client_id) {
+  if (client_id_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    delete client_id_;
   }
-  if (session_id) {
-    set_has_session_id();
-    session_id_ = session_id;
+  if (client_id) {
+    set_has_client_id();
+    client_id_ = client_id;
   } else {
-    clear_has_session_id();
-    session_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    clear_has_client_id();
+    client_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
-  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.TraceInfo.session_id)
+  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.FanoutTarget.client_id)
 }
 
-// optional string trace_id = 2;
-inline bool TraceInfo::has_trace_id() const {
+// optional bytes key = 2;
+inline bool FanoutTarget::has_key() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void TraceInfo::set_has_trace_id() {
+inline void FanoutTarget::set_has_key() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void TraceInfo::clear_has_trace_id() {
+inline void FanoutTarget::clear_has_key() {
   _has_bits_[0] &= ~0x00000002u;
 }
-inline void TraceInfo::clear_trace_id() {
+inline void FanoutTarget::clear_key() {
+  if (key_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    key_->clear();
+  }
+  clear_has_key();
+}
+inline const ::std::string& FanoutTarget::key() const {
+  // @@protoc_insertion_point(field_get:bgs.protocol.FanoutTarget.key)
+  return *key_;
+}
+inline void FanoutTarget::set_key(const ::std::string& value) {
+  set_has_key();
+  if (key_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    key_ = new ::std::string;
+  }
+  key_->assign(value);
+  // @@protoc_insertion_point(field_set:bgs.protocol.FanoutTarget.key)
+}
+inline void FanoutTarget::set_key(const char* value) {
+  set_has_key();
+  if (key_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    key_ = new ::std::string;
+  }
+  key_->assign(value);
+  // @@protoc_insertion_point(field_set_char:bgs.protocol.FanoutTarget.key)
+}
+inline void FanoutTarget::set_key(const void* value, size_t size) {
+  set_has_key();
+  if (key_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    key_ = new ::std::string;
+  }
+  key_->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.FanoutTarget.key)
+}
+inline ::std::string* FanoutTarget::mutable_key() {
+  set_has_key();
+  if (key_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    key_ = new ::std::string;
+  }
+  // @@protoc_insertion_point(field_mutable:bgs.protocol.FanoutTarget.key)
+  return key_;
+}
+inline ::std::string* FanoutTarget::release_key() {
+  clear_has_key();
+  if (key_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    return NULL;
+  } else {
+    ::std::string* temp = key_;
+    key_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    return temp;
+  }
+}
+inline void FanoutTarget::set_allocated_key(::std::string* key) {
+  if (key_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    delete key_;
+  }
+  if (key) {
+    set_has_key();
+    key_ = key;
+  } else {
+    clear_has_key();
+    key_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  }
+  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.FanoutTarget.key)
+}
+
+// optional uint64 object_id = 3;
+inline bool FanoutTarget::has_object_id() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void FanoutTarget::set_has_object_id() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void FanoutTarget::clear_has_object_id() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void FanoutTarget::clear_object_id() {
+  object_id_ = GOOGLE_ULONGLONG(0);
+  clear_has_object_id();
+}
+inline ::google::protobuf::uint64 FanoutTarget::object_id() const {
+  // @@protoc_insertion_point(field_get:bgs.protocol.FanoutTarget.object_id)
+  return object_id_;
+}
+inline void FanoutTarget::set_object_id(::google::protobuf::uint64 value) {
+  set_has_object_id();
+  object_id_ = value;
+  // @@protoc_insertion_point(field_set:bgs.protocol.FanoutTarget.object_id)
+}
+
+// -------------------------------------------------------------------
+
+// Span
+
+// optional string trace_id = 1;
+inline bool Span::has_trace_id() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void Span::set_has_trace_id() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void Span::clear_has_trace_id() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void Span::clear_trace_id() {
   if (trace_id_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     trace_id_->clear();
   }
   clear_has_trace_id();
 }
-inline const ::std::string& TraceInfo::trace_id() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.TraceInfo.trace_id)
+inline const ::std::string& Span::trace_id() const {
+  // @@protoc_insertion_point(field_get:bgs.protocol.Span.trace_id)
   return *trace_id_;
 }
-inline void TraceInfo::set_trace_id(const ::std::string& value) {
+inline void Span::set_trace_id(const ::std::string& value) {
   set_has_trace_id();
   if (trace_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     trace_id_ = new ::std::string;
   }
   trace_id_->assign(value);
-  // @@protoc_insertion_point(field_set:bgs.protocol.TraceInfo.trace_id)
+  // @@protoc_insertion_point(field_set:bgs.protocol.Span.trace_id)
 }
-inline void TraceInfo::set_trace_id(const char* value) {
+inline void Span::set_trace_id(const char* value) {
   set_has_trace_id();
   if (trace_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     trace_id_ = new ::std::string;
   }
   trace_id_->assign(value);
-  // @@protoc_insertion_point(field_set_char:bgs.protocol.TraceInfo.trace_id)
+  // @@protoc_insertion_point(field_set_char:bgs.protocol.Span.trace_id)
 }
-inline void TraceInfo::set_trace_id(const char* value, size_t size) {
+inline void Span::set_trace_id(const char* value, size_t size) {
   set_has_trace_id();
   if (trace_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     trace_id_ = new ::std::string;
   }
   trace_id_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.TraceInfo.trace_id)
+  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.Span.trace_id)
 }
-inline ::std::string* TraceInfo::mutable_trace_id() {
+inline ::std::string* Span::mutable_trace_id() {
   set_has_trace_id();
   if (trace_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     trace_id_ = new ::std::string;
   }
-  // @@protoc_insertion_point(field_mutable:bgs.protocol.TraceInfo.trace_id)
+  // @@protoc_insertion_point(field_mutable:bgs.protocol.Span.trace_id)
   return trace_id_;
 }
-inline ::std::string* TraceInfo::release_trace_id() {
+inline ::std::string* Span::release_trace_id() {
   clear_has_trace_id();
   if (trace_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     return NULL;
@@ -1450,7 +1556,7 @@ inline ::std::string* TraceInfo::release_trace_id() {
     return temp;
   }
 }
-inline void TraceInfo::set_allocated_trace_id(::std::string* trace_id) {
+inline void Span::set_allocated_trace_id(::std::string* trace_id) {
   if (trace_id_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     delete trace_id_;
   }
@@ -1461,184 +1567,7 @@ inline void TraceInfo::set_allocated_trace_id(::std::string* trace_id) {
     clear_has_trace_id();
     trace_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
-  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.TraceInfo.trace_id)
-}
-
-// optional string span_id = 3;
-inline bool TraceInfo::has_span_id() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
-}
-inline void TraceInfo::set_has_span_id() {
-  _has_bits_[0] |= 0x00000004u;
-}
-inline void TraceInfo::clear_has_span_id() {
-  _has_bits_[0] &= ~0x00000004u;
-}
-inline void TraceInfo::clear_span_id() {
-  if (span_id_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    span_id_->clear();
-  }
-  clear_has_span_id();
-}
-inline const ::std::string& TraceInfo::span_id() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.TraceInfo.span_id)
-  return *span_id_;
-}
-inline void TraceInfo::set_span_id(const ::std::string& value) {
-  set_has_span_id();
-  if (span_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    span_id_ = new ::std::string;
-  }
-  span_id_->assign(value);
-  // @@protoc_insertion_point(field_set:bgs.protocol.TraceInfo.span_id)
-}
-inline void TraceInfo::set_span_id(const char* value) {
-  set_has_span_id();
-  if (span_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    span_id_ = new ::std::string;
-  }
-  span_id_->assign(value);
-  // @@protoc_insertion_point(field_set_char:bgs.protocol.TraceInfo.span_id)
-}
-inline void TraceInfo::set_span_id(const char* value, size_t size) {
-  set_has_span_id();
-  if (span_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    span_id_ = new ::std::string;
-  }
-  span_id_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.TraceInfo.span_id)
-}
-inline ::std::string* TraceInfo::mutable_span_id() {
-  set_has_span_id();
-  if (span_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    span_id_ = new ::std::string;
-  }
-  // @@protoc_insertion_point(field_mutable:bgs.protocol.TraceInfo.span_id)
-  return span_id_;
-}
-inline ::std::string* TraceInfo::release_span_id() {
-  clear_has_span_id();
-  if (span_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    return NULL;
-  } else {
-    ::std::string* temp = span_id_;
-    span_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-    return temp;
-  }
-}
-inline void TraceInfo::set_allocated_span_id(::std::string* span_id) {
-  if (span_id_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    delete span_id_;
-  }
-  if (span_id) {
-    set_has_span_id();
-    span_id_ = span_id;
-  } else {
-    clear_has_span_id();
-    span_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.TraceInfo.span_id)
-}
-
-// optional string parent_span_id = 4;
-inline bool TraceInfo::has_parent_span_id() const {
-  return (_has_bits_[0] & 0x00000008u) != 0;
-}
-inline void TraceInfo::set_has_parent_span_id() {
-  _has_bits_[0] |= 0x00000008u;
-}
-inline void TraceInfo::clear_has_parent_span_id() {
-  _has_bits_[0] &= ~0x00000008u;
-}
-inline void TraceInfo::clear_parent_span_id() {
-  if (parent_span_id_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    parent_span_id_->clear();
-  }
-  clear_has_parent_span_id();
-}
-inline const ::std::string& TraceInfo::parent_span_id() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.TraceInfo.parent_span_id)
-  return *parent_span_id_;
-}
-inline void TraceInfo::set_parent_span_id(const ::std::string& value) {
-  set_has_parent_span_id();
-  if (parent_span_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    parent_span_id_ = new ::std::string;
-  }
-  parent_span_id_->assign(value);
-  // @@protoc_insertion_point(field_set:bgs.protocol.TraceInfo.parent_span_id)
-}
-inline void TraceInfo::set_parent_span_id(const char* value) {
-  set_has_parent_span_id();
-  if (parent_span_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    parent_span_id_ = new ::std::string;
-  }
-  parent_span_id_->assign(value);
-  // @@protoc_insertion_point(field_set_char:bgs.protocol.TraceInfo.parent_span_id)
-}
-inline void TraceInfo::set_parent_span_id(const char* value, size_t size) {
-  set_has_parent_span_id();
-  if (parent_span_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    parent_span_id_ = new ::std::string;
-  }
-  parent_span_id_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.TraceInfo.parent_span_id)
-}
-inline ::std::string* TraceInfo::mutable_parent_span_id() {
-  set_has_parent_span_id();
-  if (parent_span_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    parent_span_id_ = new ::std::string;
-  }
-  // @@protoc_insertion_point(field_mutable:bgs.protocol.TraceInfo.parent_span_id)
-  return parent_span_id_;
-}
-inline ::std::string* TraceInfo::release_parent_span_id() {
-  clear_has_parent_span_id();
-  if (parent_span_id_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    return NULL;
-  } else {
-    ::std::string* temp = parent_span_id_;
-    parent_span_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-    return temp;
-  }
-}
-inline void TraceInfo::set_allocated_parent_span_id(::std::string* parent_span_id) {
-  if (parent_span_id_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    delete parent_span_id_;
-  }
-  if (parent_span_id) {
-    set_has_parent_span_id();
-    parent_span_id_ = parent_span_id;
-  } else {
-    clear_has_parent_span_id();
-    parent_span_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.TraceInfo.parent_span_id)
-}
-
-// optional .bgs.protocol.TraceInfo.Sampling sampling = 5 [default = DEFER];
-inline bool TraceInfo::has_sampling() const {
-  return (_has_bits_[0] & 0x00000010u) != 0;
-}
-inline void TraceInfo::set_has_sampling() {
-  _has_bits_[0] |= 0x00000010u;
-}
-inline void TraceInfo::clear_has_sampling() {
-  _has_bits_[0] &= ~0x00000010u;
-}
-inline void TraceInfo::clear_sampling() {
-  sampling_ = 2;
-  clear_has_sampling();
-}
-inline ::bgs::protocol::TraceInfo_Sampling TraceInfo::sampling() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.TraceInfo.sampling)
-  return static_cast< ::bgs::protocol::TraceInfo_Sampling >(sampling_);
-}
-inline void TraceInfo::set_sampling(::bgs::protocol::TraceInfo_Sampling value) {
-  assert(::bgs::protocol::TraceInfo_Sampling_IsValid(value));
-  set_has_sampling();
-  sampling_ = value;
-  // @@protoc_insertion_point(field_set:bgs.protocol.TraceInfo.sampling)
+  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.Span.trace_id)
 }
 
 // -------------------------------------------------------------------
@@ -1921,47 +1850,482 @@ inline void Header::set_service_hash(::google::protobuf::uint32 value) {
   // @@protoc_insertion_point(field_set:bgs.protocol.Header.service_hash)
 }
 
-// optional .bgs.protocol.TraceInfo trace_info = 12;
-inline bool Header::has_trace_info() const {
+// optional string ciid = 13;
+inline bool Header::has_ciid() const {
   return (_has_bits_[0] & 0x00000800u) != 0;
 }
-inline void Header::set_has_trace_info() {
+inline void Header::set_has_ciid() {
   _has_bits_[0] |= 0x00000800u;
 }
-inline void Header::clear_has_trace_info() {
+inline void Header::clear_has_ciid() {
   _has_bits_[0] &= ~0x00000800u;
 }
-inline void Header::clear_trace_info() {
-  if (trace_info_ != NULL) trace_info_->::bgs::protocol::TraceInfo::Clear();
-  clear_has_trace_info();
-}
-inline const ::bgs::protocol::TraceInfo& Header::trace_info() const {
-  // @@protoc_insertion_point(field_get:bgs.protocol.Header.trace_info)
-  return trace_info_ != NULL ? *trace_info_ : *default_instance_->trace_info_;
-}
-inline ::bgs::protocol::TraceInfo* Header::mutable_trace_info() {
-  set_has_trace_info();
-  if (trace_info_ == NULL) trace_info_ = new ::bgs::protocol::TraceInfo;
-  // @@protoc_insertion_point(field_mutable:bgs.protocol.Header.trace_info)
-  return trace_info_;
-}
-inline ::bgs::protocol::TraceInfo* Header::release_trace_info() {
-  clear_has_trace_info();
-  ::bgs::protocol::TraceInfo* temp = trace_info_;
-  trace_info_ = NULL;
-  return temp;
-}
-inline void Header::set_allocated_trace_info(::bgs::protocol::TraceInfo* trace_info) {
-  delete trace_info_;
-  trace_info_ = trace_info;
-  if (trace_info) {
-    set_has_trace_info();
-  } else {
-    clear_has_trace_info();
+inline void Header::clear_ciid() {
+  if (ciid_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    ciid_->clear();
   }
-  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.Header.trace_info)
+  clear_has_ciid();
+}
+inline const ::std::string& Header::ciid() const {
+  // @@protoc_insertion_point(field_get:bgs.protocol.Header.ciid)
+  return *ciid_;
+}
+inline void Header::set_ciid(const ::std::string& value) {
+  set_has_ciid();
+  if (ciid_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    ciid_ = new ::std::string;
+  }
+  ciid_->assign(value);
+  // @@protoc_insertion_point(field_set:bgs.protocol.Header.ciid)
+}
+inline void Header::set_ciid(const char* value) {
+  set_has_ciid();
+  if (ciid_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    ciid_ = new ::std::string;
+  }
+  ciid_->assign(value);
+  // @@protoc_insertion_point(field_set_char:bgs.protocol.Header.ciid)
+}
+inline void Header::set_ciid(const char* value, size_t size) {
+  set_has_ciid();
+  if (ciid_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    ciid_ = new ::std::string;
+  }
+  ciid_->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.Header.ciid)
+}
+inline ::std::string* Header::mutable_ciid() {
+  set_has_ciid();
+  if (ciid_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    ciid_ = new ::std::string;
+  }
+  // @@protoc_insertion_point(field_mutable:bgs.protocol.Header.ciid)
+  return ciid_;
+}
+inline ::std::string* Header::release_ciid() {
+  clear_has_ciid();
+  if (ciid_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    return NULL;
+  } else {
+    ::std::string* temp = ciid_;
+    ciid_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    return temp;
+  }
+}
+inline void Header::set_allocated_ciid(::std::string* ciid) {
+  if (ciid_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    delete ciid_;
+  }
+  if (ciid) {
+    set_has_ciid();
+    ciid_ = ciid;
+  } else {
+    clear_has_ciid();
+    ciid_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  }
+  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.Header.ciid)
 }
 
+// repeated .bgs.protocol.FanoutTarget fanout_target = 14;
+inline int Header::fanout_target_size() const {
+  return fanout_target_.size();
+}
+inline void Header::clear_fanout_target() {
+  fanout_target_.Clear();
+}
+inline const ::bgs::protocol::FanoutTarget& Header::fanout_target(int index) const {
+  // @@protoc_insertion_point(field_get:bgs.protocol.Header.fanout_target)
+  return fanout_target_.Get(index);
+}
+inline ::bgs::protocol::FanoutTarget* Header::mutable_fanout_target(int index) {
+  // @@protoc_insertion_point(field_mutable:bgs.protocol.Header.fanout_target)
+  return fanout_target_.Mutable(index);
+}
+inline ::bgs::protocol::FanoutTarget* Header::add_fanout_target() {
+  // @@protoc_insertion_point(field_add:bgs.protocol.Header.fanout_target)
+  return fanout_target_.Add();
+}
+inline const ::google::protobuf::RepeatedPtrField< ::bgs::protocol::FanoutTarget >&
+Header::fanout_target() const {
+  // @@protoc_insertion_point(field_list:bgs.protocol.Header.fanout_target)
+  return fanout_target_;
+}
+inline ::google::protobuf::RepeatedPtrField< ::bgs::protocol::FanoutTarget >*
+Header::mutable_fanout_target() {
+  // @@protoc_insertion_point(field_mutable_list:bgs.protocol.Header.fanout_target)
+  return &fanout_target_;
+}
+
+// repeated string ciid_fanout_target = 15;
+inline int Header::ciid_fanout_target_size() const {
+  return ciid_fanout_target_.size();
+}
+inline void Header::clear_ciid_fanout_target() {
+  ciid_fanout_target_.Clear();
+}
+inline const ::std::string& Header::ciid_fanout_target(int index) const {
+  // @@protoc_insertion_point(field_get:bgs.protocol.Header.ciid_fanout_target)
+  return ciid_fanout_target_.Get(index);
+}
+inline ::std::string* Header::mutable_ciid_fanout_target(int index) {
+  // @@protoc_insertion_point(field_mutable:bgs.protocol.Header.ciid_fanout_target)
+  return ciid_fanout_target_.Mutable(index);
+}
+inline void Header::set_ciid_fanout_target(int index, const ::std::string& value) {
+  // @@protoc_insertion_point(field_set:bgs.protocol.Header.ciid_fanout_target)
+  ciid_fanout_target_.Mutable(index)->assign(value);
+}
+inline void Header::set_ciid_fanout_target(int index, const char* value) {
+  ciid_fanout_target_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set_char:bgs.protocol.Header.ciid_fanout_target)
+}
+inline void Header::set_ciid_fanout_target(int index, const char* value, size_t size) {
+  ciid_fanout_target_.Mutable(index)->assign(
+    reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.Header.ciid_fanout_target)
+}
+inline ::std::string* Header::add_ciid_fanout_target() {
+  return ciid_fanout_target_.Add();
+}
+inline void Header::add_ciid_fanout_target(const ::std::string& value) {
+  ciid_fanout_target_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add:bgs.protocol.Header.ciid_fanout_target)
+}
+inline void Header::add_ciid_fanout_target(const char* value) {
+  ciid_fanout_target_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add_char:bgs.protocol.Header.ciid_fanout_target)
+}
+inline void Header::add_ciid_fanout_target(const char* value, size_t size) {
+  ciid_fanout_target_.Add()->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_add_pointer:bgs.protocol.Header.ciid_fanout_target)
+}
+inline const ::google::protobuf::RepeatedPtrField< ::std::string>&
+Header::ciid_fanout_target() const {
+  // @@protoc_insertion_point(field_list:bgs.protocol.Header.ciid_fanout_target)
+  return ciid_fanout_target_;
+}
+inline ::google::protobuf::RepeatedPtrField< ::std::string>*
+Header::mutable_ciid_fanout_target() {
+  // @@protoc_insertion_point(field_mutable_list:bgs.protocol.Header.ciid_fanout_target)
+  return &ciid_fanout_target_;
+}
+
+// optional bytes client_record = 16;
+inline bool Header::has_client_record() const {
+  return (_has_bits_[0] & 0x00004000u) != 0;
+}
+inline void Header::set_has_client_record() {
+  _has_bits_[0] |= 0x00004000u;
+}
+inline void Header::clear_has_client_record() {
+  _has_bits_[0] &= ~0x00004000u;
+}
+inline void Header::clear_client_record() {
+  if (client_record_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_record_->clear();
+  }
+  clear_has_client_record();
+}
+inline const ::std::string& Header::client_record() const {
+  // @@protoc_insertion_point(field_get:bgs.protocol.Header.client_record)
+  return *client_record_;
+}
+inline void Header::set_client_record(const ::std::string& value) {
+  set_has_client_record();
+  if (client_record_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_record_ = new ::std::string;
+  }
+  client_record_->assign(value);
+  // @@protoc_insertion_point(field_set:bgs.protocol.Header.client_record)
+}
+inline void Header::set_client_record(const char* value) {
+  set_has_client_record();
+  if (client_record_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_record_ = new ::std::string;
+  }
+  client_record_->assign(value);
+  // @@protoc_insertion_point(field_set_char:bgs.protocol.Header.client_record)
+}
+inline void Header::set_client_record(const void* value, size_t size) {
+  set_has_client_record();
+  if (client_record_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_record_ = new ::std::string;
+  }
+  client_record_->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.Header.client_record)
+}
+inline ::std::string* Header::mutable_client_record() {
+  set_has_client_record();
+  if (client_record_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    client_record_ = new ::std::string;
+  }
+  // @@protoc_insertion_point(field_mutable:bgs.protocol.Header.client_record)
+  return client_record_;
+}
+inline ::std::string* Header::release_client_record() {
+  clear_has_client_record();
+  if (client_record_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    return NULL;
+  } else {
+    ::std::string* temp = client_record_;
+    client_record_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    return temp;
+  }
+}
+inline void Header::set_allocated_client_record(::std::string* client_record) {
+  if (client_record_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    delete client_record_;
+  }
+  if (client_record) {
+    set_has_client_record();
+    client_record_ = client_record;
+  } else {
+    clear_has_client_record();
+    client_record_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  }
+  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.Header.client_record)
+}
+
+// optional bytes original_sender = 17;
+inline bool Header::has_original_sender() const {
+  return (_has_bits_[0] & 0x00008000u) != 0;
+}
+inline void Header::set_has_original_sender() {
+  _has_bits_[0] |= 0x00008000u;
+}
+inline void Header::clear_has_original_sender() {
+  _has_bits_[0] &= ~0x00008000u;
+}
+inline void Header::clear_original_sender() {
+  if (original_sender_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    original_sender_->clear();
+  }
+  clear_has_original_sender();
+}
+inline const ::std::string& Header::original_sender() const {
+  // @@protoc_insertion_point(field_get:bgs.protocol.Header.original_sender)
+  return *original_sender_;
+}
+inline void Header::set_original_sender(const ::std::string& value) {
+  set_has_original_sender();
+  if (original_sender_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    original_sender_ = new ::std::string;
+  }
+  original_sender_->assign(value);
+  // @@protoc_insertion_point(field_set:bgs.protocol.Header.original_sender)
+}
+inline void Header::set_original_sender(const char* value) {
+  set_has_original_sender();
+  if (original_sender_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    original_sender_ = new ::std::string;
+  }
+  original_sender_->assign(value);
+  // @@protoc_insertion_point(field_set_char:bgs.protocol.Header.original_sender)
+}
+inline void Header::set_original_sender(const void* value, size_t size) {
+  set_has_original_sender();
+  if (original_sender_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    original_sender_ = new ::std::string;
+  }
+  original_sender_->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.Header.original_sender)
+}
+inline ::std::string* Header::mutable_original_sender() {
+  set_has_original_sender();
+  if (original_sender_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    original_sender_ = new ::std::string;
+  }
+  // @@protoc_insertion_point(field_mutable:bgs.protocol.Header.original_sender)
+  return original_sender_;
+}
+inline ::std::string* Header::release_original_sender() {
+  clear_has_original_sender();
+  if (original_sender_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    return NULL;
+  } else {
+    ::std::string* temp = original_sender_;
+    original_sender_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    return temp;
+  }
+}
+inline void Header::set_allocated_original_sender(::std::string* original_sender) {
+  if (original_sender_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    delete original_sender_;
+  }
+  if (original_sender) {
+    set_has_original_sender();
+    original_sender_ = original_sender;
+  } else {
+    clear_has_original_sender();
+    original_sender_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  }
+  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.Header.original_sender)
+}
+
+// optional uint32 sender_token = 18;
+inline bool Header::has_sender_token() const {
+  return (_has_bits_[0] & 0x00010000u) != 0;
+}
+inline void Header::set_has_sender_token() {
+  _has_bits_[0] |= 0x00010000u;
+}
+inline void Header::clear_has_sender_token() {
+  _has_bits_[0] &= ~0x00010000u;
+}
+inline void Header::clear_sender_token() {
+  sender_token_ = 0u;
+  clear_has_sender_token();
+}
+inline ::google::protobuf::uint32 Header::sender_token() const {
+  // @@protoc_insertion_point(field_get:bgs.protocol.Header.sender_token)
+  return sender_token_;
+}
+inline void Header::set_sender_token(::google::protobuf::uint32 value) {
+  set_has_sender_token();
+  sender_token_ = value;
+  // @@protoc_insertion_point(field_set:bgs.protocol.Header.sender_token)
+}
+
+// optional uint32 router_label = 19;
+inline bool Header::has_router_label() const {
+  return (_has_bits_[0] & 0x00020000u) != 0;
+}
+inline void Header::set_has_router_label() {
+  _has_bits_[0] |= 0x00020000u;
+}
+inline void Header::clear_has_router_label() {
+  _has_bits_[0] &= ~0x00020000u;
+}
+inline void Header::clear_router_label() {
+  router_label_ = 0u;
+  clear_has_router_label();
+}
+inline ::google::protobuf::uint32 Header::router_label() const {
+  // @@protoc_insertion_point(field_get:bgs.protocol.Header.router_label)
+  return router_label_;
+}
+inline void Header::set_router_label(::google::protobuf::uint32 value) {
+  set_has_router_label();
+  router_label_ = value;
+  // @@protoc_insertion_point(field_set:bgs.protocol.Header.router_label)
+}
+
+// optional string error_reason = 20;
+inline bool Header::has_error_reason() const {
+  return (_has_bits_[0] & 0x00040000u) != 0;
+}
+inline void Header::set_has_error_reason() {
+  _has_bits_[0] |= 0x00040000u;
+}
+inline void Header::clear_has_error_reason() {
+  _has_bits_[0] &= ~0x00040000u;
+}
+inline void Header::clear_error_reason() {
+  if (error_reason_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    error_reason_->clear();
+  }
+  clear_has_error_reason();
+}
+inline const ::std::string& Header::error_reason() const {
+  // @@protoc_insertion_point(field_get:bgs.protocol.Header.error_reason)
+  return *error_reason_;
+}
+inline void Header::set_error_reason(const ::std::string& value) {
+  set_has_error_reason();
+  if (error_reason_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    error_reason_ = new ::std::string;
+  }
+  error_reason_->assign(value);
+  // @@protoc_insertion_point(field_set:bgs.protocol.Header.error_reason)
+}
+inline void Header::set_error_reason(const char* value) {
+  set_has_error_reason();
+  if (error_reason_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    error_reason_ = new ::std::string;
+  }
+  error_reason_->assign(value);
+  // @@protoc_insertion_point(field_set_char:bgs.protocol.Header.error_reason)
+}
+inline void Header::set_error_reason(const char* value, size_t size) {
+  set_has_error_reason();
+  if (error_reason_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    error_reason_ = new ::std::string;
+  }
+  error_reason_->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:bgs.protocol.Header.error_reason)
+}
+inline ::std::string* Header::mutable_error_reason() {
+  set_has_error_reason();
+  if (error_reason_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    error_reason_ = new ::std::string;
+  }
+  // @@protoc_insertion_point(field_mutable:bgs.protocol.Header.error_reason)
+  return error_reason_;
+}
+inline ::std::string* Header::release_error_reason() {
+  clear_has_error_reason();
+  if (error_reason_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    return NULL;
+  } else {
+    ::std::string* temp = error_reason_;
+    error_reason_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    return temp;
+  }
+}
+inline void Header::set_allocated_error_reason(::std::string* error_reason) {
+  if (error_reason_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    delete error_reason_;
+  }
+  if (error_reason) {
+    set_has_error_reason();
+    error_reason_ = error_reason;
+  } else {
+    clear_has_error_reason();
+    error_reason_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  }
+  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.Header.error_reason)
+}
+
+// optional .bgs.protocol.Span span = 21;
+inline bool Header::has_span() const {
+  return (_has_bits_[0] & 0x00080000u) != 0;
+}
+inline void Header::set_has_span() {
+  _has_bits_[0] |= 0x00080000u;
+}
+inline void Header::clear_has_span() {
+  _has_bits_[0] &= ~0x00080000u;
+}
+inline void Header::clear_span() {
+  if (span_ != NULL) span_->::bgs::protocol::Span::Clear();
+  clear_has_span();
+}
+inline const ::bgs::protocol::Span& Header::span() const {
+  // @@protoc_insertion_point(field_get:bgs.protocol.Header.span)
+  return span_ != NULL ? *span_ : *default_instance_->span_;
+}
+inline ::bgs::protocol::Span* Header::mutable_span() {
+  set_has_span();
+  if (span_ == NULL) span_ = new ::bgs::protocol::Span;
+  // @@protoc_insertion_point(field_mutable:bgs.protocol.Header.span)
+  return span_;
+}
+inline ::bgs::protocol::Span* Header::release_span() {
+  clear_has_span();
+  ::bgs::protocol::Span* temp = span_;
+  span_ = NULL;
+  return temp;
+}
+inline void Header::set_allocated_span(::bgs::protocol::Span* span) {
+  delete span_;
+  span_ = span;
+  if (span) {
+    set_has_span();
+  } else {
+    clear_has_span();
+  }
+  // @@protoc_insertion_point(field_set_allocated:bgs.protocol.Header.span)
+}
 
 // @@protoc_insertion_point(namespace_scope)
 
@@ -1971,13 +2335,6 @@ inline void Header::set_allocated_trace_info(::bgs::protocol::TraceInfo* trace_i
 #ifndef SWIG
 namespace google {
 namespace protobuf {
-
-template <> struct is_proto_enum< ::bgs::protocol::TraceInfo_Sampling> : ::google::protobuf::internal::true_type {};
-template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::bgs::protocol::TraceInfo_Sampling>() {
-  return ::bgs::protocol::TraceInfo_Sampling_descriptor();
-}
-
 }  // namespace google
 }  // namespace protobuf
 #endif  // SWIG

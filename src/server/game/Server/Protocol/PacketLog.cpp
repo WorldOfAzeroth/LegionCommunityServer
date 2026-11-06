@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -17,10 +17,10 @@
 
 #include "PacketLog.h"
 #include "Config.h"
+#include "GameTime.h"
 #include "IpAddress.h"
-#include "Realm.h"
+#include "RealmList.h"
 #include "Timer.h"
-#include "World.h"
 #include "WorldPacket.h"
 
 #pragma pack(push, 1)
@@ -59,7 +59,7 @@ struct PacketHeader
 
 #pragma pack(pop)
 
-PacketLog::PacketLog() : _file(NULL)
+PacketLog::PacketLog() : _file(nullptr)
 {
     std::call_once(_initializeFlag, &PacketLog::Initialize, this);
 }
@@ -69,7 +69,7 @@ PacketLog::~PacketLog()
     if (_file)
         fclose(_file);
 
-    _file = NULL;
+    _file = nullptr;
 }
 
 PacketLog* PacketLog::instance()
@@ -97,10 +97,13 @@ void PacketLog::Initialize()
             header.Signature[0] = 'P'; header.Signature[1] = 'K'; header.Signature[2] = 'T';
             header.FormatVersion = 0x0301;
             header.SnifferId = 'T';
-            header.Build = realm.Build;
+            if (std::shared_ptr<Realm const> currentRealm = sRealmList->GetCurrentRealm())
+                header.Build = currentRealm->Build;
+            else
+                header.Build = 0;
             header.Locale[0] = 'e'; header.Locale[1] = 'n'; header.Locale[2] = 'U'; header.Locale[3] = 'S';
             std::memset(header.SessionKey, 0, sizeof(header.SessionKey));
-            header.SniffStartUnixtime = time(NULL);
+            header.SniffStartUnixtime = GameTime::GetGameTime();
             header.SniffStartTicks = getMSTime();
             header.OptionalDataSize = 0;
 
@@ -111,7 +114,7 @@ void PacketLog::Initialize()
 
 void PacketLog::LogPacket(WorldPacket const& packet, Direction direction, boost::asio::ip::address const& addr, uint16 port, ConnectionType connectionType)
 {
-    std::lock_guard<std::mutex> lock(_logPacketLock);
+    std::scoped_lock lock(_logPacketLock);
 
     PacketHeader header;
     header.Direction = direction == CLIENT_TO_SERVER ? 0x47534d43 : 0x47534d53;
@@ -132,12 +135,21 @@ void PacketLog::LogPacket(WorldPacket const& packet, Direction direction, boost:
     }
 
     header.OptionalData.SocketPort = port;
-    header.Length = packet.size() + sizeof(header.Opcode);
+    std::size_t size = packet.size();
+    if (direction == CLIENT_TO_SERVER)
+        size -= 4;
+
+    header.Length = size + sizeof(header.Opcode);
     header.Opcode = packet.GetOpcode();
 
     fwrite(&header, sizeof(header), 1, _file);
-    if (!packet.empty())
-        fwrite(packet.contents(), 1, packet.size(), _file);
+    if (size)
+    {
+        uint8 const* data = packet.data();
+        if (direction == CLIENT_TO_SERVER)
+            data += 4;
+        fwrite(data, 1, size, _file);
+    }
 
     fflush(_file);
 }

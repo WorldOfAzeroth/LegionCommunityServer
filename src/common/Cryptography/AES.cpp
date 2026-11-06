@@ -19,10 +19,26 @@
 #include "Errors.h"
 #include <limits>
 
-Trinity::Crypto::AES::AES(bool encrypting) : _ctx(EVP_CIPHER_CTX_new()), _encrypting(encrypting)
+Trinity::Crypto::AES::AES(bool encrypting, size_t keySizeBits /*= 128*/) : _ctx(EVP_CIPHER_CTX_new()), _encrypting(encrypting)
 {
     EVP_CIPHER_CTX_init(_ctx);
-    int status = EVP_CipherInit_ex(_ctx, EVP_aes_128_gcm(), nullptr, nullptr, nullptr, _encrypting ? 1 : 0);
+    EVP_CIPHER const* cipher = nullptr;
+    switch (keySizeBits)
+    {
+        case 128:
+            cipher = EVP_aes_128_gcm();
+            break;
+        case 192:
+            cipher = EVP_aes_192_gcm();
+            break;
+        case 256:
+            cipher = EVP_aes_256_gcm();
+            break;
+        default:
+            ASSERT(false, "Invalid AES key size " SZFMTD, keySizeBits);
+    }
+
+    int status = EVP_CipherInit_ex(_ctx, cipher, nullptr, nullptr, nullptr, _encrypting ? 1 : 0);
     ASSERT(status);
 }
 
@@ -33,6 +49,13 @@ Trinity::Crypto::AES::~AES()
 
 void Trinity::Crypto::AES::Init(Key const& key)
 {
+    int status = EVP_CipherInit_ex(_ctx, nullptr, nullptr, key.data(), nullptr, -1);
+    ASSERT(status);
+}
+
+void Trinity::Crypto::AES::Init(std::span<uint8 const> key)
+{
+    ASSERT(key.size() == size_t(EVP_CIPHER_CTX_get_key_length(_ctx)));
     int status = EVP_CipherInit_ex(_ctx, nullptr, nullptr, key.data(), nullptr, -1);
     ASSERT(status);
 }
@@ -60,6 +83,28 @@ bool Trinity::Crypto::AES::Process(IV const& iv, uint8* data, size_t length, Tag
 
     if (_encrypting && !EVP_CIPHER_CTX_ctrl(_ctx, EVP_CTRL_GCM_GET_TAG, sizeof(tag), tag))
         return false;
+
+    return true;
+}
+
+bool Trinity::Crypto::AES::ProcessNoIntegrityCheck(IV const& iv, uint8* data, size_t partialLength)
+{
+    ASSERT(!_encrypting, "Partial encryption is not allowed");
+    ASSERT(partialLength <= static_cast<size_t>(std::numeric_limits<int>::max()));
+    int len = static_cast<int>(partialLength);
+    if (!EVP_CipherInit_ex(_ctx, nullptr, nullptr, nullptr, iv.data(), -1))
+        return false;
+
+    int outLen;
+    if (!EVP_CipherUpdate(_ctx, data, &outLen, data, len))
+        return false;
+
+    len -= outLen;
+
+    if (!EVP_CipherFinal_ex(_ctx, data + outLen, &outLen))
+        return false;
+
+    ASSERT(len == outLen);
 
     return true;
 }

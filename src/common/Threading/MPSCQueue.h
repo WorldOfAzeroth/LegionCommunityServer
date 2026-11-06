@@ -96,7 +96,7 @@ class MPSCQueueIntrusive
     using Atomic = std::atomic<T*>;
 
 public:
-    MPSCQueueIntrusive() : _dummyPtr(reinterpret_cast<T*>(_dummy.data())), _head(_dummyPtr), _tail(_dummyPtr)
+    MPSCQueueIntrusive() : _dummy(), _dummyPtr(reinterpret_cast<T*>(_dummy.data())), _head(_dummyPtr), _tail(_dummyPtr)
     {
         // _dummy is constructed from raw byte array and is intentionally left uninitialized (it might not be default constructible)
         // so we init only its IntrusiveLink here
@@ -114,14 +114,14 @@ public:
         (_dummyPtr->*IntrusiveLink).~Atomic();
     }
 
-    void Enqueue(T* input)
+    void Enqueue(T* input) noexcept
     {
         (input->*IntrusiveLink).store(nullptr, std::memory_order_release);
         T* prevHead = _head.exchange(input, std::memory_order_acq_rel);
         (prevHead->*IntrusiveLink).store(input, std::memory_order_release);
     }
 
-    bool Dequeue(T*& result)
+    bool Dequeue(T*& result) noexcept
     {
         T* tail = _tail.load(std::memory_order_relaxed);
         T* next = (tail->*IntrusiveLink).load(std::memory_order_acquire);

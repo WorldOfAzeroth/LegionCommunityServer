@@ -21,7 +21,9 @@
 #include "Define.h"
 #include <array>
 
-namespace Trinity::Crypto
+namespace Trinity
+{
+namespace Crypto
 {
     void TC_COMMON_API GetRandomBytes(uint8* buf, size_t len);
 
@@ -38,6 +40,7 @@ namespace Trinity::Crypto
         GetRandomBytes(arr);
         return arr;
     }
+}
 }
 
 #endif
